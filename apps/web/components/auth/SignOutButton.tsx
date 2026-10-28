@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signOut } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -8,7 +7,6 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,8 +15,9 @@ export function SignOutButton() {
     setError(null);
     try {
       await signOut(getBrowserClient());
-      router.replace("/");
-      router.refresh();
+      // Navegação completa: descarta do cache do navegador as telas da conta.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intencional, ver acima
+      window.location.assign("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não conseguimos sair agora. Tente novamente.");
       setPending(false);

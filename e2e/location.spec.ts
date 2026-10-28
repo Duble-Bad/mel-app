@@ -1,20 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import reverseFixture from "../packages/core/src/geo/__fixtures__/maptiler-reverse.json" with { type: "json" };
-import searchFixture from "../packages/core/src/geo/__fixtures__/maptiler-search.json" with { type: "json" };
+import { mockGeocoding, SE } from "./support/geo";
 import { createUser, deleteUserByEmail, TEST_PASSWORD } from "./support/users";
 
-// GPS simulado: Praça da Sé (local público).
-const SE = { latitude: -23.55052, longitude: -46.633308 };
 test.use({ geolocation: SE, permissions: ["geolocation"] });
-
-/** Busca de endereço com respostas reais gravadas: sem rede e sem gastar cota. */
-async function mockGeocoding(page: Page, status = 200) {
-  await page.route("https://api.maptiler.com/geocoding/**", (route) => {
-    const path = decodeURIComponent(new URL(route.request().url()).pathname);
-    const isReverse = /\/-?\d+(\.\d+)?,-?\d+(\.\d+)?\.json$/.test(path);
-    return route.fulfill({ status, json: status === 200 ? (isReverse ? reverseFixture : searchFixture) : {} });
-  });
-}
 
 const output = async (page: Page) => JSON.parse((await page.getByTestId("harness-output").textContent()) || "null");
 

@@ -7,7 +7,8 @@ test("home communicates the purpose and the four ways to help", async ({ page })
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Uma rede inteira procurando com você.");
   await expect(page.getByRole("heading", { name: "Como podemos ajudar?" })).toBeVisible();
 
-  for (const label of ["Perdi meu pet", "Encontrei um pet", "Vi um pet", "Quero adotar"]) {
+  await expect(page.getByRole("link", { name: /Perdi meu pet/i })).toHaveAttribute("href", "/publicar/perdido");
+  for (const label of ["Encontrei um pet", "Vi um pet", "Quero adotar"]) {
     // Flows not built yet must be visibly unavailable — never a dead link.
     await expect(page.getByRole("button", { name: new RegExp(label, "i") })).toBeDisabled();
   }

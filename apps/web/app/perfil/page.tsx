@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
-import { BR_STATES } from "@mel/core";
-import { listMyPets } from "@mel/data";
+import { BR_STATES, timeAgo } from "@mel/core";
+import { listMyLostCases, listMyPets } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
@@ -9,6 +10,7 @@ import { PetCard } from "@/components/pets/PetCard";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 
 export const metadata: Metadata = {
   title: "Meu perfil",
@@ -53,6 +55,10 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
 
       {query.pet_removido && <Alert tone="success">Pet excluído.</Alert>}
 
+      <Suspense fallback={null}>
+        <MyAlerts ownerId={profile.id} />
+      </Suspense>
+
       <section aria-labelledby="meus-pets" className="flex flex-col gap-4">
         <h2 id="meus-pets" className="text-xl font-bold">
           Meus pets
@@ -69,6 +75,56 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
         <SignOutButton />
       </div>
     </div>
+  );
+}
+
+async function MyAlerts({ ownerId }: { ownerId: string }) {
+  const supabase = await createSessionClient();
+  let data;
+  try {
+    const [cases, pets] = await Promise.all([listMyLostCases(supabase, ownerId), listMyPets(supabase, ownerId)]);
+    data = { cases, pets };
+  } catch (error) {
+    console.error("[perfil] falha ao listar alertas", error);
+    return <ErrorState>Não conseguimos carregar seus alertas agora. Atualize a página.</ErrorState>;
+  }
+  if (data.cases.length === 0) return null;
+  const petName = (id: string) => data.pets.find((p) => p.id === id)?.name ?? "Pet";
+
+  return (
+    <section aria-labelledby="meus-alertas" className="flex flex-col gap-3">
+      <h2 id="meus-alertas" className="text-xl font-bold">
+        Meus alertas
+      </h2>
+      <ul className="flex flex-col gap-3">
+        {data.cases.map((c) => (
+          <li key={c.id}>
+            <Link
+              href={c.status === "DRAFT" ? "/publicar/perdido" : `/alerta/${c.code}`}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 shadow-card"
+            >
+              <span>
+                <span className="block font-bold">{petName(c.petId)}</span>
+                <span className="text-sm text-text-secondary">
+                  {c.status === "DRAFT"
+                    ? "Rascunho — toque para continuar"
+                    : c.publishedAt
+                      ? `Publicado ${timeAgo(c.publishedAt)}`
+                      : ""}
+                </span>
+              </span>
+              {c.status === "DRAFT" ? (
+                <StatusBadge status="draft">Rascunho</StatusBadge>
+              ) : c.status === "FOUND" ? (
+                <StatusBadge status="found">Encontrado</StatusBadge>
+              ) : (
+                <StatusBadge status="lost">Perdido</StatusBadge>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

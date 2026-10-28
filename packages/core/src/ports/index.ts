@@ -46,6 +46,7 @@ export interface GeocodeResult {
   /** Endereço curto para exibir ("Rua X, Bairro, Cidade – UF"). */
   label: string;
   position: LatLng;
+  neighborhood?: string;
   city?: string;
   state?: BrState;
 }

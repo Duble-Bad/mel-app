@@ -5,3 +5,4 @@ export * from "./pet/pet";
 export * from "./pet/breeds";
 export * from "./adapters/maptiler-geocoder";
 export * from "./geo/geolocation";
+export * from "./lost/lost";

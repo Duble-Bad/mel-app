@@ -11,6 +11,7 @@ export interface PickedLocation {
   position: LatLng;
   /** Endereço aproximado do ponto ("Rua X, Bairro, Cidade – UF"), quando conhecido. */
   label?: string;
+  neighborhood?: string;
   city?: string;
   state?: BrState;
   source: "gps" | "search" | "map";
@@ -65,7 +66,13 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote }: 
       // Só aplica se o ponto ainda for o mesmo (a pessoa pode ter mexido de novo).
       const current = valueRef.current?.position;
       if (address && current && current.lat === next.position.lat && current.lng === next.position.lng) {
-        onChangeRef.current({ ...next, label: address.label, city: address.city, state: address.state });
+        onChangeRef.current({
+          ...next,
+          label: address.label,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          state: address.state,
+        });
       } else if (!address) {
         setAddressFailed(true);
       }

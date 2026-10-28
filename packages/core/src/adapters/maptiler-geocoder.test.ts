@@ -25,6 +25,7 @@ describe("toGeocodeResult (real Brazilian responses)", () => {
     const r = toGeocodeResult(searchFeatures[0]!)!;
     expect(r.city).toBe("São Paulo");
     expect(r.state).toBe("SP");
+    expect(r.neighborhood).toBe("Sé");
     expect(r.label).toBe("Praça da Sé, Sé, São Paulo – SP");
     expect(r.position.lat).toBeCloseTo(-23.5507, 3);
     expect(r.position.lng).toBeCloseTo(-46.6339, 3);

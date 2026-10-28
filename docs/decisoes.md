@@ -30,5 +30,10 @@ Formato: data — decisão — motivo.
 - **2026-10-28 — Mapa "pronto" no `style.load`, não no `load`.** `load` espera todas as camadas; em rede móvel o aviso "carregando" ficaria sobre um mapa já utilizável.
 - **2026-10-28 — Página interna `/dev/local` só com `MEL_DEV_ROUTES=1`.** Verificação E2E do seletor de local até o M5 usá-lo de verdade. Builds de produção não definem a variável → 404.
 - **2026-10-28 — `nearby_cases` (consulta por raio) movida para o M5.** Depende da tabela `lost_cases`, criada no M5.
+- **2026-10-28 — Alerta: ponto exato privado; público vê ponto aproximado (grade de 250 m) e só bairro/cidade.** O último local visto muitas vezes é a casa do tutor. `public_lat/lng` são calculados no banco (trigger) a partir do ponto privado — o cliente não consegue forjá-los. A grade espelha `fuzzPoint` (TS); um teste confere a paridade. O tutor pode optar por mostrar o local exato.
+- **2026-10-28 — Leitura pública de alertas só por funções (`get_public_lost_case`, `nearby_lost_cases`).** A tabela base é invisível para visitantes; as funções devolvem apenas campos seguros e o contato que o tutor autorizou. O alerta publica o pet mesmo que a página do pet seja privada.
+- **2026-10-28 — Regras de status no banco.** Rascunho → ativo exige onde e quando; ativo não volta a rascunho; só a moderação remove. Um alerta aberto por pet.
+- **2026-10-28 — Contato no M5: WhatsApp/telefone só se o tutor marcar; chat marcado como "em breve" (M8).** Aviso antigolpe (PIX) no fluxo e na página do alerta.
+- **2026-10-28 — Após entrar/sair da conta, navegação completa (`location.assign`).** Bug achado no E2E: o Next pré-carrega links da home; o pré-carregamento de `/publicar/perdido` feito antes do login guardava o redirecionamento para `/entrar`, e a tela ficava presa em "Entrando…".
 - **2026-10-28 — Testes E2E: 3 workers e espera de 15 s.** Os testes falam com o Supabase remoto; 5 s gerava falsos negativos com o servidor frio.
 - **2026-10-28 — Tokens em `packages/ui-tokens` (TS + CSS) com teste de paridade e contraste WCAG AA.** O TS é usado onde não há CSS (cartazes, OG, Expo).

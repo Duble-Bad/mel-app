@@ -63,7 +63,7 @@ export function toGeocodeResult(feature: MapTilerFeature): GeocodeResult | null 
     : [feature.text, neighborhood !== feature.text ? neighborhood : undefined, city && state ? `${city} – ${state}` : city];
   const label = parts.filter(Boolean).join(", ");
 
-  return { label, position, city, state };
+  return { label, position, neighborhood: isArea ? undefined : neighborhood, city, state };
 }
 
 /**

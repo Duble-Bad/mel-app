@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { credentialsSchema, fieldErrors, needsOnboarding, safeNextPath } from "@mel/core";
 import { getMyProfile, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
@@ -34,7 +34,6 @@ function returnErrorMessage(code: string | null): string | null {
 }
 
 export function SignInForm() {
-  const router = useRouter();
   const params = useSearchParams();
   const next = safeNextPath(params.get("next"));
 
@@ -62,8 +61,10 @@ export function SignInForm() {
 
       const profile = await getMyProfile(supabase);
       const destination = needsOnboarding(profile) ? `/onboarding?next=${encodeURIComponent(next)}` : next;
-      router.replace(destination);
-      router.refresh();
+      // Navegação completa (não o router do cliente): o Next pode ter guardado
+      // em cache, de antes do login, um redirecionamento da página protegida
+      // de volta para /entrar — a tela ficaria presa em "Entrando…".
+      window.location.assign(destination);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Não deu certo agora. Tente novamente.");
       setPending(false);

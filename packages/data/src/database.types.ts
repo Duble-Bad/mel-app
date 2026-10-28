@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      lost_cases: {
+        Row: {
+          city: string | null
+          contact_chat: boolean
+          contact_phone: string | null
+          contact_phone_public: boolean
+          contact_whatsapp_public: boolean
+          created_at: string
+          found_at: string | null
+          found_how: string | null
+          id: string
+          indexable: boolean
+          last_seen_label: string | null
+          last_seen_lat: number | null
+          last_seen_lng: number | null
+          last_seen_point: unknown
+          lost_at: string | null
+          lost_at_uncertain: boolean
+          notes: string | null
+          owner_id: string
+          pet_id: string
+          public_area_label: string | null
+          public_lat: number | null
+          public_lng: number | null
+          public_point: unknown
+          public_point_exact: boolean
+          published_at: string | null
+          reunion_story: string | null
+          short_code: string
+          state: string | null
+          status: Database["public"]["Enums"]["lost_case_status"]
+          updated_at: string
+          wearing: string[]
+        }
+        Insert: {
+          city?: string | null
+          contact_chat?: boolean
+          contact_phone?: string | null
+          contact_phone_public?: boolean
+          contact_whatsapp_public?: boolean
+          created_at?: string
+          found_at?: string | null
+          found_how?: string | null
+          id?: string
+          indexable?: boolean
+          last_seen_label?: string | null
+          last_seen_lat?: number | null
+          last_seen_lng?: number | null
+          last_seen_point?: unknown
+          lost_at?: string | null
+          lost_at_uncertain?: boolean
+          notes?: string | null
+          owner_id: string
+          pet_id: string
+          public_area_label?: string | null
+          public_lat?: number | null
+          public_lng?: number | null
+          public_point?: unknown
+          public_point_exact?: boolean
+          published_at?: string | null
+          reunion_story?: string | null
+          short_code?: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["lost_case_status"]
+          updated_at?: string
+          wearing?: string[]
+        }
+        Update: {
+          city?: string | null
+          contact_chat?: boolean
+          contact_phone?: string | null
+          contact_phone_public?: boolean
+          contact_whatsapp_public?: boolean
+          created_at?: string
+          found_at?: string | null
+          found_how?: string | null
+          id?: string
+          indexable?: boolean
+          last_seen_label?: string | null
+          last_seen_lat?: number | null
+          last_seen_lng?: number | null
+          last_seen_point?: unknown
+          lost_at?: string | null
+          lost_at_uncertain?: boolean
+          notes?: string | null
+          owner_id?: string
+          pet_id?: string
+          public_area_label?: string | null
+          public_lat?: number | null
+          public_lng?: number | null
+          public_point?: unknown
+          public_point_exact?: boolean
+          published_at?: string | null
+          reunion_story?: string | null
+          short_code?: string
+          state?: string | null
+          status?: Database["public"]["Enums"]["lost_case_status"]
+          updated_at?: string
+          wearing?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lost_cases_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lost_cases_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_photos: {
         Row: {
           created_at: string
@@ -249,9 +366,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
+      get_public_lost_case: { Args: { p_code: string }; Returns: Json }
       health_check: { Args: never; Returns: Json }
+      nearby_lost_cases: {
+        Args: {
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_radius_m?: number
+        }
+        Returns: {
+          area_label: string
+          breed: string
+          code: string
+          distance_m: number
+          lost_at: string
+          pet_name: string
+          photo_thumb_path: string
+          public_lat: number
+          public_lng: number
+          size: Database["public"]["Enums"]["pet_size"]
+          species: Database["public"]["Enums"]["species"]
+        }[]
+      }
     }
     Enums: {
+      lost_case_status: "DRAFT" | "ACTIVE" | "FOUND" | "CLOSED" | "REMOVED"
       pet_sex: "male" | "female" | "unknown"
       pet_size: "mini" | "small" | "medium" | "large" | "giant"
       species: "dog" | "cat" | "other"
@@ -383,6 +524,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      lost_case_status: ["DRAFT", "ACTIVE", "FOUND", "CLOSED", "REMOVED"],
       pet_sex: ["male", "female", "unknown"],
       pet_size: ["mini", "small", "medium", "large", "giant"],
       species: ["dog", "cat", "other"],
