@@ -207,6 +207,10 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             options={SPECIES.map((s) => ({ value: s, label: SPECIES_LABELS[s] }))}
           />
         </div>
+        {/* Raça logo depois da espécie: a lista depende dela. */}
+        <div id="field-breed">
+          <BreedField species={species} value={breed} onChange={setBreed} error={errors.breed} />
+        </div>
         <ChoiceGroup
           name="sex"
           legend="Sexo"
@@ -228,9 +232,6 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
         <h2 id="sec-aparencia" className="text-lg font-bold">
           Como reconhecer
         </h2>
-        <div id="field-breed">
-          <BreedField species={species} value={breed} onChange={setBreed} error={errors.breed} />
-        </div>
         <ChoiceGroup
           name="colorPrimary"
           legend="Cor principal"

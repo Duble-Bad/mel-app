@@ -30,16 +30,17 @@ export function BreedField({
   }, []);
 
   if (!species) {
+    // Nada de campo cinza "travado": diz exatamente o que fazer.
     return (
-      <TextField
-        label="Raça"
-        name="breed"
-        optional
-        disabled
-        placeholder="Escolha a espécie primeiro"
-        value=""
-        onChange={() => {}}
-      />
+      <div className="flex flex-col gap-1.5" data-testid="breed-needs-species">
+        <p className="font-semibold">
+          Raça <span className="font-normal text-text-secondary">(opcional)</span>
+        </p>
+        <p className="rounded-md bg-surface-muted px-4 py-3 text-text-secondary">
+          Escolha <strong className="text-text-primary">Cachorro</strong> ou{" "}
+          <strong className="text-text-primary">Gato</strong> acima para ver a lista de raças.
+        </p>
+      </div>
     );
   }
 

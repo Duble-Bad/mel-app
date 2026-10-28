@@ -21,11 +21,25 @@ const breed = (page: Page) => page.getByRole("combobox", { name: /^Raça/ });
 const breedOptions = (page: Page) => page.getByRole("listbox", { name: /^Raça/ }).getByRole("option");
 const pickSpecies = (page: Page, name: string) => page.getByRole("radio", { name }).check({ force: true });
 
-test("breed is disabled until a species is chosen", async ({ page }) => {
-  await openNewPetForm(page, "breed-disabled");
-  const field = page.getByRole("textbox", { name: /^Raça/ });
-  await expect(field).toBeDisabled();
-  await expect(field).toHaveAttribute("placeholder", "Escolha a espécie primeiro");
+test("without species, breed explains what to do; choosing one shows the list right below", async ({ page }) => {
+  await openNewPetForm(page, "breed-needs-species");
+  // Nada de campo cinza travado: instrução clara.
+  await expect(page.getByTestId("breed-needs-species")).toContainText("Escolha Cachorro ou Gato acima");
+  await expect(breed(page)).toHaveCount(0);
+
+  await pickSpecies(page, "Cachorro");
+  await expect(page.getByTestId("breed-needs-species")).toHaveCount(0);
+  await expect(breed(page)).toBeEnabled();
+
+  // A Raça fica logo abaixo da Espécie (antes de Sexo), não perdida mais abaixo.
+  const breedBox = await breed(page).boundingBox();
+  const speciesBox = await page.getByRole("group", { name: "Espécie" }).boundingBox();
+  const sexBox = await page.getByRole("group", { name: "Sexo" }).boundingBox();
+  expect(breedBox!.y).toBeGreaterThan(speciesBox!.y);
+  expect(breedBox!.y).toBeLessThan(sexBox!.y);
+
+  await breed(page).click();
+  await expect(breedOptions(page).first()).toHaveText("Sem raça definida (SRD)");
 });
 
 test("dog list: SRD pinned first, accent-insensitive search, tap to choose", async ({ page }) => {
