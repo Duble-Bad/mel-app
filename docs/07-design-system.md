@@ -75,7 +75,9 @@ Também `danger` (texto) e `danger-solid` (botão destrutivo).
 
 *A Mel, que deu origem a tudo. A foto original fica em `apps/web/public/brand/mel-origem.webp` e é usada no componente `BrandStory`, na home. Tem 239×287 px, então deve aparecer pequena (até cerca de 112 px) e nunca com filtro.*
 
-> "A MEL nasceu da busca por uma Yorkshire chamada Mel. Seu desaparecimento revelou um problema maior: quando um animal desaparece, informações ficam espalhadas entre grupos, cartazes, redes sociais e pessoas que não conseguem se conectar. O Mel Beacon mantém essa história no centro da marca. Uma pequena Mel deu origem a uma grande rede."
+> **Antes de ser um aplicativo, MEL foi uma busca.** Tudo começou com a Mel, uma pequena Yorkshire muito amada que desapareceu de casa. Muitas pessoas quiseram ajudar, mas quem procurava, quem tinha visto e quem queria ajudar estavam espalhados por lugares diferentes. Foi dessa busca que nasceu a MEL: uma rede para transformar a procura solitária em uma busca coletiva. **Porque quando um animal desaparece, ninguém deveria precisar procurá-lo sozinho.**
+>
+> Texto completo em `/nossa-origem`. Na home, o componente `BrandStory` leva até ela.
 
 **Mel Beacon = Mel + localização + busca + conexão + esperança de reencontro.** A cabeça de uma Yorkshire, com as orelhas marcantes e o pelo, converge para a ponta de um pino. O focinho é o ponto de localização. Leitura em dois níveis: primeiro "é o símbolo da MEL", depois "há uma cachorrinha nele".
 

@@ -1,4 +1,4 @@
-import type { LatLng, LostCase, LostStatus, PetColor, PublicLostCase, Wearing } from "@mel/core";
+import type { LatLng, LostCase, LostStatus, PetColor, PublicLostCase, ReunionInput, Wearing } from "@mel/core";
 import { DataError, type MelClient } from "./client";
 import type { Database } from "./database.types";
 
@@ -193,6 +193,11 @@ interface PublicCaseJson {
   lost_at_uncertain: boolean;
   published_at: string | null;
   found_at: string | null;
+  found_how: PublicLostCase["foundHow"];
+  found_area_label: string | null;
+  reunion_story: string | null;
+  helpful_sighting_id: string | null;
+  helpers_count: number | null;
   public_lat: number | null;
   public_lng: number | null;
   public_point_exact: boolean;
@@ -239,6 +244,11 @@ export async function getPublicLostCase(client: MelClient, code: string): Promis
     lostAtUncertain: c.lost_at_uncertain,
     publishedAt: c.published_at,
     foundAt: c.found_at,
+    foundHow: c.found_how ?? null,
+    foundAreaLabel: c.found_area_label ?? null,
+    reunionStory: c.reunion_story ?? null,
+    helpfulSightingId: c.helpful_sighting_id ?? null,
+    helpersCount: c.helpers_count ?? null,
     point: c.public_lat != null && c.public_lng != null ? { lat: c.public_lat, lng: c.public_lng } : null,
     pointIsExact: c.public_point_exact,
     areaLabel: c.area_label,
@@ -306,4 +316,16 @@ export async function nearbyLostCases(client: MelClient, origin: LatLng, radiusM
     point: { lat: r.public_lat, lng: r.public_lng },
     distanceMeters: r.distance_m,
   }));
+}
+
+/** Tutor confirma o reencontro: alerta vira ENCONTRADO e quem ajudou recebe um obrigado. */
+export async function confirmReunion(client: MelClient, code: string, input: ReunionInput): Promise<void> {
+  const { error } = await client.rpc("confirm_reunion", {
+    p_code: code,
+    p_how: input.how,
+    p_helpful_sighting_id: input.helpfulSightingId ?? undefined,
+    p_found_area_label: input.foundAreaLabel ?? undefined,
+    p_story: input.story ?? undefined,
+  });
+  if (error) fail(error);
 }

@@ -23,9 +23,11 @@ import { siteOrigin } from "@/lib/site";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
+import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
 import { LiveSightings } from "@/components/sighting/LiveSightings";
 import { Timeline } from "@/components/sighting/Timeline";
+import { Heart } from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -100,6 +102,8 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
       )}
 
       <div className="flex flex-col gap-6 px-4">
+        {c.status === "FOUND" && <ReunionBanner c={c} celebrate={c.isOwner && Boolean(query.reencontro)} />}
+
         {c.isOwner && query.novo && (
           <Alert tone="success">
             <strong>Alerta MEL ativado.</strong> Agora outras pessoas poderão ajudar na busca. Compartilhe para alcançar
@@ -113,7 +117,10 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
           </div>
           <h1 className="text-3xl font-bold">{c.pet.name}</h1>
           <p className="text-lg text-text-secondary">{petSummary(c.pet)}</p>
-          {c.lostAt && (
+          {c.lostAt && c.status === "FOUND" && (
+            <p className="text-text-secondary">Desapareceu em {formatDateTimeBr(c.lostAt)}</p>
+          )}
+          {c.lostAt && c.status === "ACTIVE" && (
             <p className="font-semibold">
               Desapareceu {timeAgo(c.lostAt)}
               <span className="font-normal text-text-secondary">
@@ -123,8 +130,18 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               </span>
             </p>
           )}
-          {c.areaLabel && <p>Visto por último perto de <strong>{c.areaLabel}</strong></p>}
+          {c.areaLabel && c.status === "ACTIVE" && <p>Visto por último perto de <strong>{c.areaLabel}</strong></p>}
         </header>
+
+        {c.isOwner && c.status === "ACTIVE" && (
+          <Link
+            href={`/alerta/${c.code}/reencontro`}
+            className="inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-md bg-status-found-solid px-5 font-semibold text-text-inverse shadow-xs transition-[filter,transform] duration-200 ease-mel hover:brightness-110 active:scale-[.985]"
+          >
+            <Heart aria-hidden="true" className="size-5" strokeWidth={2} />
+            Meu pet foi encontrado
+          </Link>
+        )}
 
         {!c.isOwner && c.status === "ACTIVE" && (
           <Link
@@ -137,7 +154,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 
         <section aria-labelledby="compartilhar" className="flex flex-col gap-2">
           <h2 id="compartilhar" className="font-bold">
-            {c.isOwner ? "Compartilhe para alcançar mais pessoas" : "Ajude compartilhando"}
+            {c.status === "FOUND" ? "Compartilhe a boa notícia" : c.isOwner ? "Compartilhe para alcançar mais pessoas" : "Ajude compartilhando"}
           </h2>
           <ShareAlert lostCase={c} path={alertPath(c.code)} />
         </section>
@@ -186,6 +203,8 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
             lastSeen={c.lostAt ? { at: c.lostAt, areaLabel: c.areaLabel } : null}
             sightings={timeline}
             isOwner={c.isOwner}
+            helpfulSightingId={c.helpfulSightingId}
+            closed={c.status !== "ACTIVE"}
           />
         </section>
 
@@ -201,7 +220,8 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 
 function Contact({ c }: { c: PublicLostCase }) {
   const chat = c.contactChat && c.status === "ACTIVE";
-  if (c.isOwner || (!chat && !c.contactWhatsapp && !c.contactPhone)) return null;
+  // Encontrado: sem contato público (o chat de quem já conversou continua em Conversas).
+  if (c.isOwner || c.status !== "ACTIVE" || (!chat && !c.contactWhatsapp && !c.contactPhone)) return null;
   return (
     <section aria-labelledby="contato" className="flex flex-col gap-2">
       <h2 id="contato" className="font-bold">

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { shareText, whatsappShareUrl, type PublicLostCase } from "@mel/core";
 
 /** Compartilhar: WhatsApp, menu nativo do celular (Instagram etc.) e copiar link. */
-export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, "pet" | "areaLabel" | "lostAt">; path: string }) {
+export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, "pet" | "areaLabel" | "lostAt" | "status">; path: string }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const url = () => `${window.location.origin}${path}`;
@@ -30,7 +30,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
     // Menu nativo do celular (inclui Instagram, Telegram…). Sem ele, copia o link.
     if (!("share" in navigator)) return copy();
     try {
-      await navigator.share({ title: `Procura-se: ${lostCase.pet.name}`, text: shareText(lostCase, url()), url: url() });
+      await navigator.share({ title: lostCase.status === "FOUND" ? `Encontrado: ${lostCase.pet.name}` : `Procura-se: ${lostCase.pet.name}`, text: shareText(lostCase, url()), url: url() });
     } catch (err) {
       if ((err as Error).name !== "AbortError") setError("Não conseguimos abrir o compartilhamento. Use Copiar link.");
     }

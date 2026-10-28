@@ -11,10 +11,14 @@ interface TimelineProps {
   lastSeen: { at: string; areaLabel: string | null } | null;
   sightings: TimelineSighting[];
   isOwner: boolean;
+  /** Pista marcada pelo tutor como a que ajudou no reencontro. */
+  helpfulSightingId?: string | null;
+  /** Alerta encerrado: sem ações de responder/ocultar e sem convite para enviar. */
+  closed?: boolean;
 }
 
 /** Linha do tempo: último local conhecido + avistamentos em ordem cronológica. */
-export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProps) {
+export function Timeline({ petName, lastSeen, sightings, isOwner, helpfulSightingId, closed = false }: TimelineProps) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +51,9 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
     <div className="flex flex-col gap-3">
       {sightings.length === 0 && (
         <p className="rounded-md bg-surface-muted p-3 text-text-secondary">
-          Ainda não há avistamentos. {isOwner ? "Compartilhe o alerta para alcançar mais gente." : `Viu ${petName}? Conte pra gente.`}
+          {closed
+            ? "Nenhum avistamento foi enviado nesta busca."
+            : `Ainda não há avistamentos. ${isOwner ? "Compartilhe o alerta para alcançar mais gente." : `Viu ${petName}? Conte pra gente.`}`}
         </p>
       )}
       <ol className="flex flex-col gap-4 border-l-2 border-status-sighting pl-4">
@@ -78,8 +84,13 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
                 <img src={s.photoUrl} alt={`Foto do avistamento ${i + 1}`} loading="lazy" className="aspect-square w-full object-cover" />
               </a>
             )}
+            {s.id === helpfulSightingId && (
+              <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-status-found-soft px-3 py-1 text-caption font-bold tracking-[.04em] text-status-found uppercase">
+                Esta pista ajudou no reencontro
+              </p>
+            )}
             {s.hidden && <p className="text-sm font-semibold">Oculto — só você vê.</p>}
-            {isOwner && (
+            {isOwner && !closed && (
               <div className="mt-1 flex flex-wrap gap-x-5">
                 {s.canReply && !s.hidden && (
                   <button

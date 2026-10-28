@@ -77,6 +77,9 @@ describe("human text", () => {
       { pet: { name: "Mel" } as never, areaLabel: "Sé, São Paulo – SP", lostAt: "2026-10-28T22:04:00-03:00" },
       "https://mel.app/alerta/abc123",
     );
+    expect(shareText({ pet: { name: "Mel" } as never, areaLabel: null, lostAt: null, status: "FOUND" }, "https://mel.app/alerta/abc123")).toBe(
+      "❤️ ENCONTRADO: Mel está em casa! Obrigado a todos que ajudaram na busca: https://mel.app/alerta/abc123",
+    );
     expect(text).toBe(
       "🚨 PROCURA-SE: Mel, desaparecido(a) perto de Sé, São Paulo – SP (28/10 às 22:04). Viu? Veja fotos e ajude: https://mel.app/alerta/abc123",
     );

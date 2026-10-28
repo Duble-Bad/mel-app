@@ -122,6 +122,41 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          created_at: string
+          id: number
+          name: string
+          props: Json
+          subject_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          name: string
+          props?: Json
+          subject_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          name?: string
+          props?: Json
+          subject_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lost_cases: {
         Row: {
           city: string | null
@@ -130,8 +165,10 @@ export type Database = {
           contact_phone_public: boolean
           contact_whatsapp_public: boolean
           created_at: string
+          found_area_label: string | null
           found_at: string | null
           found_how: string | null
+          helpful_sighting_id: string | null
           id: string
           indexable: boolean
           last_seen_label: string | null
@@ -163,8 +200,10 @@ export type Database = {
           contact_phone_public?: boolean
           contact_whatsapp_public?: boolean
           created_at?: string
+          found_area_label?: string | null
           found_at?: string | null
           found_how?: string | null
+          helpful_sighting_id?: string | null
           id?: string
           indexable?: boolean
           last_seen_label?: string | null
@@ -196,8 +235,10 @@ export type Database = {
           contact_phone_public?: boolean
           contact_whatsapp_public?: boolean
           created_at?: string
+          found_area_label?: string | null
           found_at?: string | null
           found_how?: string | null
+          helpful_sighting_id?: string | null
           id?: string
           indexable?: boolean
           last_seen_label?: string | null
@@ -223,6 +264,13 @@ export type Database = {
           wearing?: string[]
         }
         Relationships: [
+          {
+            foreignKeyName: "lost_cases_helpful_sighting_id_fkey"
+            columns: ["helpful_sighting_id"]
+            isOneToOne: false
+            referencedRelation: "sightings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lost_cases_owner_id_fkey"
             columns: ["owner_id"]
@@ -681,6 +729,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_reunion: {
+        Args: {
+          p_code: string
+          p_found_area_label?: string
+          p_helpful_sighting_id?: string
+          p_how: string
+          p_story?: string
+        }
+        Returns: undefined
+      }
       debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
       get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }

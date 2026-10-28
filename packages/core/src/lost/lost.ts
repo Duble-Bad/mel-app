@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { FoundHow } from "./reunion";
 import type { LatLng } from "../geo/geo";
 import type { BrState } from "../profile/profile";
 import type { PetColor, PetSex, PetSize, Species } from "../pet/pet";
@@ -47,6 +48,12 @@ export interface PublicLostCase {
   lostAtUncertain: boolean;
   publishedAt: string | null;
   foundAt: string | null;
+  /** Reencontro (status FOUND). */
+  foundHow: FoundHow | null;
+  foundAreaLabel: string | null;
+  reunionStory: string | null;
+  helpfulSightingId: string | null;
+  helpersCount: number | null;
   point: LatLng | null;
   pointIsExact: boolean;
   areaLabel: string | null;
@@ -192,7 +199,8 @@ export function publicAreaFrom(place: { neighborhood?: string; city?: string; st
 export const alertPath = (code: string) => `/alerta/${code}`;
 
 /** Mensagem pronta para WhatsApp/redes. */
-export function shareText(c: Pick<PublicLostCase, "pet" | "areaLabel" | "lostAt">, url: string): string {
+export function shareText(c: Pick<PublicLostCase, "pet" | "areaLabel" | "lostAt"> & { status?: LostStatus }, url: string): string {
+  if (c.status === "FOUND") return `❤️ ENCONTRADO: ${c.pet.name} está em casa! Obrigado a todos que ajudaram na busca: ${url}`;
   const where = c.areaLabel ? ` perto de ${c.areaLabel}` : "";
   const when = c.lostAt ? ` (${formatDateTimeBr(c.lostAt)})` : "";
   return `🚨 PROCURA-SE: ${c.pet.name}, desaparecido(a)${where}${when}. Viu? Veja fotos e ajude: ${url}`;

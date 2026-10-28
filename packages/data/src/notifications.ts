@@ -2,7 +2,7 @@ import { DataError, type MelClient } from "./client";
 
 export interface AppNotification {
   id: string;
-  kind: "sighting_new" | "message_new";
+  kind: "sighting_new" | "message_new" | "reunion_thanks";
   /** Texto pronto para exibir. */
   title: string;
   body: string;
@@ -28,8 +28,20 @@ export function toAppNotification(row: Row): AppNotification {
     conversation_id?: string;
     to_owner?: boolean;
     count?: number;
+    helpful?: boolean;
   };
   const pet = p.pet_name ?? "seu pet";
+  if (row.kind === "reunion_thanks") {
+    return {
+      id: row.id,
+      kind: "reunion_thanks",
+      title: `${pet} está em casa!`,
+      body: p.helpful ? "A sua pista ajudou no reencontro. Obrigado por fazer parte da busca." : "Obrigado por fazer parte da busca.",
+      href: `/alerta/${p.code}`,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
   if (row.kind === "message_new") {
     const count = p.count ?? 1;
     return {
