@@ -3,14 +3,15 @@ import { Suspense } from "react";
 import { countUnreadNotifications } from "@mel/data";
 import { getCurrentProfile, getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
+import { MelLogo } from "@/components/brand/MelLogo";
 import { NotificationBell } from "./NotificationBell";
 
 export function AppHeader() {
   return (
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex min-h-14 w-full max-w-xl items-center justify-between px-4">
-        <Link href="/" className="text-2xl font-extrabold tracking-tight text-link" aria-label="MEL — início">
-          MEL
+        <Link href="/" className="-ml-1 rounded-md p-1" aria-label="MEL — início">
+          <MelLogo size={30} />
         </Link>
         <Suspense fallback={<span className="min-h-12" aria-hidden="true" />}>
           <HeaderAccount />

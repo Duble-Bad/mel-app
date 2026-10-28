@@ -56,6 +56,7 @@ describe("design tokens", () => {
     ["focus", "surface"],
     ["focus", "background"],
     ["focus", "input"],
+    ["beacon-glyph", "beacon-tile"],
   ];
 
   for (const theme of ["light", "dark"] as ThemeName[]) {

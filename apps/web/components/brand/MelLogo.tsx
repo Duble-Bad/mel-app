@@ -1,35 +1,42 @@
-import { useId } from "react";
+import beacon from "./beacon.json";
 
 /**
- * Símbolo PROVISÓRIO da MEL: pino de localização (encontro) com um ponto
- * central (o animal protegido) sobre o gradiente Honey Gold.
- * Ponto único de troca: o logotipo definitivo substitui só este componente.
+ * Mel Beacon: o símbolo da EMPRESA MEL (Yorkshire + pino de localização).
+ * Não é ícone de status (perdido/encontrado/avistamento/adoção têm os seus).
+ *
+ * Fonte única do símbolo: beacon.json (vetor). Ícones de app, favicon e
+ * notificação são gerados dele com `npm run brand:icons`.
+ * Até 32 px usa a versão simplificada (silhueta + focinho), legível em tamanho pequeno.
  */
-export function MelMark({ size = 36, className }: { size?: number; className?: string }) {
-  const id = useId();
+export function MelMark({
+  size = 36,
+  variant = "tile",
+  className,
+}: {
+  size?: number;
+  /** `tile`: ladrilho da marca (cores do tema). `glyph`: só o símbolo, na cor do texto (currentColor). */
+  variant?: "tile" | "glyph";
+  className?: string;
+}) {
+  const d = size <= 32 ? beacon.simple : beacon.detailed;
+  if (variant === "glyph") {
+    return (
+      <svg width={size} height={size} viewBox={beacon.viewBox} aria-hidden="true" className={className}>
+        <path d={d} fill="currentColor" fillRule="evenodd" />
+      </svg>
+    );
+  }
+  const scale = size <= 32 ? 0.84 : 0.78;
+  const offset = (512 * (1 - scale)) / 2;
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true" className={className}>
-      <defs>
-        <linearGradient id={`${id}-g`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style={{ stopColor: "var(--mel-honey-600)" }} />
-          <stop offset="0.48" style={{ stopColor: "var(--mel-honey-500)" }} />
-          <stop offset="1" style={{ stopColor: "var(--mel-honey-300)" }} />
-        </linearGradient>
-      </defs>
-      <rect width="40" height="40" rx="12" fill={`url(#${id}-g)`} />
-      <path
-        d="M20 9.5c-4.7 0-8.5 3.7-8.5 8.4 0 5.9 7.1 12.3 7.9 13a.9.9 0 0 0 1.2 0c.8-.7 7.9-7.1 7.9-13 0-4.7-3.8-8.4-8.5-8.4Z"
-        fill="none"
-        stroke="var(--mel-ink-900)"
-        strokeWidth="2.4"
-        strokeLinejoin="round"
-      />
-      <circle cx="20" cy="18" r="3.2" fill="var(--mel-ink-900)" />
+    <svg width={size} height={size} viewBox={beacon.viewBox} aria-hidden="true" className={className}>
+      <rect x="4" y="4" width="504" height="504" rx="116" fill="var(--mel-beacon-tile)" stroke="var(--mel-beacon-ring)" strokeWidth="8" />
+      <path d={d} fill="var(--mel-beacon-glyph)" fillRule="evenodd" transform={`translate(${offset} ${offset}) scale(${scale})`} />
     </svg>
   );
 }
 
-/** Marca completa: símbolo + "MEL". */
+/** Lockup: [ Mel Beacon ] MEL. Símbolo e palavra também funcionam separados. */
 export function MelLogo({ size = 32 }: { size?: number }) {
   return (
     <span className="inline-flex items-center gap-2.5">

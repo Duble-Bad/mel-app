@@ -78,6 +78,10 @@ const light = {
   "brand-soft": "#fff9ec",
   "brand-ring": "#f9dc91",
   focus: "#a96d18",
+  // Mel Beacon (símbolo da empresa): ladrilho Honey + símbolo Ink.
+  "beacon-tile": "#c88924",
+  "beacon-glyph": "#111923",
+  "beacon-ring": "#c88924",
 
   "inverse-surface": "#18212f",
   "inverse-foreground": "#ffffff",
@@ -135,6 +139,10 @@ const dark: Record<SemanticToken, string> = {
   "brand-soft": "#1d1a14",
   "brand-ring": "#3a2e17",
   focus: "#dfa33b",
+  // Escuro: ladrilho Ink com contorno sutil + símbolo Honey luminoso.
+  "beacon-tile": "#111923",
+  "beacon-glyph": "#dfa33b",
+  "beacon-ring": "#384250",
 
   "inverse-surface": "#2a3340",
   "inverse-foreground": "#f7f4ee",

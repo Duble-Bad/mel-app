@@ -1,4 +1,4 @@
-# MEL Design System 1.1
+# MEL Design System 1.2
 
 Fonte única da verdade visual. **Nenhuma tela nova sem estes tokens e componentes.**
 Personalidade: premium, humana, acolhedora, confiável, sem estética infantil, com urgência só onde precisa.
@@ -68,6 +68,32 @@ Também `danger` (texto) e `danger-solid` (botão destrutivo).
 - **Cartazes e pinos do mapa** usam `colors` (paletas + tema claro): cartaz é sempre claro.
 
 **Teste visual obrigatório de toda tela nova:** claro e escuro, no celular e no desktop.
+
+## 2b. Mel Beacon: o símbolo da MEL (v1.2)
+
+> "A MEL nasceu da busca por uma Yorkshire chamada Mel. Seu desaparecimento revelou um problema maior: quando um animal desaparece, informações ficam espalhadas entre grupos, cartazes, redes sociais e pessoas que não conseguem se conectar. O Mel Beacon mantém essa história no centro da marca. Uma pequena Mel deu origem a uma grande rede."
+
+**Mel Beacon = Mel + localização + busca + conexão + esperança de reencontro.** A cabeça de uma Yorkshire, com as orelhas marcantes e o pelo, converge para a ponta de um pino. O focinho é o ponto de localização. Leitura em dois níveis: primeiro "é o símbolo da MEL", depois "há uma cachorrinha nele".
+
+- **Proposta escolhida: C ("mais reconhecível").** Ela foi redesenhada em **vetor**: simétrica, sem brilho/3D, normalizada num quadrado 512. A fonte única é `apps/web/components/brand/beacon.json`.
+  - `detailed`: a partir de 48 px.
+  - `simple`: até 32 px. É a silhueta sólida com o focinho vazado, legível em favicon.
+- **Não é ícone de status.** Perdido, encontrado, avistamento e adoção têm ícones e cores próprios.
+- **Cores:** no claro, ladrilho Honey + símbolo Ink. No escuro, ladrilho Ink com contorno sutil + Honey luminoso. Tokens: `beacon-tile`, `beacon-glyph`, `beacon-ring`. Monocromáticos: Honey, Ink, branco e Ivory.
+- **Componentes:** `MelMark` (`variant="tile" | "glyph"`; escolhe sozinho a versão pelo tamanho) e `MelLogo` (lockup [Beacon] MEL). Símbolo e palavra também funcionam separados.
+- **Arquivos gerados** (`npm run brand:icons`, a partir do vetor):
+
+| Arquivo | Uso |
+|---|---|
+| `app/favicon.ico` (16/32/48) e `app/icon.svg` | favicon, versão simples |
+| `app/apple-icon.png` | ícone Apple, sangrado |
+| `public/brand/app-icon-192/512.png` e `app-icon-maskable-512.png` | PWA (M16) |
+| `public/brand/notification-96.png` | notificação Android: branco sobre transparente |
+| `public/brand/mel-beacon-{honey,ink,white,ivory,tile-light,tile-dark}.svg` | marca |
+
+- **Ilustração da rede:** o Beacon no centro e pessoas conectadas (Honey, Ink/Ivory, um Teal discreto, linhas suaves). A cada 3,4 s sai da MEL um pulso de radar de baixa opacidade, e cada nó responde de leve quando o pulso passa (escala 1,1). Com `prefers-reduced-motion`, nada se move.
+- **Não fazer:** patinha ou coração no pino, cartoon, foto da Mel como logo, gradiente metálico, efeito 3D, laço, olhos de personagem.
+- **Origem dos arquivos:** as pranchas recebidas eram recortes de uma imagem gerada. Não tinham transparência, traziam o fundo creme embutido e estavam fora de centro; o favicon de 16 px tinha 2×3 px de símbolo; a notificação vinha com a bolinha vermelha embutida; os monocromáticos eram de outra proposta (A). Por isso o símbolo foi vetorizado e todos os tamanhos são gerados do vetor.
 
 ## 3. Tipografia: Plus Jakarta Sans (variável, `next/font`, self-hosted)
 

@@ -63,6 +63,9 @@
   --color-brand-soft: var(--mel-brand-soft);
   --color-brand-ring: var(--mel-brand-ring);
   --color-focus: var(--mel-focus);
+  --color-beacon-tile: var(--mel-beacon-tile);
+  --color-beacon-glyph: var(--mel-beacon-glyph);
+  --color-beacon-ring: var(--mel-beacon-ring);
   --color-inverse-surface: var(--mel-inverse-surface);
   --color-inverse-foreground: var(--mel-inverse-foreground);
   --color-status-lost: var(--mel-status-lost);
@@ -169,6 +172,54 @@
   }
   to {
     background-position: -200% 0;
+  }
+}
+
+/* Mel Beacon: pulso de radar saindo da MEL e nós da rede respondendo de leve. */
+.mel-radar {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: mel-radar var(--mel-radar-period, 3.4s) cubic-bezier(0.25, 0.6, 0.3, 1) infinite;
+}
+.mel-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mel-node var(--mel-radar-period, 3.4s) var(--mel-easing) infinite;
+}
+@keyframes mel-radar {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.32;
+  }
+  55% {
+    opacity: 0.12;
+  }
+  70%,
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+@keyframes mel-node {
+  0%,
+  22%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  8% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mel-radar,
+  .mel-node {
+    animation: none !important;
+  }
+  .mel-node {
+    opacity: 1;
   }
 }
 

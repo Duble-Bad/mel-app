@@ -64,6 +64,9 @@
   --mel-brand-soft: #fff9ec;
   --mel-brand-ring: #f9dc91;
   --mel-focus: #a96d18;
+  --mel-beacon-tile: #c88924;
+  --mel-beacon-glyph: #111923;
+  --mel-beacon-ring: #c88924;
   --mel-inverse-surface: #18212f;
   --mel-inverse-foreground: #ffffff;
   --mel-status-lost: #c22a31;
@@ -136,6 +139,9 @@
   --mel-brand-soft: #1d1a14;
   --mel-brand-ring: #3a2e17;
   --mel-focus: #dfa33b;
+  --mel-beacon-tile: #111923;
+  --mel-beacon-glyph: #dfa33b;
+  --mel-beacon-ring: #384250;
   --mel-inverse-surface: #2a3340;
   --mel-inverse-foreground: #f7f4ee;
   --mel-status-lost: #ff8f8f;
@@ -191,6 +197,9 @@
     --mel-brand-soft: #1d1a14;
     --mel-brand-ring: #3a2e17;
     --mel-focus: #dfa33b;
+    --mel-beacon-tile: #111923;
+    --mel-beacon-glyph: #dfa33b;
+    --mel-beacon-ring: #384250;
     --mel-inverse-surface: #2a3340;
     --mel-inverse-foreground: #f7f4ee;
     --mel-status-lost: #ff8f8f;
