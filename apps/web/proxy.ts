@@ -31,7 +31,18 @@ export async function proxy(request: NextRequest) {
   const claims = data?.claims;
   const isRealUser = Boolean(claims?.sub) && claims?.is_anonymous !== true;
 
-  const { pathname, search } = request.nextUrl;
+  const { pathname, search, searchParams } = request.nextUrl;
+
+  // Falhas de OAuth voltam do Supabase como ?error_code=… em qualquer URL
+  // (normalmente a raiz). Nunca deixar passar em silêncio: levar ao /entrar.
+  const authError = searchParams.get("error_code") ?? (searchParams.get("error") ? "unknown" : null);
+  if (authError && pathname !== "/entrar" && pathname !== "/auth/callback") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/entrar";
+    url.search = `?erro=${encodeURIComponent(authError)}`;
+    return NextResponse.redirect(url);
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (isProtected && !isRealUser) {
     const url = request.nextUrl.clone();

@@ -96,6 +96,16 @@ test("signed-in person edits the profile and signs out", async ({ page }) => {
   await expect(page).toHaveURL(/\/entrar/);
 });
 
+test("a failed social login is never silent", async ({ page }) => {
+  // Formato real devolvido pelo Supabase quando o estado do OAuth expira.
+  await page.goto("/?error=invalid_request&error_code=bad_oauth_state&error_description=OAuth+state+has+expired");
+  await expect(page).toHaveURL(/\/entrar\?erro=bad_oauth_state/);
+  await expect(page.getByText("O login com Google demorou mais que o esperado e expirou.")).toBeVisible();
+
+  await page.goto("/auth/callback?error=access_denied");
+  await expect(page.getByText("O login com Google foi cancelado.")).toBeVisible();
+});
+
 test("protected pages redirect visitors to sign in", async ({ page }) => {
   for (const path of ["/perfil", "/onboarding"]) {
     await page.goto(path);

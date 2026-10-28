@@ -15,6 +15,24 @@ type Mode = "signin" | "signup";
 // Google só aparece depois de configurado no Supabase (ver README).
 const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "on";
 
+/** Mensagem para quem volta de um login social ou link que falhou (?erro=…). */
+function returnErrorMessage(code: string | null): string | null {
+  if (!code) return null;
+  switch (code) {
+    case "bad_oauth_state":
+    case "flow_state_expired":
+    case "flow_state_not_found":
+      return "O login com Google demorou mais que o esperado e expirou. Tente de novo — leva só alguns segundos.";
+    case "access_denied":
+      return "O login com Google foi cancelado. Você pode tentar de novo ou usar seu e-mail.";
+    case "link":
+    case "otp_expired":
+      return "Esse link expirou ou já foi usado. Entre de novo ou peça um novo link.";
+    default:
+      return "Não conseguimos concluir o login. Tente de novo ou use seu e-mail.";
+  }
+}
+
 export function SignInForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -22,9 +40,7 @@ export function SignInForm() {
 
   const [mode, setMode] = useState<Mode>("signin");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [formError, setFormError] = useState<string | null>(
-    params.get("erro") === "link" ? "Esse link expirou ou já foi usado. Entre de novo ou peça um novo link." : null,
-  );
+  const [formError, setFormError] = useState<string | null>(() => returnErrorMessage(params.get("erro")));
   const [pending, setPending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
