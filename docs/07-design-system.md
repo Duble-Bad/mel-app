@@ -95,6 +95,7 @@ Também `danger` (texto) e `danger-solid` (botão destrutivo).
 | `public/brand/notification-96.png` | notificação Android: branco sobre transparente |
 | `public/brand/mel-beacon-{honey,ink,white,ivory,tile-light,tile-dark}.svg` | marca |
 
+- **Retrato da Mel (proposta, aguardando aprovação):** ilustração vetorial plana feita a partir da foto original (`public/brand/mel-retrato.svg` e os ladrilhos `mel-retrato-tile-{light,dark}.svg`). Tem 6 tons de caramelo e escuro, mais a língua; o fundo foi removido. Comparação em `docs/design-review/mel-retrato.png`. Por ter muitos detalhes, funciona a partir de ~64 px (avatar oficial, história, redes sociais). Abaixo disso, o Mel Beacon continua sendo o símbolo.
 - **Ilustração da rede:** o Beacon no centro e pessoas conectadas (Honey, Ink/Ivory, um Teal discreto, linhas suaves). A cada 3,4 s sai da MEL um pulso de radar de baixa opacidade, e cada nó responde de leve quando o pulso passa (escala 1,1). Com `prefers-reduced-motion`, nada se move.
 - **Não fazer:** patinha ou coração no pino, cartoon, foto da Mel como logo, gradiente metálico, efeito 3D, laço, olhos de personagem.
 - **Origem dos arquivos:** as pranchas recebidas eram recortes de uma imagem gerada. Não tinham transparência, traziam o fundo creme embutido e estavam fora de centro; o favicon de 16 px tinha 2×3 px de símbolo; a notificação vinha com a bolinha vermelha embutida; os monocromáticos eram de outra proposta (A). Por isso o símbolo foi vetorizado e todos os tamanhos são gerados do vetor.
