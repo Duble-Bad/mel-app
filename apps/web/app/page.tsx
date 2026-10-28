@@ -5,12 +5,7 @@ import { SystemStatus } from "@/components/home/SystemStatus";
 export default function HomePage() {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col px-4 pt-8 pb-10">
-      <header className="mb-10">
-        <p className="text-3xl font-extrabold tracking-tight text-brand-primary">MEL</p>
-        <h1 className="mt-2 text-2xl leading-tight font-bold text-balance">
-          Uma rede inteira procurando com você.
-        </h1>
-      </header>
+      <h1 className="mb-10 text-3xl leading-tight font-bold text-balance">Uma rede inteira procurando com você.</h1>
 
       <section aria-labelledby="como-ajudar">
         <h2 id="como-ajudar" className="mb-4 text-xl font-semibold">

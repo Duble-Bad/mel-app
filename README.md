@@ -58,6 +58,17 @@ Existe **um único `.env.local`, na raiz** — usado pelo app e pelos testes de 
 
 Veja [.env.example](.env.example). `SUPABASE_SECRET_KEY` ignora RLS: só servidor e testes, nunca no navegador.
 
+## Autenticação
+
+- **E-mail + senha** (sem confirmação de e-mail por enquanto — ver `docs/decisoes.md`).
+- **Sessão anônima** para quem só quer ajudar (avistamento, "encontrei"): `ensureSession()` em `@mel/data`.
+- **Google**: aparece quando `NEXT_PUBLIC_AUTH_GOOGLE=on`. Para ativar:
+  1. Google Cloud Console → APIs e serviços → Credenciais → *Criar ID do cliente OAuth* (Aplicativo da Web).
+  2. URI de redirecionamento autorizado: `https://<project-ref>.supabase.co/auth/v1/callback`.
+  3. Supabase → Authentication → Sign In / Providers → Google: cole Client ID e Client Secret.
+  4. `NEXT_PUBLIC_AUTH_GOOGLE=on` no `.env.local`.
+- Configuração de Auth versionada em `supabase/config.toml`; aplique com `npx supabase config diff` (revisar) e `npx supabase config push`.
+
 ## Banco de dados (Supabase)
 
 Desenvolvimento usa um projeto Supabase Cloud dedicado (`mel-dev`, região São Paulo) — sem Docker local.

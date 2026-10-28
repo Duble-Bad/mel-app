@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import { colors } from "@mel/ui-tokens";
+import { AppHeader } from "@/components/layout/AppHeader";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -27,7 +28,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className={`${figtree.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-background text-text-primary">{children}</body>
+      <body className="flex min-h-full flex-col bg-background text-text-primary">
+        <AppHeader />
+        {children}
+      </body>
     </html>
   );
 }
