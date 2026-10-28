@@ -13,7 +13,7 @@ Cada milestone termina com: `tsc --noEmit` ✔ · `lint` ✔ · testes ✔ · fl
 | **M7** ✅ | Compartilhar + QR + cartaz | ShareSheet (WhatsApp, Web Share, copiar), QR, cartaz 1:1 / 9:16 / 16:9 PNG + A4 imprimível | unit QR/URL, E2E baixar cartaz |
 | **M8** ✅ | Chat | Conversas por caso, Realtime, bloquear/denunciar, aviso antigolpe | E2E dono ↔ anônimo; RLS mensagens/blocks |
 | **M9** ✅ | Reencontro | Fluxo R1–R4, estado "ESTÁ EM CASA", card ENCONTRADO, agradecimento | E2E; ✅ **cenário "sumiu há 15 min" ponta a ponta** |
-| **M10** | Encontrei um pet + Radar MEL | Wizard, `found_cases`, `compute_match_score`, MatchCard, `/perfil/correspondencias`, contato com tutor | unit score, E2E ✅ **cenário "encontrei na rua" ponta a ponta** |
+| **M10** ✅ | Encontrei um pet + Radar MEL | Wizard, `found_cases`, `compute_match_score`, MatchCard, `/perfil/correspondencias`, contato com tutor | unit score, E2E ✅ **cenário "encontrei na rua" ponta a ponta** |
 | **M11** | Mapa/Radar público + filtros | `/mapa`, `/perdidos`, `/encontrados`, filtros tipo/espécie/período/raio, paginação | E2E filtros |
 | **M12** | Guardião + push | `/guardiao`, área aproximada, Edge Function `notify-guardians`, Web Push, limites antispam, central de notificações | unit antispam, integração fila |
 | **M13** | Denúncias + admin mínimo | ReportDialog em todo conteúdo, `/admin` (contagens reais, denúncias, ocultar/suspender), audit log | RLS admin, E2E denúncia → moderação |

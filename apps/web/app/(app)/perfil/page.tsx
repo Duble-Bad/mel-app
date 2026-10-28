@@ -101,9 +101,14 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
 
   return (
     <section aria-labelledby="meus-alertas" className="flex flex-col gap-3">
-      <h2 id="meus-alertas" className="text-xl font-bold">
-        Meus alertas
-      </h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="meus-alertas" className="text-xl font-bold">
+          Meus alertas
+        </h2>
+        <Link href="/perfil/correspondencias" className="inline-flex min-h-11 items-center text-sm font-semibold text-link underline-offset-4 hover:underline">
+          Radar MEL
+        </Link>
+      </div>
       <ul className="flex flex-col gap-3">
         {data.cases.map((c) => (
           <li key={c.id}>

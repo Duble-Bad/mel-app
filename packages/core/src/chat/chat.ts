@@ -25,6 +25,8 @@ export interface Conversation {
   peerName: string | null;
   peerIsAnonymous: boolean;
   fromSighting: boolean;
+  /** Tutor abriu a conversa a partir de uma correspondência do Radar. */
+  fromFound: boolean;
   blockedByMe: boolean;
   canSend: boolean;
   createdAt: string;
@@ -41,9 +43,12 @@ export interface ChatMessage {
 }
 
 /** Como a outra pessoa aparece: o tutor nunca é exposto por nome a quem ajuda. */
-export function peerLabel(c: Pick<Conversation, "myRole" | "peerName" | "peerIsAnonymous" | "petName" | "fromSighting">): string {
+export function peerLabel(
+  c: Pick<Conversation, "myRole" | "peerName" | "peerIsAnonymous" | "petName" | "fromSighting"> & { fromFound?: boolean },
+): string {
   if (c.myRole === "helper") return `Tutor(a) de ${c.petName}`;
   if (c.peerName) return c.peerName;
+  if (c.fromFound) return "Quem encontrou um pet parecido";
   return c.fromSighting ? "Quem enviou o avistamento" : "Visitante sem cadastro";
 }
 

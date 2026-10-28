@@ -73,3 +73,14 @@ Formato: data — decisão — motivo.
 - **2026-10-29 — Textos do reencontro sem gênero.** Nem todo pet tem sexo informado ("Mel voltou para casa graças a um avistamento na MEL").
 - **2026-10-29 — Sem "reabrir" alerta encontrado no MVP.** O R1 pede confirmação. Se surgir demanda (marcação por engano), criar reabertura com prazo.
 - **2026-10-29 — História da marca em `/nossa-origem`, com o texto oficial e a foto real da Mel.** A home mostra uma chamada (`BrandStory`).
+- **2026-10-29 — "Vi um pet solto" é o mesmo fluxo do "Encontrei um pet" (`found_cases`, situação "continua na rua").** Um só modelo, e o Radar cruza os dois; o avistamento ligado a um alerta continua sendo `sightings`.
+- **2026-10-29 — Radar MEL v1 no banco, síncrono.** Roda ao publicar um encontrado e ao ativar um alerta, com candidatos filtrados por espécie e raio de 10 km (índice GiST) e limiar de 50. Cada lado recebe um aviso. Sem fila por enquanto (o volume é baixo); a fila entra no M12 com os Guardiões.
+- **2026-10-29 — A fórmula do Radar existe em TypeScript (`packages/core/src/found/match.ts`) e em SQL, com teste de paridade exata.** O TypeScript tem testes unitários e explica os motivos na tela ("a 600 m", "mesmo porte"). Para mudar a fórmula: os dois arquivos + nova migração + nova versão.
+- **2026-10-29 — "Não sei" vale pouco no Radar (2/2/2/1 pontos).** Relato só com a espécie a 3 km não vira alarme; um animal solto a 600 m no mesmo dia ainda vira pista. Sexo oposto pesa contra (−15).
+- **2026-10-29 — A tela sempre diz "Possível correspondência · N%".** Nunca afirma que é o mesmo animal.
+- **2026-10-29 — Prova de posse do lado de quem encontrou.** O "detalhe para conferir o tutor" é privado (só quem publicou vê), com orientação para perguntar sem dar a dica e o lembrete antigolpe.
+- **2026-10-29 — Contato pelo chat existente.** Quem encontrou usa "Falar com o tutor" (conversa do alerta). O tutor usa "Falar com quem encontrou" (`open_conversation_from_match`); é a mesma conversa (única por alerta + pessoa).
+- **2026-10-29 — Cada lado dispensa a correspondência só para si ("Não é o meu pet" / "Não é este animal").**
+- **2026-10-29 — Página do encontrado sem conversa direta com quem encontrou para quem não tem alerta.** O caminho é publicar o alerta, que o Radar cruza na hora e avisa os dois. Evita chat anônimo sem contexto (golpe).
+- **2026-10-29 — Pendente: converter a sessão anônima em conta por e-mail (E7).** Depende do domínio + SMTP. Até lá, quem publica sem conta vê respostas no mesmo aparelho (🔔 e 💬).
+

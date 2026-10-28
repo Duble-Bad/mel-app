@@ -47,10 +47,62 @@ export type Database = {
           },
         ]
       }
+      case_matches: {
+        Row: {
+          algorithm_version: string
+          created_at: string
+          finder_dismissed: boolean
+          found_case_id: string
+          id: string
+          lost_case_id: string
+          owner_dismissed: boolean
+          reasons: Json
+          score: number
+        }
+        Insert: {
+          algorithm_version?: string
+          created_at?: string
+          finder_dismissed?: boolean
+          found_case_id: string
+          id?: string
+          lost_case_id: string
+          owner_dismissed?: boolean
+          reasons?: Json
+          score: number
+        }
+        Update: {
+          algorithm_version?: string
+          created_at?: string
+          finder_dismissed?: boolean
+          found_case_id?: string
+          id?: string
+          lost_case_id?: string
+          owner_dismissed?: boolean
+          reasons?: Json
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_matches_found_case_id_fkey"
+            columns: ["found_case_id"]
+            isOneToOne: false
+            referencedRelation: "found_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_matches_lost_case_id_fkey"
+            columns: ["lost_case_id"]
+            isOneToOne: false
+            referencedRelation: "lost_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string
           created_by: string
+          found_case_id: string | null
           helper_id: string
           helper_last_read_at: string | null
           id: string
@@ -63,6 +115,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          found_case_id?: string | null
           helper_id: string
           helper_last_read_at?: string | null
           id?: string
@@ -75,6 +128,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          found_case_id?: string | null
           helper_id?: string
           helper_last_read_at?: string | null
           id?: string
@@ -90,6 +144,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_found_case_id_fkey"
+            columns: ["found_case_id"]
+            isOneToOne: false
+            referencedRelation: "found_cases"
             referencedColumns: ["id"]
           },
           {
@@ -151,6 +212,95 @@ export type Database = {
           {
             foreignKeyName: "events_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      found_cases: {
+        Row: {
+          breed_guess: string | null
+          closed_at: string | null
+          color_primary: string | null
+          colors_secondary: string[]
+          created_at: string
+          custody: Database["public"]["Enums"]["found_custody"]
+          custody_notes: string | null
+          description: string | null
+          found_at: string
+          id: string
+          lat: number
+          lng: number
+          photo_path: string | null
+          point: unknown
+          public_area_label: string | null
+          public_lat: number | null
+          public_lng: number | null
+          reporter_id: string
+          sex: Database["public"]["Enums"]["pet_sex"]
+          short_code: string
+          size: Database["public"]["Enums"]["pet_size"] | null
+          species: Database["public"]["Enums"]["species"]
+          status: Database["public"]["Enums"]["found_case_status"]
+          verification_hint: string | null
+        }
+        Insert: {
+          breed_guess?: string | null
+          closed_at?: string | null
+          color_primary?: string | null
+          colors_secondary?: string[]
+          created_at?: string
+          custody: Database["public"]["Enums"]["found_custody"]
+          custody_notes?: string | null
+          description?: string | null
+          found_at: string
+          id?: string
+          lat: number
+          lng: number
+          photo_path?: string | null
+          point?: unknown
+          public_area_label?: string | null
+          public_lat?: number | null
+          public_lng?: number | null
+          reporter_id: string
+          sex?: Database["public"]["Enums"]["pet_sex"]
+          short_code?: string
+          size?: Database["public"]["Enums"]["pet_size"] | null
+          species: Database["public"]["Enums"]["species"]
+          status?: Database["public"]["Enums"]["found_case_status"]
+          verification_hint?: string | null
+        }
+        Update: {
+          breed_guess?: string | null
+          closed_at?: string | null
+          color_primary?: string | null
+          colors_secondary?: string[]
+          created_at?: string
+          custody?: Database["public"]["Enums"]["found_custody"]
+          custody_notes?: string | null
+          description?: string | null
+          found_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          photo_path?: string | null
+          point?: unknown
+          public_area_label?: string | null
+          public_lat?: number | null
+          public_lng?: number | null
+          reporter_id?: string
+          sex?: Database["public"]["Enums"]["pet_sex"]
+          short_code?: string
+          size?: Database["public"]["Enums"]["pet_size"] | null
+          species?: Database["public"]["Enums"]["species"]
+          status?: Database["public"]["Enums"]["found_case_status"]
+          verification_hint?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "found_cases_reporter_id_fkey"
+            columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -729,6 +879,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      close_found_case: {
+        Args: {
+          p_code: string
+          p_status: Database["public"]["Enums"]["found_case_status"]
+        }
+        Returns: undefined
+      }
       confirm_reunion: {
         Args: {
           p_code: string
@@ -740,9 +897,13 @@ export type Database = {
         Returns: undefined
       }
       debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
+      debug_match_score: { Args: { p: Json }; Returns: Json }
+      dismiss_match: { Args: { p_id: string }; Returns: undefined }
       get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
       get_my_conversations: { Args: never; Returns: Json }
+      get_my_matches: { Args: { p_found_code?: string }; Returns: Json }
+      get_public_found_case: { Args: { p_code: string }; Returns: Json }
       get_public_lost_case: { Args: { p_code: string }; Returns: Json }
       health_check: { Args: never; Returns: Json }
       mark_conversation_read: { Args: { p_id: string }; Returns: undefined }
@@ -768,6 +929,7 @@ export type Database = {
           species: Database["public"]["Enums"]["species"]
         }[]
       }
+      open_conversation_from_match: { Args: { p_id: string }; Returns: string }
       open_conversation_from_sighting: {
         Args: { p_sighting_id: string }
         Returns: string
@@ -805,6 +967,8 @@ export type Database = {
       }
     }
     Enums: {
+      found_case_status: "ACTIVE" | "REUNITED" | "CLOSED" | "REMOVED"
+      found_custody: "with_me" | "safe_place" | "clinic" | "street" | "other"
       lost_case_status: "DRAFT" | "ACTIVE" | "FOUND" | "CLOSED" | "REMOVED"
       pet_sex: "male" | "female" | "unknown"
       pet_size: "mini" | "small" | "medium" | "large" | "giant"
@@ -963,6 +1127,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      found_case_status: ["ACTIVE", "REUNITED", "CLOSED", "REMOVED"],
+      found_custody: ["with_me", "safe_place", "clinic", "street", "other"],
       lost_case_status: ["DRAFT", "ACTIVE", "FOUND", "CLOSED", "REMOVED"],
       pet_sex: ["male", "female", "unknown"],
       pet_size: ["mini", "small", "medium", "large", "giant"],

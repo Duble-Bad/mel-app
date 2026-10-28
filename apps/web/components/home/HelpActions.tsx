@@ -14,8 +14,8 @@ interface HelpAction {
 // Os fluxos são liberados milestone a milestone (docs/06-milestones.md).
 const ACTIONS: HelpAction[] = [
   { label: "Perdi meu pet", hint: "Ative um alerta em 2 minutos", icon: "🔴", tone: "lost", href: "/publicar/perdido" },
-  { label: "Encontrei um pet", hint: "Ajude a achar o tutor", icon: "🟢", tone: "found" },
-  { label: "Vi um pet", hint: "Envie uma pista", icon: "🟡", tone: "sighting" },
+  { label: "Encontrei um pet", hint: "Ajude a achar o tutor", icon: "🟢", tone: "found", href: "/publicar/encontrado" },
+  { label: "Vi um pet", hint: "Viu um animal solto? Avise", icon: "🟡", tone: "sighting", href: "/publicar/encontrado?vi=1" },
   { label: "Quero adotar", hint: "Conheça quem procura um lar", icon: "❤️", tone: "adoption" },
 ];
 

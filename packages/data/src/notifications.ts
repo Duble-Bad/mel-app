@@ -2,7 +2,7 @@ import { DataError, type MelClient } from "./client";
 
 export interface AppNotification {
   id: string;
-  kind: "sighting_new" | "message_new" | "reunion_thanks";
+  kind: "sighting_new" | "message_new" | "reunion_thanks" | "match_new";
   /** Texto pronto para exibir. */
   title: string;
   body: string;
@@ -29,8 +29,25 @@ export function toAppNotification(row: Row): AppNotification {
     to_owner?: boolean;
     count?: number;
     helpful?: boolean;
+    to?: "owner" | "finder";
+    score?: number;
+    found_code?: string;
   };
   const pet = p.pet_name ?? "seu pet";
+  if (row.kind === "match_new") {
+    const owner = p.to === "owner";
+    return {
+      id: row.id,
+      kind: "match_new",
+      title: owner ? `Radar MEL: possível correspondência para ${pet}` : "Radar MEL: pode ser um pet procurado",
+      body: owner
+        ? `Alguém encontrou um animal parecido (${p.score ?? "?"}%). Confira as fotos.`
+        : `O animal que você publicou parece com ${pet}, que está sendo procurado (${p.score ?? "?"}%).`,
+      href: owner ? "/perfil/correspondencias" : `/encontrado/${p.found_code}#radar`,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
   if (row.kind === "reunion_thanks") {
     return {
       id: row.id,
