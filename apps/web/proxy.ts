@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 // Áreas que exigem conta real (não anônima).
-const PROTECTED_PREFIXES = ["/perfil", "/onboarding", "/publicar/perdido", "/notificacoes"];
+const PROTECTED_PREFIXES = ["/perfil", "/onboarding", "/publicar/perdido"];
 
 /**
  * Renova a sessão do Supabase a cada requisição e barra áreas protegidas.

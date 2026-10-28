@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { timeAgo } from "@mel/core";
 import { listNotifications } from "@mel/data";
-import { requireOnboardedProfile } from "@/lib/session";
+import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MarkNotificationsRead } from "@/components/layout/MarkNotificationsRead";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
@@ -22,20 +23,22 @@ export default function NotificationsPage() {
 }
 
 async function NotificationsContent() {
-  const profile = await requireOnboardedProfile("/notificacoes");
+  // Sessões anônimas também: quem enviou avistamento/mensagem sem cadastro recebe respostas.
+  const user = await getSessionUser();
+  if (!user) redirect("/entrar?next=%2Fnotificacoes");
   let items;
   try {
-    items = await listNotifications(await createSessionClient(), profile.id);
+    items = await listNotifications(await createSessionClient(), user.id);
   } catch (error) {
     console.error("[notificacoes] falha", error);
     return <ErrorState>Não conseguimos carregar suas notificações agora. Atualize a página.</ErrorState>;
   }
   if (items.length === 0) {
-    return <EmptyState title="Nada por aqui ainda">Quando alguém enviar um avistamento do seu pet, você vê aqui na hora.</EmptyState>;
+    return <EmptyState title="Nada por aqui ainda">Avistamentos do seu pet e mensagens novas aparecem aqui na hora.</EmptyState>;
   }
   return (
     <>
-      <MarkNotificationsRead userId={profile.id} hasUnread={items.some((n) => !n.readAt)} />
+      <MarkNotificationsRead userId={user.id} hasUnread={items.some((n) => !n.readAt)} />
       <ul className="flex flex-col gap-3">
         {items.map((n) => (
           <li key={n.id}>

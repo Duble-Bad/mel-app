@@ -473,6 +473,7 @@ function ContactStep({
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
 }) {
+  const [chat, setChat] = useState(lostCase.contactChat);
   const [whatsapp, setWhatsapp] = useState(lostCase.contactWhatsappPublic);
   const [phonePublic, setPhonePublic] = useState(lostCase.contactPhonePublic);
   const [phone, setPhone] = useState(lostCase.contactPhone ? formatBrPhone(lostCase.contactPhone) : "");
@@ -486,6 +487,7 @@ function ContactStep({
       onSubmit={(e) => {
         e.preventDefault();
         const parsed = contactStepSchema.safeParse({
+          contactChat: chat,
           contactWhatsappPublic: whatsapp,
           contactPhonePublic: phonePublic,
           contactPhone: phone || null,
@@ -497,8 +499,15 @@ function ContactStep({
         onNext(parsed.data);
       }}
     >
+      <label className="flex min-h-12 items-start gap-3">
+        <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
+        <span>
+          <span className="block font-semibold">Receber mensagens pelo chat da MEL</span>
+          <span className="block text-sm text-text-secondary">Recomendado: ninguém vê seu número, e você pode bloquear e denunciar.</span>
+        </span>
+      </label>
       <p className="text-text-secondary">
-        Seu número <strong className="text-text-primary">só aparece no alerta se você marcar</strong> uma das opções.
+        Seu número <strong className="text-text-primary">só aparece no alerta se você marcar</strong> uma das opções abaixo.
       </p>
       <label className="flex min-h-12 items-start gap-3">
         <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
@@ -520,9 +529,6 @@ function ContactStep({
           error={error}
         />
       )}
-      <p className="rounded-md bg-surface-muted p-3 text-sm text-text-secondary">
-        Em breve: conversar pelo chat da MEL, sem precisar mostrar seu número.
-      </p>
       <Alert tone="info">
         <strong>Cuidado com golpes.</strong> Desconfie de quem pedir PIX ou dinheiro antes de mostrar o animal. A MEL nunca
         pede pagamento.
@@ -558,9 +564,13 @@ function ReviewStep({
     ["Observação", lostCase.notes ?? "—", "details"],
     [
       "Contato no alerta",
-      lostCase.contactPhone
-        ? `${[lostCase.contactWhatsappPublic && "WhatsApp", lostCase.contactPhonePublic && "ligação"].filter(Boolean).join(" e ")} · ${formatBrPhone(lostCase.contactPhone)}`
-        : "nenhum número público",
+      [
+        lostCase.contactChat && "chat da MEL",
+        lostCase.contactPhone &&
+          `${[lostCase.contactWhatsappPublic && "WhatsApp", lostCase.contactPhonePublic && "ligação"].filter(Boolean).join(" e ")} · ${formatBrPhone(lostCase.contactPhone)}`,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "nenhum (só avistamentos)",
       "contact",
     ],
   ];

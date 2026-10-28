@@ -25,26 +25,38 @@ const linkClass =
 
 async function HeaderAccount() {
   const user = await getSessionUser();
-  if (!user || user.isAnonymous) {
+  if (!user) {
     return (
       <Link href="/entrar" className={linkClass}>
         Entrar
       </Link>
     );
   }
+  // Sessão anônima (enviou avistamento ou mensagem sem cadastro) também recebe respostas.
   const [profile, unread] = await Promise.all([
-    getCurrentProfile(),
+    user.isAnonymous ? null : getCurrentProfile(),
     createSessionClient()
       .then((client) => countUnreadNotifications(client, user.id))
       .catch(() => 0),
   ]);
   const firstName = profile?.displayName?.split(" ")[0];
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center">
       <NotificationBell userId={user.id} initialUnread={unread} />
-      <Link href="/perfil" className={linkClass}>
-        {firstName ? `Olá, ${firstName}` : "Meu perfil"}
+      <Link href="/conversas" aria-label="Conversas" className="inline-flex size-12 items-center justify-center rounded-md hover:bg-surface-muted">
+        <span aria-hidden="true" className="text-xl">
+          💬
+        </span>
       </Link>
+      {user.isAnonymous ? (
+        <Link href="/entrar" className={linkClass}>
+          Entrar
+        </Link>
+      ) : (
+        <Link href="/perfil" className={`${linkClass} max-w-32 truncate`}>
+          {firstName ? `Olá, ${firstName}` : "Meu perfil"}
+        </Link>
+      )}
     </div>
   );
 }

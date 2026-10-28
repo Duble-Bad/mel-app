@@ -14,6 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          helper_id: string
+          helper_last_read_at: string | null
+          id: string
+          last_message_at: string | null
+          lost_case_id: string
+          owner_id: string
+          owner_last_read_at: string | null
+          sighting_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          helper_id: string
+          helper_last_read_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          lost_case_id: string
+          owner_id: string
+          owner_last_read_at?: string | null
+          sighting_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          helper_id?: string
+          helper_last_read_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          lost_case_id?: string
+          owner_id?: string
+          owner_last_read_at?: string | null
+          sighting_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_helper_id_fkey"
+            columns: ["helper_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_lost_case_id_fkey"
+            columns: ["lost_case_id"]
+            isOneToOne: false
+            referencedRelation: "lost_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_sighting_id_fkey"
+            columns: ["sighting_id"]
+            isOneToOne: false
+            referencedRelation: "sightings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lost_cases: {
         Row: {
           city: string | null
@@ -127,6 +235,48 @@ export type Database = {
             columns: ["pet_id"]
             isOneToOne: false
             referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          hidden_at: string | null
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          hidden_at?: string | null
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          hidden_at?: string | null
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -396,6 +546,70 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          details: string | null
+          handled_at: string | null
+          handled_by: string | null
+          id: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          details?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          reason: Database["public"]["Enums"]["report_reason"]
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          details?: string | null
+          handled_at?: string | null
+          handled_by?: string | null
+          id?: string
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["report_target"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_handled_by_fkey"
+            columns: ["handled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sightings: {
         Row: {
           created_at: string
@@ -468,9 +682,13 @@ export type Database = {
     }
     Functions: {
       debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
+      get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
+      get_my_conversations: { Args: never; Returns: Json }
       get_public_lost_case: { Args: { p_code: string }; Returns: Json }
       health_check: { Args: never; Returns: Json }
+      mark_conversation_read: { Args: { p_id: string }; Returns: undefined }
+      my_conversation_for_case: { Args: { p_code: string }; Returns: string }
       nearby_lost_cases: {
         Args: {
           p_lat: number
@@ -492,6 +710,27 @@ export type Database = {
           species: Database["public"]["Enums"]["species"]
         }[]
       }
+      open_conversation_from_sighting: {
+        Args: { p_sighting_id: string }
+        Returns: string
+      }
+      report_conversation: {
+        Args: {
+          p_block?: boolean
+          p_details?: string
+          p_id: string
+          p_reason: Database["public"]["Enums"]["report_reason"]
+        }
+        Returns: string
+      }
+      set_conversation_block: {
+        Args: { p_blocked: boolean; p_id: string }
+        Returns: undefined
+      }
+      start_conversation: {
+        Args: { p_body: string; p_code: string }
+        Returns: string
+      }
       submit_sighting: {
         Args: {
           p_code: string
@@ -511,6 +750,22 @@ export type Database = {
       lost_case_status: "DRAFT" | "ACTIVE" | "FOUND" | "CLOSED" | "REMOVED"
       pet_sex: "male" | "female" | "unknown"
       pet_size: "mini" | "small" | "medium" | "large" | "giant"
+      report_reason:
+        | "scam"
+        | "harassment"
+        | "spam"
+        | "fake"
+        | "inappropriate"
+        | "other"
+      report_status: "OPEN" | "REVIEWING" | "ACTIONED" | "DISMISSED"
+      report_target:
+        | "user"
+        | "lost_case"
+        | "found_case"
+        | "sighting"
+        | "adoption"
+        | "message"
+        | "business"
       sighting_direction: "N" | "S" | "E" | "W" | "unknown"
       sighting_state:
         | "walking"
@@ -653,6 +908,24 @@ export const Constants = {
       lost_case_status: ["DRAFT", "ACTIVE", "FOUND", "CLOSED", "REMOVED"],
       pet_sex: ["male", "female", "unknown"],
       pet_size: ["mini", "small", "medium", "large", "giant"],
+      report_reason: [
+        "scam",
+        "harassment",
+        "spam",
+        "fake",
+        "inappropriate",
+        "other",
+      ],
+      report_status: ["OPEN", "REVIEWING", "ACTIONED", "DISMISSED"],
+      report_target: [
+        "user",
+        "lost_case",
+        "found_case",
+        "sighting",
+        "adoption",
+        "message",
+        "business",
+      ],
       sighting_direction: ["N", "S", "E", "W", "unknown"],
       sighting_state: [
         "walking",

@@ -200,18 +200,29 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 }
 
 function Contact({ c }: { c: PublicLostCase }) {
-  if (c.isOwner || (!c.contactWhatsapp && !c.contactPhone)) return null;
+  const chat = c.contactChat && c.status === "ACTIVE";
+  if (c.isOwner || (!chat && !c.contactWhatsapp && !c.contactPhone)) return null;
   return (
     <section aria-labelledby="contato" className="flex flex-col gap-2">
       <h2 id="contato" className="font-bold">
         Viu {c.pet.name}? Fale com o tutor
       </h2>
+      {chat && (
+        <Link
+          href={`/alerta/${c.code}/conversar`}
+          className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-brand-primary px-4 text-lg font-bold text-brand-on-primary"
+        >
+          <span aria-hidden="true">💬</span> Conversar com o tutor
+        </Link>
+      )}
       {c.contactWhatsapp && (
         <a
           href={whatsappChatUrl(c.contactWhatsapp, `Olá! Vi o alerta da MEL sobre ${c.pet.name}.`)}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-brand-primary px-4 text-lg font-bold text-brand-on-primary"
+          className={`inline-flex items-center justify-center gap-2 rounded-md px-4 font-bold ${
+            chat ? "min-h-12 border-2 border-border-strong bg-surface" : "min-h-14 bg-brand-primary text-lg text-brand-on-primary"
+          }`}
         >
           WhatsApp do tutor
         </a>
@@ -225,7 +236,8 @@ function Contact({ c }: { c: PublicLostCase }) {
         </a>
       )}
       <p className="text-sm text-text-secondary">
-        Nunca pague nada antes de ver o animal pessoalmente. A MEL nunca pede pagamento.
+        {chat && "Pelo chat, seu telefone e o do tutor não aparecem. "}Nunca pague nada antes de ver o animal pessoalmente. A MEL
+        nunca pede pagamento.
       </p>
     </section>
   );

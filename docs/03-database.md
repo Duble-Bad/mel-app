@@ -65,8 +65,7 @@ business_category  : pet_shop | vet | clinic | hospital | grooming | hotel | day
 ### Comunicação
 | Tabela | Colunas principais |
 |---|---|
-| **conversations** | id, lost_case_id / found_case_id / adoption_listing_id (um deles), created_by, created_at |
-| **conversation_members** | conversation_id, user_id, last_read_at, muted |
+| **conversations** | id, lost_case_id (found_case_id / adoption_listing_id virão no M10/M14), owner_id, helper_id, sighting_id (origem opcional), created_by, created_at, last_message_at, owner_last_read_at, helper_last_read_at — conversa de 2 pessoas, única por (caso, quem ajuda) |
 | **messages** | id, conversation_id, sender_id, body (≤2000), image_path (futuro), created_at, hidden_at |
 | **notifications** | id, user_id, kind, payload jsonb, read_at, created_at |
 | **notification_preferences** | user_id (PK), email bool, push bool, quiet_hours int4range, max_alerts_per_day |

@@ -28,7 +28,7 @@ describe("steps validation", () => {
   });
 
   it("contact: nothing public by default; phone required only when chosen", () => {
-    expect(contactStepSchema.parse({})).toEqual({ contactWhatsappPublic: false, contactPhonePublic: false, contactPhone: null });
+    expect(contactStepSchema.parse({})).toEqual({ contactChat: true, contactWhatsappPublic: false, contactPhonePublic: false, contactPhone: null });
     const missing = contactStepSchema.safeParse({ contactWhatsappPublic: true });
     expect(fieldErrors(missing.error!).contactPhone).toMatch(/celular com DDD/);
     expect(contactStepSchema.parse({ contactWhatsappPublic: true, contactPhone: "+55 (11) 98765-4321" }).contactPhone).toBe(

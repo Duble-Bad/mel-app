@@ -76,6 +76,8 @@ export interface TimelineSighting {
   photoUrl: string | null;
   hidden: boolean;
   mine: boolean;
+  /** Tutor pode responder a quem enviou (abre o chat). */
+  canReply: boolean;
 }
 
 /** Resumo curto de um avistamento ("Correndo, assustado · seguia para o Norte"). */

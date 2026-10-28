@@ -6,7 +6,7 @@ type Row = Database["public"]["Tables"]["lost_cases"]["Row"];
 
 const COLUMNS =
   "id, short_code, pet_id, owner_id, status, last_seen_lat, last_seen_lng, last_seen_label, public_point_exact, " +
-  "public_area_label, city, state, lost_at, lost_at_uncertain, wearing, notes, contact_whatsapp_public, " +
+  "public_area_label, city, state, lost_at, lost_at_uncertain, wearing, notes, contact_chat, contact_whatsapp_public, " +
   "contact_phone_public, contact_phone, published_at";
 
 type CaseRow = Pick<
@@ -27,6 +27,7 @@ type CaseRow = Pick<
   | "lost_at_uncertain"
   | "wearing"
   | "notes"
+  | "contact_chat"
   | "contact_whatsapp_public"
   | "contact_phone_public"
   | "contact_phone"
@@ -50,6 +51,7 @@ function toCase(r: CaseRow): LostCase {
     lostAtUncertain: r.lost_at_uncertain,
     wearing: r.wearing as Wearing[],
     notes: r.notes,
+    contactChat: r.contact_chat,
     contactWhatsappPublic: r.contact_whatsapp_public,
     contactPhonePublic: r.contact_phone_public,
     contactPhone: r.contact_phone,
@@ -75,6 +77,7 @@ export interface LostCasePatch {
   lostAtUncertain?: boolean;
   wearing?: Wearing[];
   notes?: string | null;
+  contactChat?: boolean;
   contactWhatsappPublic?: boolean;
   contactPhonePublic?: boolean;
   contactPhone?: string | null;
@@ -92,6 +95,7 @@ function patchToRow(p: LostCasePatch) {
     ...(p.lostAtUncertain !== undefined ? { lost_at_uncertain: p.lostAtUncertain } : {}),
     ...(p.wearing !== undefined ? { wearing: p.wearing } : {}),
     ...(p.notes !== undefined ? { notes: p.notes } : {}),
+    ...(p.contactChat !== undefined ? { contact_chat: p.contactChat } : {}),
     ...(p.contactWhatsappPublic !== undefined ? { contact_whatsapp_public: p.contactWhatsappPublic } : {}),
     ...(p.contactPhonePublic !== undefined ? { contact_phone_public: p.contactPhonePublic } : {}),
     ...(p.contactPhone !== undefined ? { contact_phone: p.contactPhone } : {}),
@@ -197,6 +201,7 @@ interface PublicCaseJson {
   state: string | null;
   wearing: Wearing[];
   notes: string | null;
+  contact_chat: boolean;
   contact_whatsapp: string | null;
   contact_phone: string | null;
   indexable: boolean;
@@ -241,6 +246,7 @@ export async function getPublicLostCase(client: MelClient, code: string): Promis
     state: c.state,
     wearing: c.wearing,
     notes: c.notes,
+    contactChat: c.contact_chat,
     contactWhatsapp: c.contact_whatsapp,
     contactPhone: c.contact_phone,
     indexable: c.indexable,

@@ -2,7 +2,7 @@ import { DataError, type MelClient } from "./client";
 
 export interface AppNotification {
   id: string;
-  kind: "sighting_new";
+  kind: "sighting_new" | "message_new";
   /** Texto pronto para exibir. */
   title: string;
   body: string;
@@ -21,11 +21,31 @@ interface Row {
 
 /** Converte a notificação do banco em texto humano. */
 export function toAppNotification(row: Row): AppNotification {
-  const p = row.payload as { code?: string; pet_name?: string; place_label?: string | null };
+  const p = row.payload as {
+    code?: string;
+    pet_name?: string;
+    place_label?: string | null;
+    conversation_id?: string;
+    to_owner?: boolean;
+    count?: number;
+  };
+  const pet = p.pet_name ?? "seu pet";
+  if (row.kind === "message_new") {
+    const count = p.count ?? 1;
+    return {
+      id: row.id,
+      kind: "message_new",
+      title: p.to_owner ? `💬 Mensagem sobre ${pet}` : `💬 O tutor de ${pet} respondeu`,
+      body: count > 1 ? `${count} mensagens novas. Toque para responder.` : "Toque para ver e responder.",
+      href: `/conversas/${p.conversation_id}`,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
   return {
     id: row.id,
     kind: "sighting_new",
-    title: `🟡 Novo avistamento de ${p.pet_name ?? "seu pet"}`,
+    title: `🟡 Novo avistamento de ${pet}`,
     body: p.place_label ? `Visto perto de ${p.place_label}.` : "Alguém viu seu pet. Confira no mapa.",
     href: `/alerta/${p.code}#linha-do-tempo`,
     readAt: row.read_at,

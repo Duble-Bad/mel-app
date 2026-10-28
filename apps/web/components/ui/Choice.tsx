@@ -16,7 +16,7 @@ interface GroupProps {
   hint?: ReactNode;
   error?: string;
   optional?: boolean;
-  columns?: 2 | 3;
+  columns?: 1 | 2 | 3;
   children: ReactNode;
 }
 
@@ -28,7 +28,7 @@ function Group({ legend, hint, error, optional, columns = 3, children }: GroupPr
         {optional && <span className="ml-1 font-normal text-text-secondary">(opcional)</span>}
       </legend>
       {hint && <p className="-mt-1 text-sm text-text-secondary">{hint}</p>}
-      <div className={`grid gap-2 ${columns === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>{children}</div>
+      <div className={`grid gap-2 ${columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>{children}</div>
       {error && <p className="text-sm font-medium text-danger">{error}</p>}
     </fieldset>
   );

@@ -32,6 +32,7 @@ export interface LostCase {
   lostAtUncertain: boolean;
   wearing: Wearing[];
   notes: string | null;
+  contactChat: boolean;
   contactWhatsappPublic: boolean;
   contactPhonePublic: boolean;
   contactPhone: string | null;
@@ -53,6 +54,7 @@ export interface PublicLostCase {
   state: string | null;
   wearing: Wearing[];
   notes: string | null;
+  contactChat: boolean;
   contactWhatsapp: string | null;
   contactPhone: string | null;
   indexable: boolean;
@@ -126,6 +128,7 @@ export function formatBrPhone(digits: string): string {
 
 export const contactStepSchema = z
   .object({
+    contactChat: z.boolean().default(true),
     contactWhatsappPublic: z.boolean().default(false),
     contactPhonePublic: z.boolean().default(false),
     contactPhone: z.string().nullable().default(null),

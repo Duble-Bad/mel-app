@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -64,4 +64,31 @@ export function Turnstile({ onToken, onError }: { onToken: (token: string | null
   }, []);
 
   return <div ref={el} data-testid="turnstile" />;
+}
+
+/**
+ * Estado do token para formulários com <Turnstile>. O token é de uso único:
+ * `reset()` remonta o widget (via `key`) para a próxima tentativa.
+ */
+export function useCaptchaToken() {
+  const [token, setTokenState] = useState<string | null>(null);
+  const tokenRef = useRef<string | null>(null);
+  const [key, setKey] = useState(0);
+  const setToken = useCallback((t: string | null) => {
+    tokenRef.current = t;
+    setTokenState(t);
+  }, []);
+  /** A verificação antirrobô costuma levar 1–2 s: espera por ela em vez de dar erro. */
+  const waitForToken = useCallback(async (timeoutMs = 15_000): Promise<string | null> => {
+    const started = Date.now();
+    while (!tokenRef.current && Date.now() - started < timeoutMs) {
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    return tokenRef.current;
+  }, []);
+  const reset = useCallback(() => {
+    setToken(null);
+    setKey((k) => k + 1);
+  }, [setToken]);
+  return { token, setToken, waitForToken, reset, key };
 }

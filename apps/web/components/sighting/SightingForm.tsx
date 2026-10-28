@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   DIRECTION_LABELS,
   fieldErrors,
@@ -22,12 +22,12 @@ import { LocationPicker, type PickedLocation } from "@/components/location/Locat
 import { Alert } from "@/components/ui/Alert";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { TextField } from "@/components/ui/Field";
-import { Turnstile } from "@/components/ui/Turnstile";
+import { Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 // Rosa dos ventos: Norte em cima, Oeste à esquerda… "Não sei" no centro.
 const COMPASS: (Direction | null)[] = [null, "N", null, "W", "unknown", "E", null, "S", null];
 
-export function SightingForm({ code, petName }: { code: string; petName: string }) {
+export function SightingForm({ code, petName, chatEnabled }: { code: string; petName: string; chatEnabled: boolean }) {
   const [where, setWhere] = useState<PickedLocation | null>(null);
   const [when, setWhen] = useState<SeenWhen | null>(null);
   const [other, setOther] = useState("");
@@ -35,22 +35,7 @@ export function SightingForm({ code, petName }: { code: string; petName: string 
   const [states, setStates] = useState<SightingState[]>([]);
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
-  const [token, setTokenState] = useState<string | null>(null);
-  const tokenRef = useRef<string | null>(null);
-  const setToken = (t: string | null) => {
-    tokenRef.current = t;
-    setTokenState(t);
-  };
-
-  /** A verificação antirrobô costuma levar 1–2 s: espera por ela em vez de dar erro. */
-  async function waitForToken(timeoutMs = 15_000): Promise<string | null> {
-    const started = Date.now();
-    while (!tokenRef.current && Date.now() - started < timeoutMs) {
-      await new Promise((r) => setTimeout(r, 250));
-    }
-    return tokenRef.current;
-  }
-  const [captchaKey, setCaptchaKey] = useState(0);
+  const captcha = useCaptchaToken();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -74,11 +59,11 @@ export function SightingForm({ code, petName }: { code: string; petName: string 
     }
     setErrors({});
     setBusy("Confirmando que você não é um robô…");
-    const captcha = await waitForToken();
-    if (!captcha) {
+    const captchaToken = await captcha.waitForToken();
+    if (!captchaToken) {
       setBusy(null);
       setError("Não conseguimos confirmar que você não é um robô. Verifique a conexão e toque em enviar de novo.");
-      setCaptchaKey((k) => k + 1);
+      captcha.reset();
       return;
     }
 
@@ -101,7 +86,7 @@ export function SightingForm({ code, petName }: { code: string; petName: string 
       const res = await fetch("/api/avistamentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken: captcha }),
+        body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken: captchaToken }),
       });
       if (!res.ok) {
         const { error: message } = (await res.json().catch(() => ({}))) as { error?: string };
@@ -112,8 +97,7 @@ export function SightingForm({ code, petName }: { code: string; petName: string 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não conseguimos enviar agora. Tente de novo.");
       // Token do captcha é de uso único: gera outro para a próxima tentativa.
-      setToken(null);
-      setCaptchaKey((k) => k + 1);
+      captcha.reset();
     } finally {
       setBusy(null);
     }
@@ -131,6 +115,14 @@ export function SightingForm({ code, petName }: { code: string; petName: string 
         >
           Ver o alerta e a linha do tempo
         </Link>
+        {chatEnabled && (
+          <Link
+            href={`/alerta/${code}/conversar`}
+            className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-border-strong bg-surface px-5 font-semibold"
+          >
+            💬 Mandar mensagem ao tutor
+          </Link>
+        )}
         <p className="text-text-secondary">Se vir de novo, envie outro avistamento — horários diferentes ajudam a entender o caminho.</p>
       </div>
     );
@@ -235,8 +227,8 @@ export function SightingForm({ code, petName }: { code: string; petName: string 
         />
       </div>
 
-      <div data-testid="captcha-state" data-state={token ? "ok" : "pending"}>
-        <Turnstile key={captchaKey} onToken={setToken} onError={setError} />
+      <div data-testid="captcha-state" data-state={captcha.token ? "ok" : "pending"}>
+        <Turnstile key={captcha.key} onToken={captcha.setToken} onError={setError} />
       </div>
 
       <button

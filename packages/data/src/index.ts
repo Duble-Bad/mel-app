@@ -7,3 +7,4 @@ export * from "./pets";
 export * from "./lostCases";
 export * from "./sightings";
 export * from "./notifications";
+export * from "./chat";

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { describeSighting, formatDateTimeBr, timeAgo, type TimelineSighting } from "@mel/core";
-import { setSightingHidden } from "@mel/data";
+import { openConversationFromSighting, setSightingHidden } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
 interface TimelineProps {
@@ -28,6 +28,17 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não conseguimos atualizar. Tente de novo.");
     } finally {
+      setPending(null);
+    }
+  }
+
+  async function reply(s: TimelineSighting) {
+    setPending(s.id);
+    setError(null);
+    try {
+      router.push(`/conversas/${await openConversationFromSighting(getBrowserClient(), s.id)}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Não conseguimos abrir a conversa. Tente de novo.");
       setPending(null);
     }
   }
@@ -69,14 +80,26 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
             )}
             {s.hidden && <p className="text-sm font-semibold">Oculto — só você vê.</p>}
             {isOwner && (
-              <button
-                type="button"
-                disabled={pending === s.id}
-                onClick={() => toggle(s)}
-                className="mt-1 min-h-11 text-sm font-semibold text-brand-primary underline-offset-4 hover:underline"
-              >
-                {s.hidden ? "Mostrar de novo" : "Ocultar (ex.: spam ou engano)"}
-              </button>
+              <div className="mt-1 flex flex-wrap gap-x-5">
+                {s.canReply && !s.hidden && (
+                  <button
+                    type="button"
+                    disabled={pending === s.id}
+                    onClick={() => reply(s)}
+                    className="min-h-11 text-sm font-semibold text-brand-primary underline-offset-4 hover:underline"
+                  >
+                    💬 Responder a quem viu
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={pending === s.id}
+                  onClick={() => toggle(s)}
+                  className="min-h-11 text-sm font-semibold text-brand-primary underline-offset-4 hover:underline"
+                >
+                  {s.hidden ? "Mostrar de novo" : "Ocultar (ex.: spam ou engano)"}
+                </button>
+              </div>
             )}
           </li>
         ))}

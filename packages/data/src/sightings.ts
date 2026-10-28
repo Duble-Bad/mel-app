@@ -50,6 +50,7 @@ interface TimelineJson {
   photo_path: string | null;
   hidden: boolean;
   mine: boolean | null;
+  can_reply: boolean | null;
 }
 
 /** Avistamentos de um alerta, em ordem cronológica (ocultos só para o tutor). */
@@ -67,6 +68,7 @@ export async function getTimeline(client: MelClient, code: string): Promise<Time
     photoUrl: s.photo_path ? mediaUrl(client, s.photo_path) : null,
     hidden: s.hidden,
     mine: s.mine === true,
+    canReply: s.can_reply === true,
   }));
 }
 

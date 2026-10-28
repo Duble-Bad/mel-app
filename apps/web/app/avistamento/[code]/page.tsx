@@ -51,7 +51,7 @@ async function SightingContent({ code }: { code: string }) {
           <p className="text-text-secondary">{petSummary(c.pet)}</p>
         </div>
       </header>
-      <SightingForm code={c.code} petName={c.pet.name} />
+      <SightingForm code={c.code} petName={c.pet.name} chatEnabled={c.contactChat} />
     </div>
   );
 }

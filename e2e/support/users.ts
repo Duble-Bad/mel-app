@@ -28,6 +28,10 @@ export async function createUser(label: string, { onboarded = false } = {}) {
   return { id: data.user.id, email };
 }
 
+export async function deleteUserById(id: string) {
+  await admin().auth.admin.deleteUser(id);
+}
+
 export async function deleteUserByEmail(email: string) {
   const client = admin();
   // Usuários de teste são poucos; a primeira página basta.

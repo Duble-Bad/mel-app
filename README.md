@@ -61,7 +61,7 @@ Veja [.env.example](.env.example). `SUPABASE_SECRET_KEY` ignora RLS: só servido
 ## Autenticação
 
 - **E-mail + senha** (sem confirmação de e-mail por enquanto — ver `docs/decisoes.md`).
-- **Sessão anônima** para quem só quer ajudar (avistamento, "encontrei"): `ensureSession()` em `@mel/data`.
+- **Sessão anônima** para quem só quer ajudar (avistamento, "encontrei", 1ª mensagem ao tutor): `ensureSession()` em `@mel/data`. Antes de publicar, ative o captcha do Supabase Auth (ver `docs/decisoes.md`).
 - **Google**: aparece quando `NEXT_PUBLIC_AUTH_GOOGLE=on`. Para ativar:
   1. Google Cloud Console → APIs e serviços → Credenciais → *Criar ID do cliente OAuth* (Aplicativo da Web).
   2. URI de redirecionamento autorizado: `https://<project-ref>.supabase.co/auth/v1/callback`.
