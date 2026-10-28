@@ -19,6 +19,7 @@ import {
 } from "@mel/core";
 import { getPublicLostCase, getTimeline } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
+import { siteOrigin } from "@/lib/site";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
@@ -35,7 +36,6 @@ export async function generateMetadata({ params }: PageProps<"/alerta/[code]">):
   const { code } = await params;
   const c = isCode(code) ? await getPublicLostCase(createPublicClient(), code).catch(() => null) : null;
   if (!c) return { title: "Alerta não encontrado", robots: { index: false } };
-  const photo = c.pet.photos[0];
   const title = c.status === "FOUND" ? `ENCONTRADO: ${c.pet.name}` : `PERDIDO: ${c.pet.name}`;
   const description = [
     petSummary(c.pet),
@@ -53,9 +53,10 @@ export async function generateMetadata({ params }: PageProps<"/alerta/[code]">):
       title: `${title} — ajude a encontrar`,
       description,
       type: "article",
-      images: photo ? [{ url: photo.url, alt: `Foto de ${c.pet.name}` }] : undefined,
+      // Prévia do link = cartaz (foto + PROCURA-SE + QR), gerado na hora.
+      images: [{ url: `${await siteOrigin()}/alerta/${c.code}/cartaz/og`, width: 1200, height: 630, alt: `${title} — cartaz MEL` }],
     },
-    twitter: { card: photo ? "summary_large_image" : "summary" },
+    twitter: { card: "summary_large_image" },
   };
 }
 

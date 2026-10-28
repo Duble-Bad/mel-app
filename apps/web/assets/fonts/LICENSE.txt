@@ -1,0 +1,2 @@
+Figtree — SIL Open Font License 1.1 (https://openfontlicense.org). Copyright 2022 The Figtree Project Authors.
+Usada no gerador de cartazes (next/og), que aceita TTF/WOFF (não WOFF2). Subconjunto latino (cobre o português).

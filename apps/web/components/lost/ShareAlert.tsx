@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { shareText, whatsappShareUrl, type PublicLostCase } from "@mel/core";
 
@@ -55,6 +56,9 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
           <span aria-hidden="true">🔗</span> {copied ? "Link copiado!" : "Copiar link"}
         </button>
       </div>
+      <Link href={`${path}/cartaz`} className={btn}>
+        <span aria-hidden="true">🖼️</span> Cartaz e QR Code (baixar ou imprimir)
+      </Link>
       <p role="status" className="sr-only">
         {copied ? "Link copiado" : ""}
       </p>

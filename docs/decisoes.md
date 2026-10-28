@@ -41,5 +41,10 @@ Formato: data — decisão — motivo.
 - **2026-10-28 — Notificações in-app com Realtime (RLS).** Duas armadilhas achadas no E2E: (1) duas assinaturas com o mesmo nome de canal quebravam a página — nomes únicos; (2) assinar antes de `realtime.setAuth()` conecta como visitante e o RLS não entrega nada. Push no celular: M12.
 - **2026-10-28 — Avisos flutuantes somem sozinhos (8 s).** Um aviso fixo cobria botões da página no celular (achado no E2E).
 - **2026-10-28 — Avistamento "solto" (sem alerta) movido para o M10**, junto com "Encontrei um pet" e o Radar MEL.
+- **2026-10-28 — Cartaz gerado no servidor (next/og) em PNG: quadrado, Stories 9:16, horizontal 16:9 e prévia de link (OG); A4 em HTML para imprimir.** Sem dependência pesada; A4 em HTML imprime nítido e permite "Salvar como PDF". Fotos WebP convertidas com `sharp` (o gerador não lê WebP). Fonte Figtree (OFL) em WOFF em `apps/web/assets/fonts`.
+- **2026-10-28 — QR Code de cada cartaz é lido nos testes (jsQR).** O primeiro layout quadrado cortava o QR; o teste agora falha se o QR ficar ilegível ou apontar para outro lugar.
+- **2026-10-28 — Telefone no cartaz só se o tutor autorizou no alerta.** O cartaz usa apenas os dados públicos do alerta.
+- **2026-10-28 — Prévia do link (WhatsApp/redes) = cartaz OG.** Mostra foto, PROCURA-SE e local aproximado em vez de só a foto.
+- **2026-10-28 — CI em dois jobs.** Verificações rápidas sempre; banco/E2E só com os secrets do Supabase cadastrados (sem eles, aviso em vez de falha).
 - **2026-10-28 — Testes E2E: 3 workers e espera de 15 s.** Os testes falam com o Supabase remoto; 5 s gerava falsos negativos com o servidor frio.
 - **2026-10-28 — Tokens em `packages/ui-tokens` (TS + CSS) com teste de paridade e contraste WCAG AA.** O TS é usado onde não há CSS (cartazes, OG, Expo).

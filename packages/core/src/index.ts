@@ -7,3 +7,4 @@ export * from "./adapters/maptiler-geocoder";
 export * from "./geo/geolocation";
 export * from "./lost/lost";
 export * from "./sighting/sighting";
+export * from "./poster/poster";

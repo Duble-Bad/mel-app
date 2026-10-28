@@ -101,7 +101,7 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   const html = await (await visitor.request.get(alertUrl)).text();
   expect(html).not.toContain("Santa Teresa");
   expect(html).toContain("PERDIDO: Mel"); // título / Open Graph
-  expect(html).toMatch(/<meta property="og:image" content="[^"]+pet-photos/);
+  expect(html).toMatch(/<meta property="og:image" content="[^"]+\/cartaz\/og"/); // prévia do link = cartaz
   expect(html).toMatch(/<meta name="robots" content="noindex/);
   await visitor.close();
 
