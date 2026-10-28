@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { BrandStory } from "@/components/brand/BrandStory";
 import { HelpActions } from "@/components/home/HelpActions";
 import { SystemStatus } from "@/components/home/SystemStatus";
 
@@ -14,14 +15,9 @@ export default function HomePage() {
         <HelpActions />
       </section>
 
-      <section className="mt-12 rounded-lg bg-primary-soft p-5 text-primary-soft-foreground">
-        <h2 className="text-lg font-bold">Começou por uma Mel. Agora é por todos eles.</h2>
-        <p className="mt-2">
-          Quando um animal desaparece, a informação se perde entre grupos, cartazes e redes sociais. A MEL
-          reúne tudo em um só lugar e alcança quem está perto, rápido — para que nenhum animal precise ser
-          procurado sozinho.
-        </p>
-      </section>
+      <div className="mt-12">
+        <BrandStory />
+      </div>
 
       <footer className="mt-auto pt-12 text-sm text-text-secondary">
         <Suspense fallback={<p>Verificando conexão…</p>}>
