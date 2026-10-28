@@ -38,6 +38,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ChoiceGroup, MultiChoiceGroup, YesNoUnknown } from "@/components/ui/Choice";
 import { SelectField, TextField } from "@/components/ui/Field";
+import { FillCityFromLocation } from "@/components/location/FillCityFromLocation";
 import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
 
@@ -315,7 +316,15 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
           <textarea id="description" rows={4} className={textarea} value={description} onChange={(e) => setDescription(e.target.value)} />
           {errors.description && <p className="text-sm font-medium text-danger">{errors.description}</p>}
         </div>
-        <TextField label="Cidade" name="city" optional value={city} onChange={(e) => setCity(e.target.value)} error={errors.city} />
+        <div className="flex flex-col gap-2">
+          <TextField label="Cidade" name="city" optional value={city} onChange={(e) => setCity(e.target.value)} error={errors.city} />
+          <FillCityFromLocation
+            onFill={(c, uf) => {
+              setCity(c);
+              if (uf) setState(uf);
+            }}
+          />
+        </div>
         <SelectField label="Estado" name="state" optional value={state} onChange={(e) => setState(e.target.value)}>
           <option value="">Escolha o estado</option>
           {BR_STATES.map((s) => (

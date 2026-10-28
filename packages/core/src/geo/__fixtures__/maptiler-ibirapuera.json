@@ -1,0 +1,580 @@
+{
+ "places": [
+  {
+   "id": "neighbourhood.18641",
+   "text": "Parque Ibirapuera",
+   "place_name": "Parque Ibirapuera, Aparecida de Goiânia, Brasil",
+   "place_type": [
+    "neighbourhood"
+   ],
+   "center": [
+    -49.335593059659004,
+    -16.81184627650088
+   ],
+   "relevance": 0.96,
+   "context": [
+    {
+     "id": "municipality.75930",
+     "text": "Aparecida de Goiânia"
+    },
+    {
+     "id": "joint_submunicipality.4126",
+     "text": "Região Geográfica Imediata de Goiânia"
+    },
+    {
+     "id": "joint_municipality.18337",
+     "text": "Região Metropolitana de Goiânia"
+    },
+    {
+     "id": "county.8370",
+     "text": "Região Geográfica Intermediária de Goiânia"
+    },
+    {
+     "id": "subregion.515",
+     "text": "Goiás"
+    },
+    {
+     "id": "region.1635",
+     "text": "Região Centro-Oeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "major_landform.1096975",
+   "text": "Lagoa Parque Ibirapuera",
+   "place_name": "Lagoa Parque Ibirapuera, Brasil",
+   "place_type": [
+    "major_landform"
+   ],
+   "center": [
+    -46.660540027884736,
+    -23.58192702900414
+   ],
+   "relevance": 0.8,
+   "context": [
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "address.9443682",
+   "text": "Ladeira da Preguiça",
+   "place_name": "Ladeira da Preguiça, São Paulo, São Paulo 04094-000, Brasil",
+   "place_type": [
+    "address"
+   ],
+   "center": [
+    -46.65652792900801,
+    -23.58846525217985
+   ],
+   "relevance": 0.8,
+   "context": [
+    {
+     "id": "postal_code.2603718",
+     "text": "04094-000"
+    },
+    {
+     "id": "municipal_district.5033",
+     "text": "Moema"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.2816051",
+     "text": "Córrego Assémbleia"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "neighbourhood.39471",
+   "text": "Parque Residencial Ibirapuera",
+   "place_name": "Parque Residencial Ibirapuera, Maringá, Brasil",
+   "place_type": [
+    "neighbourhood"
+   ],
+   "center": [
+    -51.883150823414326,
+    -23.42454021262584
+   ],
+   "relevance": 0.768,
+   "context": [
+    {
+     "id": "municipality.31138",
+     "text": "Maringá"
+    },
+    {
+     "id": "joint_submunicipality.3412",
+     "text": "Região Geográfica Imediata de Maringá"
+    },
+    {
+     "id": "joint_municipality.18346",
+     "text": "Região Metropolitana de Maringá"
+    },
+    {
+     "id": "county.8144",
+     "text": "Região Geográfica Intermediária de Maringá"
+    },
+    {
+     "id": "subregion.142",
+     "text": "Paraná"
+    },
+    {
+     "id": "region.1325",
+     "text": "Região Sul"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "address.11203646",
+   "text": "Rua Ibirapuera",
+   "place_name": "Rua Ibirapuera, Guarulhos, São Paulo 07244-023, Brasil",
+   "place_type": [
+    "address"
+   ],
+   "center": [
+    -46.411046124994755,
+    -23.447173501549706
+   ],
+   "relevance": 0.59,
+   "context": [
+    {
+     "id": "postal_code.1281991",
+     "text": "07244-023"
+    },
+    {
+     "id": "place.1912627",
+     "text": "Parque Jurema"
+    },
+    {
+     "id": "municipal_district.35908",
+     "text": "Distrito de Jardim Presidente Dutra"
+    },
+    {
+     "id": "municipality.51396",
+     "text": "Guarulhos"
+    },
+    {
+     "id": "major_landform.2926107",
+     "text": "Córrego do Moinho"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  }
+ ],
+ "pois": [
+  {
+   "id": "poi.4593576",
+   "text": "Parque Ibirapuera",
+   "place_name": "Parque Ibirapuera, São Paulo, Brasil",
+   "place_type": [
+    "poi"
+   ],
+   "center": [
+    -46.65933046777428,
+    -23.587980270418925
+   ],
+   "relevance": 1,
+   "context": [
+    {
+     "id": "address.12825458",
+     "text": "Complexo Viário Ayrton Senna"
+    },
+    {
+     "id": "postal_code.2115499",
+     "text": "04002-010"
+    },
+    {
+     "id": "municipal_district.5033",
+     "text": "Moema"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.2816051",
+     "text": "Córrego Assémbleia"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "poi.18283492",
+   "text": "Parque Ibirapuera",
+   "place_name": "Parque Ibirapuera, Avenida Brigadeiro Luís Antônio 4131, São Paulo, São Paulo 01401-002, Brasil",
+   "place_type": [
+    "poi"
+   ],
+   "center": [
+    -46.661945320665836,
+    -23.5794274566282
+   ],
+   "relevance": 1,
+   "context": [
+    {
+     "id": "address.13719327",
+     "text": "Avenida Brigadeiro Luís Antônio"
+    },
+    {
+     "id": "postal_code.899284",
+     "text": "01401-002"
+    },
+    {
+     "id": "place.3856238",
+     "text": "Jardins"
+    },
+    {
+     "id": "municipal_district.5033",
+     "text": "Moema"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.2816051",
+     "text": "Córrego Assémbleia"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "poi.9018301",
+   "text": "PARQUE IBIRAPUERA",
+   "place_name": "PARQUE IBIRAPUERA, Castanhal, Brasil",
+   "place_type": [
+    "poi"
+   ],
+   "center": [
+    -47.93388234109176,
+    -1.2851743064286019
+   ],
+   "relevance": 0.96,
+   "context": [
+    {
+     "id": "address.2359424",
+     "text": "Travessa Mil Novecentos e Setenta e Três"
+    },
+    {
+     "id": "postal_code.1359652",
+     "text": "68745-000"
+    },
+    {
+     "id": "municipality.22463",
+     "text": "Castanhal"
+    },
+    {
+     "id": "major_landform.2878762",
+     "text": "Igarapé Castanhal"
+    },
+    {
+     "id": "joint_submunicipality.4365",
+     "text": "Região Geográfica Imediata de Castanhal"
+    },
+    {
+     "id": "joint_municipality.18121",
+     "text": "Região Metropolitana de Belém"
+    },
+    {
+     "id": "county.8162",
+     "text": "Região Geográfica Intermediária de Castanhal"
+    },
+    {
+     "id": "subregion.95",
+     "text": "Pará"
+    },
+    {
+     "id": "region.1743",
+     "text": "Região Norte"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "poi.10192191",
+   "text": "parque",
+   "place_name": "parque, Feira IV, Feira de Santana, Brasil",
+   "place_type": [
+    "poi"
+   ],
+   "center": [
+    -38.97179751885437,
+    -12.260254579339504
+   ],
+   "relevance": 0.68,
+   "context": [
+    {
+     "id": "address.4038381",
+     "text": "Rua Doutor João Evangelista"
+    },
+    {
+     "id": "postal_code.544236",
+     "text": "44149-999"
+    },
+    {
+     "id": "place.612859",
+     "text": "Feira IV"
+    },
+    {
+     "id": "neighbourhood.19211",
+     "text": "Santana"
+    },
+    {
+     "id": "municipality.25254",
+     "text": "Feira de Santana"
+    },
+    {
+     "id": "joint_submunicipality.4166",
+     "text": "Região Geográfica Imediata de Feira de Santana"
+    },
+    {
+     "id": "joint_municipality.7829",
+     "text": "Região Metropolitana de Feira de Santana"
+    },
+    {
+     "id": "county.7794",
+     "text": "Região Geográfica Intermediária de Feira de Santana"
+    },
+    {
+     "id": "subregion.122",
+     "text": "Bahia"
+    },
+    {
+     "id": "region.1656",
+     "text": "Região Nordeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "id": "poi.43424674",
+   "text": "Ibirapuera Hospital e Maternidade",
+   "place_name": "Ibirapuera Hospital e Maternidade, Avenida Contorno Leste 4, São Luís, Maranhão 65000-000, Brasil",
+   "place_type": [
+    "poi"
+   ],
+   "center": [
+    -44.20984437520508,
+    -2.540933080427546
+   ],
+   "relevance": 0.67,
+   "context": [
+    {
+     "id": "address.15935190",
+     "text": "Avenida Contorno Leste"
+    },
+    {
+     "id": "postal_code.916445",
+     "text": "65000-000"
+    },
+    {
+     "id": "place.2472110",
+     "text": "Parque Aurora"
+    },
+    {
+     "id": "municipality.58545",
+     "text": "São Luís"
+    },
+    {
+     "id": "joint_submunicipality.4131",
+     "text": "Região Geográfica Imediata de São Luís"
+    },
+    {
+     "id": "joint_municipality.18339",
+     "text": "Região Metropolitana da Grande São Luís"
+    },
+    {
+     "id": "county.8427",
+     "text": "Região Geográfica Intermediária de São Luís"
+    },
+    {
+     "id": "subregion.182",
+     "text": "Maranhão"
+    },
+    {
+     "id": "region.1656",
+     "text": "Região Nordeste"
+    },
+    {
+     "id": "major_landform.4164602",
+     "text": "Upaon-Açu"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  }
+ ]
+}

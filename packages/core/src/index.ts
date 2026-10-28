@@ -3,3 +3,5 @@ export * from "./ports";
 export * from "./profile/profile";
 export * from "./pet/pet";
 export * from "./pet/breeds";
+export * from "./adapters/maptiler-geocoder";
+export * from "./geo/geolocation";

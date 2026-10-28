@@ -1,0 +1,190 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "address.1169075",
+   "text": "Praça da Sé",
+   "place_name": "Praça da Sé, São Paulo, São Paulo 01001-001, Brasil",
+   "place_type": [
+    "address"
+   ],
+   "center": [
+    -46.63390450179577,
+    -23.550749316651974
+   ],
+   "context": [
+    {
+     "id": "postal_code.1009303",
+     "text": "01001-001"
+    },
+    {
+     "id": "place.1344038",
+     "text": "Glicério"
+    },
+    {
+     "id": "municipal_district.14611",
+     "text": "Sé"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.1968117",
+     "text": "Crista da Colina de Piratininga"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "address.14981432",
+   "text": "Praça da Fé",
+   "place_name": "Praça da Fé, Sorocaba, São Paulo 18077-382, Brasil",
+   "place_type": [
+    "address"
+   ],
+   "center": [
+    -47.47655851766467,
+    -23.456508419278695
+   ],
+   "context": [
+    {
+     "id": "postal_code.2218243",
+     "text": "18077-382"
+    },
+    {
+     "id": "place.2631146",
+     "text": "Jardim Atílio Silvano"
+    },
+    {
+     "id": "municipality.58697",
+     "text": "Sorocaba"
+    },
+    {
+     "id": "major_landform.2826433",
+     "text": "Córrego CETESB"
+    },
+    {
+     "id": "joint_submunicipality.3295",
+     "text": "Região Imediata de Sorocaba"
+    },
+    {
+     "id": "joint_municipality.7767",
+     "text": "Região Metropolitana de Sorocaba"
+    },
+    {
+     "id": "county.8112",
+     "text": "Região Geográfica Intermediária de Sorocaba"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "address.18833622",
+   "text": "VILA  PAULO ESMERALDO DA SILVA",
+   "place_name": "VILA PAULO ESMERALDO DA SILVA, Pinto Madeira, Crato, Ceará 63101-250, Brasil",
+   "place_type": [
+    "address"
+   ],
+   "center": [
+    -39.404005600000005,
+    -7.238068000000002
+   ],
+   "context": [
+    {
+     "id": "postal_code.578279",
+     "text": "63101-250"
+    },
+    {
+     "id": "place.4572085",
+     "text": "Praça da Sé"
+    },
+    {
+     "id": "neighbourhood.37844",
+     "text": "Pinto Madeira"
+    },
+    {
+     "id": "municipality.80522",
+     "text": "Crato"
+    },
+    {
+     "id": "major_landform.2989411",
+     "text": "Riacho Constantino"
+    },
+    {
+     "id": "joint_submunicipality.4293",
+     "text": "Região Geográfica Imediata de Juazeiro do Norte"
+    },
+    {
+     "id": "joint_municipality.18332",
+     "text": "Região Metropolitana do Cariri"
+    },
+    {
+     "id": "county.8275",
+     "text": "Região Geográfica Intermediária de Juazeiro do Norte"
+    },
+    {
+     "id": "subregion.636",
+     "text": "Ceará"
+    },
+    {
+     "id": "region.1656",
+     "text": "Região Nordeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  }
+ ]
+}

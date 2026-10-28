@@ -9,6 +9,7 @@ import { prepareImage } from "@/lib/images";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { SelectField, TextField } from "@/components/ui/Field";
+import { FillCityFromLocation } from "@/components/location/FillCityFromLocation";
 import { AvatarPicker } from "./AvatarPicker";
 
 interface ProfileFormProps {
@@ -24,6 +25,8 @@ export function ProfileForm({ profile, next, submitLabel }: ProfileFormProps) {
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [city, setCity] = useState(profile.city ?? "");
+  const [state, setState] = useState<string>(profile.state ?? "");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,17 +74,33 @@ export function ProfileForm({ profile, next, submitLabel }: ProfileFormProps) {
         error={errors.displayName}
       />
 
-      <TextField
-        label="Cidade"
-        name="city"
-        autoComplete="address-level2"
-        hint="Usamos para mostrar alertas e parceiros perto de você."
-        defaultValue={profile.city ?? ""}
-        required
-        error={errors.city}
-      />
+      <div className="flex flex-col gap-2">
+        <TextField
+          label="Cidade"
+          name="city"
+          autoComplete="address-level2"
+          hint="Usamos para mostrar alertas e parceiros perto de você."
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          required
+          error={errors.city}
+        />
+        <FillCityFromLocation
+          onFill={(c, uf) => {
+            setCity(c);
+            if (uf) setState(uf);
+          }}
+        />
+      </div>
 
-      <SelectField label="Estado" name="state" defaultValue={profile.state ?? ""} required error={errors.state}>
+      <SelectField
+        label="Estado"
+        name="state"
+        value={state}
+        onChange={(e) => setState(e.target.value)}
+        required
+        error={errors.state}
+      >
         <option value="" disabled>
           Escolha o estado
         </option>

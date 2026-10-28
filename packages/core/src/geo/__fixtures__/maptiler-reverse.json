@@ -1,0 +1,323 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "id": "address.11563474",
+   "text": "Rua Santa Teresa",
+   "place_name": "Rua Santa Teresa 21, São Paulo, São Paulo 01016-020, Brasil",
+   "place_type": [
+    "address"
+   ],
+   "center": [
+    -46.63312766700983,
+    -23.54991270779776
+   ],
+   "context": [
+    {
+     "id": "postal_code.1235731",
+     "text": "01016-020"
+    },
+    {
+     "id": "place.1344038",
+     "text": "Glicério"
+    },
+    {
+     "id": "municipal_district.14611",
+     "text": "Sé"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.1968117",
+     "text": "Crista da Colina de Piratininga"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "postal_code.1235731",
+   "text": "01016-020",
+   "place_name": "01016-020, Brasil",
+   "place_type": [
+    "postal_code"
+   ],
+   "center": [
+    -46.632042713463306,
+    -23.54908316275476
+   ],
+   "context": [
+    {
+     "id": "place.1344038",
+     "text": "Glicério"
+    },
+    {
+     "id": "municipal_district.14611",
+     "text": "Sé"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.1968117",
+     "text": "Crista da Colina de Piratininga"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "place.1344038",
+   "text": "Glicério",
+   "place_name": "Glicério, São Paulo, Brasil",
+   "place_type": [
+    "place"
+   ],
+   "center": [
+    -46.629008799791336,
+    -23.553055342074042
+   ],
+   "context": [
+    {
+     "id": "municipal_district.14611",
+     "text": "Sé"
+    },
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.1968117",
+     "text": "Crista da Colina de Piratininga"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "municipal_district.14611",
+   "text": "Sé",
+   "place_name": "Sé, São Paulo, Brasil",
+   "place_type": [
+    "municipal_district"
+   ],
+   "center": [
+    -46.63177348673344,
+    -23.54880685148008
+   ],
+   "context": [
+    {
+     "id": "municipality.55445",
+     "text": "São Paulo"
+    },
+    {
+     "id": "major_landform.1968117",
+     "text": "Crista da Colina de Piratininga"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "municipality.55445",
+   "text": "São Paulo",
+   "place_name": "São Paulo, São Paulo, Brasil",
+   "place_type": [
+    "municipality"
+   ],
+   "center": [
+    -46.633382476866245,
+    -23.55065065732485
+   ],
+   "context": [
+    {
+     "id": "major_landform.1968117",
+     "text": "Crista da Colina de Piratininga"
+    },
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  },
+  {
+   "type": "Feature",
+   "id": "major_landform.1968117",
+   "text": "Crista da Colina de Piratininga",
+   "place_name": "Crista da Colina de Piratininga, Brasil",
+   "place_type": [
+    "major_landform"
+   ],
+   "center": [
+    -46.63667321205139,
+    -23.558080327300768
+   ],
+   "context": [
+    {
+     "id": "joint_submunicipality.3364",
+     "text": "Região Imediata de São Paulo"
+    },
+    {
+     "id": "joint_municipality.5079",
+     "text": "Região Metropolitana de São Paulo"
+    },
+    {
+     "id": "county.8177",
+     "text": "Região Geográfica Intermediária de São Paulo"
+    },
+    {
+     "id": "subregion.180",
+     "text": "São Paulo"
+    },
+    {
+     "id": "region.1382",
+     "text": "Região Sudeste"
+    },
+    {
+     "id": "country.131",
+     "text": "Brasil"
+    },
+    {
+     "id": "continental_marine.6",
+     "text": "América do Sul"
+    }
+   ]
+  }
+ ]
+}

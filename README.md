@@ -69,6 +69,13 @@ Veja [.env.example](.env.example). `SUPABASE_SECRET_KEY` ignora RLS: só servido
   4. `NEXT_PUBLIC_AUTH_GOOGLE=on` no `.env.local`.
 - Configuração de Auth versionada em `supabase/config.toml`; aplique com `npx supabase config diff` (revisar) e `npx supabase config push`.
 
+## Mapas e localização
+
+- **MapLibre GL + MapTiler** atrás de `MapProvider` (`apps/web/lib/map/maplibre.ts`) e `Geocoder` (`packages/core/src/adapters/maptiler-geocoder.ts`). Trocar de fornecedor = escrever outro adaptador.
+- O worker do MapLibre é copiado para `apps/web/public/vendor/` automaticamente antes de `dev`/`build`.
+- Restrinja a chave do MapTiler às suas origens (painel MapTiler → API keys → Allowed HTTP origins).
+- Páginas internas de verificação (ex.: `/dev/local`, seletor de local) só existem com `MEL_DEV_ROUTES=1` no build — os testes E2E definem a variável; produção não.
+
 ## Banco de dados (Supabase)
 
 Desenvolvimento usa um projeto Supabase Cloud dedicado (`mel-dev`, região São Paulo) — sem Docker local.

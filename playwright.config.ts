@@ -29,6 +29,8 @@ export default defineConfig({
     command: isCI ? `npm run build -w web && npm run start -w web -- -p ${PORT}` : `npm run dev -w web -- -p ${PORT}`,
     url: `http://localhost:${PORT}/api/health`,
     reuseExistingServer: !isCI,
+    // Habilita páginas internas de verificação (ex.: /dev/local). Nunca em produção.
+    env: { MEL_DEV_ROUTES: "1" },
     timeout: 180_000,
   },
 });
