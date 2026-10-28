@@ -6,7 +6,23 @@ on:
   pull_request:
 
 jobs:
-  check:
+  static:
+    name: Verificações rápidas (tipos, lint, unitários)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+
+  integration:
+    name: Banco (RLS) e ponta a ponta
+    needs: static
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -17,22 +33,41 @@ jobs:
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
       TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # Sem as chaves (ex.: fork ou repositório recém-criado) os testes que falam
+      # com o Supabase não têm como rodar: avisa em vez de falhar com dezenas de erros.
+      - name: Verificar chaves do Supabase
+        id: keys
+        run: |
+          missing=""
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY SUPABASE_SECRET_KEY NEXT_PUBLIC_MAPTILER_KEY; do
+            [ -z "${!name}" ] && missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::warning title=Testes de banco e E2E não executados::Cadastre em Settings → Secrets and variables → Actions:$missing"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.keys.outputs.ok == 'true'
+        uses: actions/checkout@v7
+      - if: steps.keys.outputs.ok == 'true'
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run test
-      - name: RLS / database tests
+      - if: steps.keys.outputs.ok == 'true'
+        run: npm ci
+      - if: steps.keys.outputs.ok == 'true'
+        name: Banco de dados (RLS)
         run: npm run test:db
-      - run: npx playwright install --with-deps chromium
-      - name: E2E
+      - if: steps.keys.outputs.ok == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.keys.outputs.ok == 'true'
+        name: Ponta a ponta (Playwright)
         run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
-        if: failure()
+      - if: failure() && steps.keys.outputs.ok == 'true'
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: test-results/
+          if-no-files-found: ignore
