@@ -69,6 +69,10 @@ export const credentialsSchema = z.object({
 
 export type Credentials = z.infer<typeof credentialsSchema>;
 
+/** Criar conta: nome já no cadastro (vai para o perfil e preenche o onboarding). */
+export const signUpSchema = credentialsSchema.extend({ displayName: profileInputSchema.shape.displayName });
+export type SignUpInput = z.infer<typeof signUpSchema>;
+
 export const emailSchema = credentialsSchema.shape.email;
 export const passwordSchema = credentialsSchema.shape.password;
 

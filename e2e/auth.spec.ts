@@ -13,12 +13,14 @@ test("new person signs up, completes onboarding and sees their profile", async (
   await page.goto("/");
   await page.getByRole("link", { name: "Entrar" }).click();
   await page.getByRole("tab", { name: "Criar conta" }).click();
+  await page.getByLabel("Seu nome").fill("Ana Exemplo");
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha", { exact: true }).fill(TEST_PASSWORD);
   await page.getByRole("button", { name: "Criar conta" }).click();
 
   await expect(page).toHaveURL(/\/onboarding/);
-  await page.getByLabel("Como podemos te chamar?").fill("Ana Exemplo");
+  // O nome do cadastro já vem preenchido.
+  await expect(page.getByLabel("Como podemos te chamar?")).toHaveValue("Ana Exemplo");
   await page.getByLabel("Cidade").fill("Campinas");
   await page.getByLabel("Estado").selectOption("SP");
   await page.getByRole("button", { name: "Continuar" }).click();
@@ -122,4 +124,39 @@ test("open redirects through ?next= are blocked", async ({ page }) => {
   await page.getByLabel("Senha", { exact: true }).fill(TEST_PASSWORD);
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page).toHaveURL(/localhost:\d+\/perfil$/);
+});
+
+test("sign-in screen: no errors before interaction, eye icon for the password, name on sign up", async ({ page }) => {
+  await page.goto("/entrar");
+  await expect(page.getByRole("heading", { name: "Bem-vindo à MEL" })).toBeVisible();
+  await expect(page.getByRole("banner")).toHaveCount(0); // tela cheia, sem o cabeçalho do app
+
+  // Tocar nos campos e sair sem digitar não deixa nada vermelho.
+  await page.getByLabel("E-mail").click();
+  await page.getByLabel("Senha", { exact: true }).click();
+  await page.getByRole("heading", { name: "Bem-vindo à MEL" }).click();
+  await expect(page.locator("[aria-invalid=true]")).toHaveCount(0);
+
+  // Erro aparece ao sair de um campo preenchido errado, e some ao corrigir.
+  await page.getByLabel("E-mail").fill("ana@");
+  await page.getByLabel("Senha", { exact: true }).click();
+  await expect(page.getByText("Confira o e-mail.")).toBeVisible();
+  await page.getByLabel("E-mail").fill("ana@exemplo.com");
+  await expect(page.getByText("Confira o e-mail.")).toHaveCount(0);
+
+  // Olho dentro do campo mostra/oculta a senha.
+  const password = page.getByLabel("Senha", { exact: true });
+  await password.fill("segredo123");
+  await expect(password).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "Mostrar senha" }).click();
+  await expect(password).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Ocultar senha" }).click();
+  await expect(password).toHaveAttribute("type", "password");
+
+  // Criar conta pede o nome; enviar sem ele explica o que falta e foca o campo.
+  await page.getByRole("tab", { name: "Criar conta" }).click();
+  await expect(page.getByRole("tab", { name: "Criar conta" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  await expect(page.getByText("Conte pra gente como podemos te chamar.")).toBeVisible();
+  await expect(page.getByLabel("Seu nome")).toBeFocused();
 });

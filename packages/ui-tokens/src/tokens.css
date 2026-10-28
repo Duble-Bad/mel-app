@@ -1,38 +1,92 @@
 /*
- * Design tokens da MEL — espelho de tokens.ts (validado por teste).
+ * MEL Design System 1.0 — espelho de tokens.ts (validado por teste).
  * Nunca use hex direto em componentes: use as classes geradas
- * (bg-brand-primary, text-status-lost, border-border…).
+ * (bg-brand-primary, text-status-lost, border-border…) ou estas variáveis.
+ * Dark mode (futuro): redefinir estas variáveis em [data-theme="dark"].
  */
 :root {
-  --mel-brand-primary: #8a4510;
-  --mel-brand-primary-hover: #6f370c;
+  --mel-primary-50: #fff4f1;
+  --mel-primary-100: #ffe4de;
+  --mel-primary-200: #ffc9be;
+  --mel-primary-300: #ffa596;
+  --mel-primary-400: #ff7968;
+  --mel-primary-500: #f45d4c;
+  --mel-primary-600: #df493a;
+  --mel-primary-700: #bb382d;
+  --mel-primary-800: #9b322a;
+  --mel-primary-900: #812f29;
+  --mel-ink-900: #101720;
+  --mel-ink-800: #18212f;
+  --mel-ink-700: #263445;
+  --mel-ink-600: #405066;
+  --mel-teal-50: #e8f7f4;
+  --mel-teal-100: #bfe9e2;
+  --mel-teal-300: #65c5b7;
+  --mel-teal-500: #2a9d8f;
+  --mel-teal-700: #217d72;
+  --mel-brand-accent: #f45d4c;
+  --mel-brand-primary: #bb382d;
+  --mel-brand-primary-hover: #9b322a;
   --mel-brand-on-primary: #ffffff;
-  --mel-brand-secondary: #f6e7d2;
-  --mel-brand-on-secondary: #4a2508;
-
-  --mel-status-lost: #b42d22;
-  --mel-status-lost-soft: #fbe9e7;
-  --mel-status-found: #23704a;
-  --mel-status-found-soft: #e5f3eb;
-  --mel-status-sighting: #8a5a00;
-  --mel-status-sighting-soft: #fdf1d6;
-  --mel-status-adoption: #a6305f;
-  --mel-status-adoption-soft: #fae8ef;
-
-  --mel-success: #23704a;
-  --mel-warning: #8a5a00;
-  --mel-danger: #b42318;
-  --mel-info: #1f5f99;
-
-  --mel-background: #fbf8f4;
+  --mel-brand-secondary: #fff4f1;
+  --mel-brand-on-secondary: #9b322a;
+  --mel-status-lost-accent: #e5484d;
+  --mel-status-lost: #c22a31;
+  --mel-status-lost-soft: #fff1f1;
+  --mel-status-found-accent: #1f9d72;
+  --mel-status-found: #13774f;
+  --mel-status-found-soft: #ecfdf5;
+  --mel-status-sighting-accent: #e9a23b;
+  --mel-status-sighting: #9a5b00;
+  --mel-status-sighting-soft: #fff8e8;
+  --mel-status-adoption-accent: #8b5cf6;
+  --mel-status-adoption: #6d3fd6;
+  --mel-status-adoption-soft: #f5f1ff;
+  --mel-status-info-accent: #3b82f6;
+  --mel-status-info: #1f5fd1;
+  --mel-status-info-soft: #eff6ff;
+  --mel-success: #16a36a;
+  --mel-warning: #d99018;
+  --mel-danger: #d92d20;
+  --mel-info: #3b82f6;
+  --mel-background: #fafaf8;
   --mel-surface: #ffffff;
-  --mel-surface-muted: #f3ede6;
-  --mel-border: #e3d9ce;
-  --mel-border-strong: #b9ab9c;
-
-  --mel-text-primary: #1f1a16;
-  --mel-text-secondary: #5a5048;
+  --mel-surface-muted: #f6f5f2;
+  --mel-surface-warm: #fff8f5;
+  --mel-border: #e9e7e2;
+  --mel-border-strong: #d9d6cf;
+  --mel-border-input: #e1dfda;
+  --mel-text-primary: #18212f;
+  --mel-text-secondary: #667085;
+  --mel-text-muted: #98a2b3;
   --mel-text-inverse: #ffffff;
+  --mel-focus: #f45d4c;
 
-  --mel-focus: #1f5f99;
+  --mel-radius-sm: 10px;
+  --mel-radius-md: 14px;
+  --mel-radius-lg: 18px;
+  --mel-radius-card: 20px;
+  --mel-radius-hero: 28px;
+  --mel-radius-pill: 999px;
+
+  --mel-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --mel-shadow-sm: 0 2px 8px rgba(16, 24, 40, 0.06);
+  --mel-shadow-md: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --mel-shadow-lg: 0 16px 40px rgba(16, 24, 40, 0.1);
+
+  --mel-duration-fast: 120ms;
+  --mel-duration-normal: 200ms;
+  --mel-duration-slow: 320ms;
+  --mel-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --mel-gradient-hero: linear-gradient(135deg, var(--mel-primary-500) 0%, #ff7867 52%, #ff9a83 100%);
+  --mel-gradient-soft: linear-gradient(180deg, var(--mel-surface-warm) 0%, var(--mel-background) 100%);
+
+  --mel-page-gutter: 20px;
+}
+
+@media (max-width: 359px) {
+  :root {
+    --mel-page-gutter: 16px;
+  }
 }

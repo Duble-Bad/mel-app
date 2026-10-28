@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Figtree } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { colors } from "@mel/ui-tokens";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
-const figtree = Figtree({
-  variable: "--font-figtree",
+// Fonte variável (200–800): pesos intermediários como 650 do Design System.
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin", "latin-ext"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -27,10 +29,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${figtree.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${jakarta.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background text-text-primary">
-        <AppHeader />
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

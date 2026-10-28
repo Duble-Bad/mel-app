@@ -17,6 +17,7 @@
     "@mel/ui-tokens": "*",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
+    "lucide-react": "^1.63.0",
     "maplibre-gl": "^6.16.0",
     "next": "16.4.3",
     "qrcode": "^1.5.4",

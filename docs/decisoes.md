@@ -57,3 +57,9 @@ Formato: data — decisão — motivo.
 - **2026-10-28 — Alerta de golpe dentro da conversa.** Além do aviso fixo, mensagens recebidas que falam de PIX/dinheiro/taxa ganham um aviso logo abaixo (`mentionsPayment`). Só alerta; nada é bloqueado automaticamente.
 - **2026-10-28 — Mensagens novas viram UMA notificação por conversa** (agrupa "3 mensagens novas"), lida ao abrir a conversa. Mesma tabela que o push do M12 vai usar.
 - **2026-10-28 — Chat ligado por padrão no alerta** ("Receber mensagens pelo chat da MEL"), por ser o contato que não expõe número.
+- **2026-10-28 — MEL Design System 1.0 (`docs/07-design-system.md`) é a fonte única da verdade visual.** Paleta Coral/Ink/Teal, Plus Jakarta Sans, ícones Lucide. Tokens em `packages/ui-tokens`, com teste de paridade TS×CSS e de contraste WCAG AA.
+- **2026-10-28 — Botão principal e links em `primary-700` (#BB382D); coral #F45D4C para marca e destaques.** Texto branco sobre o coral 500 tem 3,2:1 e reprova WCAG AA, que o próprio DS exige. É um token só (`brand-primary`) se a decisão mudar.
+- **2026-10-28 — Status com três tons (accent, AA, soft).** As cores vivas do DS (ex.: perdido #E5484D) não passam AA como texto; ficam para pinos, ícones e bordas.
+- **2026-10-28 — Movimento em CSS, sem Framer Motion por ora.** Cobre entrada, sheet, toast, skeleton e pressed sem JavaScript extra; respeita `prefers-reduced-motion`.
+- **2026-10-28 — Telas do app no grupo de rotas `(app)` (com cabeçalho); `/entrar` fora dele, em tela cheia.** Esconder o cabeçalho por CSS ou `usePathname` falhava: o Next mantém a tela anterior escondida no DOM, e `usePathname` impede a pré-renderização.
+- **2026-10-28 — Nome pedido já no "Criar conta".** Vai nos metadados do Supabase (o trigger existente grava no perfil) e já chega preenchido no onboarding. Nada mudou no backend.

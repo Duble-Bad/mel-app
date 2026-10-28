@@ -4,7 +4,7 @@ import { colors } from "./tokens";
 
 const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
 const cssVars = Object.fromEntries(
-  [...css.matchAll(/--mel-([a-z-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]),
+  [...css.matchAll(/--mel-([a-z0-9-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]),
 );
 
 /** Razão de contraste WCAG 2.x entre duas cores hex. */
@@ -27,19 +27,39 @@ describe("design tokens", () => {
 
   it.each([
     ["text-primary", "background"],
+    ["text-primary", "surface-warm"],
     ["text-secondary", "background"],
     ["text-secondary", "surface"],
+    ["text-secondary", "surface-muted"],
     ["brand-on-primary", "brand-primary"],
+    ["brand-on-primary", "brand-primary-hover"],
+    ["brand-primary", "surface"],
+    ["brand-primary", "background"],
     ["brand-on-secondary", "brand-secondary"],
+    ["text-inverse", "ink-800"],
     ["text-inverse", "status-lost"],
     ["text-inverse", "status-found"],
     ["text-inverse", "status-sighting"],
     ["text-inverse", "status-adoption"],
+    ["text-inverse", "status-info"],
+    ["text-inverse", "danger"],
+    ["danger", "surface"],
     ["status-lost", "status-lost-soft"],
     ["status-found", "status-found-soft"],
     ["status-sighting", "status-sighting-soft"],
     ["status-adoption", "status-adoption-soft"],
+    ["status-info", "status-info-soft"],
   ] as const)("%s on %s meets WCAG AA (4.5:1)", (fg, bg) => {
     expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  // Bordas de foco e ícones (não-texto): WCAG 1.4.11 pede 3:1.
+  it.each([
+    ["focus", "surface"],
+    ["focus", "background"],
+    ["status-lost-accent", "surface"],
+    ["status-found-accent", "surface"],
+  ] as const)("%s on %s meets 3:1 for non-text", (fg, bg) => {
+    expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(3);
   });
 });

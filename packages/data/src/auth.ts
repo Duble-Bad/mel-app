@@ -34,8 +34,13 @@ export async function signInWithPassword(client: MelClient, { email, password }:
   return data.user;
 }
 
-export async function signUpWithPassword(client: MelClient, { email, password }: Credentials) {
-  const { data, error } = await client.auth.signUp({ email, password });
+export async function signUpWithPassword(client: MelClient, { email, password, displayName }: Credentials & { displayName?: string }) {
+  // O nome vai nos metadados: o trigger handle_new_user já o grava no perfil.
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    ...(displayName ? { options: { data: { full_name: displayName } } } : {}),
+  });
   if (error || !data.user) fail(error);
   // Supabase devolve usuário "fantasma" (sem identidades) quando o e-mail já existe.
   if (data.user.identities?.length === 0) throw new AuthError("user_already_exists");

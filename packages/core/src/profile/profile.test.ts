@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { credentialsSchema, fieldErrors, needsOnboarding, profileInputSchema, safeNextPath } from "./profile";
+import { credentialsSchema, fieldErrors, needsOnboarding, profileInputSchema, safeNextPath, signUpSchema } from "./profile";
 
 describe("profileInputSchema", () => {
   it("accepts minimal valid data and trims spaces", () => {
@@ -14,6 +14,15 @@ describe("profileInputSchema", () => {
     expect(errors.displayName).toMatch(/como podemos te chamar/);
     expect(errors.city).toMatch(/cidade/);
     expect(errors.state).toMatch(/estado/);
+  });
+});
+
+describe("signUpSchema", () => {
+  it("asks for the name too", () => {
+    const r = signUpSchema.safeParse({ email: "ana@exemplo.com", password: "12345678", displayName: " " });
+    expect(r.success).toBe(false);
+    expect(fieldErrors(r.error!).displayName).toBe("Conte pra gente como podemos te chamar.");
+    expect(signUpSchema.parse({ email: "ana@exemplo.com", password: "12345678", displayName: " Ana " }).displayName).toBe("Ana");
   });
 });
 

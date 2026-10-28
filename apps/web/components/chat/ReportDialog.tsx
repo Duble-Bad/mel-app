@@ -56,7 +56,7 @@ export function ReportDialog({ conversationId, onReported }: { conversationId: s
       <dialog
         ref={dialog}
         aria-labelledby="report-title"
-        className="m-auto w-[min(100%-2rem,28rem)] rounded-lg bg-surface p-0 text-text-primary shadow-card backdrop:bg-black/50"
+        className="m-auto w-[min(100%-2rem,28rem)] rounded-lg bg-surface p-0 text-text-primary shadow-card backdrop:bg-ink-900/50"
       >
         {done ? (
           <div className="flex flex-col gap-4 p-5">
