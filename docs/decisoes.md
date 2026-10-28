@@ -35,5 +35,11 @@ Formato: data — decisão — motivo.
 - **2026-10-28 — Regras de status no banco.** Rascunho → ativo exige onde e quando; ativo não volta a rascunho; só a moderação remove. Um alerta aberto por pet.
 - **2026-10-28 — Contato no M5: WhatsApp/telefone só se o tutor marcar; chat marcado como "em breve" (M8).** Aviso antigolpe (PIX) no fluxo e na página do alerta.
 - **2026-10-28 — Após entrar/sair da conta, navegação completa (`location.assign`).** Bug achado no E2E: o Next pré-carrega links da home; o pré-carregamento de `/publicar/perdido` feito antes do login guardava o redirecionamento para `/entrar`, e a tela ficava presa em "Entrando…".
+- **2026-10-28 — Avistamento sem conta: sessão anônima + captcha no servidor + limites no banco.** A pessoa não informa nada sobre si. `/api/avistamentos` verifica o Cloudflare Turnstile e grava com a sessão da própria pessoa via `submit_sighting` (security invoker), então RLS e o trigger de limites (5/h por pessoa, 3/h por alerta) valem. Chaves Turnstile de TESTE no dev/CI; produção precisa das reais.
+- **2026-10-28 — Local do avistamento é público** (é a pista, na rua). Identidade de quem enviou nunca aparece na linha do tempo.
+- **2026-10-28 — Tutor pode ocultar avistamentos** (spam/engano) e reexibir; ocultos só ele vê.
+- **2026-10-28 — Notificações in-app com Realtime (RLS).** Duas armadilhas achadas no E2E: (1) duas assinaturas com o mesmo nome de canal quebravam a página — nomes únicos; (2) assinar antes de `realtime.setAuth()` conecta como visitante e o RLS não entrega nada. Push no celular: M12.
+- **2026-10-28 — Avisos flutuantes somem sozinhos (8 s).** Um aviso fixo cobria botões da página no celular (achado no E2E).
+- **2026-10-28 — Avistamento "solto" (sem alerta) movido para o M10**, junto com "Encontrei um pet" e o Radar MEL.
 - **2026-10-28 — Testes E2E: 3 workers e espera de 15 s.** Os testes falam com o Supabase remoto; 5 s gerava falsos negativos com o servidor frio.
 - **2026-10-28 — Tokens em `packages/ui-tokens` (TS + CSS) com teste de paridade e contraste WCAG AA.** O TS é usado onde não há CSS (cartazes, OG, Expo).

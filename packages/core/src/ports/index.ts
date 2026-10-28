@@ -24,6 +24,8 @@ export interface MapHandle {
   setCenter(p: LatLng, zoom?: number): void;
   setPins(pins: MapPin[]): void;
   drawPath(points: LatLng[]): void;
+  /** Enquadra todos os pontos (com margem). */
+  fitTo(points: LatLng[], maxZoom?: number): void;
   onMove(cb: (bbox: BBox) => void): Unsubscribe;
   onPinClick(cb: (id: string) => void): Unsubscribe;
   /** Marcador arrastável; tocar no mapa também move o marcador. */

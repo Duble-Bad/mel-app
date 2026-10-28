@@ -131,6 +131,41 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          payload: Json
+          read_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          read_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          read_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_photos: {
         Row: {
           created_at: string
@@ -361,12 +396,79 @@ export type Database = {
         }
         Relationships: []
       }
+      sightings: {
+        Row: {
+          created_at: string
+          direction: Database["public"]["Enums"]["sighting_direction"]
+          id: string
+          lat: number
+          lng: number
+          lost_case_id: string
+          notes: string | null
+          photo_path: string | null
+          place_label: string | null
+          point: unknown
+          reporter_id: string | null
+          seen_at: string
+          states: Database["public"]["Enums"]["sighting_state"][]
+          status: Database["public"]["Enums"]["sighting_status"]
+        }
+        Insert: {
+          created_at?: string
+          direction?: Database["public"]["Enums"]["sighting_direction"]
+          id?: string
+          lat: number
+          lng: number
+          lost_case_id: string
+          notes?: string | null
+          photo_path?: string | null
+          place_label?: string | null
+          point?: unknown
+          reporter_id?: string | null
+          seen_at: string
+          states?: Database["public"]["Enums"]["sighting_state"][]
+          status?: Database["public"]["Enums"]["sighting_status"]
+        }
+        Update: {
+          created_at?: string
+          direction?: Database["public"]["Enums"]["sighting_direction"]
+          id?: string
+          lat?: number
+          lng?: number
+          lost_case_id?: string
+          notes?: string | null
+          photo_path?: string | null
+          place_label?: string | null
+          point?: unknown
+          reporter_id?: string | null
+          seen_at?: string
+          states?: Database["public"]["Enums"]["sighting_state"][]
+          status?: Database["public"]["Enums"]["sighting_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sightings_lost_case_id_fkey"
+            columns: ["lost_case_id"]
+            isOneToOne: false
+            referencedRelation: "lost_cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sightings_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
+      get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
       get_public_lost_case: { Args: { p_code: string }; Returns: Json }
       health_check: { Args: never; Returns: Json }
       nearby_lost_cases: {
@@ -390,11 +492,35 @@ export type Database = {
           species: Database["public"]["Enums"]["species"]
         }[]
       }
+      submit_sighting: {
+        Args: {
+          p_code: string
+          p_direction?: Database["public"]["Enums"]["sighting_direction"]
+          p_lat: number
+          p_lng: number
+          p_notes?: string
+          p_photo_path?: string
+          p_place_label?: string
+          p_seen_at: string
+          p_states?: Database["public"]["Enums"]["sighting_state"][]
+        }
+        Returns: string
+      }
     }
     Enums: {
       lost_case_status: "DRAFT" | "ACTIVE" | "FOUND" | "CLOSED" | "REMOVED"
       pet_sex: "male" | "female" | "unknown"
       pet_size: "mini" | "small" | "medium" | "large" | "giant"
+      sighting_direction: "N" | "S" | "E" | "W" | "unknown"
+      sighting_state:
+        | "walking"
+        | "running"
+        | "stopped"
+        | "with_person"
+        | "injured"
+        | "scared"
+        | "other"
+      sighting_status: "VISIBLE" | "HIDDEN"
       species: "dog" | "cat" | "other"
       user_role: "user" | "moderator" | "admin"
     }
@@ -527,6 +653,17 @@ export const Constants = {
       lost_case_status: ["DRAFT", "ACTIVE", "FOUND", "CLOSED", "REMOVED"],
       pet_sex: ["male", "female", "unknown"],
       pet_size: ["mini", "small", "medium", "large", "giant"],
+      sighting_direction: ["N", "S", "E", "W", "unknown"],
+      sighting_state: [
+        "walking",
+        "running",
+        "stopped",
+        "with_person",
+        "injured",
+        "scared",
+        "other",
+      ],
+      sighting_status: ["VISIBLE", "HIDDEN"],
       species: ["dog", "cat", "other"],
       user_role: ["user", "moderator", "admin"],
     },

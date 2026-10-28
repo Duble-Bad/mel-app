@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { countUnreadNotifications } from "@mel/data";
 import { getCurrentProfile, getSessionUser } from "@/lib/session";
+import { createSessionClient } from "@/lib/supabase/server";
+import { NotificationBell } from "./NotificationBell";
 
 export function AppHeader() {
   return (
@@ -29,11 +32,19 @@ async function HeaderAccount() {
       </Link>
     );
   }
-  const profile = await getCurrentProfile();
+  const [profile, unread] = await Promise.all([
+    getCurrentProfile(),
+    createSessionClient()
+      .then((client) => countUnreadNotifications(client, user.id))
+      .catch(() => 0),
+  ]);
   const firstName = profile?.displayName?.split(" ")[0];
   return (
-    <Link href="/perfil" className={linkClass}>
-      {firstName ? `Olá, ${firstName}` : "Meu perfil"}
-    </Link>
+    <div className="flex items-center gap-1">
+      <NotificationBell userId={user.id} initialUnread={unread} />
+      <Link href="/perfil" className={linkClass}>
+        {firstName ? `Olá, ${firstName}` : "Meu perfil"}
+      </Link>
+    </div>
   );
 }

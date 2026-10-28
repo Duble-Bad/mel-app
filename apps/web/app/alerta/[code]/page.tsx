@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import {
@@ -16,11 +17,14 @@ import {
   whatsappChatUrl,
   type PublicLostCase,
 } from "@mel/core";
-import { getPublicLostCase } from "@mel/data";
+import { getPublicLostCase, getTimeline } from "@mel/data";
+import { getSessionUser } from "@/lib/session";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
 import { ShareAlert } from "@/components/lost/ShareAlert";
+import { LiveSightings } from "@/components/sighting/LiveSightings";
+import { Timeline } from "@/components/sighting/Timeline";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -70,9 +74,18 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
   const query = await searchParams;
   if (!isCode(code)) notFound();
   // Sessão: o tutor vê a própria visão (is_owner) — os dados continuam os públicos.
-  const c = await getPublicLostCase(await createSessionClient(), code);
+  const supabase = await createSessionClient();
+  const c = await getPublicLostCase(supabase, code);
   if (!c) notFound();
   const photo = c.pet.photos[0];
+  const [timeline, user] = await Promise.all([
+    getTimeline(supabase, c.code).catch((err) => {
+      console.error("[alerta] linha do tempo indisponível", err);
+      return [];
+    }),
+    getSessionUser(),
+  ]);
+  const visibleSightings = timeline.filter((s) => !s.hidden);
 
   return (
     <article className="flex flex-col gap-6">
@@ -112,6 +125,15 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
           {c.areaLabel && <p>Visto por último perto de <strong>{c.areaLabel}</strong></p>}
         </header>
 
+        {!c.isOwner && c.status === "ACTIVE" && (
+          <Link
+            href={`/avistamento/${c.code}`}
+            className="inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-lg bg-status-sighting px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card"
+          >
+            <span aria-hidden="true">👁</span> Eu vi este pet
+          </Link>
+        )}
+
         <section aria-labelledby="compartilhar" className="flex flex-col gap-2">
           <h2 id="compartilhar" className="font-bold">
             {c.isOwner ? "Compartilhe para alcançar mais pessoas" : "Ajude compartilhando"}
@@ -126,33 +148,47 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
         {c.point && (
           <section aria-labelledby="mapa" className="flex flex-col gap-2">
             <h2 id="mapa" className="font-bold">
-              Último local conhecido
+              {visibleSightings.length ? "Mapa da busca" : "Último local conhecido"}
             </h2>
             <MapView
+              // Remonta quando chegam avistamentos novos (o mapa é estático).
+              key={visibleSightings.length}
               center={c.point}
               zoom={15}
-              pins={[{ id: c.code, kind: "lost", position: c.point, label: c.pet.name }]}
-              label={`Mapa: ${c.pet.name} visto por último perto de ${c.areaLabel ?? "este ponto"}`}
+              pins={[
+                { id: c.code, kind: "lost", position: c.point, label: `${c.pet.name}, último local conhecido` },
+                ...visibleSightings.map((s, i) => ({
+                  id: s.id,
+                  kind: "sighting" as const,
+                  position: s.position,
+                  label: `avistamento ${i + 1}, ${formatDateTimeBr(s.seenAt)}`,
+                })),
+              ]}
+              path={[c.point, ...visibleSightings.map((s) => s.position)]}
+              label={`Mapa: ${c.pet.name} visto por último perto de ${c.areaLabel ?? "este ponto"}${
+                visibleSightings.length ? ` e ${visibleSightings.length} avistamento(s)` : ""
+              }`}
             />
-            {!c.pointIsExact && <p className="text-sm text-text-secondary">Local aproximado (raio de cerca de 250 m).</p>}
+            <p className="text-sm text-text-secondary">
+              {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 250 m)"}. `}
+              {visibleSightings.length > 0 && "Pontos com olho (👁): avistamentos, ligados por linha tracejada em ordem de horário."}
+            </p>
           </section>
         )}
 
-        <section aria-labelledby="linha-do-tempo" className="flex flex-col gap-2">
-          <h2 id="linha-do-tempo" className="font-bold">
+        <section aria-labelledby="linha-do-tempo-titulo" id="linha-do-tempo" className="flex scroll-mt-4 flex-col gap-2">
+          <h2 id="linha-do-tempo-titulo" className="font-bold">
             Linha do tempo
           </h2>
-          <ol className="border-l-2 border-status-lost pl-4">
-            {c.lostAt && (
-              <li>
-                <p className="text-sm text-text-secondary">{formatDateTimeBr(c.lostAt)}</p>
-                <p className="font-semibold">
-                  {c.pet.name} visto(a) pela última vez{c.areaLabel ? ` perto de ${c.areaLabel}` : ""}.
-                </p>
-              </li>
-            )}
-          </ol>
+          <Timeline
+            petName={c.pet.name}
+            lastSeen={c.lostAt ? { at: c.lostAt, areaLabel: c.areaLabel } : null}
+            sightings={timeline}
+            isOwner={c.isOwner}
+          />
         </section>
+
+        {c.isOwner && user && <LiveSightings userId={user.id} code={c.code} />}
 
         <p className="text-sm text-text-secondary">
           MEL ID {c.pet.melId} · Alerta {c.code}

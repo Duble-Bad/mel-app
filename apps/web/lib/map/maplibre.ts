@@ -129,6 +129,17 @@ export const mapLibreProvider: MapProvider = {
         });
       },
 
+      fitTo(points: LatLng[], maxZoom = 16) {
+        if (points.length === 0) return;
+        if (points.length === 1) {
+          map.jumpTo({ center: [points[0]!.lng, points[0]!.lat], zoom: maxZoom });
+          return;
+        }
+        const bounds = new maplibre.LngLatBounds();
+        points.forEach((p) => bounds.extend([p.lng, p.lat]));
+        map.fitBounds(bounds, { padding: 48, maxZoom, duration: 0 });
+      },
+
       onMove(cb: (bbox: BBox) => void) {
         const listener = () => {
           const b = map.getBounds();

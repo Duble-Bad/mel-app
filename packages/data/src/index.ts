@@ -5,3 +5,5 @@ export * from "./profiles";
 export type { Database } from "./database.types";
 export * from "./pets";
 export * from "./lostCases";
+export * from "./sightings";
+export * from "./notifications";

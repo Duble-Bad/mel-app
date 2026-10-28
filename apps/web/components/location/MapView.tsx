@@ -10,12 +10,15 @@ export function MapView({
   center,
   zoom = 15,
   pins,
+  path,
   label,
   className = "h-56",
 }: {
   center: LatLng;
   zoom?: number;
   pins: MapPin[];
+  /** Caminho em ordem cronológica (linha tracejada). */
+  path?: LatLng[];
   label: string;
   className?: string;
 }) {
@@ -31,6 +34,8 @@ export function MapView({
       .then((map) => {
         if (cancelled) return map.destroy();
         map.setPins(pins);
+        if (path && path.length > 1) map.drawPath(path);
+        if (pins.length > 1) map.fitTo(pins.map((p) => p.position));
         destroy = () => map.destroy();
         setStatus("ready");
       })
