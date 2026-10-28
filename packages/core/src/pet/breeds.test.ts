@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { breedLabel, breedsFor, isValidBreed, normalizeBreed, searchBreeds, SRD } from "./breeds";
+import {
+  breedAliases,
+  breedLabel,
+  breedsFor,
+  isValidBreed,
+  normalizeBreed,
+  resolveBreed,
+  searchBreeds,
+  SRD,
+  SRD_LABEL,
+} from "./breeds";
 import { petInputSchema } from "./pet";
 
 describe("breed lists", () => {
@@ -43,6 +53,51 @@ describe("searchBreeds", () => {
     expect(searchBreeds(dogs, "york")[0]).toBe("Yorkshire Terrier");
     expect(searchBreeds(dogs, "pastor").every((b) => b.toLowerCase().includes("pastor"))).toBe(true);
     expect(searchBreeds(dogs, "salsicha")).toEqual(["Dachshund (Teckel/Salsicha)"]);
+  });
+});
+
+describe("aliases (one breed, one stored value)", () => {
+  const dogs = breedsFor("dog")!;
+  const cats = breedsFor("cat")!;
+
+  it("every alias points to a breed that exists in a list", () => {
+    for (const breed of [...dogs, ...cats]) {
+      for (const alias of breedAliases(breed)) expect(normalizeBreed(alias)).toBe(breed);
+    }
+    // nenhuma raça da lista tem apelido apontando para outra
+    const allAliases = [...dogs, ...cats].flatMap((b) => breedAliases(b).map((a) => a.toLowerCase()));
+    expect(new Set(allAliases).size).toBe(allAliases.length);
+  });
+
+  it("Yorkshire Terrier covers every Yorkshire name and size", () => {
+    for (const typed of ["Yorkshire", "yorkshire", "Yorkie", "Yorkshire micro", "Yorkshire mini", "Yorkshire toy", "yorkshire terrier"]) {
+      expect(resolveBreed("dog", typed)).toBe("Yorkshire Terrier");
+      expect(searchBreeds(dogs, typed)).toContain("Yorkshire Terrier");
+    }
+    expect(dogs.filter((b) => /yorkshire/i.test(b))).toEqual(["Yorkshire Terrier"]);
+    expect(dogs).toContain("Biewer Terrier"); // raça distinta, não é Yorkshire
+  });
+
+  it("resolves popular Brazilian names", () => {
+    expect(resolveBreed("dog", "labrador")).toBe("Labrador Retriever");
+    expect(resolveBreed("dog", "salsicha")).toBe("Dachshund (Teckel/Salsicha)");
+    expect(resolveBreed("dog", "pitbull")).toBe("American Pit Bull Terrier");
+    expect(resolveBreed("dog", "lulu")).toBe("Lulu da Pomerânia (Spitz Alemão Anão)");
+    expect(resolveBreed("dog", "vira-lata")).toBe(SRD);
+  });
+
+  it("does not guess ambiguous or wrong-species names", () => {
+    expect(resolveBreed("dog", "Poodle")).toBeNull(); // 4 tamanhos: escolher na lista
+    expect(resolveBreed("cat", "Yorkshire")).toBeNull();
+    expect(resolveBreed("dog", "Labradoodle")).toBeNull();
+  });
+
+  it("search for 'vira' finds the SRD option", () => {
+    expect(searchBreeds([SRD_LABEL], "vira")).toEqual([SRD_LABEL]);
+  });
+
+  it("the schema stores the canonical name for aliases", () => {
+    expect(petInputSchema.parse({ name: "Mel", species: "dog", breed: "Yorkie" }).breed).toBe("Yorkshire Terrier");
   });
 });
 

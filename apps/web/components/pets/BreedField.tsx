@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { breedsFor, searchBreeds, SRD, SRD_LABEL, type Species } from "@mel/core";
+import { breedsFor, resolveBreed, searchBreeds, SRD, SRD_LABEL, type Species } from "@mel/core";
 import { Combobox, type ComboboxOption } from "@/components/ui/Combobox";
 import { TextField } from "@/components/ui/Field";
 
@@ -71,6 +71,7 @@ export function BreedField({
       onChange={onChange}
       error={error}
       emptyText="Não encontramos essa raça. Se não tiver certeza, escolha “Sem raça definida”."
+      resolve={(typed) => resolveBreed(species, typed)}
     />
   );
 }

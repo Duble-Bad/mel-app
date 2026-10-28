@@ -101,6 +101,34 @@ test("typed text is never discarded silently when leaving the field", async ({ p
   await expect(page.getByText(/Não encontramos essa raça/)).toBeVisible();
 });
 
+test("Yorkshire Terrier covers every Yorkshire name (search and typing)", async ({ page }) => {
+  await openNewPetForm(page, "breed-york");
+  await pickSpecies(page, "Cachorro");
+
+  for (const query of ["york", "Yorkshire", "yorkie", "yorkshire micro"]) {
+    await breed(page).fill(query);
+    await expect(breedOptions(page)).toHaveText(["Yorkshire Terrier"]);
+  }
+
+  for (const typed of ["Yorkshire", "yorkie", "Yorkshire mini"]) {
+    await breed(page).fill(typed);
+    await page.getByLabel("Nome").click();
+    await expect(breed(page)).toHaveValue("Yorkshire Terrier");
+    await expect(page.getByText(/não está na lista/)).toHaveCount(0);
+    await page.getByRole("button", { name: "Limpar" }).click();
+  }
+
+  // "vira-lata" leva à opção fixa SRD.
+  await breed(page).fill("vira");
+  await expect(breedOptions(page).first()).toHaveText("Sem raça definida (SRD)");
+
+  // Nome ambíguo continua pedindo escolha: Poodle tem 4 tamanhos.
+  await breed(page).fill("Poodle");
+  await expect(breedOptions(page)).toHaveCount(4);
+  await page.getByLabel("Nome").click();
+  await expect(page.getByText("“Poodle” não está na lista. Escolha uma das opções.")).toBeVisible();
+});
+
 test("clear button empties the breed", async ({ page }) => {
   await openNewPetForm(page, "breed-clear");
   await pickSpecies(page, "Cachorro");

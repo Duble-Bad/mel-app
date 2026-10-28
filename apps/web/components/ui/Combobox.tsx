@@ -21,6 +21,8 @@ interface ComboboxProps {
   value: string | null;
   onChange: (value: string | null) => void;
   emptyText?: string;
+  /** Converte texto digitado em uma opção (apelidos, variações). Padrão: nome exato. */
+  resolve?: (typed: string) => string | null;
 }
 
 /**
@@ -39,6 +41,7 @@ export function Combobox({
   value,
   onChange,
   emptyText = "Nada encontrado.",
+  resolve,
 }: ComboboxProps) {
   const id = useId();
   const listId = `${id}-list`;
@@ -71,7 +74,9 @@ export function Combobox({
     setOpen(false);
     setQuery("");
     if (!typed) return;
-    const exact = all.find((o) => fold(o.label) === fold(typed));
+    const resolved = resolve?.(typed);
+    const exact =
+      all.find((o) => o.value === resolved) ?? all.find((o) => fold(o.label) === fold(typed));
     if (exact) choose(exact);
     else setNotice(`“${typed}” não está na lista. Escolha uma das opções.`);
   }

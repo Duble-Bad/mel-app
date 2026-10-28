@@ -289,6 +289,46 @@ const CAT_BREEDS = [
   "Van Turco",
 ] as const;
 
+/**
+ * Apelidos populares → nome da lista. Uma raça, um valor salvo: "Yorkshire",
+ * "Yorkie" e "Yorkshire micro" são todos o Yorkshire Terrier (variações de
+ * tamanho não são raças). Só entram apelidos sem ambiguidade — "Poodle"
+ * (4 tamanhos) continua exigindo escolha na lista.
+ */
+const BREED_ALIASES: Record<string, readonly string[]> = {
+  // Para a busca achar a opção fixa "Sem raça definida (SRD)".
+  [SRD_LABEL]: ["Vira-lata", "Viralata", "Mestiço", "Sem raça"],
+  "Yorkshire Terrier": ["Yorkshire", "Yorkie", "Yorkshire mini", "Yorkshire micro", "Yorkshire toy"],
+  "Labrador Retriever": ["Labrador"],
+  "Golden Retriever": ["Golden"],
+  "Husky Siberiano": ["Husky"],
+  "American Pit Bull Terrier": ["Pit Bull", "Pitbull"],
+  "Dachshund (Teckel/Salsicha)": ["Dachshund", "Teckel", "Salsicha", "Linguicinha"],
+  "Lulu da Pomerânia (Spitz Alemão Anão)": ["Lulu da Pomerânia", "Lulu", "Spitz Alemão Anão", "Pomerânia"],
+  "Pinscher Miniatura": ["Pinscher"],
+  "Shih Tzu": ["Shih-tzu", "Shitzu"],
+  "Bulldog Francês": ["Buldogue Francês"],
+  "Bulldog Inglês": ["Buldogue Inglês"],
+  "Pastor Belga Malinois": ["Malinois"],
+  "Dogue Alemão": ["Dog Alemão", "Great Dane"],
+  "Boiadeiro Australiano": ["Blue Heeler", "Red Heeler"],
+  "Terrier Brasileiro (Fox Paulistinha)": ["Terrier Brasileiro", "Fox Paulistinha"],
+  "Cão Pelado Mexicano (Xoloitzcuintle)": ["Xoloitzcuintle", "Xolo"],
+  "Old English Sheepdog (Bobtail)": ["Bobtail"],
+  "Galgo Inglês (Greyhound)": ["Greyhound"],
+  "Bloodhound (Cão de Santo Humberto)": ["Bloodhound"],
+  "Exótico (Exotic Shorthair)": ["Exótico", "Exotic"],
+};
+
+const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
+
+const ALIAS_TO_BREED = new Map<string, string>(
+  Object.entries(BREED_ALIASES).flatMap(([breed, aliases]) => aliases.map((a) => [fold(a), breed] as const)),
+);
+
+/** Apelidos de uma raça (para a busca). */
+export const breedAliases = (breed: string): readonly string[] => BREED_ALIASES[breed] ?? [];
+
 const collator = new Intl.Collator("pt-BR", { sensitivity: "base" });
 const sorted = (list: readonly string[]) => [...list].sort(collator.compare);
 
@@ -305,13 +345,26 @@ export function breedsFor(species: Species | null | undefined): readonly string[
 /** Texto exibido para um valor salvo. */
 export const breedLabel = (breed: string | null | undefined) => (breed === SRD ? SRD_LABEL : (breed ?? ""));
 
-/** Variações comuns digitadas para "sem raça" viram o valor canônico. */
+/** Variações de "sem raça" e apelidos populares viram o valor da lista. */
 export function normalizeBreed(value: string | null): string | null {
   if (value == null) return null;
   const v = value.trim();
   if (!v) return null;
   if (/^(srd|sem ra[cç]a( definida)?(\s*\(srd\))?|vira[\s-]?lata|mesti[cç]o)$/i.test(v)) return SRD;
-  return v;
+  return ALIAS_TO_BREED.get(fold(v)) ?? v;
+}
+
+/**
+ * Texto digitado → raça da lista, quando não há dúvida: nome exato (sem
+ * acento/maiúscula), apelido conhecido ou variação de SRD. Senão, null.
+ */
+export function resolveBreed(species: Species, typed: string): string | null {
+  const normalized = normalizeBreed(typed);
+  if (!normalized) return null;
+  if (normalized === SRD) return SRD;
+  const list = breedsFor(species);
+  if (!list) return normalized;
+  return list.find((b) => fold(b) === fold(normalized)) ?? null;
 }
 
 /** Valor aceito para a espécie: da lista, SRD ou (para "outro") texto livre. */
@@ -320,17 +373,19 @@ export function isValidBreed(species: Species, breed: string): boolean {
   return breed === SRD || !list || list.includes(breed);
 }
 
-/** Busca sem acento e sem diferenciar maiúsculas: "sao bern" encontra "São Bernardo". */
+/**
+ * Busca sem acento e sem diferenciar maiúsculas, também pelos apelidos:
+ * "sao bern" → São Bernardo; "yorkie" → Yorkshire Terrier.
+ */
 export function searchBreeds(list: readonly string[], query: string): string[] {
-  const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-  const q = fold(query.trim());
+  const q = fold(query);
   if (!q) return [...list];
   const starts: string[] = [];
   const contains: string[] = [];
   for (const breed of list) {
-    const b = fold(breed);
-    if (b.startsWith(q)) starts.push(breed);
-    else if (b.includes(q)) contains.push(breed);
+    const names = [breed, ...breedAliases(breed)].map(fold);
+    if (names.some((n) => n.startsWith(q))) starts.push(breed);
+    else if (names.some((n) => n.includes(q))) contains.push(breed);
   }
   return [...starts, ...contains];
 }
