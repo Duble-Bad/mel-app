@@ -237,6 +237,7 @@ export type Database = {
           public_area_label: string | null
           public_lat: number | null
           public_lng: number | null
+          public_point: unknown
           reporter_id: string
           sex: Database["public"]["Enums"]["pet_sex"]
           short_code: string
@@ -263,6 +264,7 @@ export type Database = {
           public_area_label?: string | null
           public_lat?: number | null
           public_lng?: number | null
+          public_point?: unknown
           reporter_id: string
           sex?: Database["public"]["Enums"]["pet_sex"]
           short_code?: string
@@ -289,6 +291,7 @@ export type Database = {
           public_area_label?: string | null
           public_lat?: number | null
           public_lng?: number | null
+          public_point?: unknown
           reporter_id?: string
           sex?: Database["public"]["Enums"]["pet_sex"]
           short_code?: string
@@ -942,6 +945,19 @@ export type Database = {
           p_reason: Database["public"]["Enums"]["report_reason"]
         }
         Returns: string
+      }
+      search_public_cases: {
+        Args: {
+          p_kinds?: string[]
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_offset?: number
+          p_radius_m?: number
+          p_since?: string
+          p_species?: Database["public"]["Enums"]["species"][]
+        }
+        Returns: Json
       }
       set_conversation_block: {
         Args: { p_blocked: boolean; p_id: string }

@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight, Map as MapIcon } from "lucide-react";
 import { Suspense } from "react";
 import { BrandStory } from "@/components/brand/BrandStory";
 import { HelpActions } from "@/components/home/HelpActions";
@@ -13,6 +15,16 @@ export default function HomePage() {
           Como podemos ajudar?
         </h2>
         <HelpActions />
+        <Link
+          href="/mapa"
+          className="mt-4 flex min-h-14 items-center justify-between gap-3 rounded-card border border-border/70 bg-surface px-4 shadow-xs transition-colors hover:bg-surface-muted"
+        >
+          <span className="flex items-center gap-3 font-semibold">
+            <MapIcon aria-hidden="true" className="size-5 text-brand" strokeWidth={2} />
+            Ver o mapa da rede MEL
+          </span>
+          <ArrowRight aria-hidden="true" className="size-4 text-text-secondary" strokeWidth={2} />
+        </Link>
       </section>
 
       <div className="mt-12">

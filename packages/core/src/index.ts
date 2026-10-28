@@ -12,3 +12,4 @@ export * from "./poster/poster";
 export * from "./chat/chat";
 export * from "./found/found";
 export * from "./found/match";
+export * from "./map/search";

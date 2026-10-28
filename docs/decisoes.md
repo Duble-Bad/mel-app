@@ -83,4 +83,10 @@ Formato: data — decisão — motivo.
 - **2026-10-29 — Cada lado dispensa a correspondência só para si ("Não é o meu pet" / "Não é este animal").**
 - **2026-10-29 — Página do encontrado sem conversa direta com quem encontrou para quem não tem alerta.** O caminho é publicar o alerta, que o Radar cruza na hora e avisa os dois. Evita chat anônimo sem contexto (golpe).
 - **2026-10-29 — Pendente: converter a sessão anônima em conta por e-mail (E7).** Depende do domínio + SMTP. Até lá, quem publica sem conta vê respostas no mesmo aparelho (🔔 e 💬).
+- **2026-10-29 — Uma função pública (`search_public_cases`) alimenta o mapa e as listas.** Une perdidos, encontrados e vistos soltos, com filtros de tipo, espécie, período e raio, distância e total para paginar. Usa só pontos aproximados.
+- **2026-10-29 — Filtros no endereço (`?tipos=&especie=&periodo=&raio=&lat=&lng=&pagina=`).** Dá para compartilhar o link já filtrado; valores inválidos viram o padrão. O centro vai arredondado (5 casas) no link. Sem localização, o centro padrão é o da cidade (Praça da Sé, local público), com convite para "Perto de mim". A localização só é pedida ao tocar.
+- **2026-10-29 — Mapa com lista acessível ao lado.** Pinos não são navegáveis para todo mundo: a lista com os mesmos casos fica abaixo do mapa (celular) ou ao lado (desktop). Tocar no pino abre um cartão que sobe do rodapé.
+- **2026-10-29 — Casos na mesma célula de 250 m são abertos num círculo de ~120 m, só na tela.** Senão os pinos se empilham e só o de cima é clicável. Não revela nada além da região aproximada.
+- **2026-10-29 — Mapa no tema escuro usa o estilo escuro do MapTiler (`MapOptions.theme`).**
+- **2026-10-29 — Duas armadilhas achadas na revisão visual.** (1) O CSS do MapLibre põe `position: relative` no elemento do mapa e anula `absolute inset-0`: o mapa ficava com altura zero. Agora ele fica num contêiner próprio. (2) Toques rápidos nos filtros apagavam o toque anterior; a barra guarda o filtro pendente até o servidor responder.
 

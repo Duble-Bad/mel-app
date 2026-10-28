@@ -9,3 +9,4 @@ export * from "./sightings";
 export * from "./notifications";
 export * from "./chat";
 export * from "./found";
+export * from "./publicMap";

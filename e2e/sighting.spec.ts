@@ -63,7 +63,8 @@ test("a visitor WITHOUT an account reports a sighting; the tutor sees it live, o
   await expect(tutorPage.getByTestId("timeline-sighting")).toHaveCount(1);
   await expect(tutorPage.getByTestId("timeline-sighting")).toContainText("Correndo, assustado · seguia para o Norte");
   await expect(tutorPage.getByTestId("timeline-sighting")).toContainText("Entrou na rua de trás da igreja.");
-  await expect(tutorPage.getByTestId("unread-count")).toHaveText("1");
+  // ≥ 1: o Radar MEL pode somar avisos de outros testes rodando em paralelo na mesma região.
+  await expect(tutorPage.getByTestId("unread-count")).toHaveText(/^[1-9]/);
 
   // Mapa com o ponto do avistamento ligado ao último local conhecido.
   await expect(tutorPage.getByRole("button", { name: /Avistamento: avistamento 1/ })).toBeVisible();

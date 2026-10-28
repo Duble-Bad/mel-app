@@ -18,7 +18,7 @@ test("'Encontrei um cachorro na rua': no account → Radar finds the lost Yorksh
   page: tutorPage,
 }) => {
   test.setTimeout(180_000);
-  const tutor = await createTutorWithActiveAlert("found-e2e", { petName: "Mel", breed: "Yorkshire Terrier", withPhoto: true });
+  const tutor = await createTutorWithActiveAlert("found-e2e", { petName: "Amora", breed: "Yorkshire Terrier", withPhoto: true });
   created.push(tutor.email);
 
   // 1. Quem encontrou: navegador limpo, sem conta, começa pela home.
@@ -63,17 +63,17 @@ test("'Encontrei um cachorro na rua': no account → Radar finds the lost Yorksh
   await expect(finder).toHaveURL(/\/encontrado\/[a-z2-9]{6}\?novo=1$/, { timeout: 30_000 });
   const foundPath = new URL(finder.url()).pathname;
   await expect(finder.getByText("Publicado.")).toBeVisible();
-  const card = finder.getByTestId("match-card");
+  // Outros testes em paralelo também têm cachorros perdidos na Sé: filtra pelo alerta deste teste.
+  const card = finder.getByTestId("match-card").filter({ hasText: "Amora · perdido" });
   await expect(card).toHaveCount(1);
   await expect(card).toContainText(/Possível correspondência · \d+%/);
-  await expect(card).toContainText("Mel · perdido");
   await expect(card).toContainText("mesmo porte");
   // A prova de posse: só quem encontrou vê.
   await expect(finder.getByText("Mancha branca no peito")).toBeVisible();
 
   // 3. Quem encontrou fala com o tutor pelo chat (sem expor telefone).
   await card.getByRole("link", { name: "Falar com o tutor" }).click();
-  await finder.getByLabel("Sua mensagem").fill("Encontrei uma Yorkshire parecida com a Mel, está comigo e bem!");
+  await finder.getByLabel("Sua mensagem").fill("Encontrei uma Yorkshire parecida com a Amora, está comigo e bem!");
   await finder.getByRole("button", { name: "Enviar mensagem" }).click();
   await expect(finder).toHaveURL(/\/conversas\//, { timeout: 30_000 });
 
@@ -82,11 +82,11 @@ test("'Encontrei um cachorro na rua': no account → Radar finds the lost Yorksh
   await tutorPage.getByLabel("E-mail").fill(tutor.email);
   await tutorPage.getByLabel("Senha", { exact: true }).fill(TEST_PASSWORD);
   await tutorPage.getByRole("button", { name: "Entrar" }).click();
-  await expect(tutorPage.getByText("Radar MEL: possível correspondência para Mel")).toBeVisible();
-  await tutorPage.getByText("Radar MEL: possível correspondência para Mel").click();
+  await expect(tutorPage.getByText("Radar MEL: possível correspondência para Amora").first()).toBeVisible();
+  await tutorPage.getByText("Radar MEL: possível correspondência para Amora").first().click();
   await expect(tutorPage).toHaveURL(/\/perfil\/correspondencias$/);
-  const ownerCard = tutorPage.getByTestId("match-card");
-  await expect(ownerCard).toHaveCount(1);
+  const ownerCard = tutorPage.getByTestId("match-card").filter({ has: tutorPage.locator(`a[href="${foundPath}"]`) });
+  await expect(ownerCard).toBeVisible();
   await ownerCard.getByRole("link", { name: "Ver o animal encontrado" }).click();
   await expect(tutorPage).toHaveURL(new RegExp(`${foundPath}$`));
   await expect(tutorPage.getByRole("heading", { name: "Animal encontrado" })).toBeVisible();
@@ -94,7 +94,9 @@ test("'Encontrei um cachorro na rua': no account → Radar finds the lost Yorksh
   await expect(tutorPage.getByText("Está com quem encontrou")).toBeVisible();
 
   await tutorPage.goBack();
-  await tutorPage.getByTestId("match-card").getByRole("button", { name: "Falar com quem encontrou" }).click();
+  // A correspondência deste teste é a que aponta para o encontrado publicado acima.
+  const mine = tutorPage.getByTestId("match-card").filter({ has: tutorPage.locator(`a[href="${foundPath}"]`) });
+  await mine.getByRole("button", { name: "Falar com quem encontrou" }).click();
   await expect(tutorPage).toHaveURL(/\/conversas\//);
   await expect(tutorPage.getByTestId("chat-message")).toContainText("está comigo e bem");
 
