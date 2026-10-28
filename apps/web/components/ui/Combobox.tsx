@@ -56,10 +56,24 @@ export function Combobox({
     return [...pinnedMatches, ...matches];
   }, [filter, options, pinned, query]);
 
+  const [notice, setNotice] = useState<string | null>(null);
+
   function choose(option: ComboboxOption) {
     onChange(option.value);
     setQuery("");
+    setNotice(null);
     setOpen(false);
+  }
+
+  /** Ao sair do campo: texto igual a uma opção é aceito; qualquer outro texto gera aviso — nunca some em silêncio. */
+  function commitTyped() {
+    const typed = query.trim();
+    setOpen(false);
+    setQuery("");
+    if (!typed) return;
+    const exact = all.find((o) => fold(o.label) === fold(typed));
+    if (exact) choose(exact);
+    else setNotice(`“${typed}” não está na lista. Escolha uma das opções.`);
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -77,6 +91,7 @@ export function Combobox({
     } else if (e.key === "Escape") {
       setOpen(false);
       setQuery("");
+      setNotice(null);
     }
   }
 
@@ -113,15 +128,13 @@ export function Combobox({
             setQuery(e.target.value);
             setActive(0);
             setOpen(true);
+            setNotice(null);
           }}
           onFocus={() => {
             setOpen(true);
             setActive(0);
           }}
-          onBlur={() => {
-            setOpen(false);
-            setQuery("");
-          }}
+          onBlur={commitTyped}
           onKeyDown={onKeyDown}
           className={`block min-h-12 w-full rounded-md border-2 bg-surface py-2 pr-24 pl-4 text-base focus:border-focus focus:outline-none ${
             error ? "border-danger" : "border-border-strong"
@@ -163,7 +176,9 @@ export function Combobox({
                   e.preventDefault();
                   choose(option);
                 }}
-                onMouseEnter={() => setActive(i)}
+                // mousemove (não mouseenter): a lista abrir sob o cursor parado
+                // não pode trocar a opção destacada para o teclado.
+                onMouseMove={() => setActive(i)}
                 className={`flex min-h-11 cursor-pointer items-center px-4 ${
                   i === active ? "bg-surface-muted" : ""
                 } ${option.value === value ? "font-semibold text-brand-primary" : ""} ${
@@ -176,6 +191,11 @@ export function Combobox({
           </ul>
         )}
       </div>
+      {notice && !error && (
+        <p role="alert" className="text-sm font-medium text-danger">
+          {notice}
+        </p>
+      )}
       {error && (
         <p id={errorId} className="text-sm font-medium text-danger">
           {error}
@@ -184,3 +204,5 @@ export function Combobox({
     </div>
   );
 }
+
+const fold = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
