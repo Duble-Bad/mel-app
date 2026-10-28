@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BR_STATES, type BrState } from "../profile/profile";
+import { isValidBreed, normalizeBreed } from "./breeds";
 
 export const SPECIES = ["dog", "cat", "other"] as const;
 export const PET_SEXES = ["male", "female", "unknown"] as const;
@@ -115,7 +116,7 @@ export const petInputSchema = z
   .object({
     name: z.string().trim().min(1, "Qual é o nome do seu pet?").max(60, "Use no máximo 60 caracteres."),
     species: z.enum(SPECIES, { error: "Escolha cachorro, gato ou outro." }),
-    breed: optionalText(80, "Use no máximo 80 caracteres."),
+    breed: optionalText(80, "Use no máximo 80 caracteres.").transform(normalizeBreed),
     sex: z.enum(PET_SEXES).default("unknown"),
     birthDate: z.iso
       .date("Data inválida.")
@@ -139,6 +140,11 @@ export const petInputSchema = z
     city: optionalText(80, "Use no máximo 80 caracteres."),
     state: z.enum(UFS).nullable().default(null),
     isPublic: z.boolean().default(false),
+  })
+  .superRefine((pet, ctx) => {
+    if (pet.breed && !isValidBreed(pet.species, pet.breed)) {
+      ctx.addIssue({ code: "custom", path: ["breed"], message: "Escolha uma raça da lista ou “Sem raça definida”." });
+    }
   })
   .transform((pet) => ({
     ...pet,
@@ -185,10 +191,11 @@ export function describeAge(
   return `${prefix}${years} ${years === 1 ? "ano" : "anos"}`;
 }
 
-/** "Cachorro · SRD · Fêmea · Pequeno" — resumo usado em cards e cartazes. */
+/** "Cachorro · Yorkshire Terrier · Fêmea · Mini" — resumo usado em cards e cartazes. */
 export function petSummary(pet: Pick<Pet, "species" | "breed" | "sex" | "size">): string {
   return [
     SPECIES_LABELS[pet.species],
+    // No resumo compacto, "SRD" basta; o rótulo longo aparece na página do pet.
     pet.breed,
     pet.sex !== "unknown" ? SEX_LABELS[pet.sex] : null,
     pet.size ? SIZE_LABELS[pet.size].label : null,

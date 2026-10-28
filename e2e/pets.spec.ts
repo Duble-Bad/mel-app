@@ -32,7 +32,10 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   await page.getByRole("radio", { name: "Cachorro" }).check({ force: true });
   await page.getByRole("radio", { name: "Fêmea" }).check({ force: true });
   await page.getByRole("radio", { name: /Mini/ }).check({ force: true });
-  await page.getByRole("textbox", { name: /^Raça/ }).fill("Yorkshire");
+  // Lista com busca: digitar parte do nome e escolher a opção.
+  await page.getByRole("combobox", { name: /^Raça/ }).fill("york");
+  await page.getByRole("option", { name: "Yorkshire Terrier" }).click();
+  await expect(page.getByRole("combobox", { name: /^Raça/ })).toHaveValue("Yorkshire Terrier");
   await page.getByRole("group", { name: /Cor principal/ }).getByRole("radio", { name: "Caramelo" }).check({ force: true });
   await page.getByLabel("Peso aproximado (kg)").fill("2,8");
   await page.getByLabel("Sinais que só você conhece").fill("Mancha clara na barriga (teste)");
@@ -51,7 +54,7 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   // dono) escondida no DOM para o "voltar". Recarregar isola a página pública.
   await page.reload();
   await expect(page.getByRole("heading", { name: "Mel", level: 1 })).toBeVisible();
-  await expect(page.getByText("Cachorro · Yorkshire · Fêmea · Mini")).toBeVisible();
+  await expect(page.getByText("Cachorro · Yorkshire Terrier · Fêmea · Mini")).toBeVisible();
   await expect(page.getByText("2,8 kg")).toBeVisible();
   await expect(page.getByRole("img", { name: "Foto de Mel" })).toBeVisible();
   await expect(page.getByText("Mancha clara na barriga")).toHaveCount(0);
@@ -101,11 +104,13 @@ test("tutor edits a pet and then deletes it after confirming", async ({ page }) 
   await page.getByRole("button", { name: "Cadastrar pet" }).click();
   await expect(page.getByText("Nina está cadastrado(a) na MEL.")).toBeVisible();
 
-  await page.getByRole("textbox", { name: /^Raça/ }).fill("SRD");
+  // "Sem raça definida" fica fixa no topo da lista.
+  await page.getByRole("combobox", { name: /^Raça/ }).click();
+  await page.getByRole("option", { name: "Sem raça definida (SRD)" }).click();
   await page.getByRole("radio", { name: /Pequeno/ }).check({ force: true });
   await page.getByRole("button", { name: "Salvar alterações" }).click();
   await expect(page.getByText("Alterações salvas.")).toBeVisible();
-  await expect(page.getByRole("textbox", { name: /^Raça/ })).toHaveValue("SRD");
+  await expect(page.getByRole("combobox", { name: /^Raça/ })).toHaveValue("Sem raça definida (SRD)");
 
   await page.goto("/perfil");
   await expect(page.getByText("Gato · SRD · Pequeno")).toBeVisible();

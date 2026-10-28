@@ -6,6 +6,7 @@ import {
   AGE_OPTIONS,
   BR_STATES,
   fieldErrors,
+  isValidBreed,
   parseDecimal,
   PET_COLORS,
   PET_SEXES,
@@ -37,6 +38,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ChoiceGroup, MultiChoiceGroup, YesNoUnknown } from "@/components/ui/Choice";
 import { SelectField, TextField } from "@/components/ui/Field";
+import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
 
 interface PetFormProps {
@@ -60,7 +62,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
   const [species, setSpecies] = useState<Species | null>(pet?.species ?? null);
   const [sex, setSex] = useState<PetSex>(pet?.sex ?? "unknown");
   const [size, setSize] = useState<PetSize | null>(pet?.size ?? null);
-  const [breed, setBreed] = useState(pet?.breed ?? "");
+  const [breed, setBreed] = useState<string | null>(pet?.breed ?? null);
   const [colorPrimary, setColorPrimary] = useState<PetColor | null>(pet?.colorPrimary ?? null);
   const [colorsSecondary, setColorsSecondary] = useState<PetColor[]>(pet?.colorsSecondary ?? []);
   const [uniqueMarks, setUniqueMarks] = useState(pet?.uniqueMarks ?? "");
@@ -196,7 +198,11 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             name="species"
             legend="Espécie"
             value={species}
-            onChange={setSpecies}
+            onChange={(next) => {
+              setSpecies(next);
+              // Raça de cachorro não serve para gato (e vice-versa).
+              if (breed && !isValidBreed(next, breed)) setBreed(null);
+            }}
             error={errors.species}
             options={SPECIES.map((s) => ({ value: s, label: SPECIES_LABELS[s] }))}
           />
@@ -222,15 +228,9 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
         <h2 id="sec-aparencia" className="text-lg font-bold">
           Como reconhecer
         </h2>
-        <TextField
-          label="Raça"
-          name="breed"
-          optional
-          hint='Se não tiver raça definida, escreva "SRD" (sem raça definida).'
-          value={breed}
-          onChange={(e) => setBreed(e.target.value)}
-          error={errors.breed}
-        />
+        <div id="field-breed">
+          <BreedField species={species} value={breed} onChange={setBreed} error={errors.breed} />
+        </div>
         <ChoiceGroup
           name="colorPrimary"
           legend="Cor principal"

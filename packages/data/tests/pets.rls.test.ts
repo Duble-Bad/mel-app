@@ -68,9 +68,9 @@ describe("pets", () => {
     const edited = await updatePet(
       tutor.client,
       privatePet.id,
-      petInputSchema.parse({ name: "Mel", species: "dog", breed: "Yorkshire", size: "mini" }),
+      petInputSchema.parse({ name: "Mel", species: "dog", breed: "Yorkshire Terrier", size: "mini" }),
     );
-    expect(edited.breed).toBe("Yorkshire");
+    expect(edited.breed).toBe("Yorkshire Terrier");
 
     await expect(
       updatePet(stranger.client, privatePet.id, petInputSchema.parse({ name: "Roubado", species: "dog" })),

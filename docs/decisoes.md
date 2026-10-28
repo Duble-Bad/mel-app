@@ -20,6 +20,7 @@ Formato: data — decisão — motivo.
 - **2026-10-28 — Página do pet privada por padrão.** O cadastro preventivo é do tutor; a página `/pet/[MEL-ID]` só fica pública se ele quiser (ex.: plaquinha com QR). Um alerta de desaparecimento publica o pet independentemente disso (M5).
 - **2026-10-28 — MEL ID `MEL-XXXXXX` sem caracteres ambíguos (0/O, 1/I/L).** Legível em cartaz e ditável por telefone; gerado no banco, não editável.
 - **2026-10-28 — Dados de prova de posse em `pet_private_details`, tabela separada.** Nenhuma consulta a `pets` consegue vazá-los; nem a moderação lê por padrão.
+- **2026-10-28 — Raças em lista fechada com busca (cães ~230, gatos ~58) + "Sem raça definida (SRD)" fixo no topo.** Pedido do produto. Lista com busca (combobox ARIA) em vez de `<select>`: com centenas de opções, digitar 3 letras é mais rápido que rolar no celular. Valor salvo = nome da lista (SRD salvo como `SRD`); variações como "vira-lata" são normalizadas. Espécie "Outro" mantém texto livre. Para incluir raças: `packages/core/src/pet/breeds.ts`.
 - **2026-10-28 — Cores em vocabulário fechado (`PET_COLORS`).** Cadastro mais rápido e comparação confiável no Radar MEL (M10).
 - **2026-10-28 — Fotos em bucket público com caminho UUID + miniatura de 400px.** Imagens servidas rápido pela CDN; nomes não adivinháveis; a miniatura economiza dados em listas e mapa. Fotos de pet privado ficam acessíveis só a quem tiver a URL exata.
 - **2026-10-28 — Testes E2E: 3 workers e espera de 15 s.** Os testes falam com o Supabase remoto; 5 s gerava falsos negativos com o servidor frio.

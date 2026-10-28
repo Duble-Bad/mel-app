@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import {
   BR_STATES,
+  breedLabel,
   colorLabel,
   describeAge,
   isMelId,
@@ -128,6 +129,7 @@ function Facts({ pet }: { pet: Pet }) {
   const colors = [pet.colorPrimary, ...pet.colorsSecondary].filter(Boolean).map(colorLabel).join(", ");
   const stateName = BR_STATES.find((s) => s.uf === pet.state)?.uf;
   const rows: [string, string | null][] = [
+    ["Raça", pet.breed ? breedLabel(pet.breed) : null],
     ["Idade", age],
     ["Porte", pet.size ? `${SIZE_LABELS[pet.size].label} (${SIZE_LABELS[pet.size].hint})` : null],
     ["Peso", pet.weightKg ? `${String(pet.weightKg).replace(".", ",")} kg` : null],

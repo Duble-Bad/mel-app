@@ -19,7 +19,7 @@ const DEMO_USERS = [
       {
         name: "Mel",
         species: "dog",
-        breed: "Yorkshire",
+        breed: "Yorkshire Terrier",
         sex: "female",
         size: "mini",
         weight_kg: 2.8,
