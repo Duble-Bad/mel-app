@@ -1,0 +1,26 @@
+import { defineConfig, devices } from "@playwright/test";
+
+const PORT = 3100;
+const isCI = !!process.env.CI;
+
+export default defineConfig({
+  testDir: "e2e",
+  fullyParallel: true,
+  forbidOnly: isCI,
+  retries: isCI ? 1 : 0,
+  reporter: isCI ? "github" : "list",
+  use: {
+    baseURL: `http://localhost:${PORT}`,
+    locale: "pt-BR",
+    timezoneId: "America/Sao_Paulo",
+    trace: "retain-on-failure",
+  },
+  // Mobile-first: o fluxo principal é validado num celular mediano.
+  projects: [{ name: "mobile", use: { ...devices["Pixel 7"] } }],
+  webServer: {
+    command: isCI ? `npm run build -w web && npm run start -w web -- -p ${PORT}` : `npm run dev -w web -- -p ${PORT}`,
+    url: `http://localhost:${PORT}/api/health`,
+    reuseExistingServer: !isCI,
+    timeout: 180_000,
+  },
+});

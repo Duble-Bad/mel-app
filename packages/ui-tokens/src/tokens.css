@@ -1,0 +1,38 @@
+/*
+ * Design tokens da MEL — espelho de tokens.ts (validado por teste).
+ * Nunca use hex direto em componentes: use as classes geradas
+ * (bg-brand-primary, text-status-lost, border-border…).
+ */
+:root {
+  --mel-brand-primary: #8a4510;
+  --mel-brand-primary-hover: #6f370c;
+  --mel-brand-on-primary: #ffffff;
+  --mel-brand-secondary: #f6e7d2;
+  --mel-brand-on-secondary: #4a2508;
+
+  --mel-status-lost: #b42d22;
+  --mel-status-lost-soft: #fbe9e7;
+  --mel-status-found: #23704a;
+  --mel-status-found-soft: #e5f3eb;
+  --mel-status-sighting: #8a5a00;
+  --mel-status-sighting-soft: #fdf1d6;
+  --mel-status-adoption: #a6305f;
+  --mel-status-adoption-soft: #fae8ef;
+
+  --mel-success: #23704a;
+  --mel-warning: #8a5a00;
+  --mel-danger: #b42318;
+  --mel-info: #1f5f99;
+
+  --mel-background: #fbf8f4;
+  --mel-surface: #ffffff;
+  --mel-surface-muted: #f3ede6;
+  --mel-border: #e3d9ce;
+  --mel-border-strong: #b9ab9c;
+
+  --mel-text-primary: #1f1a16;
+  --mel-text-secondary: #5a5048;
+  --mel-text-inverse: #ffffff;
+
+  --mel-focus: #1f5f99;
+}

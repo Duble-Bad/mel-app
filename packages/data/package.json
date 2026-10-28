@@ -1,0 +1,22 @@
+{
+  "name": "@mel/data",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Acesso a dados da MEL (Supabase). Implementa os ports de @mel/core.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:db": "vitest run --config vitest.db.config.ts"
+  },
+  "dependencies": {
+    "@mel/core": "*",
+    "@supabase/supabase-js": "^2.118.0"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}

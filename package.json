@@ -1,0 +1,32 @@
+{
+  "name": "mel",
+  "private": true,
+  "description": "MEL — Movimento de Encontro e Localização. Uma rede inteira procurando com você.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "dev": "npm run dev -w web",
+    "build": "npm run build -w web",
+    "start": "npm run start -w web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "test:db": "npm run test:db -w @mel/data",
+    "test:e2e": "playwright test",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "db:push": "supabase db push --linked",
+    "db:types": "supabase gen types typescript --linked --schema public > packages/data/src/database.types.ts",
+    "env:pull": "node scripts/pull-supabase-env.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^20",
+    "supabase": "^2.122.0",
+    "typescript": "^5"
+  }
+}

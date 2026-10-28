@@ -1,0 +1,76 @@
+@import "tailwindcss";
+@import "@mel/ui-tokens/tokens.css";
+
+/* Tokens → utilitários Tailwind (bg-brand-primary, text-status-lost, …).
+   Hex codes só existem em packages/ui-tokens. */
+@theme inline {
+  --color-*: initial;
+  --color-brand-primary: var(--mel-brand-primary);
+  --color-brand-primary-hover: var(--mel-brand-primary-hover);
+  --color-brand-on-primary: var(--mel-brand-on-primary);
+  --color-brand-secondary: var(--mel-brand-secondary);
+  --color-brand-on-secondary: var(--mel-brand-on-secondary);
+
+  --color-status-lost: var(--mel-status-lost);
+  --color-status-lost-soft: var(--mel-status-lost-soft);
+  --color-status-found: var(--mel-status-found);
+  --color-status-found-soft: var(--mel-status-found-soft);
+  --color-status-sighting: var(--mel-status-sighting);
+  --color-status-sighting-soft: var(--mel-status-sighting-soft);
+  --color-status-adoption: var(--mel-status-adoption);
+  --color-status-adoption-soft: var(--mel-status-adoption-soft);
+
+  --color-success: var(--mel-success);
+  --color-warning: var(--mel-warning);
+  --color-danger: var(--mel-danger);
+  --color-info: var(--mel-info);
+
+  --color-background: var(--mel-background);
+  --color-surface: var(--mel-surface);
+  --color-surface-muted: var(--mel-surface-muted);
+  --color-border: var(--mel-border);
+  --color-border-strong: var(--mel-border-strong);
+
+  --color-text-primary: var(--mel-text-primary);
+  --color-text-secondary: var(--mel-text-secondary);
+  --color-text-inverse: var(--mel-text-inverse);
+
+  --color-focus: var(--mel-focus);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-card: 0 1px 2px rgb(31 26 22 / 0.06), 0 2px 8px rgb(31 26 22 / 0.04);
+}
+
+html {
+  background: var(--mel-background);
+  color: var(--mel-text-primary);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1.0625rem; /* 17px: legível em celulares medianos */
+  line-height: 1.5;
+}
+
+:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

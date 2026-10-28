@@ -1,0 +1,17 @@
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Segredos
+.env
+.env.local
+.env.*.local
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# Testes
+test-results/
+playwright-report/
+.playwright-mcp/
