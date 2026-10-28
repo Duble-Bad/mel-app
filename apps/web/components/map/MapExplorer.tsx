@@ -65,7 +65,6 @@ export function MapExplorer({ filters }: { filters: SearchFilters }) {
             setMovedTo(distanceMeters(c, filters.center) > filters.radiusKm * 300 ? c : null);
           }),
         );
-        h.setPins(toPins(itemsRef.current));
       })
       .catch((err) => {
         console.error("[mapa] não carregou", err);
@@ -89,7 +88,6 @@ export function MapExplorer({ filters }: { filters: SearchFilters }) {
       .then((r) => {
         if (cancelled) return;
         setResult({ key, load: { status: "ok", items: r.items, total: r.total } });
-        handle.current?.setPins(toPins(r.items));
       })
       .catch((err) => {
         console.error("[mapa] busca falhou", err);
@@ -100,6 +98,12 @@ export function MapExplorer({ filters }: { filters: SearchFilters }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersKey]);
+
+  // Pinos: desenha quando o mapa está pronto E há resultado, em qualquer ordem
+  // (a busca pode terminar antes ou depois de o mapa carregar).
+  useEffect(() => {
+    if (mapState === "ready") handle.current?.setPins(toPins(result?.load.status === "ok" ? result.load.items : []));
+  }, [mapState, result]);
 
   async function locate() {
     setLocating(true);

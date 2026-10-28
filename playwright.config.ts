@@ -9,6 +9,7 @@ const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: "e2e",
+  globalSetup: "./e2e/support/global-setup.ts",
   fullyParallel: true,
   // Os testes falam com o Supabase remoto (sa-east-1): limitar o paralelismo
   // evita sobrecarregar o projeto de dev e dar espera realista para auth/uploads.

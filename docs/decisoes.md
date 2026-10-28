@@ -90,3 +90,5 @@ Formato: data — decisão — motivo.
 - **2026-10-29 — Mapa no tema escuro usa o estilo escuro do MapTiler (`MapOptions.theme`).**
 - **2026-10-29 — Duas armadilhas achadas na revisão visual.** (1) O CSS do MapLibre põe `position: relative` no elemento do mapa e anula `absolute inset-0`: o mapa ficava com altura zero. Agora ele fica num contêiner próprio. (2) Toques rápidos nos filtros apagavam o toque anterior; a barra guarda o filtro pendente até o servidor responder.
 
+- **2026-10-29 — E2E remove ao final os visitantes anônimos que criou.** O setup anota os anônimos que já existiam; a limpeza remove os novos. Não usa horário: o relógio local estava ~2 min adiantado em relação ao Supabase. Num projeto de dev compartilhado, uma execução pode remover anônimos criados ao mesmo tempo por outra (aceitável em dev).
+- **2026-10-29 — Mapa: pinos desenhados quando "mapa pronto" e "resultado" existem, em qualquer ordem.** Corrige uma corrida (busca terminando antes do mapa) que deixava o mapa sem pinos em máquinas lentas, como a do CI.
