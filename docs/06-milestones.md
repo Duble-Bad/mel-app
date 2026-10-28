@@ -6,7 +6,7 @@ Cada milestone termina com: `tsc --noEmit` ✔ · `lint` ✔ · testes ✔ · fl
 |---|---|---|---|
 | **M1** ✅ | Fundação | Monorepo (pnpm), Next.js + Tailwind + tokens, `packages/core` e `data`, Supabase ligado, migration base (extensões, profiles, enums), `.env.example`, README, CI | build + lint + 1 E2E "home carrega" |
 | **M2** ✅ (Google pendente de credenciais) | Auth + onboarding + perfil | Entrar com e-mail/Google, sessão anônima, onboarding de 1 tela, página de perfil, middleware de rotas | E2E cadastro/login; pgTAP RLS profiles |
-| **M3** | Pets + MEL ID + fotos | CRUD de pet, upload com compressão e remoção de EXIF, campos privados separados, `/pet/[melId]` | unit (schemas), pgTAP pets/private, E2E criar pet |
+| **M3** ✅ | Pets + MEL ID + fotos | CRUD de pet, upload com compressão e remoção de EXIF, campos privados separados, `/pet/[melId]` | unit (schemas), pgTAP pets/private, E2E criar pet |
 | **M4** | Mapa + LocationPicker | `MapProvider` (MapLibre), GPS, pin arrastável, geocoding, `nearby_cases` RPC | unit geo/fuzz, E2E escolher local |
 | **M5** | **Perdi meu pet** | Wizard 6 passos com rascunho, `lost_cases`, sucesso, `/alerta/[code]` com OG dinâmico | E2E fluxo completo < 2 min, RLS lost_cases |
 | **M6** | Avistamento + timeline | `/avistamento/[code]` anônimo, Turnstile, rate limit, timeline + caminho no mapa, notificação in-app ao dono (Realtime) | E2E anônimo envia → dono vê; RLS sightings |

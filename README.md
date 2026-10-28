@@ -79,7 +79,13 @@ npm run db:push                     # aplica migrations pendentes no projeto lin
 npm run db:types                    # regenera packages/data/src/database.types.ts
 ```
 
-Nunca edite uma migration já aplicada — crie outra. Seed com dados **fictícios** chega no Milestone 3.
+Nunca edite uma migration já aplicada — crie outra.
+
+```bash
+npm run db:seed                     # dados de demonstração FICTÍCIOS (recria os pets das contas demo)
+```
+
+O seed cria as contas `demo.tutora@exemplo.com` (Mel — Yorkshire, pública; Thor — privado) e `demo.vizinho@exemplo.com` (Nina — gata). Os MEL IDs mudam a cada execução; o script os imprime.
 
 ## Scripts
 
@@ -94,6 +100,7 @@ Nunca edite uma migration já aplicada — crie outra. Seed com dados **fictíci
 | `npm run test:e2e` | E2E Playwright (Pixel 7) — sobe o servidor sozinho |
 | `npm run check` | typecheck + lint + unit |
 | `npm run env:pull` | atualiza chaves do Supabase no `.env.local` |
+| `npm run db:seed` | dados de demonstração fictícios |
 
 ## Deploy
 

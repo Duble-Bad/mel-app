@@ -14,6 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
+      pet_photos: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          is_primary: boolean
+          owner_id: string
+          pet_id: string
+          position: number
+          storage_path: string
+          thumb_path: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          is_primary?: boolean
+          owner_id: string
+          pet_id: string
+          position?: number
+          storage_path: string
+          thumb_path: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          is_primary?: boolean
+          owner_id?: string
+          pet_id?: string
+          position?: number
+          storage_path?: string
+          thumb_path?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_photos_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_photos_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: false
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pet_private_details: {
+        Row: {
+          created_at: string
+          hidden_marks: string | null
+          microchip_number: string | null
+          owner_id: string
+          ownership_notes: string | null
+          pet_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hidden_marks?: string | null
+          microchip_number?: string | null
+          owner_id: string
+          ownership_notes?: string | null
+          pet_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hidden_marks?: string | null
+          microchip_number?: string | null
+          owner_id?: string
+          ownership_notes?: string | null
+          pet_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_private_details_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pet_private_details_pet_id_fkey"
+            columns: ["pet_id"]
+            isOneToOne: true
+            referencedRelation: "pets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pets: {
+        Row: {
+          age_estimate_months: number | null
+          birth_date: string | null
+          breed: string | null
+          city: string | null
+          color_primary: string | null
+          colors_secondary: string[]
+          created_at: string
+          description: string | null
+          has_microchip: boolean | null
+          id: string
+          is_public: boolean
+          mel_id: string
+          name: string
+          neutered: boolean | null
+          owner_id: string
+          sex: Database["public"]["Enums"]["pet_sex"]
+          size: Database["public"]["Enums"]["pet_size"] | null
+          species: Database["public"]["Enums"]["species"]
+          state: string | null
+          unique_marks: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          age_estimate_months?: number | null
+          birth_date?: string | null
+          breed?: string | null
+          city?: string | null
+          color_primary?: string | null
+          colors_secondary?: string[]
+          created_at?: string
+          description?: string | null
+          has_microchip?: boolean | null
+          id?: string
+          is_public?: boolean
+          mel_id?: string
+          name: string
+          neutered?: boolean | null
+          owner_id: string
+          sex?: Database["public"]["Enums"]["pet_sex"]
+          size?: Database["public"]["Enums"]["pet_size"] | null
+          species: Database["public"]["Enums"]["species"]
+          state?: string | null
+          unique_marks?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          age_estimate_months?: number | null
+          birth_date?: string | null
+          breed?: string | null
+          city?: string | null
+          color_primary?: string | null
+          colors_secondary?: string[]
+          created_at?: string
+          description?: string | null
+          has_microchip?: boolean | null
+          id?: string
+          is_public?: boolean
+          mel_id?: string
+          name?: string
+          neutered?: boolean | null
+          owner_id?: string
+          sex?: Database["public"]["Enums"]["pet_sex"]
+          size?: Database["public"]["Enums"]["pet_size"] | null
+          species?: Database["public"]["Enums"]["species"]
+          state?: string | null
+          unique_marks?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pets_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -70,6 +252,9 @@ export type Database = {
       health_check: { Args: never; Returns: Json }
     }
     Enums: {
+      pet_sex: "male" | "female" | "unknown"
+      pet_size: "mini" | "small" | "medium" | "large" | "giant"
+      species: "dog" | "cat" | "other"
       user_role: "user" | "moderator" | "admin"
     }
     CompositeTypes: {
@@ -198,6 +383,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      pet_sex: ["male", "female", "unknown"],
+      pet_size: ["mini", "small", "medium", "large", "giant"],
+      species: ["dog", "cat", "other"],
       user_role: ["user", "moderator", "admin"],
     },
   },
