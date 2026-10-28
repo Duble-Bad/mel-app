@@ -186,7 +186,7 @@ export function SignInForm() {
           error={errors.password}
           labelAction={
             !isSignup && (
-              <Link href="/entrar/recuperar" className="text-sm font-semibold text-brand-primary underline-offset-4 hover:underline">
+              <Link href="/entrar/recuperar" className="text-sm font-semibold text-link underline-offset-4 hover:underline">
                 Esqueci minha senha
               </Link>
             )
@@ -209,7 +209,7 @@ export function SignInForm() {
         <button
           type="button"
           onClick={() => switchMode(isSignup ? "signin" : "signup")}
-          className="inline-flex min-h-11 items-center font-semibold text-brand-primary underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 items-center font-semibold text-link underline-offset-4 hover:underline"
         >
           {isSignup ? "Entre aqui" : "Crie sua conta grátis"}
         </button>

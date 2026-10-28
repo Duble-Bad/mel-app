@@ -97,7 +97,7 @@ export function ReportDialog({ conversationId, onReported }: { conversationId: s
               />
             </div>
             <label className="flex min-h-12 items-start gap-3">
-              <input type="checkbox" checked={block} onChange={(e) => setBlock(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
+              <input type="checkbox" checked={block} onChange={(e) => setBlock(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
               <span className="font-semibold">Bloquear esta pessoa também</span>
             </label>
             {error && <Alert tone="error">{error}</Alert>}

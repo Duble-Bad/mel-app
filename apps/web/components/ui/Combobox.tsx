@@ -153,7 +153,7 @@ export function Combobox({
                 onChange(null);
                 inputRef.current?.focus();
               }}
-              className="min-h-10 rounded-sm px-2 text-sm font-semibold text-brand-primary"
+              className="min-h-10 rounded-sm px-2 text-sm font-semibold text-link"
             >
               Limpar
             </button>
@@ -186,7 +186,7 @@ export function Combobox({
                 onMouseMove={() => setActive(i)}
                 className={`flex min-h-11 cursor-pointer items-center px-4 ${
                   i === active ? "bg-surface-muted" : ""
-                } ${option.value === value ? "font-semibold text-brand-primary" : ""} ${
+                } ${option.value === value ? "font-semibold text-link" : ""} ${
                   i === pinned.length - 1 && !query ? "border-b border-border" : ""
                 }`}
               >

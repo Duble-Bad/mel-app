@@ -44,7 +44,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
       <button
         type="button"
         onClick={whatsapp}
-        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-md bg-status-found px-4 text-lg font-bold text-text-inverse"
+        className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-md bg-status-found-solid px-4 text-lg font-bold text-text-inverse"
       >
         <span aria-hidden="true">💬</span> Compartilhar no WhatsApp
       </button>

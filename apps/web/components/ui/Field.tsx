@@ -16,13 +16,13 @@ interface FieldShellProps {
 
 /** Estilo dos controles: 52px, borda suave, foco com anel coral; erro só quando informado. */
 export const controlClasses = (invalid: boolean, extra = "") =>
-  "block min-h-13 w-full rounded-md border bg-surface px-4 text-base text-text-primary " +
+  "block min-h-13 w-full rounded-md border bg-input px-4 text-base text-text-primary " +
   "transition-[border-color,box-shadow] duration-200 ease-mel placeholder:text-text-muted " +
   "hover:border-border-strong focus:outline-none focus-visible:outline-none focus:ring-4 " +
   "disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-text-secondary " +
   (invalid
     ? "border-danger focus:border-danger focus:ring-status-lost-soft "
-    : "border-border-input focus:border-brand-accent focus:ring-primary-100 ") +
+    : "border-border-input focus:border-focus focus:ring-primary-soft ") +
   extra;
 
 function FieldShell({ label, hint, error, optional, labelAction, children }: FieldShellProps) {

@@ -64,7 +64,7 @@ export function PhotoManager({
                 {/* eslint-disable-next-line @next/next/no-img-element -- miniatura do Storage */}
                 <img src={photo.thumbUrl} alt="" className="size-full object-cover" />
                 {photo.isPrimary && (
-                  <span className="absolute top-1 left-1 rounded-sm bg-brand-primary px-1.5 text-xs font-semibold text-brand-on-primary">
+                  <span className="absolute top-1 left-1 rounded-sm bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
                     Principal
                   </span>
                 )}
@@ -74,7 +74,7 @@ export function PhotoManager({
                   type="button"
                   disabled={busy}
                   onClick={() => onMakePrimary(photo.id)}
-                  className="min-h-10 rounded-sm text-sm font-semibold text-brand-primary underline-offset-2 hover:underline"
+                  className="min-h-10 rounded-sm text-sm font-semibold text-link underline-offset-2 hover:underline"
                 >
                   Tornar principal
                 </button>
@@ -97,7 +97,7 @@ export function PhotoManager({
                 {/* eslint-disable-next-line @next/next/no-img-element -- prévia local (blob:) */}
                 <img src={previews[i]} alt="" className="size-full object-cover" />
                 {existing.length === 0 && i === 0 && (
-                  <span className="absolute top-1 left-1 rounded-sm bg-brand-primary px-1.5 text-xs font-semibold text-brand-on-primary">
+                  <span className="absolute top-1 left-1 rounded-sm bg-primary px-1.5 text-xs font-semibold text-primary-foreground">
                     Principal
                   </span>
                 )}

@@ -51,7 +51,7 @@ async function Content() {
             <Link
               href={`/conversas/${c.id}`}
               data-testid="conversation-item"
-              className={`flex items-center gap-3 rounded-lg border p-3 ${c.unread ? "border-brand-primary bg-brand-secondary" : "border-border bg-surface"}`}
+              className={`flex items-center gap-3 rounded-lg border p-3 ${c.unread ? "border-primary bg-primary-soft" : "border-border bg-surface"}`}
             >
               {c.petThumbUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element -- miniatura já otimizada
@@ -72,7 +72,7 @@ async function Content() {
                 </p>
               </div>
               {c.unread > 0 && (
-                <span className="flex min-w-6 shrink-0 items-center justify-center rounded-full bg-status-lost px-1.5 text-sm font-bold text-text-inverse">
+                <span className="flex min-w-6 shrink-0 items-center justify-center rounded-full bg-status-lost-solid px-1.5 text-sm font-bold text-text-inverse">
                   {c.unread}
                   <span className="sr-only"> não lida{c.unread > 1 ? "s" : ""}</span>
                 </span>

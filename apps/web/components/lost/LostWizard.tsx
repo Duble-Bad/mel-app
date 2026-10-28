@@ -124,7 +124,7 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
           {saved && <span role="status">✓ Rascunho salvo</span>}
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
-          <div className="h-full bg-status-lost transition-all" style={{ width: `${((index + 1) / LOST_STEPS.length) * 100}%` }} />
+          <div className="h-full bg-status-lost-solid transition-all" style={{ width: `${((index + 1) / LOST_STEPS.length) * 100}%` }} />
         </div>
         <h1 className="text-2xl font-bold">{TITLES[step]}</h1>
         {pet && step !== "pet" && (
@@ -214,7 +214,7 @@ function PetStep({
                 disabled={busy}
                 onClick={() => onChoose(p.id)}
                 aria-pressed={p.id === selectedId}
-                className="flex w-full items-center gap-4 rounded-lg border-2 border-border bg-surface p-3 text-left hover:border-brand-primary aria-pressed:border-brand-primary aria-pressed:bg-brand-secondary"
+                className="flex w-full items-center gap-4 rounded-lg border-2 border-border bg-surface p-3 text-left hover:border-primary aria-pressed:border-primary aria-pressed:bg-primary-soft"
               >
                 <PetAvatar pet={p} size="sm" />
                 <span className="min-w-0 flex-1">
@@ -294,7 +294,7 @@ function WhereStep({
         privacyNote="No alerta mostramos um local aproximado (cerca de 250 m) e só o bairro. Seu endereço não aparece."
       />
       <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
+        <input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
         <span>
           <span className="font-semibold">Mostrar o local exato no alerta</span>
           <span className="block text-sm text-text-secondary">Não recomendado se o local for a sua casa.</span>
@@ -393,7 +393,7 @@ function WhenStep({
         />
       )}
       <label className="flex min-h-12 items-center gap-3">
-        <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-brand-primary" />
+        <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-primary" />
         <span className="font-semibold">Não sei exatamente o horário</span>
       </label>
       {error && (
@@ -500,7 +500,7 @@ function ContactStep({
       }}
     >
       <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
+        <input type="checkbox" checked={chat} onChange={(e) => setChat(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
         <span>
           <span className="block font-semibold">Receber mensagens pelo chat da MEL</span>
           <span className="block text-sm text-text-secondary">Recomendado: ninguém vê seu número, e você pode bloquear e denunciar.</span>
@@ -510,11 +510,11 @@ function ContactStep({
         Seu número <strong className="text-text-primary">só aparece no alerta se você marcar</strong> uma das opções abaixo.
       </p>
       <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
+        <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
         <span className="font-semibold">Mostrar botão de WhatsApp no alerta</span>
       </label>
       <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="mt-1 size-5 shrink-0 accent-brand-primary" />
+        <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
         <span className="font-semibold">Mostrar botão para ligar</span>
       </label>
       {wantsPhone && (
@@ -597,7 +597,7 @@ function ReviewStep({
             <button
               type="button"
               onClick={() => onEdit(target)}
-              className="min-h-11 shrink-0 px-2 text-sm font-semibold text-brand-primary underline-offset-4 hover:underline"
+              className="min-h-11 shrink-0 px-2 text-sm font-semibold text-link underline-offset-4 hover:underline"
             >
               Editar<span className="sr-only"> {label}</span>
             </button>
@@ -609,7 +609,7 @@ function ReviewStep({
         onClick={onActivate}
         disabled={busy}
         aria-busy={busy || undefined}
-        className="min-h-16 w-full rounded-lg bg-status-lost px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card disabled:opacity-60"
+        className="min-h-16 w-full rounded-lg bg-status-lost-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card disabled:opacity-60"
       >
         {busy ? "Ativando…" : "Ativar alerta MEL"}
       </button>

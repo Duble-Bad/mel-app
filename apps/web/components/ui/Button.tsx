@@ -13,11 +13,11 @@ const base =
   "aria-disabled:pointer-events-none aria-disabled:opacity-55";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-brand-primary text-brand-on-primary shadow-xs hover:bg-brand-primary-hover",
-  secondary: "border border-border-strong bg-surface text-text-primary shadow-xs hover:border-ink-600/40 hover:bg-surface-muted",
-  ghost: "text-brand-primary hover:bg-brand-secondary",
-  danger: "bg-danger text-text-inverse shadow-xs hover:bg-status-lost",
-  soft: "bg-brand-secondary text-brand-on-secondary hover:bg-primary-100",
+  primary: "bg-primary text-primary-foreground shadow-primary hover:bg-primary-hover",
+  secondary: "border border-border-strong bg-surface-elevated text-text-primary shadow-xs hover:bg-surface-muted",
+  ghost: "text-link hover:bg-primary-soft",
+  danger: "bg-danger-solid text-text-inverse shadow-xs hover:brightness-95",
+  soft: "bg-primary-soft text-primary-soft-foreground hover:bg-brand-ring",
 };
 
 // Áreas de toque: 48px (md) e 52px (lg, padrão do Design System).

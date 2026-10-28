@@ -32,7 +32,7 @@ async function SightingContent({ code }: { code: string }) {
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-bold">{c.pet.name} já está em casa ❤️</h1>
         <p className="text-text-secondary">Este alerta foi encerrado. Obrigado por querer ajudar!</p>
-        <Link href={`/alerta/${c.code}`} className="font-semibold text-brand-primary underline">
+        <Link href={`/alerta/${c.code}`} className="font-semibold text-link underline">
           Ver o alerta
         </Link>
       </div>

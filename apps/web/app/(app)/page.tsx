@@ -14,7 +14,7 @@ export default function HomePage() {
         <HelpActions />
       </section>
 
-      <section className="mt-12 rounded-lg bg-brand-secondary p-5 text-brand-on-secondary">
+      <section className="mt-12 rounded-lg bg-primary-soft p-5 text-primary-soft-foreground">
         <h2 className="text-lg font-bold">Começou por uma Mel. Agora é por todos eles.</h2>
         <p className="mt-2">
           Quando um animal desaparece, a informação se perde entre grupos, cartazes e redes sociais. A MEL

@@ -43,7 +43,7 @@ export function ResetRequestForm() {
           Se existir uma conta com <strong>{sentTo}</strong>, o link chega em alguns minutos. Confira também a caixa de
           spam.
         </Alert>
-        <Link href="/entrar" className="font-semibold text-brand-primary underline-offset-4 hover:underline">
+        <Link href="/entrar" className="font-semibold text-link underline-offset-4 hover:underline">
           Voltar para entrar
         </Link>
       </div>

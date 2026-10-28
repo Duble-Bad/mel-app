@@ -1,75 +1,92 @@
 @import "tailwindcss";
 @import "@mel/ui-tokens/tokens.css";
 
-/* MEL Design System 1.0: tokens → utilitários Tailwind
-   (bg-brand-primary, text-status-lost, rounded-card, shadow-md, ease-mel…).
-   Hex codes só existem em packages/ui-tokens. */
+/* MEL Design System 1.1: tokens → utilitários Tailwind (bg-primary,
+   text-foreground, bg-status-lost-soft, rounded-card, shadow-md, ease-mel…).
+   Cores mudam com o tema (data-theme no <html>); hex só em packages/ui-tokens.
+   PROIBIDO: cor direta (bg-[#…]) quando existe token. */
 @theme inline {
   --color-*: initial;
-  --color-primary-50: var(--mel-primary-50);
-  --color-primary-100: var(--mel-primary-100);
-  --color-primary-200: var(--mel-primary-200);
-  --color-primary-300: var(--mel-primary-300);
-  --color-primary-400: var(--mel-primary-400);
-  --color-primary-500: var(--mel-primary-500);
-  --color-primary-600: var(--mel-primary-600);
-  --color-primary-700: var(--mel-primary-700);
-  --color-primary-800: var(--mel-primary-800);
-  --color-primary-900: var(--mel-primary-900);
-
+  --color-honey-50: var(--mel-honey-50);
+  --color-honey-100: var(--mel-honey-100);
+  --color-honey-200: var(--mel-honey-200);
+  --color-honey-300: var(--mel-honey-300);
+  --color-honey-400: var(--mel-honey-400);
+  --color-honey-500: var(--mel-honey-500);
+  --color-honey-600: var(--mel-honey-600);
+  --color-honey-700: var(--mel-honey-700);
+  --color-honey-800: var(--mel-honey-800);
+  --color-honey-900: var(--mel-honey-900);
+  --color-honey-950: var(--mel-honey-950);
+  --color-ink-950: var(--mel-ink-950);
   --color-ink-900: var(--mel-ink-900);
   --color-ink-800: var(--mel-ink-800);
   --color-ink-700: var(--mel-ink-700);
   --color-ink-600: var(--mel-ink-600);
-
+  --color-coral-50: var(--mel-coral-50);
+  --color-coral-100: var(--mel-coral-100);
+  --color-coral-200: var(--mel-coral-200);
+  --color-coral-300: var(--mel-coral-300);
+  --color-coral-400: var(--mel-coral-400);
+  --color-coral-500: var(--mel-coral-500);
+  --color-coral-600: var(--mel-coral-600);
+  --color-coral-700: var(--mel-coral-700);
   --color-teal-50: var(--mel-teal-50);
-  --color-teal-100: var(--mel-teal-100);
   --color-teal-300: var(--mel-teal-300);
   --color-teal-500: var(--mel-teal-500);
   --color-teal-700: var(--mel-teal-700);
-
-  --color-brand-accent: var(--mel-brand-accent);
-  --color-brand-primary: var(--mel-brand-primary);
-  --color-brand-primary-hover: var(--mel-brand-primary-hover);
-  --color-brand-on-primary: var(--mel-brand-on-primary);
-  --color-brand-secondary: var(--mel-brand-secondary);
-  --color-brand-on-secondary: var(--mel-brand-on-secondary);
-
-  --color-status-lost: var(--mel-status-lost);
   --color-status-lost-accent: var(--mel-status-lost-accent);
-  --color-status-lost-soft: var(--mel-status-lost-soft);
-  --color-status-found: var(--mel-status-found);
   --color-status-found-accent: var(--mel-status-found-accent);
-  --color-status-found-soft: var(--mel-status-found-soft);
-  --color-status-sighting: var(--mel-status-sighting);
   --color-status-sighting-accent: var(--mel-status-sighting-accent);
-  --color-status-sighting-soft: var(--mel-status-sighting-soft);
-  --color-status-adoption: var(--mel-status-adoption);
   --color-status-adoption-accent: var(--mel-status-adoption-accent);
-  --color-status-adoption-soft: var(--mel-status-adoption-soft);
-  --color-status-info: var(--mel-status-info);
   --color-status-info-accent: var(--mel-status-info-accent);
-  --color-status-info-soft: var(--mel-status-info-soft);
-
-  --color-success: var(--mel-success);
-  --color-warning: var(--mel-warning);
-  --color-danger: var(--mel-danger);
-  --color-info: var(--mel-info);
-
   --color-background: var(--mel-background);
   --color-surface: var(--mel-surface);
   --color-surface-muted: var(--mel-surface-muted);
+  --color-surface-elevated: var(--mel-surface-elevated);
   --color-surface-warm: var(--mel-surface-warm);
+  --color-input: var(--mel-input);
   --color-border: var(--mel-border);
   --color-border-strong: var(--mel-border-strong);
   --color-border-input: var(--mel-border-input);
-
   --color-text-primary: var(--mel-text-primary);
   --color-text-secondary: var(--mel-text-secondary);
   --color-text-muted: var(--mel-text-muted);
   --color-text-inverse: var(--mel-text-inverse);
-
+  --color-primary: var(--mel-primary);
+  --color-primary-hover: var(--mel-primary-hover);
+  --color-primary-foreground: var(--mel-primary-foreground);
+  --color-primary-soft: var(--mel-primary-soft);
+  --color-primary-soft-foreground: var(--mel-primary-soft-foreground);
+  --color-link: var(--mel-link);
+  --color-brand: var(--mel-brand);
+  --color-brand-soft: var(--mel-brand-soft);
+  --color-brand-ring: var(--mel-brand-ring);
   --color-focus: var(--mel-focus);
+  --color-inverse-surface: var(--mel-inverse-surface);
+  --color-inverse-foreground: var(--mel-inverse-foreground);
+  --color-status-lost: var(--mel-status-lost);
+  --color-status-lost-soft: var(--mel-status-lost-soft);
+  --color-status-lost-solid: var(--mel-status-lost-solid);
+  --color-status-found: var(--mel-status-found);
+  --color-status-found-soft: var(--mel-status-found-soft);
+  --color-status-found-solid: var(--mel-status-found-solid);
+  --color-status-sighting: var(--mel-status-sighting);
+  --color-status-sighting-soft: var(--mel-status-sighting-soft);
+  --color-status-sighting-solid: var(--mel-status-sighting-solid);
+  --color-status-adoption: var(--mel-status-adoption);
+  --color-status-adoption-soft: var(--mel-status-adoption-soft);
+  --color-status-adoption-solid: var(--mel-status-adoption-solid);
+  --color-status-info: var(--mel-status-info);
+  --color-status-info-soft: var(--mel-status-info-soft);
+  --color-status-info-solid: var(--mel-status-info-solid);
+  --color-danger: var(--mel-danger);
+  --color-danger-solid: var(--mel-danger-solid);
+  --color-success: var(--mel-success);
+  --color-warning: var(--mel-warning);
+  --color-info: var(--mel-info);
+  /* Aliases semânticos. */
+  --color-foreground: var(--mel-text-primary);
   --color-transparent: transparent;
   --color-current: currentColor;
 
@@ -107,6 +124,7 @@
   --shadow-sm: var(--mel-shadow-sm);
   --shadow-md: var(--mel-shadow-md);
   --shadow-lg: var(--mel-shadow-lg);
+  --shadow-primary: var(--mel-shadow-primary);
   --shadow-card: var(--mel-shadow-sm);
 
   --ease-mel: var(--mel-easing);
@@ -178,6 +196,28 @@ h3 {
 :focus-visible {
   outline: 2px solid var(--mel-focus);
   outline-offset: 2px;
+}
+
+/* Troca de tema: só as cores fazem transição (~220 ms), e só durante a troca. */
+@media (prefers-reduced-motion: no-preference) {
+  .theme-switching,
+  .theme-switching *,
+  .theme-switching *::before,
+  .theme-switching *::after {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+    transition-duration: var(--mel-duration-theme) !important;
+    transition-timing-function: var(--mel-easing) !important;
+  }
+}
+
+/* Autopreenchimento do navegador sem quebrar o tema (fundo amarelo/branco). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--mel-text-primary);
+  caret-color: var(--mel-text-primary);
+  box-shadow: 0 0 0 1000px var(--mel-input) inset;
+  transition: background-color 9999s;
 }
 
 @media (prefers-reduced-motion: reduce) {

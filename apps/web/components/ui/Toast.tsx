@@ -59,18 +59,18 @@ function ToastView({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   return (
     <div
       role={item.tone === "error" ? "alert" : "status"}
-      className="pointer-events-auto flex w-full max-w-md animate-toast items-start gap-3 rounded-lg bg-ink-800 p-4 text-text-inverse shadow-lg"
+      className="pointer-events-auto flex w-full max-w-md animate-toast items-start gap-3 rounded-lg bg-inverse-surface p-4 text-inverse-foreground shadow-lg"
     >
       <Icon aria-hidden="true" className={`mt-px size-5 shrink-0 ${className}`} strokeWidth={2} />
       <div className="min-w-0 flex-1">
         <p className="font-semibold">{item.title}</p>
-        {item.description && <p className="text-sm text-text-inverse/80">{item.description}</p>}
+        {item.description && <p className="text-sm text-inverse-foreground/80">{item.description}</p>}
       </div>
       <button
         type="button"
         onClick={onDismiss}
         aria-label="Fechar aviso"
-        className="-m-2 inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-text-inverse/70 hover:text-text-inverse"
+        className="-m-2 inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-inverse-foreground/70 hover:text-inverse-foreground"
       >
         <X aria-hidden="true" className="size-4" strokeWidth={2} />
       </button>

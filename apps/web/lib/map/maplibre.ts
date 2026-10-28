@@ -11,13 +11,14 @@ const PIN_STYLE: Record<PinKind, { color: string; icon: string; label: string }>
   found: { color: colors["status-found"], icon: "✓", label: "Encontrado" },
   sighting: { color: colors["status-sighting"], icon: "👁", label: "Avistamento" },
   adoption: { color: colors["status-adoption"], icon: "♥", label: "Adoção" },
-  business: { color: colors["brand-primary"], icon: "★", label: "Parceiro" },
+  business: { color: colors.brand, icon: "★", label: "Parceiro" },
 };
 
-function styleUrl(): string {
+function styleUrl(theme: "light" | "dark" = "light"): string {
   const key = process.env.NEXT_PUBLIC_MAPTILER_KEY;
   if (!key) throw new Error("NEXT_PUBLIC_MAPTILER_KEY ausente (veja .env.example).");
-  return `https://api.maptiler.com/maps/streets-v2/style.json?key=${key}`;
+  // Tema escuro pronto no provider; as telas passam `theme` quando forem redesenhadas.
+  return `https://api.maptiler.com/maps/${theme === "dark" ? "streets-v2-dark" : "streets-v2"}/style.json?key=${key}`;
 }
 
 function pinElement(kind: PinKind, label: string): HTMLButtonElement {
@@ -61,7 +62,7 @@ export const mapLibreProvider: MapProvider = {
     maplibre.setWorkerUrl(`/vendor/maplibre-gl-worker.mjs?v=${maplibre.getVersion()}`);
     const map = new maplibre.Map({
       container: el,
-      style: styleUrl(),
+      style: styleUrl(opts.theme),
       center: [opts.center.lng, opts.center.lat],
       zoom: opts.zoom,
       interactive: opts.interactive ?? true,

@@ -8,7 +8,7 @@ export interface ChoiceOption<T extends string> {
 
 const chip =
   "flex min-h-12 cursor-pointer flex-col justify-center rounded-md border-2 border-border-strong bg-surface px-4 py-2 " +
-  "has-[:checked]:border-brand-primary has-[:checked]:bg-brand-secondary has-[:checked]:text-brand-on-secondary " +
+  "has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:text-primary-soft-foreground " +
   "has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus";
 
 interface GroupProps {

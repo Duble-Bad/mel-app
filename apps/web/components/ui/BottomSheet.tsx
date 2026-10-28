@@ -41,7 +41,7 @@ export function BottomSheet({
         if (e.target === e.currentTarget) onClose();
       }}
       className={
-        "mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-none rounded-t-hero bg-surface p-0 text-text-primary shadow-lg " +
+        "mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-none rounded-t-hero border-t border-border bg-surface-elevated p-0 text-text-primary shadow-lg " +
         "backdrop:bg-ink-900/45 open:animate-sheet-up " +
         "sm:my-auto sm:w-[min(100%-2rem,30rem)] sm:rounded-card sm:open:animate-pop"
       }

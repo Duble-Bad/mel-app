@@ -160,3 +160,31 @@ test("sign-in screen: no errors before interaction, eye icon for the password, n
   await expect(page.getByText("Conte pra gente como podemos te chamar.")).toBeVisible();
   await expect(page.getByLabel("Seu nome")).toBeFocused();
 });
+
+test("theme: follows the device by default, can be switched, and is applied before paint on reload", async ({ browser }) => {
+  const ctx = await browser.newContext({ ...test.info().project.use, baseURL: "http://localhost:3100", colorScheme: "dark" });
+  const page = await ctx.newPage();
+  const html = page.locator("html");
+
+  // Primeiro acesso: "Sistema" (aparelho escuro → tema escuro).
+  await page.goto("/entrar");
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(html).toHaveAttribute("data-theme-pref", "system");
+
+  // Escolher "Claro" (celular: bottom sheet) persiste e vale já na próxima carga, sem piscar.
+  await page.getByRole("button", { name: "Tema: Sistema" }).click();
+  await page.getByRole("dialog", { name: "Aparência" }).getByRole("radio", { name: /Claro/ }).click();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  // Sem flash: o tema é aplicado por um script no <head>, antes da primeira pintura.
+  const head = (await (await page.request.get("/entrar")).text()).split("</head>")[0];
+  expect(head).toContain('localStorage.getItem("mel-theme")');
+  await expect(page.getByRole("button", { name: "Tema: Claro" })).toBeVisible();
+
+  // Voltar para "Sistema" segue o aparelho de novo.
+  await page.getByRole("button", { name: "Tema: Claro" }).click();
+  await page.getByRole("dialog", { name: "Aparência" }).getByRole("radio", { name: /Sistema/ }).click();
+  await expect(html).toHaveAttribute("data-theme", "dark");
+  await ctx.close();
+});

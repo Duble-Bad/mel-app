@@ -33,7 +33,7 @@ async function Content({ code }: { code: string }) {
   if (existing) redirect(`/conversas/${existing}`);
 
   const back = (
-    <Link href={`/alerta/${c.code}`} className="font-semibold text-brand-primary underline">
+    <Link href={`/alerta/${c.code}`} className="font-semibold text-link underline">
       Voltar ao alerta
     </Link>
   );

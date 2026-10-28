@@ -91,7 +91,7 @@ async function PetContent({ melId }: { melId: string }) {
           </section>
         )}
         {isOwner && (
-          <Link href={`/perfil/pets/${pet.id}`} className="font-semibold text-brand-primary underline-offset-4 hover:underline">
+          <Link href={`/perfil/pets/${pet.id}`} className="font-semibold text-link underline-offset-4 hover:underline">
             Editar informações
           </Link>
         )}

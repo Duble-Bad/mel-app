@@ -29,7 +29,7 @@ export function LiveSightings({ userId, code }: { userId: string; code: string }
 
   if (!message) return null;
   return (
-    <div role="status" className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-md rounded-lg bg-status-sighting p-4 text-text-inverse shadow-card">
+    <div role="status" className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-md rounded-lg bg-status-sighting-solid p-4 text-text-inverse shadow-card">
       <p className="font-bold">{message}</p>
       <div className="mt-1 flex gap-4">
         <a href="#linha-do-tempo" onClick={() => setMessage(null)} className="min-h-10 text-sm font-semibold underline">

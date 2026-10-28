@@ -2,7 +2,7 @@
   "name": "@mel/ui-tokens",
   "version": "0.1.0",
   "private": true,
-  "description": "Design tokens da MEL. Única fonte de cores, raios e sombras.",
+  "description": "Design tokens da MEL (paletas + temas claro/escuro). tokens.css é gerado de tokens.ts.",
   "type": "module",
   "exports": {
     ".": "./src/tokens.ts",
@@ -10,7 +10,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "tokens": "vitest run -u"
   },
   "devDependencies": {
     "typescript": "^5",

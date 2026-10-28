@@ -30,7 +30,7 @@ async function PosterContent({ code }: { code: string }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link href={`/alerta/${c.code}`} className="text-sm font-semibold text-brand-primary underline-offset-4 hover:underline">
+        <Link href={`/alerta/${c.code}`} className="text-sm font-semibold text-link underline-offset-4 hover:underline">
           ‹ Voltar ao alerta
         </Link>
         <h1 className="mt-2 text-2xl font-bold">Cartaz de {c.pet.name}</h1>
@@ -46,7 +46,7 @@ async function PosterContent({ code }: { code: string }) {
         <p className="text-sm text-text-secondary">Abre o cartaz em tamanho de folha. Use “Imprimir” ou “Salvar como PDF”.</p>
         <Link
           href={`${base}/a4`}
-          className="inline-flex min-h-12 items-center justify-center rounded-md bg-brand-primary px-4 font-semibold text-brand-on-primary"
+          className="inline-flex min-h-12 items-center justify-center rounded-md bg-primary px-4 font-semibold text-primary-foreground"
         >
           🖨️ Abrir versão para imprimir
         </Link>

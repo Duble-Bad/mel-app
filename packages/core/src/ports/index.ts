@@ -16,6 +16,8 @@ export interface MapOptions {
   center: LatLng;
   zoom: number;
   interactive?: boolean;
+  /** Estilo do mapa conforme o tema da tela (padrão: claro). */
+  theme?: "light" | "dark";
 }
 
 export type Unsubscribe = () => void;

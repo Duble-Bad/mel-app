@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { colors } from "@mel/ui-tokens";
+import { themes } from "@mel/ui-tokens";
+import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
@@ -22,18 +24,26 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: colors.background,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: themes.light.background },
+    { media: "(prefers-color-scheme: dark)", color: themes.dark.background },
+  ],
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${jakarta.variable} h-full antialiased`}>
+    // data-theme é aplicado pelo script antes da hidratação (por isso o suppressHydrationWarning).
+    <html lang="pt-BR" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Antes da 1ª pintura: evita piscar claro antes do tema escuro. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col bg-background text-text-primary">
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

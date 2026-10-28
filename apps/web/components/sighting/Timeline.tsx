@@ -53,7 +53,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
       <ol className="flex flex-col gap-4 border-l-2 border-status-sighting pl-4">
         {lastSeen && (
           <li className="relative">
-            <span aria-hidden="true" className="absolute top-1.5 -left-[1.4rem] size-3 rounded-full bg-status-lost" />
+            <span aria-hidden="true" className="absolute top-1.5 -left-[1.4rem] size-3 rounded-full bg-status-lost-solid" />
             <p className="text-sm text-text-secondary">{formatDateTimeBr(lastSeen.at)}</p>
             <p className="font-semibold">
               {petName} visto(a) pela última vez{lastSeen.areaLabel ? ` perto de ${lastSeen.areaLabel}` : ""}.
@@ -62,7 +62,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
         )}
         {sightings.map((s, i) => (
           <li key={s.id} className={`relative ${s.hidden ? "opacity-60" : ""}`} data-testid="timeline-sighting">
-            <span aria-hidden="true" className="absolute top-1.5 -left-[1.4rem] size-3 rounded-full bg-status-sighting" />
+            <span aria-hidden="true" className="absolute top-1.5 -left-[1.4rem] size-3 rounded-full bg-status-sighting-solid" />
             <p className="text-sm text-text-secondary">
               {formatDateTimeBr(s.seenAt)} · {timeAgo(s.seenAt)}
             </p>
@@ -86,7 +86,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
                     type="button"
                     disabled={pending === s.id}
                     onClick={() => reply(s)}
-                    className="min-h-11 text-sm font-semibold text-brand-primary underline-offset-4 hover:underline"
+                    className="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline"
                   >
                     💬 Responder a quem viu
                   </button>
@@ -95,7 +95,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner }: TimelineProp
                   type="button"
                   disabled={pending === s.id}
                   onClick={() => toggle(s)}
-                  className="min-h-11 text-sm font-semibold text-brand-primary underline-offset-4 hover:underline"
+                  className="min-h-11 text-sm font-semibold text-link underline-offset-4 hover:underline"
                 >
                   {s.hidden ? "Mostrar de novo" : "Ocultar (ex.: spam ou engano)"}
                 </button>

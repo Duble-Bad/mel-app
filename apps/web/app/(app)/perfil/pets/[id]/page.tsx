@@ -39,7 +39,7 @@ async function EditPetContent({ params, searchParams }: PageProps<"/perfil/pets/
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <Link href="/perfil" className="text-sm font-semibold text-brand-primary underline-offset-4 hover:underline">
+        <Link href="/perfil" className="text-sm font-semibold text-link underline-offset-4 hover:underline">
           ‹ Meus pets
         </Link>
         <h1 className="mt-2 text-2xl font-bold">{pet.name}</h1>
@@ -63,7 +63,7 @@ async function EditPetContent({ params, searchParams }: PageProps<"/perfil/pets/
 
       <Link
         href={`/pet/${pet.melId}`}
-        className="font-semibold text-brand-primary underline-offset-4 hover:underline"
+        className="font-semibold text-link underline-offset-4 hover:underline"
       >
         Ver página do pet {pet.isPublic ? "(pública)" : "(só você vê)"}
       </Link>

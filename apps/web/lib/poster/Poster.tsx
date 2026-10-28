@@ -92,7 +92,7 @@ export function Poster({ format, content, photo, qr, url }: PosterProps) {
           <div style={{ display: "flex", fontSize: s(t.cta), fontWeight: 800, color: accent }}>{content.cta}</div>
           {content.contact && <div style={{ display: "flex", fontSize: s(t.contact), fontWeight: 700, color: colors["text-primary"] }}>{content.contact}</div>}
           <div style={{ display: "flex", fontSize: s(26), color: colors["text-secondary"] }}>{url.replace(/^https?:\/\//, "")}</div>
-          <div style={{ display: "flex", fontSize: s(t.brand), fontWeight: 800, color: colors["brand-primary"] }}>
+          <div style={{ display: "flex", fontSize: s(t.brand), fontWeight: 800, color: colors["primary"] }}>
             MEL · Uma rede inteira procurando com você.
           </div>
         </div>

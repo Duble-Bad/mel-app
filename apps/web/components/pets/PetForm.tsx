@@ -374,7 +374,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
           type="checkbox"
           checked={isPublic}
           onChange={(e) => setIsPublic(e.target.checked)}
-          className="mt-1 size-5 shrink-0 accent-brand-primary"
+          className="mt-1 size-5 shrink-0 accent-primary"
         />
         <span>
           <span className="font-semibold">Deixar a página do pet visível para qualquer pessoa</span>

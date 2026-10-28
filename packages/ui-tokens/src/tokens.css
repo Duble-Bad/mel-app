@@ -1,66 +1,96 @@
 /*
- * MEL Design System 1.0 — espelho de tokens.ts (validado por teste).
- * Nunca use hex direto em componentes: use as classes geradas
- * (bg-brand-primary, text-status-lost, border-border…) ou estas variáveis.
- * Dark mode (futuro): redefinir estas variáveis em [data-theme="dark"].
+ * MEL Design System 1.1 — ARQUIVO GERADO de tokens.ts. Não edite à mão:
+ * rode `npm run tokens -w @mel/ui-tokens`.
+ *
+ * Tema: <html data-theme="light|dark"> (aplicado antes da pintura pelo app).
+ * Sem o atributo (ex.: sem JavaScript), segue prefers-color-scheme.
  */
 :root {
-  --mel-primary-50: #fff4f1;
-  --mel-primary-100: #ffe4de;
-  --mel-primary-200: #ffc9be;
-  --mel-primary-300: #ffa596;
-  --mel-primary-400: #ff7968;
-  --mel-primary-500: #f45d4c;
-  --mel-primary-600: #df493a;
-  --mel-primary-700: #bb382d;
-  --mel-primary-800: #9b322a;
-  --mel-primary-900: #812f29;
-  --mel-ink-900: #101720;
+  --mel-honey-50: #fff9ec;
+  --mel-honey-100: #fff0c7;
+  --mel-honey-200: #f9dc91;
+  --mel-honey-300: #efc15d;
+  --mel-honey-400: #dfa33b;
+  --mel-honey-500: #c88924;
+  --mel-honey-600: #a96d18;
+  --mel-honey-700: #875215;
+  --mel-honey-800: #6d4218;
+  --mel-honey-900: #593719;
+  --mel-honey-950: #321c0b;
+  --mel-ink-950: #0c1117;
+  --mel-ink-900: #111923;
   --mel-ink-800: #18212f;
   --mel-ink-700: #263445;
   --mel-ink-600: #405066;
+  --mel-coral-50: #fff4f1;
+  --mel-coral-100: #ffe4de;
+  --mel-coral-200: #ffc9be;
+  --mel-coral-300: #ffa596;
+  --mel-coral-400: #ff7968;
+  --mel-coral-500: #f45d4c;
+  --mel-coral-600: #df493a;
+  --mel-coral-700: #bb382d;
   --mel-teal-50: #e8f7f4;
-  --mel-teal-100: #bfe9e2;
   --mel-teal-300: #65c5b7;
   --mel-teal-500: #2a9d8f;
   --mel-teal-700: #217d72;
-  --mel-brand-accent: #f45d4c;
-  --mel-brand-primary: #bb382d;
-  --mel-brand-primary-hover: #9b322a;
-  --mel-brand-on-primary: #ffffff;
-  --mel-brand-secondary: #fff4f1;
-  --mel-brand-on-secondary: #9b322a;
   --mel-status-lost-accent: #e5484d;
-  --mel-status-lost: #c22a31;
-  --mel-status-lost-soft: #fff1f1;
   --mel-status-found-accent: #1f9d72;
-  --mel-status-found: #13774f;
-  --mel-status-found-soft: #ecfdf5;
   --mel-status-sighting-accent: #e9a23b;
-  --mel-status-sighting: #9a5b00;
-  --mel-status-sighting-soft: #fff8e8;
   --mel-status-adoption-accent: #8b5cf6;
-  --mel-status-adoption: #6d3fd6;
-  --mel-status-adoption-soft: #f5f1ff;
   --mel-status-info-accent: #3b82f6;
-  --mel-status-info: #1f5fd1;
-  --mel-status-info-soft: #eff6ff;
-  --mel-success: #16a36a;
-  --mel-warning: #d99018;
-  --mel-danger: #d92d20;
-  --mel-info: #3b82f6;
-  --mel-background: #fafaf8;
+
+  color-scheme: light;
+  --mel-background: #fbfaf7;
   --mel-surface: #ffffff;
-  --mel-surface-muted: #f6f5f2;
-  --mel-surface-warm: #fff8f5;
-  --mel-border: #e9e7e2;
-  --mel-border-strong: #d9d6cf;
-  --mel-border-input: #e1dfda;
+  --mel-surface-muted: #f7f4ee;
+  --mel-surface-elevated: #ffffff;
+  --mel-surface-warm: #fff9f0;
+  --mel-input: #ffffff;
+  --mel-border: #e8e3d9;
+  --mel-border-strong: #d8d1c4;
+  --mel-border-input: #e1dbd0;
   --mel-text-primary: #18212f;
   --mel-text-secondary: #667085;
   --mel-text-muted: #98a2b3;
   --mel-text-inverse: #ffffff;
-  --mel-focus: #f45d4c;
+  --mel-primary: #875215;
+  --mel-primary-hover: #6d4218;
+  --mel-primary-foreground: #ffffff;
+  --mel-primary-soft: #fff0c7;
+  --mel-primary-soft-foreground: #6d4218;
+  --mel-link: #875215;
+  --mel-brand: #c88924;
+  --mel-brand-soft: #fff9ec;
+  --mel-brand-ring: #f9dc91;
+  --mel-focus: #a96d18;
+  --mel-inverse-surface: #18212f;
+  --mel-inverse-foreground: #ffffff;
+  --mel-status-lost: #c22a31;
+  --mel-status-lost-soft: #fff1f1;
+  --mel-status-lost-solid: #c22a31;
+  --mel-status-found: #13774f;
+  --mel-status-found-soft: #ecfdf5;
+  --mel-status-found-solid: #13774f;
+  --mel-status-sighting: #9a5b00;
+  --mel-status-sighting-soft: #fff8e8;
+  --mel-status-sighting-solid: #9a5b00;
+  --mel-status-adoption: #6d3fd6;
+  --mel-status-adoption-soft: #f5f1ff;
+  --mel-status-adoption-solid: #6d3fd6;
+  --mel-status-info: #1f5fd1;
+  --mel-status-info-soft: #eff6ff;
+  --mel-status-info-solid: #1f5fd1;
+  --mel-danger: #d92d20;
+  --mel-danger-solid: #d92d20;
+  --mel-success: #13774f;
+  --mel-warning: #9a5b00;
+  --mel-info: #1f5fd1;
+  --mel-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --mel-shadow-sm: 0 2px 8px rgba(16, 24, 40, 0.06);
+  --mel-shadow-md: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --mel-shadow-lg: 0 16px 40px rgba(16, 24, 40, 0.1);
+  --mel-shadow-primary: 0 1px 2px rgba(109, 66, 24, 0.2);
 
   --mel-radius-sm: 10px;
   --mel-radius-md: 14px;
@@ -69,20 +99,126 @@
   --mel-radius-hero: 28px;
   --mel-radius-pill: 999px;
 
-  --mel-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
-  --mel-shadow-sm: 0 2px 8px rgba(16, 24, 40, 0.06);
-  --mel-shadow-md: 0 8px 24px rgba(16, 24, 40, 0.08);
-  --mel-shadow-lg: 0 16px 40px rgba(16, 24, 40, 0.1);
-
   --mel-duration-fast: 120ms;
   --mel-duration-normal: 200ms;
   --mel-duration-slow: 320ms;
+  --mel-duration-theme: 220ms;
   --mel-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --mel-gradient-hero: linear-gradient(135deg, var(--mel-primary-500) 0%, #ff7867 52%, #ff9a83 100%);
+  --mel-gradient-honey: linear-gradient(135deg, #a96d18 0%, #c88924 48%, #efc15d 100%);
   --mel-gradient-soft: linear-gradient(180deg, var(--mel-surface-warm) 0%, var(--mel-background) 100%);
 
   --mel-page-gutter: 20px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --mel-background: #0d1117;
+  --mel-surface: #151b23;
+  --mel-surface-muted: #1b222c;
+  --mel-surface-elevated: #202833;
+  --mel-surface-warm: #111923;
+  --mel-input: #1b222c;
+  --mel-border: #29313d;
+  --mel-border-strong: #384250;
+  --mel-border-input: #333c49;
+  --mel-text-primary: #f7f4ee;
+  --mel-text-secondary: #b8c0cc;
+  --mel-text-muted: #858f9e;
+  --mel-text-inverse: #ffffff;
+  --mel-primary: #dfa33b;
+  --mel-primary-hover: #efc15d;
+  --mel-primary-foreground: #15100a;
+  --mel-primary-soft: #342711;
+  --mel-primary-soft-foreground: #efc15d;
+  --mel-link: #efc15d;
+  --mel-brand: #dfa33b;
+  --mel-brand-soft: #1d1a14;
+  --mel-brand-ring: #3a2e17;
+  --mel-focus: #dfa33b;
+  --mel-inverse-surface: #2a3340;
+  --mel-inverse-foreground: #f7f4ee;
+  --mel-status-lost: #ff8f8f;
+  --mel-status-lost-soft: #3b1d20;
+  --mel-status-lost-solid: #c22a31;
+  --mel-status-found: #4fd1a0;
+  --mel-status-found-soft: #0f2e22;
+  --mel-status-found-solid: #13774f;
+  --mel-status-sighting: #f2c063;
+  --mel-status-sighting-soft: #3a2a0e;
+  --mel-status-sighting-solid: #9a5b00;
+  --mel-status-adoption: #b9a2ff;
+  --mel-status-adoption-soft: #261d45;
+  --mel-status-adoption-solid: #6d3fd6;
+  --mel-status-info: #8db8ff;
+  --mel-status-info-soft: #15253f;
+  --mel-status-info-solid: #1f5fd1;
+  --mel-danger: #ff8f8f;
+  --mel-danger-solid: #d92d20;
+  --mel-success: #4fd1a0;
+  --mel-warning: #f2c063;
+  --mel-info: #8db8ff;
+  --mel-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --mel-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --mel-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --mel-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --mel-shadow-primary: 0 0 0 1px rgba(239, 193, 93, 0.25), 0 8px 30px rgba(223, 163, 59, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --mel-background: #0d1117;
+    --mel-surface: #151b23;
+    --mel-surface-muted: #1b222c;
+    --mel-surface-elevated: #202833;
+    --mel-surface-warm: #111923;
+    --mel-input: #1b222c;
+    --mel-border: #29313d;
+    --mel-border-strong: #384250;
+    --mel-border-input: #333c49;
+    --mel-text-primary: #f7f4ee;
+    --mel-text-secondary: #b8c0cc;
+    --mel-text-muted: #858f9e;
+    --mel-text-inverse: #ffffff;
+    --mel-primary: #dfa33b;
+    --mel-primary-hover: #efc15d;
+    --mel-primary-foreground: #15100a;
+    --mel-primary-soft: #342711;
+    --mel-primary-soft-foreground: #efc15d;
+    --mel-link: #efc15d;
+    --mel-brand: #dfa33b;
+    --mel-brand-soft: #1d1a14;
+    --mel-brand-ring: #3a2e17;
+    --mel-focus: #dfa33b;
+    --mel-inverse-surface: #2a3340;
+    --mel-inverse-foreground: #f7f4ee;
+    --mel-status-lost: #ff8f8f;
+    --mel-status-lost-soft: #3b1d20;
+    --mel-status-lost-solid: #c22a31;
+    --mel-status-found: #4fd1a0;
+    --mel-status-found-soft: #0f2e22;
+    --mel-status-found-solid: #13774f;
+    --mel-status-sighting: #f2c063;
+    --mel-status-sighting-soft: #3a2a0e;
+    --mel-status-sighting-solid: #9a5b00;
+    --mel-status-adoption: #b9a2ff;
+    --mel-status-adoption-soft: #261d45;
+    --mel-status-adoption-solid: #6d3fd6;
+    --mel-status-info: #8db8ff;
+    --mel-status-info-soft: #15253f;
+    --mel-status-info-solid: #1f5fd1;
+    --mel-danger: #ff8f8f;
+    --mel-danger-solid: #d92d20;
+    --mel-success: #4fd1a0;
+    --mel-warning: #f2c063;
+    --mel-info: #8db8ff;
+    --mel-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --mel-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --mel-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+    --mel-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
+    --mel-shadow-primary: 0 0 0 1px rgba(239, 193, 93, 0.25), 0 8px 30px rgba(223, 163, 59, 0.1);
+  }
 }
 
 @media (max-width: 359px) {

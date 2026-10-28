@@ -110,7 +110,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold">{peer}</h1>
-            <Link href={`/alerta/${c.code}`} className="text-sm font-semibold text-brand-primary underline-offset-4 hover:underline">
+            <Link href={`/alerta/${c.code}`} className="text-sm font-semibold text-link underline-offset-4 hover:underline">
               Alerta de {c.petName}
               {c.caseStatus === "FOUND" && " · encontrado ❤️"}
             </Link>
@@ -123,7 +123,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
               type="button"
               disabled={blockBusy}
               onClick={() => toggleBlock(false)}
-              className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-brand-primary hover:bg-surface-muted"
+              className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-link hover:bg-surface-muted"
             >
               Desbloquear
             </button>
@@ -134,7 +134,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
                 type="button"
                 disabled={blockBusy}
                 onClick={() => toggleBlock(true)}
-                className="inline-flex min-h-11 items-center rounded-md bg-danger px-3 font-semibold text-text-inverse"
+                className="inline-flex min-h-11 items-center rounded-md bg-danger-solid px-3 font-semibold text-text-inverse"
               >
                 Sim, bloquear
               </button>
@@ -165,7 +165,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
                 <span className="sr-only">{mine ? "Você" : peer}: </span>
                 <p
                   className={`max-w-[85%] rounded-lg px-4 py-2 break-words whitespace-pre-line ${
-                    mine ? "rounded-br-sm bg-brand-primary text-brand-on-primary" : "rounded-bl-sm border border-border bg-surface"
+                    mine ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm border border-border bg-surface"
                   }`}
                 >
                   {m.body}
@@ -214,7 +214,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
               type="submit"
               disabled={sending || !canSend}
               aria-busy={sending || undefined}
-              className="min-h-12 shrink-0 rounded-md bg-brand-primary px-4 font-semibold text-brand-on-primary disabled:opacity-60"
+              className="min-h-12 shrink-0 rounded-md bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-60"
             >
               {sending ? "Enviando…" : "Enviar"}
             </button>

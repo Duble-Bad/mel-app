@@ -1,11 +1,6 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { colors } from "./tokens";
-
-const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
-const cssVars = Object.fromEntries(
-  [...css.matchAll(/--mel-([a-z0-9-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]),
-);
+import { renderTokensCss } from "./css";
+import { palette, themes, type SemanticToken, type ThemeName } from "./tokens";
 
 /** Razão de contraste WCAG 2.x entre duas cores hex. */
 function contrast(a: string, b: string): number {
@@ -21,45 +16,60 @@ function contrast(a: string, b: string): number {
 }
 
 describe("design tokens", () => {
-  it("tokens.css and tokens.ts define exactly the same colors", () => {
-    expect(cssVars).toEqual(colors);
+  it("tokens.css is generated from tokens.ts (run `npm run tokens -w @mel/ui-tokens` after editing)", async () => {
+    await expect(renderTokensCss()).toMatchFileSnapshot("./tokens.css");
   });
 
-  it.each([
+  it("both themes define exactly the same semantic tokens", () => {
+    expect(Object.keys(themes.dark).sort()).toEqual(Object.keys(themes.light).sort());
+  });
+
+  const STATUSES = ["lost", "found", "sighting", "adoption", "info"] as const;
+  // Texto (4,5:1) — vale para os dois temas.
+  const TEXT_PAIRS: [SemanticToken, SemanticToken][] = [
     ["text-primary", "background"],
+    ["text-primary", "surface"],
+    ["text-primary", "surface-elevated"],
     ["text-primary", "surface-warm"],
+    ["text-primary", "input"],
     ["text-secondary", "background"],
     ["text-secondary", "surface"],
     ["text-secondary", "surface-muted"],
-    ["brand-on-primary", "brand-primary"],
-    ["brand-on-primary", "brand-primary-hover"],
-    ["brand-primary", "surface"],
-    ["brand-primary", "background"],
-    ["brand-on-secondary", "brand-secondary"],
-    ["text-inverse", "ink-800"],
-    ["text-inverse", "status-lost"],
-    ["text-inverse", "status-found"],
-    ["text-inverse", "status-sighting"],
-    ["text-inverse", "status-adoption"],
-    ["text-inverse", "status-info"],
-    ["text-inverse", "danger"],
+    ["text-secondary", "surface-warm"],
+    ["primary-foreground", "primary"],
+    ["primary-foreground", "primary-hover"],
+    ["primary-soft-foreground", "primary-soft"],
+    ["link", "surface"],
+    ["link", "background"],
+    ["inverse-foreground", "inverse-surface"],
+    ["text-inverse", "danger-solid"],
     ["danger", "surface"],
-    ["status-lost", "status-lost-soft"],
-    ["status-found", "status-found-soft"],
-    ["status-sighting", "status-sighting-soft"],
-    ["status-adoption", "status-adoption-soft"],
-    ["status-info", "status-info-soft"],
-  ] as const)("%s on %s meets WCAG AA (4.5:1)", (fg, bg) => {
-    expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(4.5);
-  });
-
-  // Bordas de foco e ícones (não-texto): WCAG 1.4.11 pede 3:1.
-  it.each([
+    ["danger", "input"],
+    ...STATUSES.flatMap((s): [SemanticToken, SemanticToken][] => [
+      [`status-${s}`, `status-${s}-soft`],
+      [`status-${s}`, "surface"],
+      ["text-inverse", `status-${s}-solid`],
+    ]),
+  ];
+  // Não-texto (3:1): anel de foco, contorno de campo em foco.
+  const UI_PAIRS: [SemanticToken, SemanticToken][] = [
     ["focus", "surface"],
     ["focus", "background"],
-    ["status-lost-accent", "surface"],
-    ["status-found-accent", "surface"],
-  ] as const)("%s on %s meets 3:1 for non-text", (fg, bg) => {
-    expect(contrast(colors[fg], colors[bg])).toBeGreaterThanOrEqual(3);
-  });
+    ["focus", "input"],
+  ];
+
+  for (const theme of ["light", "dark"] as ThemeName[]) {
+    const t = themes[theme];
+    it.each(TEXT_PAIRS)(`[${theme}] %s on %s meets WCAG AA (4.5:1)`, (fg, bg) => {
+      expect(contrast(t[fg], t[bg])).toBeGreaterThanOrEqual(4.5);
+    });
+    it.each(UI_PAIRS)(`[${theme}] %s on %s meets 3:1 (non-text)`, (fg, bg) => {
+      expect(contrast(t[fg], t[bg])).toBeGreaterThanOrEqual(3);
+    });
+    it(`[${theme}] status pins/icons stand out from the surface (3:1)`, () => {
+      for (const s of ["lost", "found", "adoption"] as const) {
+        expect(contrast(palette[`status-${s}-accent`], t.surface), s).toBeGreaterThanOrEqual(3);
+      }
+    });
+  }
 });

@@ -111,7 +111,7 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
         </Alert>
         <Link
           href={`/alerta/${code}#linha-do-tempo`}
-          className="inline-flex min-h-14 items-center justify-center rounded-md bg-brand-primary px-5 text-lg font-semibold text-brand-on-primary"
+          className="inline-flex min-h-14 items-center justify-center rounded-md bg-primary px-5 text-lg font-semibold text-primary-foreground"
         >
           Ver o alerta e a linha do tempo
         </Link>
@@ -178,7 +178,7 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
             d ? (
               <label
                 key={d}
-                className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border-2 border-border-strong bg-surface text-center has-[:checked]:border-brand-primary has-[:checked]:bg-brand-secondary has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus"
+                className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border-2 border-border-strong bg-surface text-center has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus"
               >
                 <input type="radio" name="direction" value={d} checked={direction === d} onChange={() => setDirection(d)} className="sr-only" />
                 <span aria-hidden="true" className="text-2xl">
@@ -235,7 +235,7 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
         type="submit"
         disabled={Boolean(busy)}
         aria-busy={Boolean(busy) || undefined}
-        className="min-h-16 w-full rounded-lg bg-status-sighting px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card disabled:opacity-60"
+        className="min-h-16 w-full rounded-lg bg-status-sighting-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card disabled:opacity-60"
       >
         {busy ?? "Enviar avistamento"}
       </button>

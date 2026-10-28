@@ -40,7 +40,7 @@ export function SegmentedControl<T extends string>({
     <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="relative grid rounded-md bg-surface-muted p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
       <span
         aria-hidden="true"
-        className="absolute inset-y-1 left-1 rounded-[11px] bg-surface shadow-sm transition-transform duration-300 ease-mel"
+        className="absolute inset-y-1 left-1 rounded-[11px] border border-border bg-surface-elevated shadow-sm transition-transform duration-300 ease-mel"
         style={{ width: `calc((100% - 8px) / ${options.length})`, transform: `translateX(${index * 100}%)` }}
       />
       {options.map((o, i) => {

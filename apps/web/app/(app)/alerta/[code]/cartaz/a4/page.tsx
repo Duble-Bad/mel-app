@@ -61,7 +61,7 @@ async function PrintPoster({ code }: { code: string }) {
             <p className={`text-[7mm] font-extrabold ${accent}`}>{p.cta}</p>
             {p.contact && <p className="text-[6mm] font-bold text-text-primary">{p.contact}</p>}
             <p className="text-[4mm] break-all text-text-secondary">{url.replace(/^https?:\/\//, "")}</p>
-            <p className="text-[5mm] font-extrabold text-brand-primary">MEL · Uma rede inteira procurando com você.</p>
+            <p className="text-[5mm] font-extrabold text-link">MEL · Uma rede inteira procurando com você.</p>
           </div>
         </div>
       </article>

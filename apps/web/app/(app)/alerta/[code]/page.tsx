@@ -129,7 +129,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
         {!c.isOwner && c.status === "ACTIVE" && (
           <Link
             href={`/avistamento/${c.code}`}
-            className="inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-lg bg-status-sighting px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card"
+            className="inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-lg bg-status-sighting-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card"
           >
             <span aria-hidden="true">👁</span> Eu vi este pet
           </Link>
@@ -210,7 +210,7 @@ function Contact({ c }: { c: PublicLostCase }) {
       {chat && (
         <Link
           href={`/alerta/${c.code}/conversar`}
-          className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-brand-primary px-4 text-lg font-bold text-brand-on-primary"
+          className="inline-flex min-h-14 items-center justify-center gap-2 rounded-md bg-primary px-4 text-lg font-bold text-primary-foreground"
         >
           <span aria-hidden="true">💬</span> Conversar com o tutor
         </Link>
@@ -221,7 +221,7 @@ function Contact({ c }: { c: PublicLostCase }) {
           target="_blank"
           rel="noopener noreferrer"
           className={`inline-flex items-center justify-center gap-2 rounded-md px-4 font-bold ${
-            chat ? "min-h-12 border-2 border-border-strong bg-surface" : "min-h-14 bg-brand-primary text-lg text-brand-on-primary"
+            chat ? "min-h-12 border-2 border-border-strong bg-surface" : "min-h-14 bg-primary text-lg text-primary-foreground"
           }`}
         >
           WhatsApp do tutor

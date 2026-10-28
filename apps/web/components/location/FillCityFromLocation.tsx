@@ -40,7 +40,7 @@ export function FillCityFromLocation({ onFill }: { onFill: (city: string, state:
         type="button"
         onClick={handleClick}
         disabled={pending}
-        className="inline-flex min-h-11 items-center gap-2 self-start rounded-md px-1 font-semibold text-brand-primary underline-offset-4 hover:underline disabled:opacity-60"
+        className="inline-flex min-h-11 items-center gap-2 self-start rounded-md px-1 font-semibold text-link underline-offset-4 hover:underline disabled:opacity-60"
       >
         <span aria-hidden="true">📍</span>
         {pending ? "Procurando sua cidade…" : "Usar minha localização"}

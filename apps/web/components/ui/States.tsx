@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export function LoadingState({ label = "Carregando…" }: { label?: string }) {
   return (
     <div role="status" aria-live="polite" className="flex items-center gap-3 py-8 text-sm font-medium text-text-secondary">
-      <LoaderCircle aria-hidden="true" className="size-5 animate-spin text-brand-accent" strokeWidth={2} />
+      <LoaderCircle aria-hidden="true" className="size-5 animate-spin text-brand" strokeWidth={2} />
       {label}
     </div>
   );
@@ -45,7 +45,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-start gap-3 rounded-card border border-border bg-surface p-6 shadow-xs">
-      <span className="flex size-11 items-center justify-center rounded-full bg-brand-secondary text-brand-accent">
+      <span className="flex size-11 items-center justify-center rounded-full bg-primary-soft text-brand">
         <Icon aria-hidden="true" className="size-5" strokeWidth={1.75} />
       </span>
       <p className="text-lg font-semibold">{title}</p>

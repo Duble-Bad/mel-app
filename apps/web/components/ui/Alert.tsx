@@ -6,7 +6,7 @@ type Tone = "error" | "success" | "info";
 const tones: Record<Tone, { box: string; icon: typeof Info; iconClass: string; label: string }> = {
   error: { box: "border-status-lost/20 bg-status-lost-soft", icon: CircleAlert, iconClass: "text-status-lost", label: "Atenção" },
   success: { box: "border-status-found/20 bg-status-found-soft", icon: CircleCheck, iconClass: "text-status-found", label: "Tudo certo" },
-  info: { box: "border-border bg-surface-muted", icon: Info, iconClass: "text-ink-600", label: "Informação" },
+  info: { box: "border-border bg-surface-muted", icon: Info, iconClass: "text-text-secondary", label: "Informação" },
 };
 
 /** Mensagem de feedback na página. Ícone + texto, não só cor. */

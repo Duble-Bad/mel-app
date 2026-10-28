@@ -24,7 +24,7 @@ export function NotificationBell({ userId, initialUnread }: { userId: string; in
         <span
           aria-hidden="true"
           data-testid="unread-count"
-          className="absolute top-1 right-1 flex min-w-5 items-center justify-center rounded-full bg-status-lost px-1 text-xs font-bold text-text-inverse"
+          className="absolute top-1 right-1 flex min-w-5 items-center justify-center rounded-full bg-status-lost-solid px-1 text-xs font-bold text-text-inverse"
         >
           {unread > 9 ? "9+" : unread}
         </span>

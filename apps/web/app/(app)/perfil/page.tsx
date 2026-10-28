@@ -6,6 +6,7 @@ import { listMyLostCases, listMyPets } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { ThemeOptions } from "@/components/theme/ThemeSwitcher";
 import { PetCard } from "@/components/pets/PetCard";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
@@ -66,6 +67,13 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
         <Suspense fallback={<LoadingState label="Carregando seus pets…" />}>
           <MyPets ownerId={profile.id} />
         </Suspense>
+      </section>
+
+      <section aria-labelledby="aparencia" className="flex flex-col gap-3">
+        <h2 id="aparencia" className="text-xl font-bold">
+          Aparência
+        </h2>
+        <ThemeOptions layout="segmented" />
       </section>
 
       <div className="flex flex-col gap-3">
