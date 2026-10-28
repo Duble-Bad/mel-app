@@ -1,9 +1,11 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { MelMark } from "./MelLogo";
 
 /**
- * História da marca: a Mel real, que deu origem à rede. A foto aparece pequena
- * (o original tem 239×287 px) e sem filtro nos dois temas.
+ * Chamada da história da marca na home; o texto completo fica em /nossa-origem.
+ * A foto real da Mel aparece pequena (original 239×287 px) e sem filtro nos dois temas.
  */
 export function BrandStory() {
   return (
@@ -12,7 +14,7 @@ export function BrandStory() {
         <figure className="relative shrink-0">
           <Image
             src="/brand/mel-origem.webp"
-            alt="Mel, uma Yorkshire de pelo dourado e orelhas em pé"
+            alt="A Mel, uma pequena Yorkshire de pelo dourado e orelhas em pé"
             width={96}
             height={115}
             className="h-[115px] w-24 rounded-lg object-cover object-top ring-1 ring-border"
@@ -26,15 +28,21 @@ export function BrandStory() {
         <div className="flex min-w-0 flex-col gap-2">
           <p className="text-caption font-semibold tracking-[.06em] text-link uppercase">Nossa origem</p>
           <h2 id="historia" className="text-lg font-bold">
-            Começou por uma Mel. Agora é por todos eles.
+            Antes de ser um aplicativo, MEL foi uma busca.
           </h2>
         </div>
       </div>
       <p className="mt-8 text-text-secondary">
-        A MEL nasceu da busca por uma Yorkshire chamada Mel. Quando ela desapareceu, as informações ficaram espalhadas
-        entre grupos, cartazes e redes sociais, e quem queria ajudar não conseguia se conectar. A MEL reúne tudo em um só
-        lugar, para que nenhum animal precise ser procurado sozinho.
+        Tudo começou com a Mel, uma pequena Yorkshire muito amada que desapareceu de casa. Dessa busca nasceu uma rede para
+        que ninguém precise procurar sozinho.
       </p>
+      <Link
+        href="/nossa-origem"
+        className="mt-3 inline-flex min-h-11 items-center gap-1.5 font-semibold text-link underline-offset-4 hover:underline"
+      >
+        Conheça a história da Mel
+        <ArrowRight aria-hidden="true" className="size-4" strokeWidth={2} />
+      </Link>
     </section>
   );
 }

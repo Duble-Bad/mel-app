@@ -33,3 +33,12 @@ test("home has no horizontal scroll on a phone", async ({ page }) => {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test("the brand story leads to 'Nossa origem' with the real Mel", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Conheça a história da Mel" }).click();
+  await expect(page).toHaveURL(/\/nossa-origem$/);
+  await expect(page.getByRole("heading", { name: "Antes de ser um aplicativo, MEL foi uma busca.", level: 1 })).toBeVisible();
+  await expect(page.getByRole("img", { name: /A Mel, uma pequena Yorkshire/ })).toBeVisible();
+  await expect(page.getByText("Porque quando um animal desaparece, ninguém deveria precisar procurá-lo sozinho.")).toBeVisible();
+});
