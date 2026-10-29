@@ -96,8 +96,13 @@ unsafeDefiner.length ? fail(`SECURITY DEFINER sem search_path: ${unsafeDefiner.m
 // Funções SECURITY DEFINER executáveis por anon (devem ser só as públicas de leitura/envio previstas).
 const anonDefiner = q(`select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prosecdef and has_function_privilege('anon', p.oid, 'execute') order by 1`).map((r) => r[0]);
 pass(`funções SECURITY DEFINER que anon pode executar (${anonDefiner.length}): ${anonDefiner.join(", ")}`);
-const privateUsage = q(`select has_schema_privilege('anon','private','usage')::text, has_schema_privilege('authenticated','private','usage')::text`)[0];
-privateUsage.includes("true") ? fail(`schema private acessível pela API (anon/authenticated usage: ${privateUsage.join("/")})`) : pass("schema private fora da API (sem USAGE para anon/authenticated)");
+// private: anon sem acesso; authenticated tem USAGE de propósito (foundation.sql:
+// as políticas RLS chamam os helpers private.* com o papel de quem consulta).
+// O que impede o acesso pela API é o schema NÃO estar exposto (config "schemas").
+const [anonPrivate] = q(`select has_schema_privilege('anon','private','usage')::text`)[0];
+anonPrivate === "true" ? fail("anon tem USAGE no schema private") : pass("anon sem acesso ao schema private");
+const exposed = readFileSync(resolve(root, "supabase/config.toml"), "utf8").match(/^schemas = \[(.*)\]/m)?.[1] ?? "";
+exposed.includes("private") ? fail(`schema private exposto pela API (${exposed})`) : pass(`schema private fora da API (expostos: ${exposed}); authenticated tem USAGE só para as políticas RLS`);
 
 // Grants: escrita direta de anon em tabelas public.
 const anonWrite = q(`select table_name||':'||string_agg(privilege_type, '/' order by privilege_type) from information_schema.role_table_grants where grantee='anon' and table_schema='public' and privilege_type in ('INSERT','UPDATE','DELETE') group by table_name order by 1`).map((r) => r[0]);

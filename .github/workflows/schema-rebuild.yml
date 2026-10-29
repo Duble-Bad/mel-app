@@ -67,13 +67,9 @@ jobs:
         continue-on-error: true
         run: |
           npx supabase gen types typescript --local --schema public > /tmp/local.types.ts
-          if diff -u -w packages/data/src/database.types.ts /tmp/local.types.ts > /tmp/types.diff; then
-            echo "IGUAL: tipos do banco reconstruído idênticos aos gerados do mel-dev" | tee /tmp/parity.txt
-          else
-            echo "DIFERENTE: $(grep -cE '^[+-][^+-]' /tmp/types.diff) linha(s)" | tee /tmp/parity.txt
-            head -80 /tmp/types.diff | tee -a /tmp/parity.txt
-            exit 1
-          fi
+          # Comparação semântica (a versão do gerador muda só a formatação).
+          node scripts/schema-audit/types-parity.mjs packages/data/src/database.types.ts /tmp/local.types.ts | tee /tmp/parity.txt
+          exit "${PIPESTATUS[0]}"
 
       - name: Drift (schema do banco × o que as migrations geram)
         id: drift
@@ -85,12 +81,13 @@ jobs:
       - name: Testes unitários (core + trava contra produção)
         id: unit
         continue-on-error: true
-        run: npm test
+        run: npm test 2>&1 | tee /tmp/unit.txt; exit "${PIPESTATUS[0]}"
 
       - name: Testes de banco (RLS, Storage, Auth, negativos) contra 127.0.0.1
         id: db
         continue-on-error: true
-        run: npm run test:db -- --reporter=default --reporter=json --outputFile.json="$GITHUB_WORKSPACE/vitest-db.json"
+        working-directory: packages/data
+        run: npx vitest run --config vitest.db.config.ts --reporter=default --reporter=json --outputFile.json="$GITHUB_WORKSPACE/vitest-db.json"
 
       - name: Relatório
         if: always()
@@ -104,6 +101,7 @@ jobs:
           {
             echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }}"
             echo "$db_summary"
+            echo "unitários: $(grep -E 'Tests +[0-9]' /tmp/unit.txt | tr -s ' ' | paste -sd ';' -) ; trava: $(grep -E '^ℹ (pass|fail)' /tmp/unit.txt | paste -sd ' ' -)"
           } > /tmp/summary.txt
           echo "::notice title=Resumo::$(enc < /tmp/summary.txt)"
           [ -f schema-audit-report.md ] && echo "::notice title=Auditoria do schema::$(enc < schema-audit-report.md)"

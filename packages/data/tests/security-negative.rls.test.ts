@@ -75,6 +75,15 @@ describe("visitors without an account (anon key, no session)", () => {
   });
 });
 
+describe("the private schema is not reachable through the API", () => {
+  it("neither visitors nor logged-in users can call private.* helpers", async () => {
+    for (const client of [anonClient(), a.client]) {
+      const { error } = await client.schema("private" as "public").rpc("is_moderator" as never);
+      expect(error).not.toBeNull();
+    }
+  });
+});
+
 describe("anonymous sessions (sighting senders)", () => {
   it("cannot upload an avatar (real accounts only)", async () => {
     const c = anonClient();
