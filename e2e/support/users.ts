@@ -1,9 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTarget } from "../../scripts/lib/safe-target.mjs";
 
 function admin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) throw new Error('Rode "npm run env:pull" antes dos testes E2E.');
+  assertSafeTarget(url, "testes E2E");
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 

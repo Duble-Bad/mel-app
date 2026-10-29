@@ -1,8 +1,11 @@
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+import { assertSafeTarget } from "./scripts/lib/safe-target.mjs";
 
 // Os testes usam a chave secreta para criar/remover usuários de teste.
 if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+// Os E2E criam usuários, pets, alertas e apagam visitantes anônimos: só local ou dev listado.
+assertSafeTarget(process.env.NEXT_PUBLIC_SUPABASE_URL, "testes E2E");
 
 const PORT = 3100;
 const isCI = !!process.env.CI;

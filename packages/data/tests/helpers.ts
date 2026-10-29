@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { MelClient } from "../src/client";
+import { assertSafeTarget } from "../../../scripts/lib/safe-target.mjs";
 
 function env(name: string): string {
   const value = process.env[name];
@@ -15,6 +16,8 @@ export function anonClient(): MelClient {
 
 /** Ignora RLS. Usar apenas para preparar/limpar dados de teste. */
 export function serviceClient(): MelClient {
+  // Segunda barreira (a primeira é o vitest.db.config): a chave que ignora RLS só vai para alvo seguro.
+  assertSafeTarget(process.env.NEXT_PUBLIC_SUPABASE_URL, "testes de banco");
   return createClient(env("NEXT_PUBLIC_SUPABASE_URL"), env("SUPABASE_SECRET_KEY"), options);
 }
 

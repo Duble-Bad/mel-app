@@ -1,0 +1,119 @@
+name: Reconstrução do schema (Supabase local)
+
+# Prova "banco vazio + migrations versionadas = infraestrutura completa da MEL".
+# Sobe um Supabase LOCAL e descartável no runner (Docker), aplica as migrations
+# de supabase/migrations num banco vazio, audita o catálogo e roda os testes de
+# banco contra 127.0.0.1. Nenhum segredo de projeto é usado: este workflow não
+# tem como alcançar o mel-dev nem o mel-prod.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "scripts/schema-audit/**"
+      - "scripts/lib/**"
+      - "packages/data/tests/**"
+      - ".github/workflows/schema-rebuild.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild:
+    name: Banco do zero, auditoria e testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      # Só no runner (não é commitado): os testes criam dezenas de contas e
+      # sessões em minutos, acima dos limites de desenvolvimento do config.toml.
+      - name: Limites de Auth do ambiente descartável
+        run: |
+          sed -i -E 's/^(anonymous_users|sign_in_sign_ups|token_verifications) = [0-9]+/\1 = 10000/; s/^token_refresh = [0-9]+/token_refresh = 10000/' supabase/config.toml
+          grep -E '^(anonymous_users|sign_in_sign_ups|token_refresh|token_verifications) =' supabase/config.toml
+
+      - name: Subir Supabase local (banco vazio + 23 migrations, sem intervenção)
+        run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
+
+      - name: Migrations aplicadas
+        run: npx supabase migration list --local
+
+      - name: Variáveis do ambiente local (chaves padrão do Supabase local)
+        run: |
+          npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb.env
+          set -a; . /tmp/sb.env; set +a
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
+            echo "SUPABASE_SECRET_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+            echo "DB_URL=$DB_URL"
+          } >> "$GITHUB_ENV"
+          echo "API: $API_URL"
+
+      - name: Auditoria do catálogo (objeto a objeto contra as migrations)
+        id: audit
+        continue-on-error: true
+        run: node scripts/schema-audit/audit.mjs
+
+      - name: Paridade com o mel-dev (tipos gerados do dev × do banco reconstruído)
+        id: parity
+        continue-on-error: true
+        run: |
+          npx supabase gen types typescript --local --schema public > /tmp/local.types.ts
+          if diff -u -w packages/data/src/database.types.ts /tmp/local.types.ts > /tmp/types.diff; then
+            echo "IGUAL: tipos do banco reconstruído idênticos aos gerados do mel-dev" | tee /tmp/parity.txt
+          else
+            echo "DIFERENTE: $(grep -cE '^[+-][^+-]' /tmp/types.diff) linha(s)" | tee /tmp/parity.txt
+            head -80 /tmp/types.diff | tee -a /tmp/parity.txt
+            exit 1
+          fi
+
+      - name: Drift (schema do banco × o que as migrations geram)
+        id: drift
+        continue-on-error: true
+        run: |
+          npx supabase db diff --local 2>&1 | tee /tmp/drift.txt
+          if grep -qiE '^(create|alter|drop|grant|revoke)' /tmp/drift.txt; then exit 1; fi
+
+      - name: Testes unitários (core + trava contra produção)
+        id: unit
+        continue-on-error: true
+        run: npm test
+
+      - name: Testes de banco (RLS, Storage, Auth, negativos) contra 127.0.0.1
+        id: db
+        continue-on-error: true
+        run: npm run test:db -- --reporter=default --reporter=json --outputFile.json="$GITHUB_WORKSPACE/vitest-db.json"
+
+      - name: Relatório
+        if: always()
+        run: |
+          enc() { python3 -c 'import sys,urllib.parse; s=sys.stdin.read(); print(s.replace("%","%25").replace("\r","").replace("\n","%0A"))'; }
+          db_summary=$(node -e '
+            try { const r = require(process.env.GITHUB_WORKSPACE + "/vitest-db.json");
+              const failed = r.testResults.flatMap(f => f.assertionResults.filter(a => a.status === "failed").map(a => f.name.split("/").pop() + " › " + a.fullName));
+              console.log(`testes de banco: ${r.numTotalTests} executados, ${r.numPassedTests} aprovados, ${r.numFailedTests} falharam` + (failed.length ? "\nFALHAS:\n" + failed.join("\n") : ""));
+            } catch { console.log("testes de banco: relatório JSON ausente"); }')
+          {
+            echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }}"
+            echo "$db_summary"
+          } > /tmp/summary.txt
+          echo "::notice title=Resumo::$(enc < /tmp/summary.txt)"
+          [ -f schema-audit-report.md ] && echo "::notice title=Auditoria do schema::$(enc < schema-audit-report.md)"
+          [ -f /tmp/parity.txt ] && echo "::notice title=Paridade com mel-dev::$(head -c 20000 /tmp/parity.txt | enc)"
+          [ -f /tmp/drift.txt ] && echo "::notice title=Drift::$(tail -c 8000 /tmp/drift.txt | enc)"
+          cat /tmp/summary.txt schema-audit-report.md 2>/dev/null >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Falhar se alguma verificação falhou
+        if: steps.audit.outcome != 'success' || steps.parity.outcome != 'success' || steps.drift.outcome != 'success' || steps.unit.outcome != 'success' || steps.db.outcome != 'success'
+        run: exit 1
+
+      - if: always()
+        run: npx supabase stop --no-backup

@@ -1,8 +1,11 @@
 // Diagnóstico: usuários com identidade Google e seus profiles.
 // Uso: node scripts/inspect-google-users.mjs   (lê .env.local; e-mails mascarados)
 import { createClient } from "@supabase/supabase-js";
+import { assertAdminTarget } from "./lib/safe-target.mjs";
 
 process.loadEnvFile(".env.local");
+// Lê dados de usuários: fora do local/dev listado, exige --confirm-target=<ref>.
+assertAdminTarget(process.env.NEXT_PUBLIC_SUPABASE_URL, "inspeção de usuários");
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, {
   auth: { persistSession: false },
 });

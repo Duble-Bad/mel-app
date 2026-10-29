@@ -4,10 +4,12 @@
 // Uso: npm run db:seed   (projeto de desenvolvimento; lê .env.local)
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { assertSafeTarget } from "./lib/safe-target.mjs";
 
 process.loadEnvFile(".env.local");
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-if (!url?.includes(".supabase.co")) throw new Error("NEXT_PUBLIC_SUPABASE_URL ausente.");
+// Dados fictícios: só no Supabase local ou em projeto de desenvolvimento listado. Nunca em produção.
+assertSafeTarget(url, "seed de demonstração");
 
 const admin = createClient(url, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
 

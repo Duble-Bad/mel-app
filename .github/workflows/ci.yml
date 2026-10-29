@@ -31,6 +31,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       NEXT_PUBLIC_MAPTILER_KEY: ${{ secrets.NEXT_PUBLIC_MAPTILER_KEY }}
+      # Lista de permissão da trava contra produção (scripts/lib/safe-target.mjs):
+      # ref(s) do projeto de DESENVOLVIMENTO. Produção nunca entra aqui.
+      MEL_SAFE_TARGET_REFS: ${{ vars.MEL_SAFE_TARGET_REFS }}
       # Chaves de TESTE públicas da Cloudflare (sempre aprovam) — produção usa as reais.
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
       TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA
@@ -44,6 +47,10 @@ jobs:
           for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY SUPABASE_SECRET_KEY NEXT_PUBLIC_MAPTILER_KEY; do
             [ -z "${!name}" ] && missing="$missing $name"
           done
+          if [ -z "$missing" ] && [ -z "$MEL_SAFE_TARGET_REFS" ]; then
+            echo "::error title=Trava contra produção::Cadastre a variável MEL_SAFE_TARGET_REFS (ref do projeto de desenvolvimento) em Settings → Secrets and variables → Actions → Variables. Sem ela, testes que criam dados não rodam."
+            exit 1
+          fi
           if [ -n "$missing" ]; then
             echo "::warning title=Testes de banco e E2E não executados::Cadastre em Settings → Secrets and variables → Actions:$missing"
             echo "ok=false" >> "$GITHUB_OUTPUT"

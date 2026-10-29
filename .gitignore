@@ -18,3 +18,7 @@ playwright-report/
 
 # Gerado no build (worker do MapLibre)
 apps/web/public/vendor/
+
+# Saídas da reconstrução local do schema
+schema-audit-report.md
+vitest-db.json

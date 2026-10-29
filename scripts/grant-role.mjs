@@ -1,19 +1,24 @@
 // Dá (ou tira) o papel de moderação a uma conta. Só o dono do projeto roda,
 // com a chave secreta do .env.local:
 //   npm run admin:role -- pessoa@exemplo.com moderator   (ou admin / user)
+// Fora do Supabase local/dev listado em MEL_SAFE_TARGET_REFS: acrescente
+// --confirm-target=<ref do projeto>.
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
+import { assertAdminTarget } from "./lib/safe-target.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 if (existsSync(resolve(root, ".env.local"))) process.loadEnvFile(resolve(root, ".env.local"));
 const { createClient } = createRequire(resolve(root, "packages/data/package.json"))("@supabase/supabase-js");
 
-const [email, role = "moderator"] = process.argv.slice(2);
+const [email, role = "moderator"] = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 if (!email || !["user", "moderator", "admin"].includes(role)) {
   console.error("Uso: npm run admin:role -- <email> <user|moderator|admin>");
   process.exit(1);
 }
+// Fora do local/dev listado, exige --confirm-target=<ref exato> (ação deliberada).
+assertAdminTarget(process.env.NEXT_PUBLIC_SUPABASE_URL, "admin:role");
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
 let user;
 for (let page = 1; page <= 50 && !user; page++) {
