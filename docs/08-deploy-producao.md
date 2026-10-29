@@ -91,6 +91,16 @@ Transação **READ ONLY**, só catálogo — não cria usuários nem dados.
 - Realtime: `public.messages` e `public.notifications`.
 - **Drift:** impressão digital (definição completa de colunas, constraints, índices, funções, grants, triggers, políticas, RLS, enums, buckets, publication) idêntica à do banco reconstruído do zero.
 
+### Objetos criados pelo próprio Supabase
+
+Projetos novos podem nascer com objetos que **não** vêm das migrations. O pós-deploy os verifica à parte (`PLATFORM_FUNCTIONS` em `postdeploy-check.mjs`) e os tira das demais comparações. Assim, qualquer diferença restante é drift do schema da MEL.
+
+| Objeto | Origem | Critério de aceite |
+|---|---|---|
+| `public.rls_auto_enable()` | opção **"Enable automatic RLS"** na criação do `mel-prod` (event trigger que liga RLS em tabelas novas do `public`) | sem argumentos; retorna `event_trigger` (não é chamável pela API); ligada a um event trigger; `search_path` fixo; md5 da definição igual ao revisado |
+
+Enquanto o md5 não for fixado no código após revisão humana da definição (impressa no fim do relatório), o pós-deploy reprova.
+
 Pode ser rodado sozinho, a qualquer momento:
 `node scripts/prod/postdeploy-check.mjs --production --expect-ref=<ref do mel-prod>` (mesmas variáveis).
 

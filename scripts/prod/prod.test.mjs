@@ -5,6 +5,8 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
+import { compareFingerprint, fingerprint } from "../schema-audit/catalog.mjs";
+import { inspectPlatformFunctions } from "./postdeploy-check.mjs";
 import { PLAN, runPreflight, validatePlan } from "./preflight.mjs";
 import { assertInteractive, assertProdTarget, parseProdDbUrl, ProdTargetError } from "./prod-target.mjs";
 
@@ -135,6 +137,45 @@ test("preflight aborts on git, CI, plan or production-state problems (no network
   assert.match(fails(await run({ remoteVersions: async () => ["99999999999999"] })), /desconhecidas/);
   const nothing = await run({ remoteVersions: async () => (await import("../schema-audit/catalog.mjs")).migrationFiles(root).map((f) => f.version) });
   assert.match(fails(nothing), /nada pendente/);
+});
+
+test("platform functions are accepted only with exact signature, event trigger and reviewed definition", async () => {
+  const known = { "public.rls_auto_enable": { args: "", returns: "event_trigger", md5: "abc" } };
+  const row = (over = {}) => {
+    const r = { name: "public.rls_auto_enable", args: "", returns: "event_trigger", secdef: "true", config: "search_path=pg_catalog", md5: "abc", events: "ensure_rls (ddl_command_end, enabled=O)", def: "CREATE FUNCTION ...", ...over };
+    return [r.name, r.args, r.returns, r.secdef, r.config, r.md5, r.events, r.def];
+  };
+  const inspect = (rows, k = known) => inspectPlatformFunctions(async () => rows, k);
+
+  assert.deepEqual((await inspect([])).present, []); // ausente (banco reconstruído, mel-dev): nada a fazer
+  const ok = await inspect([row()]);
+  assert.deepEqual(ok.present, ["public.rls_auto_enable"]);
+  assert.equal(ok.results.every((r) => r.ok), true);
+  for (const [why, over, k] of [
+    ["definição alterada", { md5: "zzz" }],
+    ["ainda não revisada", {}, { "public.rls_auto_enable": { ...known["public.rls_auto_enable"], md5: null } }],
+    ["chamável (retorna outro tipo)", { returns: "void" }],
+    ["com argumentos", { args: "x text" }],
+    ["sem event trigger", { events: "" }],
+    ["definer sem search_path", { config: "" }],
+  ]) {
+    const r = await inspect([row(over)], k);
+    assert.equal(r.results.some((x) => !x.ok), true, why);
+  }
+});
+
+test("fingerprint ignores only the listed platform function, nothing else", async () => {
+  const fns = (extra) => async (sql) =>
+    sql.includes("pg_get_functiondef") || sql.includes("has_function_privilege")
+      ? [["public.a(x text):h"], ...extra.map((l) => [l])]
+      : [["outro"]];
+  const base = await fingerprint(fns([]));
+  const withPlatform = await fingerprint(fns(["public.rls_auto_enable():h"]), { ignoreFunctions: ["public.rls_auto_enable"] });
+  assert.deepEqual(compareFingerprint(withPlatform, base), []);
+  // Sem a exclusão, ou com outro objeto a mais, continua sendo drift.
+  assert.notDeepEqual(compareFingerprint(await fingerprint(fns(["public.rls_auto_enable():h"])), base), []);
+  const other = await fingerprint(fns(["public.rls_auto_enable():h", "public.rls_auto_enable_x():h"]), { ignoreFunctions: ["public.rls_auto_enable"] });
+  assert.notDeepEqual(compareFingerprint(other, base), []);
 });
 
 test("deploy never runs commands through a shell (the DB URL carries the password)", () => {

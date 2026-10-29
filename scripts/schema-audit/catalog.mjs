@@ -151,7 +151,7 @@ export async function collectActual(q) {
  * Impressão digital do schema por categoria: hash da definição COMPLETA de cada
  * objeto (não só do nome). Mesmo resultado em qualquer banco com o mesmo schema.
  */
-export async function fingerprint(q) {
+export async function fingerprint(q, { ignoreFunctions = [] } = {}) {
   const parts = {
     columns: `select table_name||'.'||column_name||':'||data_type||':'||udt_name||':'||is_nullable||':'||coalesce(column_default,'')||':'||is_generated||':'||coalesce(generation_expression,'') from information_schema.columns where table_schema='public' and table_name in (select tablename from pg_tables where schemaname='public')`,
     constraints: `select c.conrelid::regclass::text||':'||c.conname||':'||pg_get_constraintdef(c.oid) from pg_constraint c join pg_namespace n on n.oid=c.connamespace where n.nspname='public'`,
@@ -169,16 +169,22 @@ export async function fingerprint(q) {
   };
   const out = {};
   for (const [name, sql] of Object.entries(parts)) {
-    const lines = (await q(sql)).map((r) => r[0]).sort();
+    // Objetos da plataforma já verificados à parte (pós-deploy) saem da comparação.
+    const ignored = name === "functions" || name === "function_grants" ? ignoreFunctions.map((f) => `${f}(`) : [];
+    const lines = (await q(sql))
+      .map((r) => r[0])
+      .filter((l) => !ignored.some((p) => l.startsWith(p)))
+      .sort();
     out[name] = { count: lines.length, sha256: sha256(lines.join("\n")) };
   }
   return out;
 }
 
 /** Inventário e todas as verificações de estrutura (as mesmas em local e produção). */
-export async function audit(q, files, { exposedSchemas }) {
+export async function audit(q, files, { exposedSchemas, ignoreFunctions = [] }) {
   const expect = expectedFromMigrations(files);
   const actual = await collectActual(q);
+  for (const f of ignoreFunctions) actual.functions.delete(f);
   const results = [];
   const pass = (msg) => results.push({ ok: true, msg });
   const fail = (msg) => results.push({ ok: false, msg });
