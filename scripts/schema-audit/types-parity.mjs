@@ -8,7 +8,17 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 
 const IGNORED = new Set(["ComputedFields", "__InternalSupabase"]);
-const clean = (s) => s.replace(/\s+/g, "").replace(/^\|/, "").replace(/,(?=[\]}])/g, "").replace(/;/g, ",");
+// Notação que muda entre versões do gerador, sem mudar o tipo:
+// never ≡ Record<PropertyKey, never>; 'x' ≡ "x"; (T)[] ≡ T[]; {"k": T, …} ≡ {k: T …}.
+const clean = (s) =>
+  s
+    .replace(/\s+/g, "")
+    .replace(/^\|/, "")
+    .replace(/Record<PropertyKey,never>/g, "never")
+    .replace(/'/g, '"')
+    .replace(/\(([^()]*)\)\[\]/g, "$1[]")
+    .replace(/"(\w+)"(\??):/g, "$1$2:")
+    .replace(/[,;]/g, "");
 
 function literal(node) {
   // Converte um TypeLiteral em objeto { prop: valor | texto normalizado }.
