@@ -25,6 +25,7 @@ import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
 import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
+import { ReportButton } from "@/components/report/ReportButton";
 import { LiveSightings } from "@/components/sighting/LiveSightings";
 import { Timeline } from "@/components/sighting/Timeline";
 import { Heart } from "lucide-react";
@@ -210,9 +211,12 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 
         {c.isOwner && user && <LiveSightings userId={user.id} code={c.code} />}
 
-        <p className="text-sm text-text-secondary">
-          MEL ID {c.pet.melId} · Alerta {c.code}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-text-secondary">
+            MEL ID {c.pet.melId} · Alerta {c.code}
+          </p>
+          {!c.isOwner && <ReportButton type="lost_case" targetKey={c.code} />}
+        </div>
       </div>
     </article>
   );

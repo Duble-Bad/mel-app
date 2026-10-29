@@ -538,6 +538,54 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action: string
+          created_at: string
+          id: number
+          moderator_id: string | null
+          reason: string | null
+          report_id: string | null
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: never
+          moderator_id?: string | null
+          reason?: string | null
+          report_id?: string | null
+          target_id: string
+          target_type: Database["public"]["Enums"]["report_target"]
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: never
+          moderator_id?: string | null
+          reason?: string | null
+          report_id?: string | null
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["report_target"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_moderator_id_fkey"
+            columns: ["moderator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1024,6 +1072,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_audit_log: { Args: { p_limit?: number }; Returns: Json }
+      admin_list_reports: {
+        Args: { p_limit?: number; p_open?: boolean }
+        Returns: Json
+      }
+      admin_moderate: {
+        Args: { p_action: string; p_reason?: string; p_report_id: string }
+        Returns: undefined
+      }
+      admin_overview: { Args: never; Returns: Json }
       claim_push_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -1101,6 +1159,15 @@ export type Database = {
       open_conversation_from_match: { Args: { p_id: string }; Returns: string }
       open_conversation_from_sighting: {
         Args: { p_sighting_id: string }
+        Returns: string
+      }
+      report_content: {
+        Args: {
+          p_details?: string
+          p_reason: Database["public"]["Enums"]["report_reason"]
+          p_target: string
+          p_target_type: Database["public"]["Enums"]["report_target"]
+        }
         Returns: string
       }
       report_conversation: {

@@ -17,6 +17,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { CloseFoundCase } from "@/components/found/CloseFoundCase";
 import { MatchCard } from "@/components/found/MatchCard";
+import { ReportButton } from "@/components/report/ReportButton";
 import { MapView } from "@/components/location/MapView";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
@@ -171,6 +172,12 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
             </p>
             <ButtonLink href="/publicar/perdido">Publicar alerta do meu pet</ButtonLink>
           </section>
+        )}
+
+        {!f.isReporter && (
+          <div className="flex justify-end">
+            <ReportButton type="found_case" targetKey={f.code} />
+          </div>
         )}
 
         {f.point && (

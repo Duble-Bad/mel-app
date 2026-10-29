@@ -16,7 +16,7 @@ Cada milestone termina com: `tsc --noEmit` ✔ · `lint` ✔ · testes ✔ · fl
 | **M10** ✅ | Encontrei um pet + Radar MEL | Wizard, `found_cases`, `compute_match_score`, MatchCard, `/perfil/correspondencias`, contato com tutor | unit score, E2E ✅ **cenário "encontrei na rua" ponta a ponta** |
 | **M11** ✅ | Mapa/Radar público + filtros | `/mapa`, `/perdidos`, `/encontrados`, filtros tipo/espécie/período/raio, paginação | E2E filtros |
 | **M12** ✅ | Guardião + push | `/guardiao`, área aproximada, Edge Function `notify-guardians`, Web Push, limites antispam, central de notificações | unit antispam, integração fila |
-| **M13** | Denúncias + admin mínimo | ReportDialog em todo conteúdo, `/admin` (contagens reais, denúncias, ocultar/suspender), audit log | RLS admin, E2E denúncia → moderação |
+| **M13** ✅ | Denúncias + admin mínimo | ReportDialog em todo conteúdo, `/admin` (contagens reais, denúncias, ocultar/suspender), audit log | RLS admin, E2E denúncia → moderação |
 | **M14** | Adoção básica | Listagem, página, cadastro (moderado), formulário de interesse, status AVAILABLE/IN_PROCESS/ADOPTED | E2E adoção |
 | **M15** | Parceiros básicos | Cadastro de empresa (aprovação admin), diretório + mapa, perfil, ofertas rotuladas "Patrocinado" quando aplicável; `plans` seed sem cobrança | E2E cadastro → aprovação → aparece |
 | **M16** | LGPD + PWA + polimento | Exportar/excluir conta, consentimentos, manifest + service worker, offline básico, auditoria de acessibilidade, performance (Lighthouse mobile) | E2E exclusão; Lighthouse ≥ 90 a11y |

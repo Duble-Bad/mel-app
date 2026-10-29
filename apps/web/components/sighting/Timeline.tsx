@@ -5,6 +5,7 @@ import { useState } from "react";
 import { describeSighting, formatDateTimeBr, timeAgo, type TimelineSighting } from "@mel/core";
 import { openConversationFromSighting, setSightingHidden } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
+import { ReportButton } from "@/components/report/ReportButton";
 
 interface TimelineProps {
   petName: string;
@@ -90,6 +91,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner, helpfulSightin
               </p>
             )}
             {s.hidden && <p className="text-sm font-semibold">Oculto — só você vê.</p>}
+            {!isOwner && !s.mine && <ReportButton type="sighting" targetKey={s.id} compact />}
             {isOwner && !closed && (
               <div className="mt-1 flex flex-wrap gap-x-5">
                 {s.canReply && !s.hidden && (

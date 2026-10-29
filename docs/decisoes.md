@@ -99,4 +99,10 @@ Formato: data — decisão — motivo.
 - **2026-10-29 — Reencontro avisa os Guardiões que receberam o alerta ("Boa notícia: Mel está em casa"), só no app, sem push.**
 - **2026-10-29 — Service worker mínimo (`/sw.js`) só para notificações.** PWA completo (manifest, offline) fica no M16. No iPhone, o push exige adicionar a MEL à Tela de Início; a tela explica isso.
 - **2026-10-29 — Entrega real no celular não é testada automaticamente.** O navegador automatizado não tem serviço de push. Os testes cobrem fila, antispam, despachante (inclusive falha registrada) e a interface; a entrega deve ser conferida num Chrome/Edge real.
+- **2026-10-29 — "Denunciar" em todo conteúdo público (alerta, encontrado, avistamento), também sem conta.** O painel sobe do rodapé (Design System). A mesma pessoa não duplica denúncia aberta do mesmo conteúdo; limite de 10 por hora. Quem publicou não sabe quem denunciou.
+- **2026-10-29 — Moderação = `profiles.role` moderator/admin, definido só pelo dono do projeto (`npm run admin:role -- email moderator`).** Fora da moderação, `/admin` responde "não encontrada" (não revela o painel) e as funções recusam no banco.
+- **2026-10-29 — Painel mínimo com números reais e três ações: ocultar conteúdo, suspender autor, descartar.** Todas pedem confirmação, aceitam motivo e valem para todas as denúncias abertas do mesmo conteúdo. Cada ação entra no registro de auditoria (`moderation_actions`), que só a moderação lê.
+- **2026-10-29 — Conta suspensa não publica nada (alerta, encontrado, avistamento, mensagem)**, com uma mensagem clara. A moderação não pode suspender a própria conta.
+- **2026-10-29 — Reencontros no painel (total e 30 dias) vêm dos eventos `pet_reunited`.** É o histórico do KPI: continua contando mesmo se o alerta for apagado depois.
+- **2026-10-29 — Sem "desfazer" no painel do MVP.** Restaurar conteúdo ou suspensão é feito no banco pelo dono do projeto até existir demanda.
 

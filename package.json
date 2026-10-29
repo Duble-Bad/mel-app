@@ -23,7 +23,8 @@
     "db:seed": "node scripts/seed-demo.mjs",
     "db:types": "supabase gen types typescript --linked --schema public > packages/data/src/database.types.ts",
     "env:pull": "node scripts/pull-supabase-env.mjs",
-    "brand:icons": "node scripts/build-brand-icons.mjs"
+    "brand:icons": "node scripts/build-brand-icons.mjs",
+    "admin:role": "node scripts/grant-role.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

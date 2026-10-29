@@ -31,8 +31,11 @@ interface StyleProps {
   size?: Size;
 }
 
+/** `w-auto` em `className` troca a largura total padrão (sem depender da ordem do CSS). */
 export const buttonClasses = ({ variant = "primary", size = "lg" }: StyleProps, extra?: string) =>
-  [base, variants[variant], sizes[size], extra].filter(Boolean).join(" ");
+  [extra?.split(/\s+/).includes("w-auto") ? base.replace("w-full ", "") : base, variants[variant], sizes[size], extra]
+    .filter(Boolean)
+    .join(" ");
 
 export function Button({
   variant,

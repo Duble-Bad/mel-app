@@ -28,6 +28,12 @@ export async function createUser(label: string, { onboarded = false } = {}) {
   return { id: data.user.id, email };
 }
 
+/** Papel de moderação (somente testes; em produção use `npm run admin:role`). */
+export async function setRole(id: string, role: "user" | "moderator" | "admin") {
+  const { error } = await admin().from("profiles").update({ role }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function deleteUserById(id: string) {
   await admin().auth.admin.deleteUser(id);
 }

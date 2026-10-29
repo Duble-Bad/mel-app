@@ -109,6 +109,8 @@ O seed cria as contas `demo.tutora@exemplo.com` (Mel — Yorkshire, pública; Th
 | `npm run test:e2e` | E2E Playwright (Pixel 7) — sobe o servidor sozinho |
 | `npm run check` | typecheck + lint + unit |
 | `npm run env:pull` | atualiza chaves do Supabase no `.env.local` |
+| `npm run admin:role -- email moderator` | dá (ou tira, com `user`) acesso ao painel de moderação `/admin` |
+| `npm run brand:icons` | regera favicon e ícones do app a partir do vetor do Mel Beacon |
 | `npm run db:seed` | dados de demonstração fictícios |
 
 ## Deploy
