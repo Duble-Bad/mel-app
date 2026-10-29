@@ -193,6 +193,140 @@ export type Database = {
           },
         ]
       }
+      business_offers: {
+        Row: {
+          business_id: string
+          created_at: string
+          description: string | null
+          ends_at: string | null
+          id: string
+          is_sponsored: boolean
+          starts_at: string | null
+          title: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_sponsored?: boolean
+          starts_at?: string | null
+          title: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          ends_at?: string | null
+          id?: string
+          is_sponsored?: boolean
+          starts_at?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_offers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      businesses: {
+        Row: {
+          address_label: string
+          approved_at: string | null
+          category: Database["public"]["Enums"]["business_category"]
+          created_at: string
+          description: string
+          helps_lost: boolean
+          hours: string | null
+          id: string
+          instagram: string | null
+          lat: number
+          lng: number
+          logo_path: string | null
+          name: string
+          owner_id: string
+          phone: string | null
+          plan_code: string
+          point: unknown
+          review_note: string | null
+          short_code: string
+          status: Database["public"]["Enums"]["business_status"]
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address_label: string
+          approved_at?: string | null
+          category: Database["public"]["Enums"]["business_category"]
+          created_at?: string
+          description: string
+          helps_lost?: boolean
+          hours?: string | null
+          id?: string
+          instagram?: string | null
+          lat: number
+          lng: number
+          logo_path?: string | null
+          name: string
+          owner_id: string
+          phone?: string | null
+          plan_code?: string
+          point?: unknown
+          review_note?: string | null
+          short_code: string
+          status?: Database["public"]["Enums"]["business_status"]
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address_label?: string
+          approved_at?: string | null
+          category?: Database["public"]["Enums"]["business_category"]
+          created_at?: string
+          description?: string
+          helps_lost?: boolean
+          hours?: string | null
+          id?: string
+          instagram?: string | null
+          lat?: number
+          lng?: number
+          logo_path?: string | null
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          plan_code?: string
+          point?: unknown
+          review_note?: string | null
+          short_code?: string
+          status?: Database["public"]["Enums"]["business_status"]
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "businesses_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "businesses_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       case_matches: {
         Row: {
           algorithm_version: string
@@ -959,6 +1093,33 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          active: boolean
+          code: string
+          features: Json
+          name: string
+          price_cents: number | null
+          sort: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          features?: Json
+          name: string
+          price_cents?: number | null
+          sort?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          features?: Json
+          name?: string
+          price_cents?: number | null
+          sort?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1230,6 +1391,7 @@ export type Database = {
     Functions: {
       admin_audit_log: { Args: { p_limit?: number }; Returns: Json }
       admin_list_adoptions_for_review: { Args: never; Returns: Json }
+      admin_list_businesses_for_review: { Args: never; Returns: Json }
       admin_list_reports: {
         Args: { p_limit?: number; p_open?: boolean }
         Returns: Json
@@ -1240,6 +1402,10 @@ export type Database = {
       }
       admin_overview: { Args: never; Returns: Json }
       admin_review_adoption: {
+        Args: { p_approve: boolean; p_code: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_review_business: {
         Args: { p_approve: boolean; p_code: string; p_note?: string }
         Returns: undefined
       }
@@ -1287,6 +1453,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_business: { Args: { p_code: string }; Returns: Json }
       get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
       get_my_conversations: { Args: never; Returns: Json }
@@ -1301,6 +1468,16 @@ export type Database = {
           p_offset?: number
           p_size?: Database["public"]["Enums"]["pet_size"][]
           p_species?: Database["public"]["Enums"]["species"][]
+        }
+        Returns: Json
+      }
+      list_businesses: {
+        Args: {
+          p_categories?: Database["public"]["Enums"]["business_category"][]
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_radius_m?: number
         }
         Returns: Json
       }
@@ -1413,6 +1590,15 @@ export type Database = {
         | "ADOPTED"
         | "REJECTED"
         | "REMOVED"
+      business_category:
+        | "vet"
+        | "petshop"
+        | "grooming"
+        | "hotel"
+        | "trainer"
+        | "ngo"
+        | "other"
+      business_status: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "SUSPENDED"
       found_case_status: "ACTIVE" | "REUNITED" | "CLOSED" | "REMOVED"
       found_custody: "with_me" | "safe_place" | "clinic" | "street" | "other"
       lost_case_status: "DRAFT" | "ACTIVE" | "FOUND" | "CLOSED" | "REMOVED"
@@ -1581,6 +1767,16 @@ export const Constants = {
         "REJECTED",
         "REMOVED",
       ],
+      business_category: [
+        "vet",
+        "petshop",
+        "grooming",
+        "hotel",
+        "trainer",
+        "ngo",
+        "other",
+      ],
+      business_status: ["PENDING_REVIEW", "APPROVED", "REJECTED", "SUSPENDED"],
       found_case_status: ["ACTIVE", "REUNITED", "CLOSED", "REMOVED"],
       found_custody: ["with_me", "safe_place", "clinic", "street", "other"],
       lost_case_status: ["DRAFT", "ACTIVE", "FOUND", "CLOSED", "REMOVED"],

@@ -13,3 +13,4 @@ export * from "./publicMap";
 export * from "./guardian";
 export * from "./moderation";
 export * from "./adoption";
+export * from "./partners";

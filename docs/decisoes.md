@@ -111,3 +111,8 @@ Formato: data — decisão — motivo.
 - **2026-10-29 — Sem venda de animais.** A tela de adoção e o formulário reforçam que é gratuito e pedem denúncia em caso de cobrança.
 - **2026-10-29 — Fotos de adoção no bucket `pet-photos`, na pasta de quem doa (`<id>/adocao/…`).** Mesmas regras de upload; 1 a 4 fotos, reduzidas e sem EXIF no navegador.
 
+- **2026-10-29 — Parceiros moderados.** Todo cadastro de empresa entra "em análise"; só a moderação aprova ou recusa (recusa exige motivo, mostrado ao dono). Mudar nome, categoria, endereço ou localização de uma empresa aprovada a devolve para análise. Ofertas só depois de aprovada.
+- **2026-10-29 — "Patrocinado" é marcado só pela moderação**, nunca por quem cadastra, e aparece sempre de forma visível, na oferta e no cartão do diretório. A página explica o que o selo significa.
+- **2026-10-29 — Planos (FREE/LOCAL/PRO/PREMIUM) existem sem preço (`price_cents` nulo).** Não há cobrança no MVP; todo parceiro começa no FREE (perfil, contatos e presença no mapa).
+- **2026-10-29 — Endereço de estabelecimento é público** (diferente do endereço de tutores, que nunca é exposto). O diretório mostra parceiros num raio de 15 km do "Perto de mim" (coordenadas arredondadas no endereço da página) ou do centro de São Paulo.
+- **2026-10-29 — Logo de parceiro no bucket `pet-photos`, pasta do dono (`<id>/parceiros/…`)**, reduzido a 512 px no navegador.

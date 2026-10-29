@@ -3,12 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, Inbox, ShieldAlert } from "lucide-react";
 import { Suspense } from "react";
-import { formatDateTimeBr, MODERATION_ACTION_LABELS, REPORT_REASON_LABELS, REPORT_TARGET_LABELS, timeAgo } from "@mel/core";
-import { getAdminOverview, getAuditLog, listAdminReports, listAdoptionsForReview } from "@mel/data";
+import { BUSINESS_CATEGORY_LABELS, formatDateTimeBr, MODERATION_ACTION_LABELS, REPORT_REASON_LABELS, REPORT_TARGET_LABELS, timeAgo } from "@mel/core";
+import { getAdminOverview, getAuditLog, listAdminReports, listAdoptionsForReview, listBusinessesForReview } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AdoptionReview } from "@/components/admin/AdoptionReview";
 import { ModerationActions } from "@/components/admin/ModerationActions";
+import { BusinessReview } from "@/components/partners/PartnerClient";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 
 export const metadata: Metadata = { title: "Moderação", robots: { index: false } };
@@ -28,13 +29,14 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
   const client = await createSessionClient();
   let data;
   try {
-    const [overview, reports, audit, adoptions] = await Promise.all([
+    const [overview, reports, audit, adoptions, businesses] = await Promise.all([
       getAdminOverview(client),
       listAdminReports(client, tab === "open"),
       getAuditLog(client, 15),
       listAdoptionsForReview(client),
+      listBusinessesForReview(client),
     ]);
-    data = { overview, reports, audit, adoptions };
+    data = { overview, reports, audit, adoptions, businesses };
   } catch (error) {
     console.error("[admin] falha", error);
     return <ErrorState>Não conseguimos carregar o painel agora. Atualize a página.</ErrorState>;
@@ -151,6 +153,31 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
                   <p className="line-clamp-3 text-sm text-text-secondary">{a.description}</p>
                   <AdoptionReview code={a.code} name={a.name} />
                 </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="parceiros" className="flex flex-col gap-3">
+        <h2 id="parceiros" className="text-xl font-bold">
+          Parceiros aguardando aprovação
+        </h2>
+        {data.businesses.length === 0 ? (
+          <p className="text-text-secondary">Nenhum cadastro esperando.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {data.businesses.map((b) => (
+              <li key={b.code} data-testid="admin-business" className="flex flex-col gap-2 rounded-card border border-border/70 bg-surface p-4 shadow-sm">
+                <p className="flex flex-wrap items-center gap-2">
+                  <Link href={`/parceiros/${b.code}`} className="font-semibold text-link hover:underline">
+                    {b.name}
+                  </Link>
+                  <span className="text-sm text-text-secondary">{BUSINESS_CATEGORY_LABELS[b.category]}</span>
+                </p>
+                <p className="text-sm text-text-secondary">{b.addressLabel}</p>
+                <p className="line-clamp-3 text-sm">{b.description}</p>
+                <BusinessReview code={b.code} name={b.name} />
               </li>
             ))}
           </ul>
