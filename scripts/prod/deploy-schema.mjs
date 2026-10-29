@@ -13,6 +13,8 @@
 //
 //   node scripts/prod/deploy-schema.mjs --production --expect-ref=<ref do mel-prod>
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
 import { runPostdeploy } from "./postdeploy-check.mjs";
@@ -21,10 +23,17 @@ import { assertInteractive, maskRef } from "./prod-target.mjs";
 
 export const CONFIRM_PHRASE = "APLICAR MIGRATIONS NO MEL-PROD";
 
+// CLI do Supabase instalado no projeto (versão do package-lock), chamado pelo
+// próprio Node SEM shell: a URL com senha vai como argumento, nunca passa pelo
+// cmd.exe/bash (caracteres como & % ^ | na senha não são interpretados).
+const SUPABASE_CLI = resolve(import.meta.dirname, "../../node_modules/supabase/dist/supabase.js");
+
 function run(cmd, dbUrl) {
+  if (cmd[0] !== "supabase") throw new Error("ABORTADO: só o CLI do Supabase pode ser executado.");
+  if (!existsSync(SUPABASE_CLI)) throw new Error("ABORTADO: CLI do Supabase não instalado (rode npm ci).");
   const args = cmd.slice(1).map((a) => (a === "<DB_URL>" ? dbUrl : a));
   // Sem --yes: o próprio CLI pede a última confirmação.
-  execFileSync("npx", [cmd[0], ...args], { stdio: "inherit", shell: process.platform === "win32" });
+  execFileSync(process.execPath, [SUPABASE_CLI, ...args], { stdio: "inherit" });
 }
 
 async function main() {

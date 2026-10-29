@@ -28,13 +28,16 @@ Colocar o `mel-prod` em `MEL_SAFE_TARGET_REFS` **não** libera produção: o pro
 
 ## Execução (somente com autorização)
 
-Num **terminal novo**, na raiz do repositório, na `main` atualizada e limpa:
+Num **PowerShell novo** (ou Windows Terminal), na raiz do repositório, na `main` atualizada e limpa.
+**Não use o Git Bash**: no terminal dele o Node não é reconhecido como interativo e o deploy é recusado.
 
-```bash
-# Só nesta sessão do terminal. Nada disso vai para arquivo.
-export MEL_PROD_PROJECT_REF='<ref do mel-prod>'
-export MEL_PROD_DB_URL='postgresql://postgres:<senha>@db.<ref do mel-prod>.supabase.co:5432/postgres'
-export MEL_PROD_DB_CA_FILE='/caminho/para/prod-ca-2021.crt'
+```powershell
+# Só nesta sessão. A URL com senha é digitada mascarada (Read-Host -AsSecureString)
+# e não vai para o histórico do PowerShell nem para arquivo.
+$env:MEL_PROD_PROJECT_REF = '<ref do mel-prod>'
+$s = Read-Host 'URL do banco do mel-prod (com senha)' -AsSecureString
+$env:MEL_PROD_DB_URL = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s)); Remove-Variable s
+$env:MEL_PROD_DB_CA_FILE = 'C:\caminho\para\prod-ca-2021.crt'
 
 # 1) Pre-flight (só leitura). Aborta se qualquer item falhar.
 node scripts/prod/preflight.mjs --production --expect-ref=<ref do mel-prod>
@@ -43,8 +46,10 @@ node scripts/prod/preflight.mjs --production --expect-ref=<ref do mel-prod>
 node scripts/prod/deploy-schema.mjs --production --expect-ref=<ref do mel-prod>
 
 # 3) Limpar a sessão
-unset MEL_PROD_PROJECT_REF MEL_PROD_DB_URL MEL_PROD_DB_CA_FILE
+Remove-Item Env:MEL_PROD_PROJECT_REF, Env:MEL_PROD_DB_URL, Env:MEL_PROD_DB_CA_FILE
 ```
+
+O CLI do Supabase é chamado pelo próprio Node, **sem shell**: caracteres especiais da senha nunca são interpretados por `cmd.exe`/bash.
 
 O `deploy-schema.mjs`, em ordem:
 

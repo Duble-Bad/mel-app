@@ -1,7 +1,7 @@
 // Testes do procedimento de produção — sem rede, sem banco, refs fictícios.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
@@ -135,4 +135,11 @@ test("preflight aborts on git, CI, plan or production-state problems (no network
   assert.match(fails(await run({ remoteVersions: async () => ["99999999999999"] })), /desconhecidas/);
   const nothing = await run({ remoteVersions: async () => (await import("../schema-audit/catalog.mjs")).migrationFiles(root).map((f) => f.version) });
   assert.match(fails(nothing), /nada pendente/);
+});
+
+test("deploy never runs commands through a shell (the DB URL carries the password)", () => {
+  const src = readFileSync(join(root, "scripts/prod/deploy-schema.mjs"), "utf8").replace(/\/\/[^\n]*/g, "");
+  assert.doesNotMatch(src, /shell\s*:/);
+  assert.doesNotMatch(src, /["']npx["']/);
+  assert.match(src, /execFileSync\(process\.execPath, \[SUPABASE_CLI/);
 });
