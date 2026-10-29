@@ -3,6 +3,7 @@ import { DataError, type MelClient } from "./client";
 
 interface ConversationJson {
   id: string;
+  context?: "lost" | "adoption";
   code: string;
   case_status: LostStatus;
   pet_name: string;
@@ -38,6 +39,7 @@ const thumbUrl = (client: MelClient, path: string) => client.storage.from("pet-p
 function toConversation(client: MelClient, c: ConversationJson): Conversation {
   return {
     id: c.id,
+    context: c.context ?? "lost",
     code: c.code,
     caseStatus: c.case_status,
     petName: c.pet_name,

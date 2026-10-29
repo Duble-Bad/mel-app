@@ -10,8 +10,7 @@ test("home communicates the purpose and the four ways to help", async ({ page })
   await expect(page.getByRole("link", { name: /Perdi meu pet/i })).toHaveAttribute("href", "/publicar/perdido");
   await expect(page.getByRole("link", { name: /Encontrei um pet/i })).toHaveAttribute("href", "/publicar/encontrado");
   await expect(page.getByRole("link", { name: /Vi um pet/i })).toHaveAttribute("href", "/publicar/encontrado?vi=1");
-  // Fluxos ainda não construídos ficam visivelmente indisponíveis — nunca link morto.
-  await expect(page.getByRole("button", { name: /Quero adotar/i })).toBeDisabled();
+  await expect(page.getByRole("link", { name: /Quero adotar/i })).toHaveAttribute("href", "/adocao");
 });
 
 test("home reports a live connection to the MEL backend", async ({ page }) => {

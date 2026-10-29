@@ -15,6 +15,8 @@ export const ANTI_SCAM_NOTICE =
 
 export interface Conversation {
   id: string;
+  /** Conversa sobre um alerta ("lost") ou um anúncio de adoção ("adoption"). */
+  context: "lost" | "adoption";
   code: string;
   caseStatus: LostStatus;
   petName: string;
@@ -44,11 +46,12 @@ export interface ChatMessage {
 
 /** Como a outra pessoa aparece: o tutor nunca é exposto por nome a quem ajuda. */
 export function peerLabel(
-  c: Pick<Conversation, "myRole" | "peerName" | "peerIsAnonymous" | "petName" | "fromSighting"> & { fromFound?: boolean },
+  c: Pick<Conversation, "myRole" | "peerName" | "peerIsAnonymous" | "petName" | "fromSighting"> & { fromFound?: boolean; context?: Conversation["context"] },
 ): string {
-  if (c.myRole === "helper") return `Tutor(a) de ${c.petName}`;
+  if (c.myRole === "helper") return c.context === "adoption" ? `Quem está doando ${c.petName}` : `Tutor(a) de ${c.petName}`;
   if (c.peerName) return c.peerName;
   if (c.fromFound) return "Quem encontrou um pet parecido";
+  if (c.context === "adoption") return "Pessoa interessada em adotar";
   return c.fromSighting ? "Quem enviou o avistamento" : "Visitante sem cadastro";
 }
 

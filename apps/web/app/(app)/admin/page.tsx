@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 import { ExternalLink, Inbox, ShieldAlert } from "lucide-react";
 import { Suspense } from "react";
 import { formatDateTimeBr, MODERATION_ACTION_LABELS, REPORT_REASON_LABELS, REPORT_TARGET_LABELS, timeAgo } from "@mel/core";
-import { getAdminOverview, getAuditLog, listAdminReports } from "@mel/data";
+import { getAdminOverview, getAuditLog, listAdminReports, listAdoptionsForReview } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
+import { AdoptionReview } from "@/components/admin/AdoptionReview";
 import { ModerationActions } from "@/components/admin/ModerationActions";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 
@@ -27,8 +28,13 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
   const client = await createSessionClient();
   let data;
   try {
-    const [overview, reports, audit] = await Promise.all([getAdminOverview(client), listAdminReports(client, tab === "open"), getAuditLog(client, 15)]);
-    data = { overview, reports, audit };
+    const [overview, reports, audit, adoptions] = await Promise.all([
+      getAdminOverview(client),
+      listAdminReports(client, tab === "open"),
+      getAuditLog(client, 15),
+      listAdoptionsForReview(client),
+    ]);
+    data = { overview, reports, audit, adoptions };
   } catch (error) {
     console.error("[admin] falha", error);
     return <ErrorState>Não conseguimos carregar o painel agora. Atualize a página.</ErrorState>;
@@ -120,6 +126,31 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
                 )}
                 {tab === "open" && <ModerationActions reportId={r.id} targetType={r.targetType} authorSuspended={r.authorSuspended} />}
                 {tab === "closed" && <p className="text-sm text-text-secondary">{r.status === "DISMISSED" ? "Descartada" : "Ação aplicada"}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="adocoes" className="flex flex-col gap-3">
+        <h2 id="adocoes" className="text-xl font-bold">
+          Adoções aguardando revisão
+        </h2>
+        {data.adoptions.length === 0 ? (
+          <p className="text-text-secondary">Nenhum anúncio esperando.</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {data.adoptions.map((a) => (
+              <li key={a.code} data-testid="admin-adoption" className="flex gap-4 rounded-card border border-border/70 bg-surface p-4 shadow-sm">
+                {a.photoUrls[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
+                  <img src={a.photoUrls[0]} alt="" className="size-20 shrink-0 rounded-md object-cover" />
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <p className="font-semibold">{a.name}</p>
+                  <p className="line-clamp-3 text-sm text-text-secondary">{a.description}</p>
+                  <AdoptionReview code={a.code} name={a.name} />
+                </div>
               </li>
             ))}
           </ul>

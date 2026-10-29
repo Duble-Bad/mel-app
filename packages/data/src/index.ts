@@ -12,3 +12,4 @@ export * from "./found";
 export * from "./publicMap";
 export * from "./guardian";
 export * from "./moderation";
+export * from "./adoption";

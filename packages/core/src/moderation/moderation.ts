@@ -16,13 +16,15 @@ export const REPORT_TARGET_LABELS: Record<string, string> = {
   business: "Parceiro",
 };
 
-export const MODERATION_ACTIONS = ["hide", "suspend", "dismiss"] as const;
+export const MODERATION_ACTIONS = ["hide", "suspend", "dismiss", "approve", "reject"] as const;
 export type ModerationAction = (typeof MODERATION_ACTIONS)[number];
 
 export const MODERATION_ACTION_LABELS: Record<ModerationAction, string> = {
   hide: "Conteúdo ocultado",
   suspend: "Autor suspenso",
   dismiss: "Denúncia descartada",
+  approve: "Adoção aprovada",
+  reject: "Adoção recusada",
 };
 
 export interface AdminOverview {
@@ -61,7 +63,10 @@ export interface AuditEntry {
   target: AdminReport["target"];
 }
 
+/** Ações sobre denúncias (aprovar/recusar são da revisão de adoção). */
+export type ReportAction = Exclude<ModerationAction, "approve" | "reject">;
+
 /** Ações possíveis para um tipo de alvo (pessoa do chat não tem "ocultar"). */
-export function actionsFor(targetType: ReportTargetType): ModerationAction[] {
+export function actionsFor(targetType: ReportTargetType): ReportAction[] {
   return targetType === "user" ? ["suspend", "dismiss"] : ["hide", "suspend", "dismiss"];
 }

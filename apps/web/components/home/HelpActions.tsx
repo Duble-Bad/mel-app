@@ -16,7 +16,7 @@ const ACTIONS: HelpAction[] = [
   { label: "Perdi meu pet", hint: "Ative um alerta em 2 minutos", icon: "🔴", tone: "lost", href: "/publicar/perdido" },
   { label: "Encontrei um pet", hint: "Ajude a achar o tutor", icon: "🟢", tone: "found", href: "/publicar/encontrado" },
   { label: "Vi um pet", hint: "Viu um animal solto? Avise", icon: "🟡", tone: "sighting", href: "/publicar/encontrado?vi=1" },
-  { label: "Quero adotar", hint: "Conheça quem procura um lar", icon: "❤️", tone: "adoption" },
+  { label: "Quero adotar", hint: "Conheça quem procura um lar", icon: "❤️", tone: "adoption", href: "/adocao" },
 ];
 
 const toneClasses: Record<Tone, string> = {

@@ -105,4 +105,9 @@ Formato: data — decisão — motivo.
 - **2026-10-29 — Conta suspensa não publica nada (alerta, encontrado, avistamento, mensagem)**, com uma mensagem clara. A moderação não pode suspender a própria conta.
 - **2026-10-29 — Reencontros no painel (total e 30 dias) vêm dos eventos `pet_reunited`.** É o histórico do KPI: continua contando mesmo se o alerta for apagado depois.
 - **2026-10-29 — Sem "desfazer" no painel do MVP.** Restaurar conteúdo ou suspensão é feito no banco pelo dono do projeto até existir demanda.
+- **2026-10-29 — Adoção moderada.** Todo anúncio entra "em análise" e só a moderação aprova ou recusa (recusa exige motivo, mostrado a quem doa). Editar nome, descrição, fotos ou requisitos de um anúncio publicado o devolve para análise. Quem doa só alterna disponível ⇄ em processo ⇄ adotado. Adotado sai da lista, mas a página continua (história).
+- **2026-10-29 — "Quero adotar" exige conta real** (responsabilidade) e abre uma conversa no chat com quem doa. As respostas (moradia, outros pets, crianças, apresentação) vão como primeira mensagem. Um interesse por pessoa por anúncio; limite diário.
+- **2026-10-29 — Chat generalizado: conversa de alerta OU de adoção** (`conversations.adoption_listing_id`, com a regra "exatamente um contexto"). Regras de envio, aviso e resumo usam `private.conversation_context`; a tela mostra "Tutor(a) de…" ou "Quem está doando…".
+- **2026-10-29 — Sem venda de animais.** A tela de adoção e o formulário reforçam que é gratuito e pedem denúncia em caso de cobrança.
+- **2026-10-29 — Fotos de adoção no bucket `pet-photos`, na pasta de quem doa (`<id>/adocao/…`).** Mesmas regras de upload; 1 a 4 fotos, reduzidas e sem EXIF no navegador.
 

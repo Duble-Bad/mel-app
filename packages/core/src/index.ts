@@ -15,3 +15,4 @@ export * from "./found/match";
 export * from "./map/search";
 export * from "./guardian/guardian";
 export * from "./moderation/moderation";
+export * from "./adoption/adoption";

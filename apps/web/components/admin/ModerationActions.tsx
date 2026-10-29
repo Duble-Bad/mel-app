@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { actionsFor, type ModerationAction, type ReportTargetType } from "@mel/core";
+import { actionsFor, type ReportAction, type ReportTargetType } from "@mel/core";
 import { moderate } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { TextareaField } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
 
-const COPY: Record<ModerationAction, { button: string; title: string; text: string; confirm: string; done: string }> = {
+const COPY: Record<ReportAction, { button: string; title: string; text: string; confirm: string; done: string }> = {
   hide: {
     button: "Ocultar conteúdo",
     title: "Ocultar este conteúdo?",
@@ -39,7 +39,7 @@ const COPY: Record<ModerationAction, { button: string; title: string; text: stri
 export function ModerationActions({ reportId, targetType, authorSuspended }: { reportId: string; targetType: ReportTargetType; authorSuspended: boolean }) {
   const router = useRouter();
   const toast = useToast();
-  const [pending, setPending] = useState<ModerationAction | null>(null);
+  const [pending, setPending] = useState<ReportAction | null>(null);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -95,7 +95,9 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
       ? c.peerIsAnonymous
         ? "Esta pessoa enviou sem cadastro: ela verá sua mensagem quando voltar à MEL no mesmo aparelho."
         : `Escreva para ${peer}.`
-      : `Escreva para o tutor de ${c.petName}.`;
+      : c.context === "adoption"
+        ? `Escreva para quem está doando ${c.petName}.`
+        : `Escreva para o tutor de ${c.petName}.`;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -110,9 +112,12 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
           )}
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold">{peer}</h1>
-            <Link href={`/alerta/${c.code}`} className="text-sm font-semibold text-link underline-offset-4 hover:underline">
-              Alerta de {c.petName}
-              {c.caseStatus === "FOUND" && " · encontrado ❤️"}
+            <Link
+              href={c.context === "adoption" ? `/adocao/${c.code}` : `/alerta/${c.code}`}
+              className="text-sm font-semibold text-link underline-offset-4 hover:underline"
+            >
+              {c.context === "adoption" ? `Adoção de ${c.petName}` : `Alerta de ${c.petName}`}
+              {c.context === "lost" && c.caseStatus === "FOUND" && " · encontrado ❤️"}
             </Link>
           </div>
         </div>
