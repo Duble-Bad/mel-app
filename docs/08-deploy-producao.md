@@ -1,6 +1,6 @@
 # MEL — Deploy de schema em produção (`mel-prod`)
 
-> **Status:** procedimento preparado e testado sem rede. **Nunca executado.**
+> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29.
 > Só rode com autorização explícita do dono do projeto.
 
 Este procedimento aplica **somente as migrations versionadas** (`supabase/migrations`) no `mel-prod`.
@@ -91,15 +91,30 @@ Transação **READ ONLY**, só catálogo — não cria usuários nem dados.
 - Realtime: `public.messages` e `public.notifications`.
 - **Drift:** impressão digital (definição completa de colunas, constraints, índices, funções, grants, triggers, políticas, RLS, enums, buckets, publication) idêntica à do banco reconstruído do zero.
 
-### Objetos criados pelo próprio Supabase
+### Objetos de plataforma (não são migrations da MEL)
 
-Projetos novos podem nascer com objetos que **não** vêm das migrations. O pós-deploy os verifica à parte (`PLATFORM_FUNCTIONS` em `postdeploy-check.mjs`) e os tira das demais comparações. Assim, qualquer diferença restante é drift do schema da MEL.
+O `mel-prod` tem objetos que **não** fazem parte das 23 migrations. Eles foram auditados (READ ONLY, 2026-10-29) e são aceitos **só** pela definição exata, fixada em `scripts/prod/postdeploy-check.mjs`.
 
-| Objeto | Origem | Critério de aceite |
-|---|---|---|
-| `public.rls_auto_enable()` | provável: opção **"Enable automatic RLS"** na criação do `mel-prod` (não comprovada só pelo catálogo) | sem argumentos; retorna `event_trigger`; ligada a um event trigger; `search_path` fixo; chamada como `anon` recusada; **todas** as propriedades observadas (md5 da definição, owner, segurança, ACL, grants de anon/authenticated/service_role, event triggers com evento, tags e estado) iguais às revisadas em `expected` |
+**`public.rls_auto_enable()` + event trigger `ensure_rls`**
 
-A chamada como `anon` é feita dentro da transação READ ONLY, num savepoint sempre desfeito. Enquanto `expected` for `null` (sem revisão humana das propriedades impressas no fim do relatório), o pós-deploy reprova. O relatório lista também todos os event triggers do banco e quem pode criar objetos.
+- **Fatos:** nenhuma migration nem arquivo do repositório os cria. Os OIDs (função 17604, event trigger 17605) são anteriores ao schema `supabase_migrations` (17606, criado pelo primeiro `db push`) e a todos os objetos das migrations (≥ 18740): **já existiam antes do deploy da MEL**.
+- **Origem:** provisionamento/infraestrutura do Supabase é **PROVÁVEL, não comprovada**. Nome, event trigger, tags e mensagens de LOG coincidem com a receita oficial de [event triggers do Supabase](https://supabase.com/docs/guides/database/postgres/event-triggers) (variante: nome da tabela via OID com `%I.%I`, erro não relançado). O catálogo não registra quem criou; não afirmamos que veio da opção "Enable automatic RLS".
+- **O que faz:** ao fim de `CREATE TABLE` / `CREATE TABLE AS` / `SELECT INTO` no `public`, liga RLS (sem FORCE) na tabela nova; fora do `public`, só LOG. Se o ALTER falhar, a tabela fica sem RLS e só há LOG — o pós-deploy e a auditoria da reconstrução exigem RLS em toda tabela, então isso não passa despercebido.
+- **Segurança:** owner `postgres` (não superusuário), SECURITY DEFINER com `search_path=pg_catalog`. O EXECUTE para `anon`/`authenticated` é o grant padrão do `public` e é inócuo: a chamada direta como `anon` é recusada (`0A000 cannot display a value of type event_trigger`) e o corpo só funciona dentro de um event trigger. `anon`/`authenticated` não têm CREATE em schema nem no banco.
+- **Por que mantemos:** já existia, só restringe (liga RLS) e reforça a regra "RLS em toda tabela" para tabelas criadas fora das migrations (ex.: pelo painel). Remover exigiria uma migration em produção para tirar uma proteção.
+
+**Como a exceção não esconde outro drift**
+
+| Verificação | Reprova se |
+|---|---|
+| `PLATFORM_FUNCTIONS` (uma única função, por nome) | ausente; assinatura, retorno, linguagem, md5 (`846ec2fb…a9bf`), owner, superusuário, DEFINER/INVOKER, `search_path`, ACL ou EXECUTE de anon/authenticated/service_role diferentes; event trigger ligado diferente; chamada como `anon` não recusada (ou não testável) |
+| `EXPECTED_EVENT_TRIGGERS` (lista exata de 7) | qualquer event trigger a mais, a menos, ou com nome, evento, tags, estado, owner ou função diferentes |
+| Funções / impressão digital | qualquer outra função a mais no `public`/`private` (só o nome acima sai da comparação) ou qualquer diferença nas 13 categorias |
+| Papéis da API | `anon`/`authenticated` com CREATE em algum schema ou no banco |
+
+Os 6 outros event triggers (`issue_graphql_placeholder`, `issue_pg_cron_access`, `issue_pg_graphql_access`, `issue_pg_net_access`, `pgrst_ddl_watch`, `pgrst_drop_watch`; owner `supabase_admin`, funções em `extensions`) são **infraestrutura do Supabase**, não migrations da MEL. Uma atualização da plataforma que os altere faz o pós-deploy reprovar de propósito: revise e atualize a lista antes de aceitar.
+
+A chamada como `anon` roda dentro da transação READ ONLY, num savepoint sempre desfeito.
 
 Pode ser rodado sozinho, a qualquer momento:
 `node scripts/prod/postdeploy-check.mjs --production --expect-ref=<ref do mel-prod>` (mesmas variáveis).

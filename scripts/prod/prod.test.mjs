@@ -5,8 +5,8 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
-import { compareFingerprint, fingerprint } from "../schema-audit/catalog.mjs";
-import { inspectPlatformFunctions } from "./postdeploy-check.mjs";
+import { audit, compareFingerprint, fingerprint } from "../schema-audit/catalog.mjs";
+import { checkEventTriggers, EXPECTED_EVENT_TRIGGERS, inspectPlatformFunctions, PLATFORM_FUNCTIONS } from "./postdeploy-check.mjs";
 import { PLAN, runPreflight, validatePlan } from "./preflight.mjs";
 import { assertInteractive, assertProdTarget, parseProdDbUrl, ProdTargetError } from "./prod-target.mjs";
 
@@ -139,59 +139,114 @@ test("preflight aborts on git, CI, plan or production-state problems (no network
   assert.match(fails(nothing), /nada pendente/);
 });
 
-test("platform functions are accepted only when every observed property equals the reviewed one", async () => {
+// Valores observados na auditoria READ ONLY do mel-prod (2026-10-29).
+const AUDITED_ACL = "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}";
+const AUDITED_EVT = ["ensure_rls", "ddl_command_end", "CREATE TABLE,CREATE TABLE AS,SELECT INTO", "O", "postgres"];
+
+test("rls_auto_enable is accepted only when it matches the audited object exactly", async () => {
   const NAME = "public.rls_auto_enable";
-  // Catálogo simulado: responde a cada consulta da inspeção.
+  // Catálogo simulado (padrão = o que a auditoria observou); `over` muda um atributo.
   const catalog = (over = {}) => {
-    const f = { args: "", returns: "event_trigger", owner: "postgres", secdef: "true", config: "search_path=pg_catalog", acl: "{postgres=X/postgres}", anon: "false", md5: "abc", evt: [["ensure_rls", "ddl_command_end", "CREATE TABLE", "O", "postgres"]], callable: false, ...over };
+    const f = {
+      args: "", returns: "event_trigger", language: "plpgsql", owner: "postgres", ownerSuper: "false", secdef: "true", config: "search_path=pg_catalog",
+      acl: AUDITED_ACL, anon: "true", authenticated: "true", serviceRole: "true", md5: "846ec2fbff751d24b890656d63c3a9bf",
+      evt: [AUDITED_EVT], member: "true", callable: false, canCreate: [], ...over,
+    };
     const calls = [];
     const q = async (sql) => {
       calls.push(sql);
-      if (sql.includes("from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_language"))
-        return f.absent ? [] : [["1", f.args, f.returns, "plpgsql", f.owner, "false", f.secdef, f.config, f.acl, f.anon, "true", "true", f.md5, "CREATE FUNCTION ..."]];
+      if (sql.includes("join pg_language"))
+        return f.absent ? [] : [["1", f.args, f.returns, f.language, f.owner, f.ownerSuper, f.secdef, f.config, f.acl, f.anon, f.authenticated, f.serviceRole, f.md5, "CREATE FUNCTION ..."]];
       if (sql.includes("where evtfoid=")) return f.evt;
-      if (sql.includes("pg_has_role")) return [["true"]];
+      if (sql.includes("pg_has_role")) return [[f.member]];
       if (sql.startsWith(`select ${NAME}()`)) {
         if (f.callable) return [[""]];
-        throw Object.assign(new Error("trigger functions can only be called as triggers"), { code: "0A000" });
+        throw Object.assign(new Error("cannot display a value of type event_trigger"), { code: "0A000" });
       }
+      if (sql.includes("has_database_privilege")) return [["anon", "nenhum", "false"], ["authenticated", "nenhum", "false"], ...f.canCreate];
       return [];
     };
     return { q, calls };
   };
-  const reviewed = async () => {
-    const { q } = catalog({ callable: false });
-    const r = await inspectPlatformFunctions(q, { [NAME]: { expected: null } });
-    return JSON.parse(r.details.join("\n").match(/```json\n([\s\S]*?)\n```/)[1]);
-  };
-  const expected = await reviewed();
-  const inspect = (over) => inspectPlatformFunctions(catalog(over).q, { [NAME]: { expected } });
+  const fails = async (over) => (await inspectPlatformFunctions(catalog(over).q)).results.filter((r) => !r.ok).map((r) => r.msg);
 
-  assert.deepEqual((await inspect({ absent: true })).present, []); // ausente (banco reconstruído, mel-dev): nada a fazer
-  const ok = await inspect({});
+  // O objeto auditado passa com a constante versionada (PLATFORM_FUNCTIONS).
+  const ok = await inspectPlatformFunctions(catalog().q);
   assert.deepEqual(ok.present, [NAME]);
-  assert.equal(ok.results.every((r) => r.ok), true, ok.results.map((r) => r.msg).join(" | "));
+  assert.deepEqual(ok.results.filter((r) => !r.ok), []);
+  assert.deepEqual(ok.details, []);
   // A sondagem como anon roda num savepoint que é sempre desfeito.
-  const { q, calls } = catalog({});
-  await inspectPlatformFunctions(q, { [NAME]: { expected } });
+  const { q, calls } = catalog();
+  await inspectPlatformFunctions(q);
   assert.deepEqual(calls.filter((c) => /savepoint|set local role/.test(c)), ["savepoint mel_probe", "set local role anon", "rollback to savepoint mel_probe"]);
 
-  for (const [why, over, spec] of [
-    ["ainda não revisada", {}, { expected: null }],
-    ["definição alterada", { md5: "zzz" }],
-    ["outro owner", { owner: "supabase_admin" }],
-    ["grant novo para anon", { anon: "true", acl: "{=X/postgres}" }],
-    ["event trigger diferente", { evt: [["ensure_rls", "ddl_command_end", "(todas)", "O", "postgres"]] }],
-    ["event trigger desabilitado", { evt: [["ensure_rls", "ddl_command_end", "CREATE TABLE", "D", "postgres"]] }],
-    ["sem event trigger", { evt: [] }],
-    ["retorna outro tipo", { returns: "void" }],
-    ["com argumentos", { args: "x text" }],
-    ["definer sem search_path", { config: "" }],
-    ["chamável como anon", { callable: true }],
+  for (const [why, over] of [
+    ["ausente quando esperada", { absent: true }],
+    ["hash diferente", { md5: "00000000000000000000000000000000" }],
+    ["assinatura com argumentos", { args: "x text" }],
+    ["retorno diferente", { returns: "void" }],
+    ["linguagem diferente", { language: "sql" }],
+    ["owner diferente", { owner: "supabase_admin" }],
+    ["owner superusuário", { ownerSuper: "true" }],
+    ["SECURITY INVOKER", { secdef: "false" }],
+    ["search_path diferente", { config: "search_path=public" }],
+    ["sem search_path", { config: "" }],
+    ["grant adicional (ACL)", { acl: `${AUDITED_ACL.slice(0, -1)},outro=X/postgres}` }],
+    ["grant removido (anon)", { acl: AUDITED_ACL.replace("anon=X/postgres,", ""), anon: "false" }],
+    ["grant removido (authenticated)", { authenticated: "false" }],
+    ["event trigger ausente", { evt: [] }],
+    ["event trigger adicional", { evt: [AUDITED_EVT, ["ensure_rls_2", ...AUDITED_EVT.slice(1)]] }],
+    ["nome do event trigger", { evt: [["outro_nome", ...AUDITED_EVT.slice(1)]] }],
+    ["evento do event trigger", { evt: [[AUDITED_EVT[0], "sql_drop", ...AUDITED_EVT.slice(2)]] }],
+    ["tag do event trigger", { evt: [[AUDITED_EVT[0], AUDITED_EVT[1], "CREATE TABLE", "O", "postgres"]] }],
+    ["estado do event trigger", { evt: [[...AUDITED_EVT.slice(0, 3), "D", "postgres"]] }],
+    ["owner do event trigger", { evt: [[...AUDITED_EVT.slice(0, 4), "supabase_admin"]] }],
+    ["chamada como anon passando", { callable: true }],
+    ["chamada como anon não testável", { member: "false" }],
+    ["anon pode criar tabelas", { canCreate: [["anon", "public", "false"]] }],
   ]) {
-    const r = await inspectPlatformFunctions(catalog(over).q, { [NAME]: spec ?? { expected } });
-    assert.equal(r.results.some((x) => !x.ok), true, why);
+    assert.notDeepEqual(await fails(over), [], why);
   }
+  // Sem revisão, nada é aceito.
+  assert.notDeepEqual((await inspectPlatformFunctions(catalog().q, { [NAME]: { expected: null } })).results.filter((r) => !r.ok), []);
+});
+
+test("event triggers must match the audited list exactly, one by one", async () => {
+  const row = (e) => [e.name, e.event, e.tags, e.enabled, e.owner, e.function];
+  const check = async (rows) => (await checkEventTriggers(async () => rows))[0];
+  const audited = EXPECTED_EVENT_TRIGGERS.map(row);
+  assert.equal(EXPECTED_EVENT_TRIGGERS.length, 7);
+  assert.equal((await check(audited)).ok, true);
+  const change = (i, k, v) => audited.map((r, j) => (j === i ? r.with(k, v) : r));
+  for (const [why, rows] of [
+    ["ausente", audited.slice(1)],
+    ["adicional", [...audited, ["novo", "ddl_command_end", "(todas)", "O", "postgres", "public.x()"]]],
+    ["nome diferente", change(0, 0, "ensure_rls_x")],
+    ["evento diferente", change(0, 1, "sql_drop")],
+    ["tag diferente", change(0, 2, "CREATE TABLE")],
+    ["estado diferente", change(0, 3, "D")],
+    ["owner diferente", change(0, 4, "supabase_admin")],
+    ["função associada diferente", change(0, 5, "public.outra()")],
+    ["infra do Supabase alterada", change(5, 5, "public.pgrst_ddl_watch()")],
+    ["mesma quantidade, outro trigger", [...audited.slice(1), ["outro", ...audited[0].slice(1)]]],
+  ]) {
+    assert.equal((await check(rows)).ok, false, why);
+  }
+});
+
+test("any other extra function in public is still drift (only the audited platform function is ignored)", async () => {
+  const q = async (sql) => {
+    if (sql.includes("p.prokind='f'") && sql.startsWith("select n.nspname||'.'||p.proname from")) return [["public.rls_auto_enable"], ["public.extra_fn"]];
+    if (sql.startsWith("select count(*)")) return [["0"]];
+    if (sql.includes("has_schema_privilege('anon','private'")) return [["false"]];
+    return [];
+  };
+  const { results } = await audit(q, [], { exposedSchemas: undefined, ignoreFunctions: Object.keys(PLATFORM_FUNCTIONS) });
+  const fn = results.find((r) => r.msg.startsWith("functions:"));
+  assert.equal(fn.ok, false);
+  assert.match(fn.msg, /Sobrando: public\.extra_fn$/);
+  assert.doesNotMatch(fn.msg, /rls_auto_enable/);
+  assert.deepEqual(Object.keys(PLATFORM_FUNCTIONS), ["public.rls_auto_enable"]);
 });
 
 test("fingerprint ignores only the listed platform function, nothing else", async () => {

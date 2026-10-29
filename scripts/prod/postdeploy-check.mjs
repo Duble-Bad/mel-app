@@ -13,19 +13,74 @@ import { assertProdTarget, maskRef } from "./prod-target.mjs";
 export const EXPECTED = { migrations: 23, tabelas: 24, politicas_public: 60, politicas_storage: 9, enums: 16, funcoes_public: 40, funcoes_private: 46, triggers: 24 };
 
 /**
- * Funções que o PRÓPRIO Supabase cria em projetos novos, fora das migrations
- * (não existem no banco reconstruído do zero nem no mel-dev). Só são aceitas
- * quando TODAS as propriedades observadas (assinatura, md5 da definição,
- * owner, segurança, search_path, ACL, grants e event triggers) forem iguais às
- * revisadas em `expected`. `expected: null` = ainda não revisada → reprova.
- * Qualquer outro objeto a mais é drift.
+ * Funções de PLATAFORMA (não são migrations da MEL) aceitas no mel-prod.
+ * Só são aceitas quando TODAS as propriedades observadas (assinatura, md5 da
+ * definição, owner, segurança, search_path, ACL, grants e event triggers)
+ * forem iguais às revisadas em `expected`, e a chamada como anon for recusada.
+ * Ausente em produção também reprova. Qualquer outra função a mais é drift.
  */
 export const PLATFORM_FUNCTIONS = {
-  // Provável origem: opção "Enable automatic RLS" na criação do projeto.
-  "public.rls_auto_enable": { expected: null },
+  // Auditada em 2026-10-29 (READ ONLY): criada antes das migrations da MEL
+  // (OID anterior ao schema supabase_migrations). Origem no provisionamento do
+  // Supabase PROVÁVEL, não comprovada. Mantida: só liga RLS em tabelas novas do public.
+  "public.rls_auto_enable": {
+    expected: {
+      signature: "public.rls_auto_enable() returns event_trigger",
+      language: "plpgsql",
+      owner: "postgres",
+      ownerSuperuser: false,
+      security: "DEFINER",
+      config: "search_path=pg_catalog",
+      acl: "{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+      execute: { anon: true, authenticated: true, service_role: true },
+      md5: "846ec2fbff751d24b890656d63c3a9bf",
+      eventTriggers: [{ name: "ensure_rls", event: "ddl_command_end", tags: "CREATE TABLE,CREATE TABLE AS,SELECT INTO", enabled: "O", owner: "postgres" }],
+    },
+  },
 };
 
-const EVT_ENABLED = { O: "habilitado (origin)", A: "habilitado (always)", R: "só em réplica", D: "DESABILITADO" };
+/**
+ * Lista EXATA de event triggers do mel-prod (auditada em 2026-10-29). Nenhum
+ * vem das migrations da MEL: `ensure_rls` é o da função acima; os demais são
+ * infraestrutura do Supabase (owner supabase_admin, funções em `extensions`).
+ * Um a mais, a menos ou com qualquer atributo diferente reprova — inclusive
+ * uma atualização da plataforma, que precisa ser revisada antes de aceita.
+ */
+export const EXPECTED_EVENT_TRIGGERS = [
+  { name: "ensure_rls", event: "ddl_command_end", tags: "CREATE TABLE,CREATE TABLE AS,SELECT INTO", enabled: "O", owner: "postgres", function: "public.rls_auto_enable()" },
+  { name: "issue_graphql_placeholder", event: "sql_drop", tags: "DROP EXTENSION", enabled: "O", owner: "supabase_admin", function: "extensions.set_graphql_placeholder()" },
+  { name: "issue_pg_cron_access", event: "ddl_command_end", tags: "CREATE EXTENSION", enabled: "O", owner: "supabase_admin", function: "extensions.grant_pg_cron_access()" },
+  { name: "issue_pg_graphql_access", event: "ddl_command_end", tags: "CREATE EXTENSION", enabled: "O", owner: "supabase_admin", function: "extensions.grant_pg_graphql_access()" },
+  { name: "issue_pg_net_access", event: "ddl_command_end", tags: "CREATE EXTENSION", enabled: "O", owner: "supabase_admin", function: "extensions.grant_pg_net_access()" },
+  { name: "pgrst_ddl_watch", event: "ddl_command_end", tags: "(todas)", enabled: "O", owner: "supabase_admin", function: "extensions.pgrst_ddl_watch()" },
+  { name: "pgrst_drop_watch", event: "sql_drop", tags: "(todas)", enabled: "O", owner: "supabase_admin", function: "extensions.pgrst_drop_watch()" },
+];
+
+/** Compara os event triggers do banco, um a um, com a lista esperada. */
+export async function checkEventTriggers(q, expected = EXPECTED_EVENT_TRIGGERS) {
+  const actual = (
+    await q(
+      `select e.evtname, e.evtevent, coalesce(array_to_string(e.evttags, ','),'(todas)'), e.evtenabled::text, pg_get_userbyid(e.evtowner), n.nspname||'.'||p.proname||'('||pg_get_function_identity_arguments(p.oid)||')' from pg_event_trigger e join pg_proc p on p.oid=e.evtfoid join pg_namespace n on n.oid=p.pronamespace order by 1`,
+    )
+  ).map(([name, event, tags, enabled, owner, fn]) => ({ name, event, tags, enabled, owner, function: fn }));
+  const byName = new Map(actual.map((e) => [e.name, e]));
+  const problems = [];
+  for (const e of expected) {
+    const a = byName.get(e.name);
+    if (!a) problems.push(`${e.name} ausente`);
+    else {
+      const diff = Object.keys(e).filter((k) => a[k] !== e[k]);
+      if (diff.length) problems.push(`${e.name} diferente em ${diff.map((k) => `${k}=${a[k]}`).join(", ")}`);
+    }
+  }
+  for (const a of actual) if (!expected.some((e) => e.name === a.name)) problems.push(`${a.name} a mais (${a.event} → ${a.function})`);
+  const list = actual.map((e) => `${e.name} (${e.event}; ${e.function})`).join(", ");
+  return [
+    problems.length
+      ? { ok: false, msg: `event triggers diferentes do esperado: ${problems.join("; ")}` }
+      : { ok: true, msg: `event triggers: ${actual.length}, idênticos ao esperado (nome, evento, tags, estado, owner, função): ${list}` },
+  ];
+}
 
 /** Todas as propriedades de segurança de uma função, num objeto comparável. */
 async function observeFunction(q, name) {
@@ -81,15 +136,19 @@ export async function inspectPlatformFunctions(q, known = PLATFORM_FUNCTIONS) {
   const details = [];
   const present = [];
   for (const [name, spec] of Object.entries(known)) {
-    for (const { observed: o, definition } of await observeFunction(q, name)) {
+    const found = await observeFunction(q, name);
+    // Revisada e esperada em produção: sumir também é diferença.
+    if (!found.length && spec.expected !== null) results.push({ ok: false, msg: `objeto da plataforma ${name}: ausente (era esperado, conforme auditoria)` });
+    for (const { observed: o, definition } of found) {
       present.push(name);
       const problems = [];
       // Requisitos estruturais, valem mesmo antes da revisão.
       if (o.signature !== `${name}() returns event_trigger`) problems.push(`assinatura inesperada: ${o.signature}`);
       if (!o.eventTriggers.length) problems.push("não está ligada a nenhum event trigger");
       if (o.security === "DEFINER" && !o.config.split(";").some((c) => c.startsWith("search_path="))) problems.push("SECURITY DEFINER sem search_path");
+      // A chamada como anon tem que ser RECUSADA; executar ou não testar reprova.
       const probe = await probeCallAsAnon(q, name);
-      if (probe.called) problems.push(probe.msg);
+      if (probe.called !== false) problems.push(`chamada como anon: ${probe.msg}`);
       // Tudo o que foi observado tem que ser igual ao revisado.
       if (spec.expected === null) problems.push("propriedades ainda não revisadas (veja o detalhe no fim do relatório)");
       else {
@@ -99,8 +158,9 @@ export async function inspectPlatformFunctions(q, known = PLATFORM_FUNCTIONS) {
       results.push(
         problems.length
           ? { ok: false, msg: `objeto da plataforma ${name}: ${problems.join("; ")}` }
-          : { ok: true, msg: `objeto da plataforma ${name}() idêntico ao revisado (definição, owner, grants e event trigger)` },
+          : { ok: true, msg: `objeto da plataforma ${name}() idêntico ao revisado (md5 ${o.md5}, owner, segurança, ACL, grants, event trigger); chamada como anon ${probe.msg}` },
       );
+      if (!problems.length) continue;
       details.push(
         "",
         `### ${name} — fora das migrations`,
@@ -119,19 +179,15 @@ export async function inspectPlatformFunctions(q, known = PLATFORM_FUNCTIONS) {
     }
   }
   if (present.length) {
-    const evts = await q(
-      `select e.evtname, e.evtevent, coalesce(array_to_string(e.evttags, ','),'(todas)'), e.evtenabled::text, pg_get_userbyid(e.evtowner), n.nspname||'.'||p.proname from pg_event_trigger e join pg_proc p on p.oid=e.evtfoid join pg_namespace n on n.oid=p.pronamespace order by 1`,
-    );
+    // anon/authenticated não podem criar tabelas (o que dispararia event triggers de DDL).
     const ddl = await q(
-      `select r, coalesce((select string_agg(n.nspname, ', ' order by n.nspname) from pg_namespace n where has_schema_privilege(r, n.oid, 'CREATE')),'nenhum'), has_database_privilege(r, current_database(), 'CREATE')::text, has_database_privilege(r, current_database(), 'TEMP')::text from unnest(array['anon','authenticated']) r`,
+      `select r, coalesce((select string_agg(n.nspname, ', ' order by n.nspname) from pg_namespace n where has_schema_privilege(r, n.oid, 'CREATE')),'nenhum'), has_database_privilege(r, current_database(), 'CREATE')::text from unnest(array['anon','authenticated']) r`,
     );
-    details.push(
-      "",
-      "### Todos os event triggers do banco",
-      ...evts.map(([n, ev, tags, en, own, fn]) => `- ${n}: ${ev}; tags ${tags}; ${EVT_ENABLED[en] ?? en}; owner ${own}; função ${fn}`),
-      "",
-      "### Quem pode criar objetos (dispararia event triggers de DDL)",
-      ...ddl.map(([r, schemas, db, temp]) => `- ${r}: CREATE em schemas: ${schemas}; CREATE no banco: ${db}; TEMP: ${temp}`),
+    const canCreate = ddl.filter(([, schemas, db]) => schemas !== "nenhum" || db === "true");
+    results.push(
+      canCreate.length
+        ? { ok: false, msg: `papéis da API podem criar objetos: ${canCreate.map(([r, s, db]) => `${r} (schemas: ${s}; banco: ${db})`).join("; ")}` }
+        : { ok: true, msg: "anon e authenticated sem CREATE em schemas e no banco" },
     );
   }
   return { present, results, details };
@@ -148,7 +204,7 @@ export async function runPostdeploy(target, root = process.cwd()) {
     // Na produção a lista de schemas expostos é do painel (não do config.toml):
     // a verificação "private fora da API" fica no checklist de configuração.
     const { inventory, results } = await audit(db.query, files, { exposedSchemas: undefined, ignoreFunctions });
-    results.push(...platform.results);
+    results.push(...platform.results, ...(await checkEventTriggers(db.query)));
     for (const [k, v] of Object.entries(EXPECTED)) {
       const got = k === "migrations" ? Number(String(inventory.migrations).split("/")[0]) : inventory[k];
       results.push({ ok: got === v, msg: `${k}: ${got} (esperado ${v})` });
