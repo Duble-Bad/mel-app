@@ -22,3 +22,4 @@ apps/web/public/vendor/
 # Saídas da reconstrução local do schema
 schema-audit-report.md
 vitest-db.json
+schema-fingerprint.generated.json

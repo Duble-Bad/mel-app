@@ -53,6 +53,14 @@ export function describeTarget(url) {
  */
 export function assertSafeTarget(url, purpose, env = process.env) {
   const t = describeTarget(url);
+  // Produção identificada neste terminal (procedimento de deploy): nunca é alvo de desenvolvimento.
+  const prod = String(env.MEL_PROD_PROJECT_REF ?? "").trim();
+  if (prod && allowedRefs(env).has(prod)) {
+    throw new UnsafeTargetError(`[trava] ${purpose} recusado: o ref de produção (${mask(prod)}) está em MEL_SAFE_TARGET_REFS. Essa lista é só de desenvolvimento; corrija antes de continuar.`);
+  }
+  if (t.kind === "cloud" && prod && t.ref === prod) {
+    throw new UnsafeTargetError(`[trava] ${purpose} recusado: o alvo é o projeto de PRODUÇÃO (${mask(prod)}).`);
+  }
   if (t.kind === "local") return t;
   if (t.kind === "cloud" && allowedRefs(env).has(t.ref)) return t;
   const where =
@@ -72,6 +80,8 @@ export function assertAdminTarget(url, purpose, argv = process.argv, env = proce
   } catch (err) {
     const t = describeTarget(url);
     const confirm = argv.find((a) => a.startsWith("--confirm-target="))?.split("=")[1];
+    // A lista de dev contaminada com produção nunca é contornável.
+    if (String(err.message).includes("está em MEL_SAFE_TARGET_REFS")) throw err;
     if (t.kind === "cloud" && confirm === t.ref) return t;
     throw new UnsafeTargetError(
       `${err.message} Para um script administrativo num projeto fora da lista, repita o comando com --confirm-target=<ref do projeto> (o ref completo, digitado de propósito).`,

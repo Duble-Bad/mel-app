@@ -1,20 +1,18 @@
 name: Reconstrução do schema (Supabase local)
 
-# Prova "banco vazio + migrations versionadas = infraestrutura completa da MEL".
+# Prova "banco vazio + migrations versionadas = infraestrutura completa da MEL"
+# e gera a impressão digital de referência usada pelo pós-deploy de produção.
 # Sobe um Supabase LOCAL e descartável no runner (Docker), aplica as migrations
 # de supabase/migrations num banco vazio, audita o catálogo e roda os testes de
 # banco contra 127.0.0.1. Nenhum segredo de projeto é usado: este workflow não
 # tem como alcançar o mel-dev nem o mel-prod.
 on:
   workflow_dispatch:
+  # Em todo push na main: o pre-flight de produção exige este check verde no
+  # commit que vai para o mel-prod.
   push:
     branches: [main]
-    paths:
-      - "supabase/migrations/**"
-      - "scripts/schema-audit/**"
-      - "scripts/lib/**"
-      - "packages/data/tests/**"
-      - ".github/workflows/schema-rebuild.yml"
+  pull_request:
 
 permissions:
   contents: read

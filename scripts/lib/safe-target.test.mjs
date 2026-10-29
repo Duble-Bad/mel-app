@@ -61,3 +61,14 @@ test("describeTarget classifies hosts", () => {
   assert.deepEqual(describeTarget(`https://${DEV}.supabase.co/rest/v1`), { kind: "cloud", ref: DEV });
   assert.equal(describeTarget("https://example.com").kind, "unknown");
 });
+
+test("production identified in the terminal is never a dev target", () => {
+  const withProd = { MEL_SAFE_TARGET_REFS: DEV, MEL_PROD_PROJECT_REF: PROD };
+  assert.throws(() => assertSafeTarget(`https://${PROD}.supabase.co`, "seed", withProd), /PRODUÇÃO/);
+  assert.equal(assertSafeTarget(`https://${DEV}.supabase.co`, "seed", withProd).ref, DEV);
+  // Produção dentro da lista de dev: tudo recusado, até o dev e o local.
+  const polluted = { MEL_SAFE_TARGET_REFS: `${DEV},${PROD}`, MEL_PROD_PROJECT_REF: PROD };
+  assert.throws(() => assertSafeTarget(`https://${DEV}.supabase.co`, "seed", polluted), UnsafeTargetError);
+  assert.throws(() => assertSafeTarget("http://127.0.0.1:54321", "seed", polluted), UnsafeTargetError);
+  assert.throws(() => assertAdminTarget(`https://${PROD}.supabase.co`, "admin", ["node", "x", `--confirm-target=${PROD}`], polluted), UnsafeTargetError);
+});

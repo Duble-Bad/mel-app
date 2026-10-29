@@ -1,0 +1,97 @@
+{
+  "note": "Migrations validadas na reconstrução do zero (workflow schema-rebuild). Mudou uma migration validada? Não edite: crie outra. Nova migration: acrescente aqui e rode a reconstrução.",
+  "migrations": [
+    {
+      "file": "20261028120000_foundation.sql",
+      "sha256": "c9740b18bd8138dab078fb4ff1ed5ddc09e14b1d74ac3b2cfcae1b09022a33aa"
+    },
+    {
+      "file": "20261028130000_avatars.sql",
+      "sha256": "6476a291dd24453d8a7b47fc4cc3da31169d71b16c79e1ca73c37585be4e8f59"
+    },
+    {
+      "file": "20261028140000_pets.sql",
+      "sha256": "ec2b5d926422d67a3f20e8c362932db482136abbf7f823045be1950bff2fe183"
+    },
+    {
+      "file": "20261028150000_lost_cases.sql",
+      "sha256": "955c130b1c555b2926bf352089cfaace7bb7e1ec13caf160c4bd32b6a5e5cd2e"
+    },
+    {
+      "file": "20261028151000_fix_is_owner.sql",
+      "sha256": "bdcc81a8e7f6999a96eb496d120f9600d86ecdc421e5c5773de498402a761748"
+    },
+    {
+      "file": "20261028160000_sightings.sql",
+      "sha256": "3f7c2c880a2082ccfee522cc6df51ea73b48a76e26b1d5a5b50b54c1bd8191f7"
+    },
+    {
+      "file": "20261028161000_submit_sighting.sql",
+      "sha256": "fa1ddcb25e6a04e6c32704e86cdde56702e5cb7908225aff8a7e09c2aa5e7ee0"
+    },
+    {
+      "file": "20261028170000_chat.sql",
+      "sha256": "0c878f248acfa0f772069a7639b1f02f50fcd0cb8210c09d61a52474f44c7c33"
+    },
+    {
+      "file": "20261029120000_reunion.sql",
+      "sha256": "84a27c732c1c5ef07e41b48e4bb5a22d47a3943c2bb3bc9b8980803b066c4aa5"
+    },
+    {
+      "file": "20261029121000_fix_is_owner_reunion.sql",
+      "sha256": "7ff5ccc362f35d62517afed3f03ca188e41539476950791824deb7b8930c7178"
+    },
+    {
+      "file": "20261029130000_found_cases.sql",
+      "sha256": "a999dac2387f2e834c0dd1acf09502b5ac9a6ac14d385750eb51e52e8f29c1a3"
+    },
+    {
+      "file": "20261029131000_match_score_radius.sql",
+      "sha256": "bbc7b8b31cd07b155d9403149ee07a98a3d29c0f14b23e90db91a5d81b6cf4bd"
+    },
+    {
+      "file": "20261029132000_match_score_unknowns.sql",
+      "sha256": "9df6109c8c04d596fffea76977d4393562fce8258d74e49f78ae48dd26530b2a"
+    },
+    {
+      "file": "20261029133000_match_score_unknowns_v2.sql",
+      "sha256": "f7c167f28a21aa4dcebb5c211e188bc09fed2a0ae741cd4168923c8fb9a3c71d"
+    },
+    {
+      "file": "20261029140000_public_map.sql",
+      "sha256": "c986cc81feccc0e5e7d4c749869c75331c629519e6af9d1940058ac242c7e9bf"
+    },
+    {
+      "file": "20261029150000_guardians.sql",
+      "sha256": "4d02167ca5e71e41d7026283414c434ec52aeb852ab631ad012cfd90261de977"
+    },
+    {
+      "file": "20261029151000_guardian_upsert_grant.sql",
+      "sha256": "bd3360b50cebb0b3d2ac3169d2a1a50131642894c50698de98f2d924122ac2ea"
+    },
+    {
+      "file": "20261029160000_moderation.sql",
+      "sha256": "d0bbafa314a66454d6cfb126a6958aee0816c6298f210134a03c0762fdcc2269"
+    },
+    {
+      "file": "20261029161000_admin_overview_events.sql",
+      "sha256": "077b7c375547750ce5de35c9fa770d3851632f5e3544829c8e9daed4c11c255b"
+    },
+    {
+      "file": "20261029170000_adoption.sql",
+      "sha256": "4c4aa9404bb9919eca856030b41d61653a0bc3542950680bda808c4dba50bfbd"
+    },
+    {
+      "file": "20261029180000_partners.sql",
+      "sha256": "e30a9384fad6c3fb059337e2ead209983f39ce0a265ad7faf87137c299add183"
+    },
+    {
+      "file": "20261029181000_partners_list_limit.sql",
+      "sha256": "5cb5cd3f345e6bb9067be5068b1933abe6f62d36e88a0a00a7c5fadd5aff43a3"
+    },
+    {
+      "file": "20261029190000_lgpd.sql",
+      "sha256": "2a64ba3c37afa98deb4ccf838dcad6d3fd09aab147e1546422a7af7d460cb300"
+    }
+  ]
+}
