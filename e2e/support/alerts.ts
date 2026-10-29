@@ -17,6 +17,8 @@ interface AlertOptions {
   whatsapp?: string;
   /** Chat da MEL ligado (padrão: sim). */
   contactChat?: boolean;
+  /** Último local visto (padrão: Praça da Sé). */
+  at?: { lat: number; lng: number; label: string };
 }
 
 const publicClient = () =>
@@ -67,8 +69,8 @@ export async function createTutorWithActiveAlert(label: string, petNameOrOptions
   }
   const draft = await startLostCase(client, user.id, pet.id);
   await updateLostCase(client, draft.id, {
-    lastSeen: { lat: -23.55052, lng: -46.633308 },
-    publicAreaLabel: "Sé, São Paulo – SP",
+    lastSeen: opts.at ? { lat: opts.at.lat, lng: opts.at.lng } : { lat: -23.55052, lng: -46.633308 },
+    publicAreaLabel: opts.at?.label ?? "Sé, São Paulo – SP",
     lostAt: new Date(Date.now() - 60 * 60_000).toISOString(),
     contactChat: opts.contactChat ?? true,
     ...(opts.whatsapp ? { contactWhatsappPublic: true, contactPhone: opts.whatsapp } : {}),

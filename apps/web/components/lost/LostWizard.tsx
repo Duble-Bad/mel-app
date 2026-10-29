@@ -23,6 +23,7 @@ import {
 } from "@mel/core";
 import { activateLostCase, discardDraft, startLostCase, updateLostCase, type LostCasePatch } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
+import { kickPushDispatch } from "@/lib/push/client";
 import { LocationPicker, type PickedLocation } from "@/components/location/LocationPicker";
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { Alert } from "@/components/ui/Alert";
@@ -105,6 +106,8 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
     setError(null);
     try {
       const active = await activateLostCase(getBrowserClient(), lostCase.id);
+      // Guardiões da região: o banco já criou os avisos; aqui só pede o envio do push.
+      kickPushDispatch();
       router.push(`/alerta/${active.code}?novo=1`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não conseguimos ativar o alerta. Tente de novo.");

@@ -15,7 +15,7 @@ Cada milestone termina com: `tsc --noEmit` ✔ · `lint` ✔ · testes ✔ · fl
 | **M9** ✅ | Reencontro | Fluxo R1–R4, estado "ESTÁ EM CASA", card ENCONTRADO, agradecimento | E2E; ✅ **cenário "sumiu há 15 min" ponta a ponta** |
 | **M10** ✅ | Encontrei um pet + Radar MEL | Wizard, `found_cases`, `compute_match_score`, MatchCard, `/perfil/correspondencias`, contato com tutor | unit score, E2E ✅ **cenário "encontrei na rua" ponta a ponta** |
 | **M11** ✅ | Mapa/Radar público + filtros | `/mapa`, `/perdidos`, `/encontrados`, filtros tipo/espécie/período/raio, paginação | E2E filtros |
-| **M12** | Guardião + push | `/guardiao`, área aproximada, Edge Function `notify-guardians`, Web Push, limites antispam, central de notificações | unit antispam, integração fila |
+| **M12** ✅ | Guardião + push | `/guardiao`, área aproximada, Edge Function `notify-guardians`, Web Push, limites antispam, central de notificações | unit antispam, integração fila |
 | **M13** | Denúncias + admin mínimo | ReportDialog em todo conteúdo, `/admin` (contagens reais, denúncias, ocultar/suspender), audit log | RLS admin, E2E denúncia → moderação |
 | **M14** | Adoção básica | Listagem, página, cadastro (moderado), formulário de interesse, status AVAILABLE/IN_PROCESS/ADOPTED | E2E adoção |
 | **M15** | Parceiros básicos | Cadastro de empresa (aprovação admin), diretório + mapa, perfil, ofertas rotuladas "Patrocinado" quando aplicável; `plans` seed sem cobrança | E2E cadastro → aprovação → aparece |

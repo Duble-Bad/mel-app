@@ -2,7 +2,7 @@ import { DataError, type MelClient } from "./client";
 
 export interface AppNotification {
   id: string;
-  kind: "sighting_new" | "message_new" | "reunion_thanks" | "match_new";
+  kind: "sighting_new" | "message_new" | "reunion_thanks" | "match_new" | "guardian_alert" | "guardian_resolved";
   /** Texto pronto para exibir. */
   title: string;
   body: string;
@@ -32,8 +32,37 @@ export function toAppNotification(row: Row): AppNotification {
     to?: "owner" | "finder";
     score?: number;
     found_code?: string;
+    case_kind?: "lost" | "found";
+    species?: "dog" | "cat" | "other";
+    custody?: string;
+    area_label?: string | null;
   };
   const pet = p.pet_name ?? "seu pet";
+  if (row.kind === "guardian_alert") {
+    const where = p.area_label ? ` perto de ${p.area_label}` : "";
+    const animal = p.species === "cat" ? "Gato" : p.species === "dog" ? "Cachorro" : "Animal";
+    const lost = p.case_kind === "lost";
+    return {
+      id: row.id,
+      kind: "guardian_alert",
+      title: lost ? `Pet perdido perto de você: ${pet}` : `${animal} ${p.custody === "street" ? "visto solto" : "encontrado"} perto de você`,
+      body: lost ? `Visto por último${where}. Fique de olho e compartilhe.` : `Pode ser o pet de alguém da região${where}.`,
+      href: lost ? `/alerta/${p.code}` : `/encontrado/${p.found_code}`,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
+  if (row.kind === "guardian_resolved") {
+    return {
+      id: row.id,
+      kind: "guardian_resolved",
+      title: `Boa notícia: ${pet} está em casa`,
+      body: "Obrigado por ficar de olho como Guardião MEL.",
+      href: `/alerta/${p.code}`,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
   if (row.kind === "match_new") {
     const owner = p.to === "owner";
     return {

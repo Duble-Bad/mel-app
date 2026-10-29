@@ -13,3 +13,4 @@ export * from "./chat/chat";
 export * from "./found/found";
 export * from "./found/match";
 export * from "./map/search";
+export * from "./guardian/guardian";

@@ -310,6 +310,62 @@ export type Database = {
           },
         ]
       }
+      guardian_settings: {
+        Row: {
+          alert_found: boolean
+          alert_lost: boolean
+          area_label: string | null
+          area_lat: number
+          area_lng: number
+          area_point: unknown
+          created_at: string
+          enabled: boolean
+          max_per_day: number
+          quiet_night: boolean
+          radius_m: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_found?: boolean
+          alert_lost?: boolean
+          area_label?: string | null
+          area_lat: number
+          area_lng: number
+          area_point?: unknown
+          created_at?: string
+          enabled?: boolean
+          max_per_day?: number
+          quiet_night?: boolean
+          radius_m?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_found?: boolean
+          alert_lost?: boolean
+          area_label?: string | null
+          area_lat?: number
+          area_lng?: number
+          area_point?: unknown
+          created_at?: string
+          enabled?: boolean
+          max_per_day?: number
+          quiet_night?: boolean
+          radius_m?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardian_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lost_cases: {
         Row: {
           city: string | null
@@ -747,6 +803,92 @@ export type Database = {
         }
         Relationships: []
       }
+      push_outbox: {
+        Row: {
+          created_at: string
+          id: number
+          notification_id: string
+          processed_at: string | null
+          reason: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          notification_id: string
+          processed_at?: string | null
+          reason?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          notification_id?: string
+          processed_at?: string | null
+          reason?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_outbox_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "push_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_success_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_success_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           conversation_id: string | null
@@ -882,6 +1024,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_push_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          created_at: string
+          kind: string
+          notification_id: string
+          outbox_id: number
+          payload: Json
+          quiet_night: boolean
+          read_at: string
+          subscriptions: Json
+          user_id: string
+        }[]
+      }
       close_found_case: {
         Args: {
           p_code: string
@@ -902,6 +1058,16 @@ export type Database = {
       debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
       debug_match_score: { Args: { p: Json }; Returns: Json }
       dismiss_match: { Args: { p_id: string }; Returns: undefined }
+      finish_push: {
+        Args: {
+          p_dead_subscriptions?: string[]
+          p_ok_subscriptions?: string[]
+          p_outbox_id: number
+          p_reason?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
       get_my_conversations: { Args: never; Returns: Json }
@@ -945,6 +1111,15 @@ export type Database = {
           p_reason: Database["public"]["Enums"]["report_reason"]
         }
         Returns: string
+      }
+      save_push_subscription: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_p256dh: string
+          p_user_agent?: string
+        }
+        Returns: undefined
       }
       search_public_cases: {
         Args: {

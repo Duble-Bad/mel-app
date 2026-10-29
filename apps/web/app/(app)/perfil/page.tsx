@@ -69,6 +69,10 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
         </Suspense>
       </section>
 
+      <ButtonLink href="/guardiao" variant="secondary" size="md">
+        Guardião MEL: alertas perto de mim
+      </ButtonLink>
+
       <section aria-labelledby="aparencia" className="flex flex-col gap-3">
         <h2 id="aparencia" className="text-xl font-bold">
           Aparência

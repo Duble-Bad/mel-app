@@ -1,4 +1,5 @@
-import { type NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
+import { dispatchPushQueue } from "@/lib/push/dispatch";
 import { foundInputSchema } from "@mel/core";
 import { createFoundCase, DataError } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
@@ -30,6 +31,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const code = await createFoundCase(await createSessionClient(), user.id, parsed.data);
+    // Guardiões da região: o banco já enfileirou; envia o push sem atrasar a resposta.
+    after(() => dispatchPushQueue().catch((err) => console.error("[api/encontrados] push falhou", err)));
     return json(201, { code });
   } catch (err) {
     if (err instanceof DataError && err.code === "P0429") return json(429, { error: err.message });

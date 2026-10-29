@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Map as MapIcon } from "lucide-react";
+import { ArrowRight, Map as MapIcon, ShieldCheck } from "lucide-react";
 import { Suspense } from "react";
 import { BrandStory } from "@/components/brand/BrandStory";
 import { HelpActions } from "@/components/home/HelpActions";
@@ -26,6 +26,22 @@ export default function HomePage() {
           <ArrowRight aria-hidden="true" className="size-4 text-text-secondary" strokeWidth={2} />
         </Link>
       </section>
+
+      <Link
+        href="/guardiao"
+        className="mt-10 flex items-start gap-4 rounded-card border border-border/70 bg-surface-warm p-5 shadow-sm transition-colors hover:bg-surface-muted"
+      >
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
+          <ShieldCheck aria-hidden="true" className="size-6" strokeWidth={1.75} />
+        </span>
+        <span className="flex flex-col gap-1">
+          <span className="text-lg font-bold">Seja um Guardião MEL</span>
+          <span className="text-text-secondary">Receba um aviso quando um pet se perder perto de você. Leva 1 minuto.</span>
+          <span className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-link">
+            Ativar alertas próximos <ArrowRight aria-hidden="true" className="size-4" strokeWidth={2} />
+          </span>
+        </span>
+      </Link>
 
       <div className="mt-12">
         <BrandStory />

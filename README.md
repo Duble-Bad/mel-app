@@ -58,6 +58,8 @@ Existe **um único `.env.local`, na raiz** — usado pelo app e pelos testes de 
 
 Veja [.env.example](.env.example). `SUPABASE_SECRET_KEY` ignora RLS: só servidor e testes, nunca no navegador.
 
+**Notificações no celular (Web Push, Guardião MEL):** gere um par de chaves com `npx web-push generate-vapid-keys` e coloque em `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (a privada nunca no código). Em produção, agende `POST /api/push/dispatch` com `Authorization: Bearer $PUSH_DISPATCH_SECRET` (ex.: a cada minuto) para enviar avisos pendentes. Sem as chaves, os avisos continuam no sininho do app.
+
 ## Autenticação
 
 - **E-mail + senha** (sem confirmação de e-mail por enquanto — ver `docs/decisoes.md`).
