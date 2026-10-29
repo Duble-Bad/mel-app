@@ -139,27 +139,57 @@ test("preflight aborts on git, CI, plan or production-state problems (no network
   assert.match(fails(nothing), /nada pendente/);
 });
 
-test("platform functions are accepted only with exact signature, event trigger and reviewed definition", async () => {
-  const known = { "public.rls_auto_enable": { args: "", returns: "event_trigger", md5: "abc" } };
-  const row = (over = {}) => {
-    const r = { name: "public.rls_auto_enable", args: "", returns: "event_trigger", secdef: "true", config: "search_path=pg_catalog", md5: "abc", events: "ensure_rls (ddl_command_end, enabled=O)", def: "CREATE FUNCTION ...", ...over };
-    return [r.name, r.args, r.returns, r.secdef, r.config, r.md5, r.events, r.def];
+test("platform functions are accepted only when every observed property equals the reviewed one", async () => {
+  const NAME = "public.rls_auto_enable";
+  // Catálogo simulado: responde a cada consulta da inspeção.
+  const catalog = (over = {}) => {
+    const f = { args: "", returns: "event_trigger", owner: "postgres", secdef: "true", config: "search_path=pg_catalog", acl: "{postgres=X/postgres}", anon: "false", md5: "abc", evt: [["ensure_rls", "ddl_command_end", "CREATE TABLE", "O", "postgres"]], callable: false, ...over };
+    const calls = [];
+    const q = async (sql) => {
+      calls.push(sql);
+      if (sql.includes("from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_language"))
+        return f.absent ? [] : [["1", f.args, f.returns, "plpgsql", f.owner, "false", f.secdef, f.config, f.acl, f.anon, "true", "true", f.md5, "CREATE FUNCTION ..."]];
+      if (sql.includes("where evtfoid=")) return f.evt;
+      if (sql.includes("pg_has_role")) return [["true"]];
+      if (sql.startsWith(`select ${NAME}()`)) {
+        if (f.callable) return [[""]];
+        throw Object.assign(new Error("trigger functions can only be called as triggers"), { code: "0A000" });
+      }
+      return [];
+    };
+    return { q, calls };
   };
-  const inspect = (rows, k = known) => inspectPlatformFunctions(async () => rows, k);
+  const reviewed = async () => {
+    const { q } = catalog({ callable: false });
+    const r = await inspectPlatformFunctions(q, { [NAME]: { expected: null } });
+    return JSON.parse(r.details.join("\n").match(/```json\n([\s\S]*?)\n```/)[1]);
+  };
+  const expected = await reviewed();
+  const inspect = (over) => inspectPlatformFunctions(catalog(over).q, { [NAME]: { expected } });
 
-  assert.deepEqual((await inspect([])).present, []); // ausente (banco reconstruído, mel-dev): nada a fazer
-  const ok = await inspect([row()]);
-  assert.deepEqual(ok.present, ["public.rls_auto_enable"]);
-  assert.equal(ok.results.every((r) => r.ok), true);
-  for (const [why, over, k] of [
+  assert.deepEqual((await inspect({ absent: true })).present, []); // ausente (banco reconstruído, mel-dev): nada a fazer
+  const ok = await inspect({});
+  assert.deepEqual(ok.present, [NAME]);
+  assert.equal(ok.results.every((r) => r.ok), true, ok.results.map((r) => r.msg).join(" | "));
+  // A sondagem como anon roda num savepoint que é sempre desfeito.
+  const { q, calls } = catalog({});
+  await inspectPlatformFunctions(q, { [NAME]: { expected } });
+  assert.deepEqual(calls.filter((c) => /savepoint|set local role/.test(c)), ["savepoint mel_probe", "set local role anon", "rollback to savepoint mel_probe"]);
+
+  for (const [why, over, spec] of [
+    ["ainda não revisada", {}, { expected: null }],
     ["definição alterada", { md5: "zzz" }],
-    ["ainda não revisada", {}, { "public.rls_auto_enable": { ...known["public.rls_auto_enable"], md5: null } }],
-    ["chamável (retorna outro tipo)", { returns: "void" }],
+    ["outro owner", { owner: "supabase_admin" }],
+    ["grant novo para anon", { anon: "true", acl: "{=X/postgres}" }],
+    ["event trigger diferente", { evt: [["ensure_rls", "ddl_command_end", "(todas)", "O", "postgres"]] }],
+    ["event trigger desabilitado", { evt: [["ensure_rls", "ddl_command_end", "CREATE TABLE", "D", "postgres"]] }],
+    ["sem event trigger", { evt: [] }],
+    ["retorna outro tipo", { returns: "void" }],
     ["com argumentos", { args: "x text" }],
-    ["sem event trigger", { events: "" }],
     ["definer sem search_path", { config: "" }],
+    ["chamável como anon", { callable: true }],
   ]) {
-    const r = await inspect([row(over)], k);
+    const r = await inspectPlatformFunctions(catalog(over).q, { [NAME]: spec ?? { expected } });
     assert.equal(r.results.some((x) => !x.ok), true, why);
   }
 });

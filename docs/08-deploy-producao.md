@@ -97,9 +97,9 @@ Projetos novos podem nascer com objetos que **não** vêm das migrations. O pós
 
 | Objeto | Origem | Critério de aceite |
 |---|---|---|
-| `public.rls_auto_enable()` | opção **"Enable automatic RLS"** na criação do `mel-prod` (event trigger que liga RLS em tabelas novas do `public`) | sem argumentos; retorna `event_trigger` (não é chamável pela API); ligada a um event trigger; `search_path` fixo; md5 da definição igual ao revisado |
+| `public.rls_auto_enable()` | provável: opção **"Enable automatic RLS"** na criação do `mel-prod` (não comprovada só pelo catálogo) | sem argumentos; retorna `event_trigger`; ligada a um event trigger; `search_path` fixo; chamada como `anon` recusada; **todas** as propriedades observadas (md5 da definição, owner, segurança, ACL, grants de anon/authenticated/service_role, event triggers com evento, tags e estado) iguais às revisadas em `expected` |
 
-Enquanto o md5 não for fixado no código após revisão humana da definição (impressa no fim do relatório), o pós-deploy reprova.
+A chamada como `anon` é feita dentro da transação READ ONLY, num savepoint sempre desfeito. Enquanto `expected` for `null` (sem revisão humana das propriedades impressas no fim do relatório), o pós-deploy reprova. O relatório lista também todos os event triggers do banco e quem pode criar objetos.
 
 Pode ser rodado sozinho, a qualquer momento:
 `node scripts/prod/postdeploy-check.mjs --production --expect-ref=<ref do mel-prod>` (mesmas variáveis).
