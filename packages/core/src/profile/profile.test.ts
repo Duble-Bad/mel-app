@@ -44,6 +44,15 @@ describe("safeNextPath", () => {
     expect(safeNextPath("/\\evil.com")).toBe("/perfil");
     expect(safeNextPath(null, "/")).toBe("/");
   });
+
+  it("refuses tricks the browser turns into another host", () => {
+    for (const evil of ["/\t/evil.com", "/\n/evil.com", "/\r/evil.com", "/ /evil.com", "/x\\..\\\\evil.com", "/\u0000//evil.com", "javascript:alert(1)", "evil.com", ""]) {
+      expect(safeNextPath(evil), JSON.stringify(evil)).toBe("/perfil");
+    }
+    // Caminhos internos comuns continuam valendo (query e espaço codificado incluídos).
+    expect(safeNextPath("/alerta/abc123?aba=mapa")).toBe("/alerta/abc123?aba=mapa");
+    expect(safeNextPath("/busca?q=gato%20preto")).toBe("/busca?q=gato%20preto");
+  });
 });
 
 describe("needsOnboarding", () => {

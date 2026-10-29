@@ -21,6 +21,9 @@ const AUTH_MESSAGES: Record<string, string> = {
   session_expired: SESSION_EXPIRED,
   bad_jwt: SESSION_EXPIRED,
   user_not_found: SESSION_EXPIRED,
+  no_authorization: SESSION_EXPIRED,
+  manual_linking_disabled:
+    "Continuar com Google mantendo suas contribuições não está disponível agora. Crie a conta com e-mail e senha para manter o que você enviou.",
   // Conversão da sessão sem cadastro (veja signUpWithPassword).
   anonymous_email_exists:
     "Já existe uma conta com este e-mail. Você pode entrar nela, mas o que enviou sem conta neste aparelho continua publicado e não passa para essa conta.",
@@ -122,9 +125,27 @@ async function convertAnonymousUser(
   return { user: data.user, hasSession: true, needsEmailConfirmation: false, convertedFromAnonymous: true };
 }
 
+/**
+ * Login/cadastro com Google (sem sessão anônima). Com sessão anônima isso
+ * TROCA de usuário — use linkGoogleToAnonymous para manter as contribuições.
+ */
 export async function signInWithGoogle(client: MelClient, redirectTo: string) {
   const { error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
   if (error) fail(error);
+}
+
+/**
+ * Visitante com sessão anônima: liga o Google ao PRÓPRIO usuário (mesmo id),
+ * que vira conta real ao voltar do Google (o Supabase tira `is_anonymous` e
+ * usa o e-mail verificado do Google). O alvo é sempre o dono do token, nunca um
+ * parâmetro. Exige "Allow manual linking" no Supabase. Se esse Google já for
+ * de outra conta, o retorno traz `identity_already_exists` (nada é transferido).
+ * No navegador, redireciona para o Google; devolve a URL (útil fora dele).
+ */
+export async function linkGoogleToAnonymous(client: MelClient, redirectTo: string): Promise<string> {
+  const { data, error } = await client.auth.linkIdentity({ provider: "google", options: { redirectTo } });
+  if (error || !data.url) fail(error);
+  return data.url;
 }
 
 /**

@@ -37,6 +37,17 @@ jobs:
           sed -i -E 's/^(anonymous_users|sign_in_sign_ups|token_verifications) = [0-9]+/\1 = 10000/; s/^token_refresh = [0-9]+/token_refresh = 10000/' supabase/config.toml
           grep -E '^(anonymous_users|sign_in_sign_ups|token_refresh|token_verifications) =' supabase/config.toml
 
+      # Só no runner: manual linking + um Google FICTÍCIO (ids de mentira, não é
+      # segredo) para provar contra o Auth real que a sessão anônima inicia o
+      # vínculo do Google a ela mesma (tests/google-linking.test.ts). O
+      # consentimento no Google não roda aqui: não há conta Google no CI.
+      - name: Vínculo de identidade (Google de teste) no ambiente descartável
+        run: |
+          sed -i -E 's/^enable_manual_linking = false/enable_manual_linking = true/' supabase/config.toml
+          printf '\n[auth.external.google]\nenabled = true\nclient_id = "mel-ci-fake-client-id"\nsecret = "mel-ci-fake-not-a-secret"\nskip_nonce_check = false\n' >> supabase/config.toml
+          grep -E '^enable_manual_linking =' supabase/config.toml
+          grep -A2 '^\[auth.external.google\]' supabase/config.toml | grep -v secret
+
       - name: Subir Supabase local (banco vazio + 23 migrations, sem intervenção)
         run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
 
@@ -85,6 +96,8 @@ jobs:
         id: db
         continue-on-error: true
         working-directory: packages/data
+        env:
+          MEL_TEST_LINKING: "1"
         run: npx vitest run --config vitest.db.config.ts --reporter=default --reporter=json --outputFile.json="$GITHUB_WORKSPACE/vitest-db.json"
 
       - name: Relatório

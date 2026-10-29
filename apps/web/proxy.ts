@@ -35,7 +35,9 @@ export async function proxy(request: NextRequest) {
 
   // Falhas de OAuth voltam do Supabase como ?error_code=… em qualquer URL
   // (normalmente a raiz). Nunca deixar passar em silêncio: levar ao /entrar.
-  const authError = searchParams.get("error_code") ?? (searchParams.get("error") ? "unknown" : null);
+  // Só códigos no formato do Supabase seguem para a URL (nada de texto arbitrário).
+  const rawError = searchParams.get("error_code") ?? (searchParams.get("error") ? "unknown" : null);
+  const authError = rawError && (/^[a-z0-9_]{1,64}$/.test(rawError) ? rawError : "unknown");
   if (authError && pathname !== "/entrar" && pathname !== "/auth/callback") {
     const url = request.nextUrl.clone();
     url.pathname = "/entrar";

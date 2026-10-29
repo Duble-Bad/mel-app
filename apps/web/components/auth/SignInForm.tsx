@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
-import { credentialsSchema, fieldErrors, needsOnboarding, safeNextPath, signUpSchema } from "@mel/core";
-import { getMyProfile, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
+import { authReturnMessage, credentialsSchema, fieldErrors, needsOnboarding, safeNextPath, signUpSchema } from "@mel/core";
+import { getMyProfile, linkGoogleToAnonymous, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -23,39 +23,24 @@ const MODES = [
 // Google só aparece depois de configurado no Supabase (ver README).
 const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "on";
 
-/** Mensagem para quem volta de um login social ou link que falhou (?erro=…). */
-function returnErrorMessage(code: string | null): string | null {
-  if (!code) return null;
-  switch (code) {
-    case "bad_oauth_state":
-    case "flow_state_expired":
-    case "flow_state_not_found":
-      return "O login com Google demorou mais que o esperado e expirou. Tente de novo — leva só alguns segundos.";
-    case "access_denied":
-      return "O login com Google foi cancelado. Você pode tentar de novo ou usar seu e-mail.";
-    case "link":
-    case "otp_expired":
-      return "Esse link expirou ou já foi usado. Entre de novo ou peça um novo link.";
-    default:
-      return "Não conseguimos concluir o login. Tente de novo ou use seu e-mail.";
-  }
-}
-
 /**
  * `anonymous`: há sessão sem cadastro neste aparelho (a pessoa já ajudou).
- * Criar conta mantém o mesmo usuário e as contribuições; entrar numa conta que
- * já existe troca de usuário e não leva nada junto (sem merge automático).
+ * Criar conta (e-mail ou Google) mantém o mesmo usuário e as contribuições;
+ * entrar numa conta que já existe troca de usuário e não leva nada junto (sem
+ * merge automático).
  */
 export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
   const params = useSearchParams();
   const next = safeNextPath(params.get("next"));
+  // Volta de um login social/link que falhou (?erro=…).
+  const [returned] = useState(() => authReturnMessage(params.get("erro")));
 
   const [mode, setMode] = useState<Mode>("signin");
   const [values, setValues] = useState<Record<FieldName, string>>({ displayName: "", email: "", password: "" });
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   // Depois da 1ª tentativa de envio, os erros acompanham a digitação.
   const [submitted, setSubmitted] = useState(false);
-  const [formError, setFormError] = useState<string | null>(() => returnErrorMessage(params.get("erro")));
+  const [formError, setFormError] = useState<string | null>(returned?.message ?? null);
   const [pending, setPending] = useState<"form" | "google" | null>(null);
   // Com "Confirm email" ligado no Supabase, a conta só vale depois do link.
   const [confirmEmailFor, setConfirmEmailFor] = useState<string | null>(null);
@@ -129,27 +114,34 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
     }
   }
 
-  // Com sessão anônima, signInWithOAuth troca de usuário (não converte). Antes
-  // de ligar o Google, usar linkIdentity para quem é anônimo (docs/decisoes.md).
-  async function handleGoogle() {
+  /**
+   * "keep" (padrão): anônimo liga o Google ao próprio usuário (linkIdentity) e
+   * mantém as contribuições; sem sessão anônima é o login normal.
+   * "switch": entrar na conta Google que já existe — troca de usuário, nada é
+   * transferido (só oferecido depois do aviso de identity_already_exists).
+   */
+  async function handleGoogle(intent: "keep" | "switch" = "keep") {
     setFormError(null);
     setPending("google");
     try {
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-      await signInWithGoogle(getBrowserClient(), redirectTo);
+      if (anonymous && intent === "keep") await linkGoogleToAnonymous(getBrowserClient(), redirectTo);
+      else await signInWithGoogle(getBrowserClient(), redirectTo);
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Não deu certo agora. Tente novamente.");
       setPending(null);
     }
   }
 
+  const offerGoogleSignIn = GOOGLE_ENABLED && returned?.offerGoogleSignIn === true && formError === returned.message;
+
   return (
     <div className="flex flex-col gap-6">
       {GOOGLE_ENABLED && (
         <>
-          <Button variant="secondary" onClick={handleGoogle} disabled={pending !== null} loading={pending === "google"} loadingText="Abrindo o Google…">
+          <Button variant="secondary" onClick={() => handleGoogle("keep")} disabled={pending !== null} loading={pending === "google"} loadingText="Abrindo o Google…">
             <GoogleIcon />
-            Continuar com Google
+            {anonymous ? "Manter contribuições com o Google" : "Continuar com Google"}
           </Button>
           <Divider>ou continue com e-mail</Divider>
         </>
@@ -159,13 +151,19 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
 
       <form id="auth-form" ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         {formError && <Alert tone="error">{formError}</Alert>}
+        {offerGoogleSignIn && (
+          <Button variant="secondary" onClick={() => handleGoogle("switch")} disabled={pending !== null}>
+            <GoogleIcon />
+            Entrar na conta Google existente
+          </Button>
+        )}
         {confirmEmailFor && (
           <Alert tone="success">
             Enviamos um link para <strong className="break-all">{confirmEmailFor}</strong>. Abra o e-mail para confirmar sua conta e continuar.
           </Alert>
         )}
 
-        {anonymous && !confirmEmailFor && (
+        {anonymous && !confirmEmailFor && !offerGoogleSignIn && (
           <Alert tone="info">
             {isSignup ? (
               <>
@@ -276,7 +274,7 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
 /** "G" do Google nas cores oficiais (exigência da marca Google para o botão). */
 function GoogleIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5">
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0">
       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z" />
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
       <path fill="#FBBC05" d="M5.84 14.1A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.43 3.45 1.18 4.94l3.66-2.84Z" />

@@ -1,13 +1,13 @@
 // Unitários do cadastro/conversão com cliente simulado (sem rede, sem banco).
 // O comportamento real do Supabase é coberto em tests/anon-conversion.test.ts.
 import { describe, expect, it, vi } from "vitest";
-import { AuthError, signUpWithPassword } from "./auth";
+import { AuthError, linkGoogleToAnonymous, signInWithGoogle, signUpWithPassword } from "./auth";
 import type { MelClient } from "./client";
 
 const ANON_ID = "11111111-1111-4111-8111-111111111111";
 const creds = { email: "pessoa@exemplo.com", password: "Senha-Teste-123", displayName: "Pessoa Teste" };
 
-type Over = Partial<Record<"getSession" | "updateUser" | "signUp" | "refreshSession" | "signInWithPassword", ReturnType<typeof vi.fn>>>;
+type Over = Partial<Record<"getSession" | "updateUser" | "signUp" | "refreshSession" | "signInWithPassword" | "linkIdentity" | "signInWithOAuth", ReturnType<typeof vi.fn>>>;
 
 function fakeClient({ anonymous = true, ...over }: Over & { anonymous?: boolean | null } = {}) {
   const profileUpdate = vi.fn(() => ({ eq: vi.fn(async () => ({ error: null })) }));
@@ -20,6 +20,8 @@ function fakeClient({ anonymous = true, ...over }: Over & { anonymous?: boolean 
     signUp: vi.fn(async () => ({ data: { user: { id: "novo", identities: [{}] }, session: {} }, error: null })),
     refreshSession: vi.fn(async () => ({ data: { session: {} }, error: null })),
     signInWithPassword: vi.fn(async () => ({ data: { user: { id: ANON_ID } }, error: null })),
+    linkIdentity: vi.fn(async () => ({ data: { provider: "google", url: "https://accounts.google.com/o/oauth2/auth?x" }, error: null })),
+    signInWithOAuth: vi.fn(async () => ({ data: { provider: "google", url: "https://accounts.google.com/o/oauth2/auth?y" }, error: null })),
     ...over,
   };
   const client = { auth, from: vi.fn(() => ({ update: profileUpdate })) } as unknown as MelClient;
@@ -111,5 +113,41 @@ describe("signUpWithPassword with an anonymous session (conversion)", () => {
     await expect(signUpWithPassword(offline.client, creds)).rejects.toThrow("Verifique sua conexão");
     expect(missing.auth.signUp).not.toHaveBeenCalled();
     expect(offline.auth.signUp).not.toHaveBeenCalled();
+  });
+});
+
+describe("Google", () => {
+  const CALLBACK = "https://mel.example/auth/callback?next=%2Fperfil";
+
+  it("anonymous visitor links Google to the SAME user (linkIdentity), never signInWithOAuth", async () => {
+    const { client, auth } = fakeClient();
+    expect(await linkGoogleToAnonymous(client, CALLBACK)).toContain("accounts.google.com");
+    expect(auth.linkIdentity).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: CALLBACK } });
+    expect(auth.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it("visitor without session uses the normal OAuth sign-in", async () => {
+    const { client, auth } = fakeClient({ anonymous: null });
+    await signInWithGoogle(client, CALLBACK);
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith({ provider: "google", options: { redirectTo: CALLBACK } });
+    expect(auth.linkIdentity).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["manual linking desligado", "manual_linking_disabled", "e-mail e senha para manter"],
+    ["sem token no servidor", "no_authorization", "Sua sessão expirou"],
+    ["sessão revogada", "session_not_found", "Sua sessão expirou"],
+    ["rate limit", "over_request_rate_limit", "Muitas tentativas"],
+    ["erro inesperado", "unexpected_failure", "Não deu certo agora"],
+  ])("linking failure before leaving the site (%s) has a clear message", async (_why, code, message) => {
+    const { client } = fakeClient({ linkIdentity: vi.fn(async () => ({ data: { provider: "google", url: null }, error: authError(code) })) });
+    await expect(linkGoogleToAnonymous(client, CALLBACK)).rejects.toThrow(message);
+  });
+
+  it("session missing on the client and network failure while linking", async () => {
+    const missing = fakeClient({ linkIdentity: vi.fn(async () => ({ data: { url: null }, error: authError(undefined, "AuthSessionMissingError") })) });
+    await expect(linkGoogleToAnonymous(missing.client, CALLBACK)).rejects.toThrow("Sua sessão expirou");
+    const offline = fakeClient({ linkIdentity: vi.fn(async () => ({ data: { url: null }, error: authError(undefined, "AuthRetryableFetchError") })) });
+    await expect(linkGoogleToAnonymous(offline.client, CALLBACK)).rejects.toThrow("Verifique sua conexão");
   });
 });

@@ -81,9 +81,15 @@ export function needsOnboarding(profile: Pick<Profile, "onboardedAt"> | null): b
   return !profile?.onboardedAt;
 }
 
-/** Só aceita caminhos internos — evita redirecionamento aberto via ?next=. */
+/**
+ * Só aceita caminhos internos — evita redirecionamento aberto via ?next=.
+ * Recusa também barra invertida e caracteres de controle/espaço: o navegador
+ * remove tab/quebra de linha da URL, e "/\t/evil.com" viraria "//evil.com".
+ */
 export function safeNextPath(next: string | null | undefined, fallback = "/perfil"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) return fallback;
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000- \u007f]/.test(next)) return fallback;
   return next;
 }
 
