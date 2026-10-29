@@ -4,6 +4,7 @@
 // (ComputedFields, __InternalSupabase). Compara tabelas/colunas/tipos,
 // Insert/Update (opcionalidade), relações, funções (args e retorno) e enums.
 // Uso: node scripts/schema-audit/types-parity.mjs <dev.types.ts> <local.types.ts>
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 
@@ -59,7 +60,37 @@ function diff(a, b, path = "", out = []) {
 const [devFile, localFile] = process.argv.slice(2);
 const dev = publicSchema(devFile);
 const local = publicSchema(localFile);
-const differences = diff(dev, local);
+const raw = diff(dev, local);
+
+// Duas regras do gerador mais novo que não mudam o schema — aceitas SÓ se o
+// catálogo do banco reconstruído confirmar a coluna exata:
+//   Json → NonNullable<Json>   coluna jsonb NOT NULL
+//   unknown → never (Insert/Update)   coluna GENERATED ALWAYS (não se escreve nela)
+function column(table, col) {
+  const url = process.env.DB_URL;
+  if (!url) return null;
+  const out = execFileSync("psql", [url, "-X", "-A", "-t", "-F", "|", "-c", `select is_nullable, is_generated, data_type from information_schema.columns where table_schema='public' and table_name='${table}' and column_name='${col}'`], { encoding: "utf8" }).trim();
+  const [nullable, generated, type] = out.split("|");
+  return { nullable, generated, type };
+}
+const accepted = [];
+const differences = raw.filter((line) => {
+  const m = line.match(/^≠ Tables\.(\w+)\.(Row|Insert|Update)\.(\w+)\??: mel-dev=(.*) \| reconstruído=(.*)$/);
+  if (!m) return true;
+  const [, table, section, col, before, after] = m;
+  const c = column(table, col);
+  if (!c) return true;
+  if (before === "Json" && after === "NonNullable<Json>" && c.nullable === "NO" && c.type === "jsonb") {
+    accepted.push(`${table}.${col} (${section}): jsonb NOT NULL`);
+    return false;
+  }
+  if (before === "unknown" && after === "never" && section !== "Row" && c.generated === "ALWAYS") {
+    accepted.push(`${table}.${col} (${section}): GENERATED ALWAYS`);
+    return false;
+  }
+  return true;
+});
+if (accepted.length) console.log(`Equivalências do gerador confirmadas no catálogo (${accepted.length}): ${accepted.join("; ")}`);
 const count = (o) => Object.keys(o ?? {}).length;
 const cols = (o) => Object.values(o ?? {}).reduce((n, t) => n + count(t.Row), 0);
 console.log(
