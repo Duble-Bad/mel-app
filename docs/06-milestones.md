@@ -20,6 +20,8 @@ Cada milestone termina com: `tsc --noEmit` ✔ · `lint` ✔ · testes ✔ · fl
 | **M14** ✅ | Adoção básica | Listagem, página, cadastro (moderado), formulário de interesse, status AVAILABLE/IN_PROCESS/ADOPTED | E2E adoção |
 | **M15** ✅ | Parceiros básicos | Cadastro de empresa (aprovação admin), diretório + mapa, perfil, ofertas rotuladas "Patrocinado" quando aplicável; `plans` seed sem cobrança | E2E cadastro → aprovação → aparece |
 | **M16** ✅ | LGPD + PWA + polimento | Exportar/excluir conta, consentimentos, manifest + service worker, offline básico, auditoria de acessibilidade, performance (Lighthouse mobile) | E2E exclusão; Lighthouse ≥ 90 a11y |
+| **Schema em produção** ✅ | Deploy das 23 migrations no `mel-prod` | Travas, reconstrução do zero no CI, pre-flight, deploy e pós-deploy ([08](08-deploy-producao.md), [09](09-migrations.md)) | pós-deploy READ ONLY sem drift |
+| **M17** ⏸️ | Configuração de produção | Auth, URLs, OAuth, SMTP, Turnstile, MapTiler, VAPID, push, secrets, domínio, primeiro moderador — ver [10-status.md](10-status.md) | smoke test manual |
 
 Seed (a partir de M3, ampliado a cada milestone): Mel (Yorkshire, demonstrativa) e outros pets fictícios em São Paulo/SP com coordenadas de praças públicas, usuários `@exemplo.com`, telefones `(11) 90000-000X` — nenhum dado real.
 

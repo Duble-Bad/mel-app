@@ -16,6 +16,9 @@ Plataforma geolocalizada de proteção animal: alertas de pets perdidos, animais
 | [Fluxos](docs/05-fluxos.md) | Perdi / Encontrei / Avistamento / Reencontro |
 | [Milestones](docs/06-milestones.md) | plano de implementação e status |
 | [Decisões](docs/decisoes.md) | registro de decisões arquitetônicas |
+| [Deploy de produção](docs/08-deploy-producao.md) | procedimento seguro de schema no `mel-prod` |
+| [Migrations](docs/09-migrations.md) | as 23 migrations, regras e como criar novas |
+| [**Status / onde estamos**](docs/10-status.md) | etapa atual e próximos passos — leia ao retomar |
 
 ## Stack
 
@@ -115,7 +118,7 @@ O seed cria as contas `demo.tutora@exemplo.com` (Mel — Yorkshire, pública; Th
 
 ## Deploy
 
-Planejado: Vercel (web) + Supabase Cloud (produção em projeto separado, região `sa-east-1`). CI no GitHub Actions (`.github/workflows/ci.yml`) roda typecheck, lint, unit, RLS e E2E; requer os secrets listados no workflow.
+Planejado: Vercel (web) + Supabase Cloud (produção em projeto separado, `mel-prod`, região `sa-east-1`). Schema de produção já aplicado (23 migrations); configuração e publicação pendentes — ver [docs/10-status.md](docs/10-status.md). CI no GitHub Actions (`.github/workflows/ci.yml` e `schema-rebuild.yml`) roda typecheck, lint, unit, RLS, E2E e a reconstrução do schema do zero; requer a variável `MEL_SAFE_TARGET_REFS` e os secrets listados no workflow.
 
 ## Privacidade
 
