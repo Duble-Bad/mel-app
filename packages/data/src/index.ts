@@ -14,3 +14,4 @@ export * from "./guardian";
 export * from "./moderation";
 export * from "./adoption";
 export * from "./partners";
+export * from "./privacy";

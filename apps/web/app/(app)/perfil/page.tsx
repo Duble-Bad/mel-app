@@ -84,6 +84,9 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
         <ButtonLink href="/perfil/editar" variant="secondary" size="md">
           Editar perfil
         </ButtonLink>
+        <ButtonLink href="/perfil/privacidade" variant="secondary" size="md">
+          Privacidade e dados
+        </ButtonLink>
         <SignOutButton />
       </div>
     </div>

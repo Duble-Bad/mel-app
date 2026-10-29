@@ -141,7 +141,8 @@
 
 @keyframes mel-enter {
   from {
-    opacity: 0;
+    /* 0.01, não 0: com opacidade zero o Chrome não registra a 1ª pintura (FCP/LCP) e as métricas zeram. */
+    opacity: 0.01;
     transform: translateY(8px);
   }
 }

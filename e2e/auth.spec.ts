@@ -21,8 +21,11 @@ test("new person signs up, completes onboarding and sees their profile", async (
   await expect(page).toHaveURL(/\/onboarding/);
   // O nome do cadastro já vem preenchido.
   await expect(page.getByLabel("Como podemos te chamar?")).toHaveValue("Ana Exemplo");
-  await page.getByLabel("Cidade").fill("Campinas");
+  await page.getByLabel("Cidade", { exact: true }).fill("Campinas");
   await page.getByLabel("Estado").selectOption("SP");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByText("Para continuar, aceite os Termos e a Política de privacidade.")).toBeVisible();
+  await page.getByRole("checkbox", { name: /Li e aceito os Termos de uso/ }).check();
   await page.getByRole("button", { name: "Continuar" }).click();
 
   await expect(page).toHaveURL(/\/perfil$/);
@@ -45,6 +48,7 @@ test("onboarding explains what is missing instead of failing silently", async ({
   await expect(page.getByText("Conte pra gente como podemos te chamar.")).toBeVisible();
   await expect(page.getByText("Qual é a sua cidade?")).toBeVisible();
   await expect(page.getByText("Escolha o seu estado.")).toBeVisible();
+  await expect(page.getByText("Para continuar, aceite os Termos e a Política de privacidade.")).toBeVisible();
 });
 
 test("returning person signs in and goes back to where they were", async ({ page }) => {
@@ -86,7 +90,7 @@ test("signed-in person edits the profile and signs out", async ({ page }) => {
   await expect(page).toHaveURL(/\/perfil$/);
 
   await page.getByRole("link", { name: "Editar perfil" }).click();
-  await page.getByLabel("Cidade").fill("Jundiaí");
+  await page.getByLabel("Cidade", { exact: true }).fill("Jundiaí");
   await page.getByRole("button", { name: "Salvar alterações" }).click();
   await expect(page.getByText("Jundiaí, São Paulo")).toBeVisible();
 

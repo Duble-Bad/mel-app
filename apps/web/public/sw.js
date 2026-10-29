@@ -1,5 +1,35 @@
-// MEL — service worker mínimo (M12): só notificações push.
-// PWA completo (offline, cache) fica para o M16.
+// MEL — service worker: notificações push (M12) e página offline (M16).
+// De propósito, NÃO guardamos páginas nem dados em cache: alertas mudam a todo
+// momento e podem conter informações pessoais. Sem rede, mostramos /offline.html.
+const OFFLINE_CACHE = "mel-offline-v1";
+const OFFLINE_ASSETS = ["/offline.html", "/brand/app-icon-192.png"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(OFFLINE_CACHE).then((c) => c.addAll(OFFLINE_ASSETS)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("mel-") && k !== OFFLINE_CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+  if (req.mode === "navigate") {
+    event.respondWith(fetch(req).catch(() => caches.match("/offline.html")));
+    return;
+  }
+  // Ícone usado pela página offline.
+  if (new URL(req.url).pathname === "/brand/app-icon-192.png") {
+    event.respondWith(fetch(req).catch(() => caches.match(req)));
+  }
+});
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {

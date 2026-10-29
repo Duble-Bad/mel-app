@@ -378,6 +378,41 @@ export type Database = {
           },
         ]
       }
+      consents: {
+        Row: {
+          created_at: string
+          granted: boolean
+          id: number
+          kind: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          id?: never
+          kind: string
+          user_id: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          id?: never
+          kind?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           adoption_listing_id: string | null
@@ -1443,6 +1478,7 @@ export type Database = {
       debug_fuzz_point: { Args: { lat: number; lng: number }; Returns: Json }
       debug_match_score: { Args: { p: Json }; Returns: Json }
       dismiss_match: { Args: { p_id: string }; Returns: undefined }
+      export_my_data: { Args: never; Returns: Json }
       finish_push: {
         Args: {
           p_dead_subscriptions?: string[]

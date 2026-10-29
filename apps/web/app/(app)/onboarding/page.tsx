@@ -30,5 +30,5 @@ async function OnboardingContent({ searchParams }: Pick<PageProps<"/onboarding">
     return <ErrorState>Não encontramos seu perfil. Saia e entre novamente.</ErrorState>;
   }
   if (!needsOnboarding(profile)) redirect(next);
-  return <ProfileForm profile={profile} next={next} submitLabel="Continuar" />;
+  return <ProfileForm profile={profile} next={next} submitLabel="Continuar" requireTerms />;
 }

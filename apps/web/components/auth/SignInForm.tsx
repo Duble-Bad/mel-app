@@ -204,6 +204,20 @@ export function SignInForm() {
         </Button>
       </form>
 
+      {isSignup && (
+        <p className="text-center text-xs text-text-secondary">
+          Ao continuar, você vai aceitar os{" "}
+          <Link href="/termos" target="_blank" className="font-semibold underline underline-offset-2">
+            Termos de uso
+          </Link>{" "}
+          e a{" "}
+          <Link href="/privacidade" target="_blank" className="font-semibold underline underline-offset-2">
+            Política de privacidade
+          </Link>
+          .
+        </p>
+      )}
+
       <p className="text-center text-sm text-text-secondary">
         {isSignup ? "Já tem conta? " : "Primeira vez na MEL? "}
         <button

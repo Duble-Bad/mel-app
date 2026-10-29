@@ -21,6 +21,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     locale: "pt-BR",
+    // O service worker (PWA) responde às navegações; bloqueado para não esconder rotas simuladas. O teste de PWA o libera.
+    serviceWorkers: "block",
     timezoneId: "America/Sao_Paulo",
     trace: "retain-on-failure",
   },

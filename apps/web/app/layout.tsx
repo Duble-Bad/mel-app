@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { themes } from "@mel/ui-tokens";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

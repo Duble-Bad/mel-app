@@ -173,7 +173,10 @@ export function MapExplorer({ filters }: { filters: SearchFilters }) {
         )}
       </div>
 
-      <section aria-label="Lista de casos" className="flex flex-col gap-3 lg:order-1 lg:w-[400px] lg:shrink-0">
+      <section aria-labelledby="lista-casos" className="flex flex-col gap-3 lg:order-1 lg:w-[400px] lg:shrink-0">
+        <h2 id="lista-casos" className="sr-only">
+          Lista de casos
+        </h2>
         {geoError && (
           <p role="alert" className="text-sm font-medium text-danger">
             {geoError}

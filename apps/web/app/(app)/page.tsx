@@ -57,7 +57,15 @@ export default function HomePage() {
         <BrandStory />
       </div>
 
-      <footer className="mt-auto pt-12 text-sm text-text-secondary">
+      <footer className="mt-auto flex flex-col gap-3 pt-12 text-sm text-text-secondary">
+        <nav aria-label="Informações legais" className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link href="/termos" className="inline-flex min-h-11 items-center font-semibold hover:text-text-primary hover:underline">
+            Termos de uso
+          </Link>
+          <Link href="/privacidade" className="inline-flex min-h-11 items-center font-semibold hover:text-text-primary hover:underline">
+            Política de privacidade
+          </Link>
+        </nav>
         <Suspense fallback={<p>Verificando conexão…</p>}>
           <SystemStatus />
         </Suspense>

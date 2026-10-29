@@ -57,6 +57,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Tudo, exceto arquivos estáticos, imagens e a API de health.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health|vendor/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // Tudo, exceto arquivos estáticos, imagens, arquivos do PWA e a API de health.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health|vendor/|sw\\.js|offline\\.html|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };

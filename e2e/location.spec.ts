@@ -97,7 +97,7 @@ test("onboarding fills city and state from the current location", async ({ page 
     await expect(page).toHaveURL(/\/onboarding/);
 
     await page.getByRole("button", { name: "Usar minha localização" }).click();
-    await expect(page.getByLabel("Cidade")).toHaveValue("São Paulo");
+    await expect(page.getByLabel("Cidade", { exact: true })).toHaveValue("São Paulo");
     await expect(page.getByLabel("Estado")).toHaveValue("SP");
     await expect(page.getByText("Preenchido: São Paulo – SP.")).toBeVisible();
   } finally {
