@@ -7,6 +7,7 @@ import { NetworkIllustration } from "@/components/brand/NetworkIllustration";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
 import { Skeleton } from "@/components/ui/Surface";
+import { getSessionUser } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -59,12 +60,18 @@ export default function SignInPage() {
           </div>
 
           <Suspense fallback={<FormSkeleton />}>
-            <SignInForm />
+            <SessionSignInForm />
           </Suspense>
         </div>
       </div>
     </main>
   );
+}
+
+/** Quem já ajudou sem conta neste aparelho: criar conta mantém as contribuições. */
+async function SessionSignInForm() {
+  const anonymous = (await getSessionUser())?.isAnonymous === true;
+  return <SignInForm anonymous={anonymous} />;
 }
 
 /** Desktop: lado da marca, com a ilustração da rede e o que a MEL faz. */

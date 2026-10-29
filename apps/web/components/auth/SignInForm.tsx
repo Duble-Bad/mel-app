@@ -41,7 +41,12 @@ function returnErrorMessage(code: string | null): string | null {
   }
 }
 
-export function SignInForm() {
+/**
+ * `anonymous`: há sessão sem cadastro neste aparelho (a pessoa já ajudou).
+ * Criar conta mantém o mesmo usuário e as contribuições; entrar numa conta que
+ * já existe troca de usuário e não leva nada junto (sem merge automático).
+ */
+export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
   const params = useSearchParams();
   const next = safeNextPath(params.get("next"));
 
@@ -52,6 +57,8 @@ export function SignInForm() {
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(() => returnErrorMessage(params.get("erro")));
   const [pending, setPending] = useState<"form" | "google" | null>(null);
+  // Com "Confirm email" ligado no Supabase, a conta só vale depois do link.
+  const [confirmEmailFor, setConfirmEmailFor] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const isSignup = mode === "signup";
@@ -96,11 +103,19 @@ export function SignInForm() {
       return;
     }
     setErrors({});
+    setConfirmEmailFor(null);
     setPending("form");
     try {
       const supabase = getBrowserClient();
-      if (isSignup) await signUpWithPassword(supabase, parsed.data);
-      else await signInWithPassword(supabase, parsed.data);
+      if (isSignup) {
+        const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+        const result = await signUpWithPassword(supabase, parsed.data, { emailRedirectTo });
+        if (!result.hasSession) {
+          setConfirmEmailFor(parsed.data.email);
+          setPending(null);
+          return;
+        }
+      } else await signInWithPassword(supabase, parsed.data);
 
       const profile = await getMyProfile(supabase);
       const destination = needsOnboarding(profile) ? `/onboarding?next=${encodeURIComponent(next)}` : next;
@@ -114,6 +129,8 @@ export function SignInForm() {
     }
   }
 
+  // Com sessão anônima, signInWithOAuth troca de usuário (não converte). Antes
+  // de ligar o Google, usar linkIdentity para quem é anônimo (docs/decisoes.md).
   async function handleGoogle() {
     setFormError(null);
     setPending("google");
@@ -142,6 +159,30 @@ export function SignInForm() {
 
       <form id="auth-form" ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         {formError && <Alert tone="error">{formError}</Alert>}
+        {confirmEmailFor && (
+          <Alert tone="success">
+            Enviamos um link para <strong className="break-all">{confirmEmailFor}</strong>. Abra o e-mail para confirmar sua conta e continuar.
+          </Alert>
+        )}
+
+        {anonymous && !confirmEmailFor && (
+          <Alert tone="info">
+            {isSignup ? (
+              <>
+                <strong>Crie sua conta e mantenha suas contribuições.</strong> O que você já enviou sem conta neste aparelho passa a ser da sua conta.
+              </>
+            ) : (
+              <>
+                Você já ajudou sem conta neste aparelho. Se entrar numa conta que já existe, o que enviou continua publicado, mas não passa
+                para ela. Para manter,{" "}
+                <button type="button" onClick={() => switchMode("signup")} className="font-semibold text-link underline underline-offset-2">
+                  crie sua conta
+                </button>
+                .
+              </>
+            )}
+          </Alert>
+        )}
 
         {isSignup && (
           <div className="animate-enter">
