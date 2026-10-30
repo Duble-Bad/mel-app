@@ -8,8 +8,7 @@ const BUCKET = "sighting-media";
  * avistamento ou encontrado usa há mais de 24 h. Devolve quantas apagou.
  */
 export async function purgeOrphanSightingMedia(service: MelClient, limit = 100): Promise<number> {
-  const rpc = service.rpc as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: string[] | null; error: { message: string; code?: string } | null }>;
-  const { data, error } = await rpc.call(service, "list_orphan_sighting_media", { p_limit: limit });
+  const { data, error } = await service.rpc("list_orphan_sighting_media", { p_limit: limit });
   if (error) throw new DataError(error.message, error.code);
   const paths = data ?? [];
   if (!paths.length) return 0;

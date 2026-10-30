@@ -1520,6 +1520,10 @@ export type Database = {
         }
         Returns: Json
       }
+      list_orphan_sighting_media: {
+        Args: { p_limit?: number; p_min_age?: string }
+        Returns: string[]
+      }
       mark_conversation_read: { Args: { p_id: string }; Returns: undefined }
       my_conversation_for_case: { Args: { p_code: string }; Returns: string }
       nearby_lost_cases: {

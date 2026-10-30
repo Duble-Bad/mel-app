@@ -16,12 +16,12 @@
     "sha256": "f82ed1b34235e587062d579b4870452387bfdd2eab371ca1c1c431e19ed219f4"
   },
   "functions": {
-    "count": 91,
-    "sha256": "1cdca1f53ba2c9bd822ccf08a2a78b9c7211357198d28a62022702800a40853e"
+    "count": 92,
+    "sha256": "c2de845cb6fef3ea05fd4a2f584192b7abeb69ca481581169c5c5bbe8f23a3e6"
   },
   "function_grants": {
-    "count": 273,
-    "sha256": "1ede4a36e0a4ea2b38c7669c36d9fe75bd7e81bcf089cba778277583ca1b8211"
+    "count": 276,
+    "sha256": "e5defc3019b34069761285671c21f75cf8085bbffe63e7c25ba4d440d9efeb6f"
   },
   "triggers": {
     "count": 26,

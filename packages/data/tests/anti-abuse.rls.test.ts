@@ -170,10 +170,7 @@ describe("Ataque E: spam de upload", () => {
 
 describe("Fotos órfãs: limpeza pelo servidor", () => {
   const listOrphans = (client: MelClient, minAge: string) =>
-    (client.rpc as unknown as (fn: string, a: object) => PromiseLike<{ data: string[] | null; error: unknown }>).call(client, "list_orphan_sighting_media", {
-      p_limit: 1000,
-      p_min_age: minAge,
-    });
+    client.rpc("list_orphan_sighting_media", { p_limit: 1000, p_min_age: minAge });
 
   it("só a chave secreta lista; órfã aparece, foto usada em envio não; a limpeza respeita as 24 h", async () => {
     const a = await alert("Orfas");
