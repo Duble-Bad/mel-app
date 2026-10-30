@@ -131,6 +131,7 @@ jobs:
             echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }} confirm=${{ steps.confirm.outcome }}"
             echo "$db_summary"
             echo "confirmação de e-mail ON: $(sed 's/\x1b\[[0-9;]*m//g' /tmp/confirm.txt 2>/dev/null | grep -E 'Tests +[0-9]' | tr -s ' ')"
+            sed 's/\x1b\[[0-9;]*m//g' /tmp/confirm.txt 2>/dev/null | grep -E '^ *(FAIL|×|✗)|Error:|AssertionError|Expected|Received|^ *[-+] ' | head -40 || true
             sed 's/\x1b\[[0-9;]*m//g' /tmp/unit.txt > /tmp/unit-plain.txt
             echo "unitários: $(grep -E 'Tests +[0-9]+ passed|Tests +[0-9]+ failed' /tmp/unit-plain.txt | tr -s ' ' | paste -sd ';' -) | trava: $(grep -E '^ℹ (pass|fail)' /tmp/unit-plain.txt | paste -sd ' ' -)"
           } > /tmp/summary.txt
