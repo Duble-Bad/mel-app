@@ -1,7 +1,7 @@
 # MEL — Migrations do banco
 
 Fonte única do schema: `supabase/migrations/*.sql`, aplicadas em ordem de nome (timestamp).
-Estado: **26 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev` e no `mel-prod` (2026-10-29); a 24ª (Radar v2), a 25ª (ciclo de vida do alerta) e a 26ª (moderação de adoção e parceiros) só no `mel-dev` — **pendentes para produção** (fase de lançamento).
+Estado: **27 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev` e no `mel-prod` (2026-10-29); a 24ª (Radar v2), a 25ª (ciclo de vida do alerta) a 26ª (moderação de adoção e parceiros) e a 27ª (anti-abuso) só no `mel-dev` — **pendentes para produção** (fase de lançamento).
 
 ## Regras
 
@@ -41,6 +41,7 @@ Estado: **26 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev
 | 24 | `20261030120000_radar_public_distance.sql` | P0 auditoria | Radar v2: pontuação, faixa de distância (NEAR/MEDIUM/AREA) e existência da correspondência só pelos pontos públicos; recalcula correspondências antigas; avisos sem pontuação. **Pendente no `mel-prod`.** |
 | 25 | `20261030140000_lost_case_close_edit.sql` | P1 auditoria | Ciclo de vida do alerta: `closed_at`; CLOSED só de ACTIVE; conteúdo travado após FOUND/CLOSED/REMOVED; página pública de encerrado mínima; linha do tempo de encerrado só do tutor; Radar recalculado ao editar local/data ou o pet. **Pendente no `mel-prod`.** |
 | 26 | `20261030160000_adoption_partner_moderation.sql` | P1 auditoria | Moderação de adoção e parceiros: mudar conteúdo de anúncio aprovado (mesmo junto com o status) ou qualquer campo público de parceiro aprovado volta para revisão; `review_note` (e status/plano do parceiro) só pela moderação; denúncia de anúncio e de parceiro; "ocultar" remove o anúncio (`REMOVED`) ou suspende o parceiro (`SUSPENDED`). **Pendente no `mel-prod`.** |
+| 27 | `20261030180000_global_abuse_limits.sql` | P1 auditoria | Anti-abuso com sessões anônimas descartáveis: sino agrupado (avistamentos e Radar), teto de conversas anônimas por alerta, mensagem repetida, push de Guardião vindo de anônimo, denúncias anônimas agrupadas, cota de fotos em `sighting-media`, eventos `abuse_guard`. **Pendente no `mel-prod`.** |
 
 Inventário resultante (banco reconstruído = `mel-prod`): 24 tabelas, 291 colunas, 43 FKs, 16 enums, 40 funções `public` + 46 `private`, 24 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 60 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
 
@@ -58,7 +59,7 @@ Inventário resultante (banco reconstruído = `mel-prod`): 24 tabelas, 291 colun
 1. `npx supabase migration new <nome>` e escreva o SQL (com RLS, grants e `search_path`).
 2. `npm run db:push` (só aplica no `mel-dev`; a trava recusa qualquer outro alvo) e `npm run db:types`.
 3. Testes: `npm run check`, `npm run test:db`, E2E se tocar em fluxo.
-4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 26).
+4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 27).
 5. Push na `main`. O workflow de reconstrução gera `schema-fingerprint.generated.json`; versione-o como `supabase/schema-fingerprint.json` (ou rode `node scripts/schema-audit/audit.mjs --write-fingerprint` contra um Supabase local).
 6. Produção: só com autorização explícita, pelo procedimento de [08-deploy-producao.md](08-deploy-producao.md).
 

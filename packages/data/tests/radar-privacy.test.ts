@@ -165,7 +165,8 @@ describe("tutor side: the tutor cannot locate the finder's private point", () =>
     const { data } = await serviceClient().from("notifications").select("payload").eq("user_id", tutorA.id).eq("kind", "match_new");
     expect(data?.length).toBeGreaterThan(0);
     for (const { payload } of data ?? []) {
-      expect(Object.keys(payload as object).sort()).toEqual(["lost_code", "pet_name", "to"]);
+      // `count` (avisos agrupados) é só quantas correspondências; nada de pontuação ou local.
+      expect(Object.keys(payload as object).filter((k) => k !== "count").sort()).toEqual(["lost_code", "pet_name", "to"]);
     }
   });
 });

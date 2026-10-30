@@ -8,20 +8,20 @@
     "sha256": "de7e2b6456c7a3ea8060d9e5eec68f009233053e65b9ee3ebd194bf06521039e"
   },
   "indexes": {
-    "count": 79,
-    "sha256": "9e6b6558f45c9708570e5906fcffc8002388bde9afd396dc0bf64ef53077d3f4"
+    "count": 81,
+    "sha256": "07db6160f5871802be5cddb985e3845d05d6b35569ea748adba4e4f9cf882135"
   },
   "enums": {
     "count": 16,
     "sha256": "f82ed1b34235e587062d579b4870452387bfdd2eab371ca1c1c431e19ed219f4"
   },
   "functions": {
-    "count": 89,
-    "sha256": "fc268445038ee22056388d331491eee3739d468e317c30e3e5da0c88da1f19fc"
+    "count": 91,
+    "sha256": "1cdca1f53ba2c9bd822ccf08a2a78b9c7211357198d28a62022702800a40853e"
   },
   "function_grants": {
-    "count": 267,
-    "sha256": "abd26a105d7fc47bf55602e4fb672a27bf1c8d344ed42f3bfa75d045919ab8fd"
+    "count": 273,
+    "sha256": "1ede4a36e0a4ea2b38c7669c36d9fe75bd7e81bcf089cba778277583ca1b8211"
   },
   "triggers": {
     "count": 26,
@@ -29,7 +29,7 @@
   },
   "policies": {
     "count": 69,
-    "sha256": "d6680a592ffffe752bd3d65a939a0917e489d6f3b9192d2b22f281c6818637fa"
+    "sha256": "5fa5d8bf4798c4e7bfe2480fb79586b247b6d89255400d045e32c3430d08e329"
   },
   "rls": {
     "count": 24,
@@ -45,7 +45,7 @@
   },
   "buckets": {
     "count": 3,
-    "sha256": "97197028cb6d19ee030e7a5b5210480f692eba78e3e01ea48717e27411911e25"
+    "sha256": "30410060237a5506fa6cdbd494b2ea97246945bdeec34f59f0517e937f117f38"
   },
   "publication": {
     "count": 2,
