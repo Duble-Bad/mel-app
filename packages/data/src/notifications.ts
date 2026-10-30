@@ -30,7 +30,6 @@ export function toAppNotification(row: Row): AppNotification {
     count?: number;
     helpful?: boolean;
     to?: "owner" | "finder";
-    score?: number;
     found_code?: string;
     case_kind?: "lost" | "found";
     species?: "dog" | "cat" | "other";
@@ -70,8 +69,8 @@ export function toAppNotification(row: Row): AppNotification {
       kind: "match_new",
       title: owner ? `Radar MEL: possível correspondência para ${pet}` : "Radar MEL: pode ser um pet procurado",
       body: owner
-        ? `Alguém encontrou um animal parecido (${p.score ?? "?"}%). Confira as fotos.`
-        : `O animal que você publicou parece com ${pet}, que está sendo procurado (${p.score ?? "?"}%).`,
+        ? "Alguém encontrou um animal parecido. Confira as fotos."
+        : `O animal que você publicou parece com ${pet}, que está sendo procurado.`,
       href: owner ? "/perfil/correspondencias" : `/encontrado/${p.found_code}#radar`,
       readAt: row.read_at,
       createdAt: row.created_at,

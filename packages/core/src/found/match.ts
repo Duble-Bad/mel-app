@@ -1,14 +1,27 @@
-import { distanceMeters, formatDistance, type LatLng } from "../geo/geo";
+import { distanceMeters, type LatLng } from "../geo/geo";
 import { PET_SIZES, type PetSex, type PetSize, type Species } from "../pet/pet";
 
 /**
- * Radar MEL v1 ("não sei" vale pouco, para relatos vagos não virarem alarme): pontuação heurística 0–100 entre um alerta de perdido e um
+ * Radar MEL v2 ("não sei" vale pouco, para relatos vagos não virarem alarme): pontuação heurística 0–100 entre um alerta de perdido e um
  * animal encontrado/visto. ESPELHO de private.match_score (SQL) — um teste de
  * banco confere a paridade. Mudou aqui? Mude lá (nova migração) e suba a versão.
+ *
+ * PRIVACIDADE: as posições são os pontos PÚBLICOS (centro da célula de 250 m),
+ * nunca os exatos; a distância sai só como faixa e a pontuação usa um degrau
+ * por faixa — nada aqui permite reconstruir um ponto privado.
  */
-export const MATCH_ALGORITHM_VERSION = "v1";
+export const MATCH_ALGORITHM_VERSION = "v2";
 export const MATCH_THRESHOLD = 50;
 export const MATCH_MAX_DISTANCE_M = 10_000;
+
+/** Faixas de distância entre os pontos públicos (o Radar nunca devolve metros). */
+export type MatchDistanceBand = "NEAR" | "MEDIUM" | "AREA";
+
+export function matchDistanceBand(meters: number): MatchDistanceBand {
+  return meters <= 1_000 ? "NEAR" : meters <= 3_000 ? "MEDIUM" : "AREA";
+}
+
+const BAND_POINTS: Record<MatchDistanceBand, number> = { NEAR: 35, MEDIUM: 22, AREA: 10 };
 
 export interface MatchSide {
   species: Species;
@@ -17,6 +30,7 @@ export interface MatchSide {
   colorPrimary: string | null;
   colorsSecondary: string[];
   breed: string | null;
+  /** Ponto PÚBLICO (aproximado) do alerta ou da publicação. */
   position: LatLng;
   /** Perdido: quando sumiu. Encontrado: quando foi encontrado/visto. */
   at: string;
@@ -25,7 +39,7 @@ export interface MatchSide {
 export type MatchFacet = "same" | "close" | "partial" | "unknown" | "different";
 
 export interface MatchReasons {
-  distance_m: number;
+  distance: MatchDistanceBand;
   days: number;
   size: MatchFacet;
   sex: MatchFacet;
@@ -44,7 +58,8 @@ export function computeMatchScore(lost: MatchSide, found: MatchSide): MatchResul
   const days = (new Date(found.at).getTime() - new Date(lost.at).getTime()) / 86_400_000;
   if (lost.species !== found.species || d > MATCH_MAX_DISTANCE_M || days < -1 || days > 60) return null;
 
-  let score = Math.round(35 * (1 - d / MATCH_MAX_DISTANCE_M));
+  const distance = matchDistanceBand(d);
+  let score = BAND_POINTS[distance];
   score += Math.round(15 * Math.max(0, 1 - Math.max(days, 0) / 30));
 
   let size: MatchFacet;
@@ -96,13 +111,19 @@ export function computeMatchScore(lost: MatchSide, found: MatchSide): MatchResul
 
   return {
     score: Math.min(100, Math.max(0, score)),
-    reasons: { distance_m: Math.round(d), days: Math.round(days * 10) / 10, size, sex, color, breed },
+    reasons: { distance, days: Math.round(days * 10) / 10, size, sex, color, breed },
   };
 }
 
-/** Motivos em linguagem humana para o MatchCard ("a 1,2 km", "mesmo porte"…). */
+const BAND_TEXT: Record<MatchDistanceBand, string> = {
+  NEAR: "muito perto do último local",
+  MEDIUM: "perto do último local",
+  AREA: "na mesma região",
+};
+
+/** Motivos em linguagem humana para o MatchCard ("muito perto do último local", "mesmo porte"…). */
 export function describeMatchReasons(r: MatchReasons): string[] {
-  const out = [`a ${formatDistance(r.distance_m)} do último local`];
+  const out = [BAND_TEXT[r.distance] ?? BAND_TEXT.AREA];
   if (r.days < 1) out.push("menos de 1 dia depois");
   else out.push(`${Math.round(r.days)} dia${Math.round(r.days) > 1 ? "s" : ""} depois`);
   if (r.size === "same") out.push("mesmo porte");

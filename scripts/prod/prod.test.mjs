@@ -7,7 +7,7 @@ import { join, resolve } from "node:path";
 import { test } from "node:test";
 import { audit, compareFingerprint, fingerprint } from "../schema-audit/catalog.mjs";
 import { checkEventTriggers, EXPECTED_EVENT_TRIGGERS, inspectPlatformFunctions, PLATFORM_FUNCTIONS } from "./postdeploy-check.mjs";
-import { PLAN, runPreflight, validatePlan } from "./preflight.mjs";
+import { EXPECTED_MIGRATIONS, PLAN, runPreflight, validatePlan } from "./preflight.mjs";
 import { assertInteractive, assertProdTarget, parseProdDbUrl, ProdTargetError } from "./prod-target.mjs";
 
 const PROD = "pppppppppppppppppppp";
@@ -127,7 +127,7 @@ test("preflight aborts on git, CI, plan or production-state problems (no network
 
   const ok = await run({});
   assert.equal(ok.ok, true, fails(ok));
-  assert.equal(ok.pending.length, 23);
+  assert.equal(ok.pending.length, EXPECTED_MIGRATIONS);
 
   assert.match(fails(await run({ gitState: () => ({ ...okDeps.gitState(), dirty: " M x" }) })), /working tree/);
   assert.match(fails(await run({ gitState: () => ({ ...okDeps.gitState(), branch: "dev" }) })), /branch/);

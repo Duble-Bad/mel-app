@@ -48,7 +48,7 @@ jobs:
           grep -E '^enable_manual_linking =' supabase/config.toml
           grep -A2 '^\[auth.external.google\]' supabase/config.toml | grep -v secret
 
-      - name: Subir Supabase local (banco vazio + 23 migrations, sem intervenção)
+      - name: Subir Supabase local (banco vazio + todas as migrations, sem intervenção)
         run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
 
       - name: Migrations aplicadas

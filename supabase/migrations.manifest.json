@@ -92,6 +92,10 @@
     {
       "file": "20261029190000_lgpd.sql",
       "sha256": "2a64ba3c37afa98deb4ccf838dcad6d3fd09aab147e1546422a7af7d460cb300"
+    },
+    {
+      "file": "20261030120000_radar_public_distance.sql",
+      "sha256": "6075922be955c45004fb091d95484b9a808462f573e8ed637c07f9ee97392934"
     }
   ]
 }

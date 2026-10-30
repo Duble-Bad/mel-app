@@ -18,7 +18,7 @@ import { resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { pathToFileURL } from "node:url";
 import { runPostdeploy } from "./postdeploy-check.mjs";
-import { PLAN, printChecks, remoteVersions, runPreflight, validatePlan } from "./preflight.mjs";
+import { EXPECTED_MIGRATIONS, PLAN, printChecks, remoteVersions, runPreflight, validatePlan } from "./preflight.mjs";
 import { assertInteractive, maskRef } from "./prod-target.mjs";
 
 export const CONFIRM_PHRASE = "APLICAR MIGRATIONS NO MEL-PROD";
@@ -62,7 +62,7 @@ async function main() {
 
   // Estado pode ter mudado entre o pre-flight e a confirmação: confere de novo.
   const again = await remoteVersions(target);
-  if (again.length !== 23 - pending.length) throw new Error("ABORTADO: o estado de produção mudou desde o pre-flight.");
+  if (again.length !== EXPECTED_MIGRATIONS - pending.length) throw new Error("ABORTADO: o estado de produção mudou desde o pre-flight.");
 
   console.log("\nAplicando migrations pendentes:");
   run(PLAN[2].cmd, target.dbUrl);

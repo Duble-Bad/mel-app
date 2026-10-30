@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeMatchScore, describeMatchReasons, matchLabel, MATCH_THRESHOLD, type MatchSide } from "./match";
+import { computeMatchScore, describeMatchReasons, matchDistanceBand, matchLabel, MATCH_THRESHOLD, type MatchSide } from "./match";
 
 const SE = { lat: -23.55052, lng: -46.633308 };
 const lost: MatchSide = {
@@ -20,13 +20,30 @@ const found = (o: Partial<MatchSide> = {}): MatchSide => ({
   ...o,
 });
 
-describe("computeMatchScore (Radar MEL v1)", () => {
+describe("computeMatchScore (Radar MEL v2)", () => {
   it("a near-identical dog found nearby the same day scores high", () => {
     const r = computeMatchScore(lost, found())!;
     expect(r.score).toBeGreaterThanOrEqual(90);
     expect(r.reasons).toMatchObject({ size: "same", sex: "same", color: "same", breed: "same" });
-    expect(r.reasons.distance_m).toBeGreaterThan(500);
-    expect(r.reasons.distance_m).toBeLessThan(700);
+    expect(r.reasons.distance).toBe("NEAR"); // ~600 m
+    expect(r.reasons).not.toHaveProperty("distance_m");
+  });
+
+  it("distance only ever leaves as a band, and the score does not change inside a band (no meters to recover)", () => {
+    const at = (lat: number) => computeMatchScore(lost, found({ position: { lat, lng: -46.633308 } }))!;
+    // ~100 m, ~500 m e ~900 m: mesma faixa → mesma pontuação e mesmos motivos.
+    const inNear = [-23.5514, -23.555, -23.5586].map(at);
+    expect(new Set(inNear.map((r) => r.reasons.distance))).toEqual(new Set(["NEAR"]));
+    expect(new Set(inNear.map((r) => r.score)).size).toBe(1);
+    expect(new Set(inNear.map((r) => JSON.stringify(r.reasons))).size).toBe(1);
+    expect(at(-23.5685).reasons.distance).toBe("MEDIUM"); // ~2 km
+    expect(at(-23.6).reasons.distance).toBe("AREA"); // ~5,5 km
+    for (const r of [...inNear, at(-23.5685), at(-23.6)]) {
+      expect(Object.keys(r.reasons).sort()).toEqual(["breed", "color", "days", "distance", "sex", "size"]);
+    }
+    expect(matchDistanceBand(1000)).toBe("NEAR");
+    expect(matchDistanceBand(1001)).toBe("MEDIUM");
+    expect(matchDistanceBand(3001)).toBe("AREA");
   });
 
   it("is not a candidate when species differ, too far, or found long before/after", () => {
@@ -70,7 +87,10 @@ describe("describeMatchReasons / matchLabel", () => {
   it("speaks human and never claims certainty", () => {
     const r = computeMatchScore(lost, found())!;
     const lines = describeMatchReasons(r.reasons);
-    expect(lines[0]).toMatch(/^a \d+ m do último local$/);
+    expect(lines[0]).toBe("muito perto do último local");
+    expect(describeMatchReasons({ ...r.reasons, distance: "MEDIUM" })[0]).toBe("perto do último local");
+    expect(describeMatchReasons({ ...r.reasons, distance: "AREA" })[0]).toBe("na mesma região");
+    expect(lines.join(" ")).not.toMatch(/\d+\s*(m|km)\b/);
     expect(lines.slice(1)).toEqual(["menos de 1 dia depois", "mesmo porte", "mesmo sexo", "mesma cor", "mesma raça"]);
     expect(matchLabel(82)).toBe("Possível correspondência · 82%");
   });
