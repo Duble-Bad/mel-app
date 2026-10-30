@@ -9,6 +9,10 @@
 - **Produção:** schema aplicado e verificado no `mel-prod` (pós-deploy 100% ✅). Auth básico ajustado pelo dono no painel (abaixo). O app não está publicado.
 - **Etapa atual:** M17 — configuração de produção. Código de Auth pronto (conversão anônimo → conta por e-mail e por Google). **Google no `mel-prod` só depois de SMTP próprio + "Confirm email" ON** (risco de conta pré-criada, abaixo). **Próximo: comprar o domínio** — sem ele não há SMTP de produção ([11-email-producao.md](11-email-producao.md)). Preparar o client no Google Cloud já pode.
 
+## ⏸️ Produção pausada (decisão de 2026-10-30)
+
+Todo o trabalho de produção está **pausado** até o produto estar funcionalmente pronto em DEV: nada de domínio, SMTP/Resend, "Confirm email", Google OAuth, Manual Linking, alterações no `mel-prod` ou deploy. Os itens abaixo ficam como **pendências de lançamento**; o foco agora é o produto (auditoria funcional em DEV).
+
 ## Último CI
 
 `e17a9c3` — e-mail do Auth (`/auth/confirmar`, templates pt-BR): ✅ verde nos 3 checks. "Banco do zero" roda também um segundo arranque com "Confirm email" ON + Mailpit: 4/4 (cadastro, e-mail duplicado neutro, recuperação, anônimo → conta).
