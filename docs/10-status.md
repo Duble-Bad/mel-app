@@ -7,7 +7,7 @@
 
 - **Produto (M1–M16): concluído** em desenvolvimento ([06-milestones.md](06-milestones.md)).
 - **Produção:** schema aplicado e verificado no `mel-prod` (pós-deploy 100% ✅). Auth básico ajustado pelo dono no painel (abaixo). O app não está publicado.
-- **Etapa atual:** M17 — configuração de produção. Código de Auth pronto (conversão anônimo → conta por e-mail e por Google). **Google no `mel-prod` só depois de SMTP próprio + "Confirm email" ON** (risco de conta pré-criada, abaixo). Preparar o client no Google Cloud já pode.
+- **Etapa atual:** M17 — configuração de produção. Código de Auth pronto (conversão anônimo → conta por e-mail e por Google). **Google no `mel-prod` só depois de SMTP próprio + "Confirm email" ON** (risco de conta pré-criada, abaixo). **Próximo: comprar o domínio** — sem ele não há SMTP de produção ([11-email-producao.md](11-email-producao.md)). Preparar o client no Google Cloud já pode.
 
 ## Último CI
 
@@ -27,7 +27,9 @@
 | Conversão anônimo → conta por e-mail/senha (mesmo id, contribuições mantidas) | ✅ `e9a42d5` |
 | Google: login normal + vínculo à sessão anônima (`linkIdentity`) no código | ✅ `021a5a1` |
 | Google Cloud: projeto, tela de consentimento e client OAuth | ⏭️ pode ser feito já (manual, pelo dono) |
-| **SMTP próprio + "Confirm email" ON** (antes de qualquer conta real e antes do Google) | ⏭️ pré-requisito do Google |
+| E-mail transacional no código: `/auth/confirmar` (token_hash, qualquer aparelho, só com clique), templates pt-BR, cadastro sem enumeração, testes com "Confirm email" ON | ✅ |
+| **Domínio próprio** (pelo dono) | ⏭️ próximo — necessário para SMTP, Site URL e Google |
+| **SMTP (Resend) + templates + "Confirm email" ON** (antes de qualquer conta real e antes do Google) | ⏸️ depois do domínio — [11-email-producao.md](11-email-producao.md) |
 | Google provider + manual linking no painel do `mel-prod` | ⏸️ depois do item acima |
 | Publicação do app (Vercel + domínio) | ⏸️ não iniciado |
 
@@ -66,7 +68,7 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 1. **API:** schemas expostos sem `private`.
 2. **Auth restante:** Rate Limits nos padrões (anônimos 30/h por IP, logins 30/5 min); captcha **só depois** de o código enviar `captchaToken` nas chamadas de Auth (hoje não envia — ligar antes quebra login, cadastro e anônimo).
 3. **URLs:** Site URL e Redirect URLs (`/auth/callback`) do domínio final.
-4. **SMTP** próprio (e-mail da MEL, nunca de terceiros/empregador), templates em pt-BR (confirmação, troca de e-mail, recuperação; `codigo.html` para o código) e então **"Confirm email" ON**. Sem SMTP, a recuperação de senha não chega a usuários reais — **bloqueia o lançamento público**.
+4. **SMTP** próprio (Resend; e-mail da MEL, nunca de terceiros/empregador), templates pt-BR do repositório e então **"Confirm email" ON** — passo a passo em [11-email-producao.md](11-email-producao.md). Sem SMTP, a recuperação de senha não chega a usuários reais — **bloqueia o lançamento público**.
 5. **Google OAuth:** passo a passo acima (depois do item 4).
 6. **MapTiler:** chave de produção restrita ao domínio.
 7. **Web Push:** gerar par VAPID novo para produção (nunca reutilizar o do dev); agendador de push (`PUSH_DISPATCH_SECRET`).
@@ -91,8 +93,8 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 1. `git pull` na `main` e confira o CI.
 2. Para qualquer verificação em produção: PowerShell com as 3 variáveis temporárias (ver [08-deploy-producao.md](08-deploy-producao.md)) e `node scripts/prod/postdeploy-check.mjs --production --expect-ref=<ref>` — somente leitura; deve passar inteiro.
-3. Próximo item: SMTP próprio + "Confirm email" ON (pré-requisito do Google); em paralelo, preparar o client no Google Cloud.
+3. Próximo item: comprar o domínio; depois seguir [11-email-producao.md](11-email-producao.md) (SMTP → templates → "Confirm email" ON); em paralelo, preparar o client no Google Cloud.
 
 ## Documentos
 
-[Migrations](09-migrations.md) · [Deploy de produção](08-deploy-producao.md) · [Milestones](06-milestones.md) · [Decisões](decisoes.md) · [Banco (planejamento)](03-database.md)
+[Migrations](09-migrations.md) · [Deploy de produção](08-deploy-producao.md) · [E-mail de produção](11-email-producao.md) · [Milestones](06-milestones.md) · [Decisões](decisoes.md) · [Banco (planejamento)](03-database.md)

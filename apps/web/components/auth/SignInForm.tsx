@@ -159,7 +159,8 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
         )}
         {confirmEmailFor && (
           <Alert tone="success">
-            Enviamos um link para <strong className="break-all">{confirmEmailFor}</strong>. Abra o e-mail para confirmar sua conta e continuar.
+            Enviamos um link de confirmação para <strong className="break-all">{confirmEmailFor}</strong>. Pode abrir em qualquer
+            aparelho. Não chegou em alguns minutos? Confira o spam. Se você já tem conta com esse e-mail, é só entrar.
           </Alert>
         )}
 

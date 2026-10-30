@@ -100,6 +100,24 @@ jobs:
           MEL_TEST_LINKING: "1"
         run: npx vitest run --config vitest.db.config.ts --reporter=default --reporter=json --outputFile.json="$GITHUB_WORKSPACE/vitest-db.json"
 
+      # Segundo arranque do ambiente descartável com "Confirm email" ON (como
+      # ficará a produção): cadastro, recuperação e anônimo → conta pelo link
+      # dos nossos templates, lido no Mailpit local (tests/email-confirmation.test.ts).
+      - name: Confirmação de e-mail ligada (cadastro, recuperação, anônimo → conta)
+        id: confirm
+        continue-on-error: true
+        run: |
+          npx supabase stop --no-backup
+          sed -i '/^\[auth.email\]/,/^\[/ s/^enable_confirmations = false/enable_confirmations = true/' supabase/config.toml
+          grep -n '^enable_confirmations' supabase/config.toml
+          npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
+          npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb2.env
+          set -a; . /tmp/sb2.env; set +a
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${PUBLISHABLE_KEY:-$ANON_KEY}" SUPABASE_SECRET_KEY="${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+          cd packages/data
+          MEL_TEST_CONFIRM=1 npx vitest run --config vitest.db.config.ts tests/email-confirmation.test.ts 2>&1 | tee /tmp/confirm.txt
+          exit "${PIPESTATUS[0]}"
+
       - name: Relatório
         if: always()
         run: |
@@ -110,8 +128,9 @@ jobs:
               console.log(`testes de banco: ${r.numTotalTests} executados, ${r.numPassedTests} aprovados, ${r.numFailedTests} falharam` + (failed.length ? "\nFALHAS:\n" + failed.join("\n") : ""));
             } catch { console.log("testes de banco: relatório JSON ausente"); }')
           {
-            echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }}"
+            echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }} confirm=${{ steps.confirm.outcome }}"
             echo "$db_summary"
+            echo "confirmação de e-mail ON: $(sed 's/\x1b\[[0-9;]*m//g' /tmp/confirm.txt 2>/dev/null | grep -E 'Tests +[0-9]' | tr -s ' ')"
             sed 's/\x1b\[[0-9;]*m//g' /tmp/unit.txt > /tmp/unit-plain.txt
             echo "unitários: $(grep -E 'Tests +[0-9]+ passed|Tests +[0-9]+ failed' /tmp/unit-plain.txt | tr -s ' ' | paste -sd ';' -) | trava: $(grep -E '^ℹ (pass|fail)' /tmp/unit-plain.txt | paste -sd ' ' -)"
           } > /tmp/summary.txt
@@ -122,7 +141,7 @@ jobs:
           cat /tmp/summary.txt schema-audit-report.md 2>/dev/null >> "$GITHUB_STEP_SUMMARY"
 
       - name: Falhar se alguma verificação falhou
-        if: steps.audit.outcome != 'success' || steps.parity.outcome != 'success' || steps.drift.outcome != 'success' || steps.unit.outcome != 'success' || steps.db.outcome != 'success'
+        if: steps.audit.outcome != 'success' || steps.parity.outcome != 'success' || steps.drift.outcome != 'success' || steps.unit.outcome != 'success' || steps.db.outcome != 'success' || steps.confirm.outcome != 'success'
         run: exit 1
 
       - if: always()

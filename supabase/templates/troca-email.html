@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="margin:0;padding:24px;background:#fbf8f4;font-family:Arial,Helvetica,sans-serif;color:#1f1a16;">
+    <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;">
+      <tr>
+        <td>
+          <p style="margin:0 0 4px;font-size:24px;font-weight:800;color:#8a4510;">MEL</p>
+          <p style="margin:0 0 24px;color:#5a5048;">Uma rede inteira procurando com você.</p>
+
+          <p style="margin:0 0 12px;font-size:17px;">Confirme que <strong>{{ .NewEmail }}</strong> é o seu e-mail na MEL.</p>
+          <p style="margin:0 0 24px;">
+            <a href="{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&amp;type=email_change"
+               style="display:inline-block;background:#8a4510;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:12px;">Confirmar e-mail</a>
+          </p>
+
+          <p style="margin:0 0 8px;color:#5a5048;">
+            O link vale por 1 hora e só funciona uma vez. Se você ajudou na MEL sem conta, o que já enviou continua com você.
+          </p>
+          <p style="margin:0 0 20px;color:#5a5048;font-size:13px;word-break:break-all;">
+            Se o botão não abrir, copie este endereço no navegador:<br />
+            {{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash }}&amp;type=email_change
+          </p>
+          <p style="margin:0;color:#5a5048;font-size:14px;">
+            Não pediu isso? Pode ignorar este e-mail: nada muda sem a confirmação.
+            A MEL nunca pede senhas, códigos ou pagamentos por mensagem.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

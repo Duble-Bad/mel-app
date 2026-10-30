@@ -64,3 +64,44 @@ export function authReturnMessage(code: string | null | undefined): AuthReturnMe
       return msg("Não conseguimos concluir o login. Tente de novo ou use seu e-mail.");
   }
 }
+
+/**
+ * Links dos e-mails do Auth (confirmação de cadastro, recuperação de senha,
+ * troca de e-mail — inclusive a conversão da sessão anônima com "Confirm
+ * email" ON). Os templates apontam para /auth/confirmar?token_hash=…&type=…:
+ * funciona em qualquer navegador (o link costuma abrir no app de e-mail, longe
+ * do navegador do cadastro, onde o fluxo PKCE falharia) e só vale depois de um
+ * clique (leitores de e-mail que abrem links sozinhos não gastam o token).
+ */
+export const EMAIL_LINK_TYPES = ["email", "recovery", "email_change"] as const;
+export type EmailLinkType = (typeof EMAIL_LINK_TYPES)[number];
+
+export type EmailLink = { ok: true; tokenHash: string; type: EmailLinkType; next: string } | { ok: false; code: "link" };
+
+export function emailLinkAction(params: { get(name: string): string | null }): EmailLink {
+  const tokenHash = params.get("token_hash");
+  const raw = params.get("type");
+  // "signup" é o nome antigo do tipo de confirmação de cadastro.
+  const type = raw === "signup" ? "email" : raw;
+  if (!tokenHash || !/^[A-Za-z0-9_-]{8,256}$/.test(tokenHash) || !EMAIL_LINK_TYPES.includes(type as EmailLinkType)) {
+    return { ok: false, code: "link" };
+  }
+  // Recuperação sempre termina em "criar senha nova"; os demais, no perfil (que leva ao onboarding se faltar).
+  const next = type === "recovery" ? "/perfil/nova-senha" : safeNextPath(params.get("next"), "/perfil");
+  return { ok: true, tokenHash, type: type as EmailLinkType, next };
+}
+
+export function emailLinkCopy(type: EmailLinkType): { title: string; body: string; action: string } {
+  switch (type) {
+    case "recovery":
+      return { title: "Criar uma senha nova", body: "Toque no botão para continuar e escolher sua senha nova.", action: "Continuar" };
+    case "email_change":
+      return {
+        title: "Confirmar seu e-mail",
+        body: "Toque no botão para confirmar este e-mail na sua conta MEL. O que você já enviou continua com você.",
+        action: "Confirmar e-mail",
+      };
+    default:
+      return { title: "Confirmar seu cadastro", body: "Falta só um passo: toque no botão para ativar sua conta na MEL.", action: "Confirmar e entrar" };
+  }
+}

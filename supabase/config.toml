@@ -233,7 +233,7 @@ max_frequency = "60s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 900
+otp_expiry = 3600
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -245,13 +245,22 @@ otp_expiry = 900
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Templates personalizados (código de 6 dígitos em pt-BR, supabase/templates/codigo.html)
-# exigem SMTP próprio no plano gratuito. Ativar quando houver domínio + SMTP (ver docs/decisoes.md).
+# Templates pt-BR (só ambiente local/CI; em produção são colados no painel, ver
+# docs/11-email-producao.md). Os links vão para /auth/confirmar?token_hash=…
+# (funciona em qualquer navegador e só vale com um clique).
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail na MEL"
+content_path = "./supabase/templates/confirmacao.html"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+[auth.email.template.recovery]
+subject = "Crie uma senha nova na MEL"
+content_path = "./supabase/templates/recuperar-senha.html"
+
+[auth.email.template.email_change]
+subject = "Confirme seu e-mail na MEL"
+content_path = "./supabase/templates/troca-email.html"
+
+# codigo.html (código de 6 dígitos) fica para quando houver "entrar com código".
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

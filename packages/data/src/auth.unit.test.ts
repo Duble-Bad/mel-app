@@ -48,6 +48,13 @@ describe("signUpWithPassword without a session", () => {
     expect(await signUpWithPassword(client, creds)).toMatchObject({ hasSession: false, needsEmailConfirmation: true });
   });
 
+  it("Confirm email ON + email already registered: same neutral answer (no user enumeration)", async () => {
+    // O Supabase devolve um usuário "fantasma" (sem identidades, sem sessão) para não revelar a conta.
+    const ghost = vi.fn(async () => ({ data: { user: { id: "fantasma", identities: [] }, session: null }, error: null }));
+    const { client } = fakeClient({ anonymous: null, signUp: ghost });
+    expect(await signUpWithPassword(client, creds)).toMatchObject({ hasSession: false, needsEmailConfirmation: true });
+  });
+
   it("a real (non-anonymous) session also signs up normally", async () => {
     const { client, auth } = fakeClient({ anonymous: false });
     await signUpWithPassword(client, creds);

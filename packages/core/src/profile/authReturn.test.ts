@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authCallbackAction, authReturnMessage, safeErrorCode } from "./authReturn";
+import { authCallbackAction, authReturnMessage, emailLinkAction, emailLinkCopy, safeErrorCode } from "./authReturn";
 
 const params = (q: string) => new URLSearchParams(q);
 
@@ -51,5 +51,36 @@ describe("authReturnMessage", () => {
     expect(authReturnMessage("over_request_rate_limit")!.message).toContain("Muitas tentativas");
     expect(authReturnMessage("unknown")!.message).toContain("Não conseguimos concluir");
     for (const code of ["access_denied", "manual_linking_disabled", "unknown"]) expect(authReturnMessage(code)!.offerGoogleSignIn).toBe(false);
+  });
+});
+
+describe("emailLinkAction", () => {
+  const HASH = "pkce_0a1b2c3d4e5f60718293a4b5c6d7e8f9";
+
+  it("accepts the three email link types (and the old 'signup' name)", () => {
+    expect(emailLinkAction(params(`token_hash=${HASH}&type=email`))).toEqual({ ok: true, tokenHash: HASH, type: "email", next: "/perfil" });
+    expect(emailLinkAction(params(`token_hash=${HASH}&type=signup`))).toMatchObject({ ok: true, type: "email" });
+    expect(emailLinkAction(params(`token_hash=${HASH}&type=email_change`))).toMatchObject({ ok: true, type: "email_change", next: "/perfil" });
+  });
+
+  it("recovery always ends in 'new password', whatever next says", () => {
+    expect(emailLinkAction(params(`token_hash=${HASH}&type=recovery&next=%2Fadmin`))).toMatchObject({ ok: true, next: "/perfil/nova-senha" });
+  });
+
+  it("keeps next internal only", () => {
+    expect(emailLinkAction(params(`token_hash=${HASH}&type=email&next=%2Fpublicar%2Fperdido`))).toMatchObject({ next: "/publicar/perdido" });
+    for (const next of ["https://evil.com", "//evil.com", "/\t/evil.com"]) {
+      expect(emailLinkAction(params(`token_hash=${HASH}&type=email&next=${encodeURIComponent(next)}`))).toMatchObject({ next: "/perfil" });
+    }
+  });
+
+  it("refuses missing/odd tokens and unknown types (magic link, invite, etc.)", () => {
+    for (const q of ["type=email", `token_hash=${HASH}`, `token_hash=${HASH}&type=magiclink`, `token_hash=${HASH}&type=invite`, "token_hash=abc&type=email", `token_hash=${HASH}%3Cx%3E&type=email`]) {
+      expect(emailLinkAction(params(q)), q).toEqual({ ok: false, code: "link" });
+    }
+  });
+
+  it("has copy for each type", () => {
+    for (const t of ["email", "recovery", "email_change"] as const) expect(emailLinkCopy(t).action.length).toBeGreaterThan(3);
   });
 });
