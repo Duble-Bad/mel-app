@@ -44,7 +44,7 @@ export function CloseLostCaseButton({ code, petName }: { code: string; petName: 
           setError(null);
           setOpen(true);
         }}
-        className="text-text-secondary hover:bg-status-lost-soft hover:text-status-lost"
+        className="whitespace-nowrap text-text-secondary hover:bg-status-lost-soft hover:text-status-lost sm:w-auto sm:px-4"
       >
         Encerrar alerta
       </Button>

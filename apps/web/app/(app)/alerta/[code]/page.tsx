@@ -166,7 +166,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
         {c.isOwner && c.status === "ACTIVE" && (
           // Reencontro é a ação positiva; editar é normal; encerrar é secundária (com confirmação).
           <div className="-mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <ButtonLink href={`/alerta/${c.code}/editar`} variant="secondary" size="md" className="sm:w-auto sm:px-6">
+            <ButtonLink href={`/alerta/${c.code}/editar`} variant="secondary" size="md" className="whitespace-nowrap sm:w-auto sm:px-6">
               <Pencil aria-hidden="true" className="size-4" strokeWidth={2} />
               Editar alerta
             </ButtonLink>
