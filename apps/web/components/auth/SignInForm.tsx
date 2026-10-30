@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
-import { authReturnMessage, credentialsSchema, fieldErrors, needsOnboarding, safeNextPath, signUpSchema } from "@mel/core";
+import { authReturnMessage, credentialsSchema, fieldErrors, needsOnboarding, safeNextPath, signUpSchema, userErrorMessage } from "@mel/core";
 import { getMyProfile, linkGoogleToAnonymous, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -109,7 +109,7 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
       // de volta para /entrar — a tela ficaria presa em "Entrando…".
       window.location.assign(destination);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Não deu certo agora. Tente novamente.");
+      setFormError(userErrorMessage(error, "Não deu certo agora. Tente novamente."));
       setPending(null);
     }
   }
@@ -128,7 +128,7 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
       if (anonymous && intent === "keep") await linkGoogleToAnonymous(getBrowserClient(), redirectTo);
       else await signInWithGoogle(getBrowserClient(), redirectTo);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Não deu certo agora. Tente novamente.");
+      setFormError(userErrorMessage(error, "Não deu certo agora. Tente novamente."));
       setPending(null);
     }
   }

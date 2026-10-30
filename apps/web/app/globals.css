@@ -250,6 +250,12 @@ h3 {
   outline-offset: 2px;
 }
 
+/* Foco movido por código (títulos de telas de erro, por exemplo): é para o
+   leitor de tela, não é um controle — sem moldura. */
+[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
 /* Troca de tema: só as cores fazem transição (~220 ms), e só durante a troca. */
 @media (prefers-reduced-motion: no-preference) {
   .theme-switching,

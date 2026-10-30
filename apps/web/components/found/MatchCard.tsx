@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight, MessageCircle, PawPrint } from "lucide-react";
 import { useState } from "react";
-import { describeMatchReasons, matchLabel, type MatchView } from "@mel/core";
+import { describeMatchReasons, matchLabel, type MatchView, userErrorMessage } from "@mel/core";
 import { dismissMatch, openConversationFromMatch } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -42,7 +42,7 @@ export function MatchCard({ match: m }: { match: MatchView }) {
     try {
       router.push(`/conversas/${await openConversationFromMatch(getBrowserClient(), m.id)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos abrir a conversa. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos abrir a conversa. Tente de novo."));
       setBusy(null);
     }
   }
@@ -54,7 +54,7 @@ export function MatchCard({ match: m }: { match: MatchView }) {
       await dismissMatch(getBrowserClient(), m.id);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos atualizar. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos atualizar. Tente de novo."));
       setBusy(null);
     }
   }

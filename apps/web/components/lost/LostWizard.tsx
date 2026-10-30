@@ -2,25 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import {
-  contactStepSchema,
-  detailsStepSchema,
-  fieldErrors,
-  firstIncompleteStep,
-  formatBrPhone,
-  formatDateTimeBr,
-  LOST_STEPS,
-  petSummary,
-  publicAreaFrom,
-  WEARING,
-  WEARING_LABELS,
-  whenStepSchema,
-  whereStepSchema,
-  type LostCase,
-  type LostStep,
-  type Pet,
-  type Wearing,
-} from "@mel/core";
+import { contactStepSchema, detailsStepSchema, fieldErrors, firstIncompleteStep, formatBrPhone, formatDateTimeBr, LOST_STEPS, type LostCase, type LostStep, type Pet, petSummary, publicAreaFrom, userErrorMessage, type Wearing, WEARING, WEARING_LABELS, whenStepSchema, whereStepSchema } from "@mel/core";
 import { activateLostCase, discardDraft, startLostCase, updateLostCase, type LostCasePatch } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { kickPushDispatch } from "@/lib/push/client";
@@ -71,7 +53,7 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
       setStep(next);
       window.scrollTo({ top: 0 });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos salvar. Verifique a conexão e tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos salvar. Verifique a conexão e tente de novo."));
     } finally {
       setBusy(false);
     }
@@ -94,7 +76,7 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
       setStep(firstIncompleteStep(started) === "pet" ? "where" : firstIncompleteStep(started));
       window.scrollTo({ top: 0 });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos continuar. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos continuar. Tente de novo."));
     } finally {
       setBusy(false);
     }
@@ -110,7 +92,7 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
       kickPushDispatch();
       router.push(`/alerta/${active.code}?novo=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos ativar o alerta. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos ativar o alerta. Tente de novo."));
       setBusy(false);
     }
   }

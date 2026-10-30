@@ -2,7 +2,7 @@
 
 import { Flag } from "lucide-react";
 import { useState } from "react";
-import { REPORT_REASON_LABELS, REPORT_REASONS, type ReportableTarget, type ReportReason } from "@mel/core";
+import { REPORT_REASON_LABELS, REPORT_REASONS, type ReportableTarget, type ReportReason, userErrorMessage } from "@mel/core";
 import { ensureSession, reportContent } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -43,7 +43,7 @@ export function ReportButton({ type, targetKey, compact = false }: { type: Repor
       setDetails("");
       toast({ tone: "success", title: "Denúncia enviada.", description: "A equipe da MEL vai analisar. Obrigado por proteger a rede." });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos enviar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos enviar agora. Tente de novo."));
     } finally {
       setBusy(false);
     }

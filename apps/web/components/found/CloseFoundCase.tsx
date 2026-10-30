@@ -5,6 +5,7 @@ import { useState } from "react";
 import { closeFoundCase } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/Button";
+import { userErrorMessage } from "@mel/core";
 
 /** Quem publicou encerra: devolvido ao tutor, ou o animal não está mais com a pessoa. */
 export function CloseFoundCase({ code }: { code: string }) {
@@ -19,7 +20,7 @@ export function CloseFoundCase({ code }: { code: string }) {
       await closeFoundCase(getBrowserClient(), code, status);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos atualizar. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos atualizar. Tente de novo."));
       setBusy(null);
     }
   }

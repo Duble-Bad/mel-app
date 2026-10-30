@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LocateFixed, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { fieldErrors, offerSchema, type BusinessOffer } from "@mel/core";
+import { type BusinessOffer, fieldErrors, offerSchema, userErrorMessage } from "@mel/core";
 import { addOffer, deleteOffer, reviewBusiness, setOfferSponsored } from "@mel/data";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -30,7 +30,7 @@ export function NearMeChip({ active }: { active: boolean }) {
       q.set("lng", position.lng.toFixed(4));
       router.replace(`${pathname}?${q}`, { scroll: false });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos pegar sua localização.");
+      setError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
       setBusy(false);
     }
@@ -62,7 +62,7 @@ function useOfferAction() {
       toast({ tone: "success", title: ok });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos atualizar.");
+      setError(userErrorMessage(err, "Não conseguimos atualizar."));
     } finally {
       setBusy(false);
     }
@@ -151,7 +151,7 @@ export function BusinessReview({ code, name }: { code: string; name: string }) {
       toast({ tone: "success", title: approve ? `${name} aprovado.` : "Cadastro recusado." });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos aplicar agora.");
+      setError(userErrorMessage(err, "Não conseguimos aplicar agora."));
       setBusy(null);
     }
   }

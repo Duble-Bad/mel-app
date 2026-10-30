@@ -34,7 +34,8 @@ const FALLBACK = "Não deu certo agora. Verifique sua conexão e tente novamente
 
 export class AuthError extends DataError {
   constructor(code: string | undefined) {
-    super((code && AUTH_MESSAGES[code]) || FALLBACK, code);
+    // Mensagens já escritas para a pessoa (AUTH_MESSAGES); código desconhecido → FALLBACK.
+    super((code && AUTH_MESSAGES[code]) || FALLBACK, code, { trusted: true });
     this.name = "AuthError";
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MESSAGE_MAX, messageBodySchema } from "@mel/core";
+import { MESSAGE_MAX, messageBodySchema, userErrorMessage, UserFacingError } from "@mel/core";
 import { ensureSession } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -43,13 +43,13 @@ export function StartConversationForm({ code, petName, needsCaptcha }: { code: s
         body: JSON.stringify({ code, body: parsed.data, turnstileToken }),
       });
       const data = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-      if (!res.ok || !data.id) throw new Error(data.error ?? "Não conseguimos enviar agora. Tente de novo.");
+      if (!res.ok || !data.id) throw new UserFacingError(data.error ?? "Não conseguimos enviar agora. Tente de novo.");
       // Navegação completa: a sessão pode ter acabado de ser criada (anônima), e o
       // cabeçalho/telas pré-carregadas antes dela ficariam desatualizados.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intencional, ver acima
       window.location.assign(`/conversas/${data.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos enviar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos enviar agora. Tente de novo."));
       if (needsCaptcha) captcha.reset();
       setBusy(null);
     }

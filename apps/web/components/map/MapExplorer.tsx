@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { usePathname, useRouter } from "next/navigation";
 import { LoaderCircle, LocateFixed, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { distanceMeters, itemTitle, toSearchParams, type MapHandle, type PublicCaseItem, type SearchFilters } from "@mel/core";
+import { distanceMeters, itemTitle, type MapHandle, type PublicCaseItem, type SearchFilters, toSearchParams, userErrorMessage } from "@mel/core";
 import { searchPublicCases } from "@mel/data";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { mapLibreProvider } from "@/lib/map/maplibre";
@@ -112,7 +112,7 @@ export function MapExplorer({ filters }: { filters: SearchFilters }) {
       const { position } = await getCurrentPosition();
       go({ center: position, hasCenter: true });
     } catch (err) {
-      setGeoError(err instanceof Error ? err.message : "Não conseguimos pegar sua localização.");
+      setGeoError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
       setLocating(false);
     }

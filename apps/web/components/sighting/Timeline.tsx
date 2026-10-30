@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { describeSighting, formatDateTimeBr, timeAgo, type TimelineSighting } from "@mel/core";
+import { describeSighting, formatDateTimeBr, timeAgo, type TimelineSighting, userErrorMessage } from "@mel/core";
 import { openConversationFromSighting, setSightingHidden } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { ReportButton } from "@/components/report/ReportButton";
@@ -31,7 +31,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner, helpfulSightin
       await setSightingHidden(getBrowserClient(), s.id, !s.hidden);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos atualizar. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos atualizar. Tente de novo."));
     } finally {
       setPending(null);
     }
@@ -43,7 +43,7 @@ export function Timeline({ petName, lastSeen, sightings, isOwner, helpfulSightin
     try {
       router.push(`/conversas/${await openConversationFromSighting(getBrowserClient(), s.id)}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos abrir a conversa. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos abrir a conversa. Tente de novo."));
       setPending(null);
     }
   }

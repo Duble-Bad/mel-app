@@ -5,6 +5,7 @@ import { signOut } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { userErrorMessage } from "@mel/core";
 
 export function SignOutButton() {
   const [pending, setPending] = useState(false);
@@ -19,7 +20,7 @@ export function SignOutButton() {
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intencional, ver acima
       window.location.assign("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos sair agora. Tente novamente.");
+      setError(userErrorMessage(err, "Não conseguimos sair agora. Tente novamente."));
       setPending(false);
     }
   }

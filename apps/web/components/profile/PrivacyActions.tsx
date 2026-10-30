@@ -3,7 +3,7 @@
 import { Download, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { DELETE_CONFIRMATION, isDeleteConfirmed } from "@mel/core";
+import { DELETE_CONFIRMATION, isDeleteConfirmed, userErrorMessage, UserFacingError } from "@mel/core";
 import { acceptTerms, exportMyData } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -23,7 +23,7 @@ export function AcceptTermsButton({ userId }: { userId: string }) {
       await acceptTerms(getBrowserClient(), userId);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos registrar agora.");
+      setError(userErrorMessage(err, "Não conseguimos registrar agora."));
     } finally {
       setBusy(false);
     }
@@ -54,7 +54,7 @@ export function ExportDataButton() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos gerar o arquivo agora.");
+      setError(userErrorMessage(err, "Não conseguimos gerar o arquivo agora."));
     } finally {
       setBusy(false);
     }
@@ -89,12 +89,12 @@ export function DeleteAccount() {
         body: JSON.stringify({ confirm: typed }),
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? "Não conseguimos excluir agora.");
+      if (!res.ok) throw new UserFacingError(body.error ?? "Não conseguimos excluir agora.");
       // Recarrega tudo: a sessão não existe mais.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- saída completa da sessão
       window.location.assign("/conta-excluida");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos excluir agora.");
+      setError(userErrorMessage(err, "Não conseguimos excluir agora."));
       setBusy(false);
     }
   }

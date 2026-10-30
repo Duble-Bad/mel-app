@@ -62,6 +62,6 @@ export async function uploadAvatar(client: MelClient, userId: string, image: Blo
     cacheControl: "31536000",
     upsert: false,
   });
-  if (error) throw new DataError(error.message);
+  if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return client.storage.from("avatars").getPublicUrl(path).data.publicUrl;
 }

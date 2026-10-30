@@ -12,7 +12,7 @@ export async function uploadAdoptionPhoto(client: MelClient, userId: string, ima
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
   const path = `${userId}/adocao/${crypto.randomUUID()}.${ext}`;
   const { error } = await client.storage.from("pet-photos").upload(path, image, { contentType: image.type, cacheControl: "31536000", upsert: false });
-  if (error) throw new DataError(error.message);
+  if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return path;
 }
 
@@ -120,7 +120,7 @@ export async function listAdoptions(
 export async function setAdoptionStatus(client: MelClient, code: string, status: "AVAILABLE" | "IN_PROCESS" | "ADOPTED"): Promise<void> {
   const { error, count } = await client.from("adoption_listings").update({ status } as never, { count: "exact" }).eq("short_code", code);
   if (error) fail(error);
-  if (!count) throw new DataError("Você não pode alterar este anúncio.", "42501");
+  if (!count) throw new DataError("Você não pode alterar este anúncio.", "42501", { trusted: true });
 }
 
 /** Interesse (conta real): abre/retoma a conversa com quem doa. Devolve o id da conversa. */

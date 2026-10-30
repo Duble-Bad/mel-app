@@ -9,6 +9,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
+import { userErrorMessage } from "@mel/core";
 
 /** Aprovar ou recusar um anúncio de adoção (recusa pede um motivo, mostrado a quem doa). */
 export function AdoptionReview({ code, name }: { code: string; name: string }) {
@@ -30,7 +31,7 @@ export function AdoptionReview({ code, name }: { code: string; name: string }) {
       toast({ tone: "success", title: approve ? `${name} publicado para adoção.` : "Anúncio recusado." });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos aplicar agora.");
+      setError(userErrorMessage(err, "Não conseguimos aplicar agora."));
       setBusy(null);
     }
   }

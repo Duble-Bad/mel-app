@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { emailSchema } from "@mel/core";
+import { emailSchema, userErrorMessage } from "@mel/core";
 import { requestPasswordReset } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -30,7 +30,7 @@ export function ResetRequestForm() {
       await requestPasswordReset(getBrowserClient(), parsed.data, redirectTo);
       setSentTo(parsed.data);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Não deu certo agora. Tente novamente.");
+      setFormError(userErrorMessage(err, "Não deu certo agora. Tente novamente."));
     } finally {
       setPending(false);
     }

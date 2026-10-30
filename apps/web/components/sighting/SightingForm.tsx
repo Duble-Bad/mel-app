@@ -2,19 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  DIRECTION_LABELS,
-  fieldErrors,
-  SEEN_WHEN,
-  SEEN_WHEN_LABELS,
-  seenAtFrom,
-  SIGHTING_STATE_LABELS,
-  SIGHTING_STATES,
-  sightingInputSchema,
-  type Direction,
-  type SeenWhen,
-  type SightingState,
-} from "@mel/core";
+import { type Direction, DIRECTION_LABELS, fieldErrors, SEEN_WHEN, SEEN_WHEN_LABELS, seenAtFrom, type SeenWhen, SIGHTING_STATE_LABELS, SIGHTING_STATES, sightingInputSchema, type SightingState, userErrorMessage, UserFacingError } from "@mel/core";
 import { ensureSession, uploadSightingPhoto } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { prepareImage } from "@/lib/images";
@@ -90,12 +78,12 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
       });
       if (!res.ok) {
         const { error: message } = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(message ?? "Não conseguimos enviar agora. Tente de novo.");
+        throw new UserFacingError(message ?? "Não conseguimos enviar agora. Tente de novo.");
       }
       setSent(true);
       window.scrollTo({ top: 0 });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos enviar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos enviar agora. Tente de novo."));
       // Token do captcha é de uso único: gera outro para a próxima tentativa.
       captcha.reset();
     } finally {

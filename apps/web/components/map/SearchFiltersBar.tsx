@@ -3,18 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { LocateFixed } from "lucide-react";
 import { useState, useTransition } from "react";
-import {
-  PERIOD_LABELS,
-  PERIODS,
-  PUBLIC_KIND_LABELS,
-  PUBLIC_KINDS,
-  RADII_KM,
-  SPECIES_LABELS,
-  toSearchParams,
-  type PublicKind,
-  type SearchFilters,
-  type Species,
-} from "@mel/core";
+import { PERIOD_LABELS, PERIODS, PUBLIC_KIND_LABELS, PUBLIC_KINDS, type PublicKind, RADII_KM, type SearchFilters, type Species, SPECIES_LABELS, toSearchParams, userErrorMessage } from "@mel/core";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { FilterChip } from "@/components/ui/FilterChip";
 
@@ -51,7 +40,7 @@ export function SearchFiltersBar({ filters, fixedKinds }: { filters: SearchFilte
       const { position } = await getCurrentPosition();
       apply({ center: position, hasCenter: true });
     } catch (err) {
-      setGeoError(err instanceof Error ? err.message : "Não conseguimos pegar sua localização.");
+      setGeoError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
       setLocating(false);
     }

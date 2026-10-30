@@ -11,7 +11,7 @@ export async function uploadBusinessLogo(client: MelClient, userId: string, imag
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
   const path = `${userId}/parceiros/${crypto.randomUUID()}.${ext}`;
   const { error } = await client.storage.from("pet-photos").upload(path, image, { contentType: image.type, cacheControl: "31536000", upsert: false });
-  if (error) throw new DataError(error.message);
+  if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return path;
 }
 

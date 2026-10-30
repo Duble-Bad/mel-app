@@ -2,7 +2,7 @@
 
 import { BellRing, Info, ShieldCheck, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
-import { DAILY_LIMITS, fieldErrors, GUARDIAN_RADII_M, guardianSettingsSchema, publicAreaFrom, radiusLabel, type GuardianRadius, type GuardianSettings } from "@mel/core";
+import { DAILY_LIMITS, fieldErrors, GUARDIAN_RADII_M, type GuardianRadius, type GuardianSettings, guardianSettingsSchema, publicAreaFrom, radiusLabel, userErrorMessage } from "@mel/core";
 import { saveGuardianSettings } from "@mel/data";
 import { disablePush, enablePush, getPushState, type PushState } from "@/lib/push/client";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -52,7 +52,7 @@ export function GuardianForm({ userId, initial }: { userId: string; initial: Gua
       toast({ tone: "success", title: saved ? "Preferências salvas." : "Pronto! Você é um Guardião MEL.", description: enabled ? "Vamos avisar quando um pet precisar de ajuda perto de você." : "Avisos pausados." });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos salvar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos salvar agora. Tente de novo."));
     } finally {
       setSaving(false);
     }
@@ -151,7 +151,7 @@ function PushCard() {
       setState(on ? "on" : "off");
       toast({ tone: "success", title: on ? "Avisos ativados neste aparelho." : "Avisos desativados neste aparelho." });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos mudar agora.");
+      setError(userErrorMessage(err, "Não conseguimos mudar agora."));
       setState(await getPushState().catch(() => "unsupported" as const));
     } finally {
       setBusy(false);

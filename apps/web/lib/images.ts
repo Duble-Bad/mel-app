@@ -1,5 +1,7 @@
 "use client";
 
+import { UserFacingError } from "@mel/core";
+
 interface Rendered {
   blob: Blob;
   width: number;
@@ -15,7 +17,7 @@ async function render(bitmap: ImageBitmap, maxSide: number, quality: number): Pr
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Seu navegador não conseguiu processar a imagem.");
+  if (!ctx) throw new UserFacingError("Seu navegador não conseguiu processar a imagem.");
   ctx.drawImage(bitmap, 0, 0, width, height);
 
   const toBlob = (type: string) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
@@ -23,12 +25,12 @@ async function render(bitmap: ImageBitmap, maxSide: number, quality: number): Pr
   if (webp && webp.type === "image/webp") return { blob: webp, width, height };
   // Safari antigo não gera WebP: cai para JPEG.
   const jpeg = await toBlob("image/jpeg");
-  if (!jpeg) throw new Error("Não foi possível preparar a imagem.");
+  if (!jpeg) throw new UserFacingError("Não foi possível preparar a imagem.");
   return { blob: jpeg, width, height };
 }
 
 async function load(file: File): Promise<ImageBitmap> {
-  if (!file.type.startsWith("image/")) throw new Error("Escolha um arquivo de imagem.");
+  if (!file.type.startsWith("image/")) throw new UserFacingError("Escolha um arquivo de imagem.");
   return createImageBitmap(file, { imageOrientation: "from-image" });
 }
 

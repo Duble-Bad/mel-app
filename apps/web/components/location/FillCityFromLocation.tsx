@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BrState } from "@mel/core";
 import { getCurrentPosition, getGeocoder } from "@/lib/geo/client";
+import { userErrorMessage } from "@mel/core";
 
 /**
  * "Usar minha localização" para preencher cidade/estado. Usa o GPS uma vez,
@@ -27,7 +28,7 @@ export function FillCityFromLocation({ onFill }: { onFill: (city: string, state:
     } catch (err) {
       setMessage({
         tone: "error",
-        text: err instanceof Error ? err.message : "Não conseguimos usar sua localização. Preencha à mão.",
+        text: userErrorMessage(err, "Não conseguimos usar sua localização. Preencha à mão."),
       });
     } finally {
       setPending(false);

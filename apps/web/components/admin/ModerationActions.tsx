@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { actionsFor, type ReportAction, type ReportTargetType } from "@mel/core";
+import { actionsFor, type ReportAction, type ReportTargetType, userErrorMessage } from "@mel/core";
 import { moderate } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -55,7 +55,7 @@ export function ModerationActions({ reportId, targetType, authorSuspended }: { r
       setReason("");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos aplicar agora.");
+      setError(userErrorMessage(err, "Não conseguimos aplicar agora."));
     } finally {
       setBusy(false);
     }

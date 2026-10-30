@@ -61,8 +61,7 @@ function toCase(r: CaseRow): LostCase {
 
 /** Mensagens humanas para erros do banco neste fluxo. */
 function fail(error: { message: string; code?: string }): never {
-  if (error.code === "23505") throw new DataError("Este pet já tem um alerta aberto.", error.code);
-  if (error.code === "22023") throw new DataError(error.message, error.code); // mensagens do trigger já são humanas
+  if (error.code === "23505") throw new DataError("Este pet já tem um alerta aberto.", error.code, { trusted: true });
   throw new DataError(error.message, error.code);
 }
 

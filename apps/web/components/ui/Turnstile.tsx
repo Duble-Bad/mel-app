@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { UserFacingError, userErrorMessage } from "@mel/core";
 
 declare global {
   interface Window {
@@ -20,7 +21,7 @@ function loadScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     const script = existing ?? Object.assign(document.createElement("script"), { src: SCRIPT, async: true });
     script.addEventListener("load", () => resolve());
-    script.addEventListener("error", () => reject(new Error("Não foi possível carregar a verificação antirrobô.")));
+    script.addEventListener("error", () => reject(new UserFacingError("Não foi possível carregar a verificação antirrobô. Verifique sua internet e recarregue a página.")));
     if (!existing) document.head.appendChild(script);
   });
 }
@@ -39,7 +40,8 @@ export function Turnstile({ onToken, onError }: { onToken: (token: string | null
   useEffect(() => {
     const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
     if (!siteKey) {
-      cb.current.onError("Envio temporariamente indisponível (verificação antirrobô não configurada).");
+      console.warn("[Turnstile] NEXT_PUBLIC_TURNSTILE_SITE_KEY ausente: envio bloqueado.");
+      cb.current.onError("Envio temporariamente indisponível. Tente novamente mais tarde.");
       return;
     }
     let widgetId: string | undefined;
@@ -56,7 +58,7 @@ export function Turnstile({ onToken, onError }: { onToken: (token: string | null
           "error-callback": () => cb.current.onError("A verificação antirrobô falhou. Recarregue a página e tente de novo."),
         });
       })
-      .catch((err: Error) => cb.current.onError(err.message));
+      .catch((err: unknown) => cb.current.onError(userErrorMessage(err, "Não foi possível carregar a verificação antirrobô. Recarregue a página.")));
     return () => {
       cancelled = true;
       if (widgetId) window.turnstile?.remove(widgetId);

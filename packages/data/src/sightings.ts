@@ -12,7 +12,7 @@ export async function uploadSightingPhoto(client: MelClient, userId: string, ima
     cacheControl: "31536000",
     upsert: false,
   });
-  if (error) throw new DataError(error.message);
+  if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return path;
 }
 
@@ -79,5 +79,5 @@ export async function setSightingHidden(client: MelClient, sightingId: string, h
     .update({ status: hidden ? "HIDDEN" : "VISIBLE" }, { count: "exact" })
     .eq("id", sightingId);
   if (error) throw new DataError(error.message, error.code);
-  if (!count) throw new DataError("Você não pode alterar este avistamento.", "42501");
+  if (!count) throw new DataError("Você não pode alterar este avistamento.", "42501", { trusted: true });
 }

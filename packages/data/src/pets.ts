@@ -203,7 +203,7 @@ export async function addPetPhoto(
   ]);
   if (full.error || thumb.error) {
     await storage.remove([fullPath, thumbPath]);
-    throw new DataError((full.error ?? thumb.error)!.message);
+    throw new DataError((full.error ?? thumb.error)!.message, undefined, { context: "upload" });
   }
 
   const { error } = await client.from("pet_photos").insert({

@@ -2,31 +2,7 @@
 
 import { Camera, Lock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  colorLabel,
-  fieldErrors,
-  FOUND_CUSTODY,
-  FOUND_CUSTODY_LABELS,
-  foundInputSchema,
-  formatDateTimeBr,
-  PET_COLORS,
-  PET_SEXES,
-  PET_SIZES,
-  publicAreaFrom,
-  SEEN_WHEN,
-  SEEN_WHEN_LABELS,
-  seenAtFrom,
-  SEX_LABELS,
-  SIZE_LABELS,
-  SPECIES,
-  SPECIES_LABELS,
-  type FoundCustody,
-  type PetColor,
-  type PetSex,
-  type PetSize,
-  type SeenWhen,
-  type Species,
-} from "@mel/core";
+import { colorLabel, fieldErrors, formatDateTimeBr, FOUND_CUSTODY, FOUND_CUSTODY_LABELS, type FoundCustody, foundInputSchema, PET_COLORS, PET_SEXES, PET_SIZES, type PetColor, type PetSex, type PetSize, publicAreaFrom, SEEN_WHEN, SEEN_WHEN_LABELS, seenAtFrom, type SeenWhen, SEX_LABELS, SIZE_LABELS, type Species, SPECIES, SPECIES_LABELS, userErrorMessage, UserFacingError } from "@mel/core";
 import { ensureSession, uploadSightingPhoto } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { prepareImage } from "@/lib/images";
@@ -156,12 +132,12 @@ export function FoundWizard({ sawOnly }: { sawOnly: boolean }) {
         body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken: token }),
       });
       const data = (await res.json().catch(() => ({}))) as { code?: string; error?: string };
-      if (!res.ok || !data.code) throw new Error(data.error ?? "Não conseguimos publicar agora. Tente de novo.");
+      if (!res.ok || !data.code) throw new UserFacingError(data.error ?? "Não conseguimos publicar agora. Tente de novo.");
       // Navegação completa: a sessão pode ter acabado de ser criada (anônima).
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intencional, ver acima
       window.location.assign(`/encontrado/${data.code}?novo=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos publicar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos publicar agora. Tente de novo."));
       captcha.reset();
       setBusy(null);
     }

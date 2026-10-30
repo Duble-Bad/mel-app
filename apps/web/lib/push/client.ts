@@ -1,5 +1,6 @@
 "use client";
 
+import { UserFacingError } from "@mel/core";
 import { removePushSubscription, savePushSubscription } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
@@ -32,11 +33,11 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
 /** Pede permissão, inscreve o aparelho e grava no banco. Mensagens humanas em caso de erro. */
 export async function enablePush(): Promise<void> {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  if (!pushSupported()) throw new Error("Este navegador não recebe notificações. No iPhone, adicione a MEL à tela de início primeiro.");
-  if (!publicKey) throw new Error("Notificações no celular ainda não estão configuradas.");
+  if (!pushSupported()) throw new UserFacingError("Este navegador não recebe notificações. No iPhone, adicione a MEL à tela de início primeiro.");
+  if (!publicKey) throw new UserFacingError("Notificações no celular ainda não estão configuradas.");
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
-    throw new Error("Você não permitiu notificações. Dá para mudar nas configurações do navegador.");
+    throw new UserFacingError("Você não permitiu notificações. Dá para mudar nas configurações do navegador.");
   }
   const reg = await registration();
   await navigator.serviceWorker.ready;
@@ -48,7 +49,7 @@ export async function enablePush(): Promise<void> {
   } catch (err) {
     // O serviço de push do navegador recusou (modo anônimo, navegador sem push, rede…).
     console.error("[push] inscrição recusada pelo navegador", err);
-    throw new Error("Este navegador não conseguiu ativar os avisos agora. Tente de novo mais tarde ou use o Chrome, Edge ou Firefox. Os avisos continuam no sininho do app.");
+    throw new UserFacingError("Este navegador não conseguiu ativar os avisos agora. Tente de novo mais tarde ou use o Chrome, Edge ou Firefox. Os avisos continuam no sininho do app.");
   }
   const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
   await savePushSubscription(getBrowserClient(), json, navigator.userAgent);

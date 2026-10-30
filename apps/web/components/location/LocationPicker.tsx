@@ -2,7 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { describeAccuracy, type BrState, type GeocodeResult, type LatLng, type MapHandle, type Picker } from "@mel/core";
+import { type BrState, describeAccuracy, type GeocodeResult, type LatLng, type MapHandle, type Picker, userErrorMessage } from "@mel/core";
 import { getCurrentPosition, getGeocoder } from "@/lib/geo/client";
 import { mapLibreProvider } from "@/lib/map/maplibre";
 import { Button } from "@/components/ui/Button";
@@ -129,7 +129,7 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote }: 
       setGpsInfo(describeAccuracy(accuracyMeters));
       await commit({ position, source: "gps" });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos usar sua localização.");
+      setError(userErrorMessage(err, "Não conseguimos usar sua localização."));
     } finally {
       setGpsPending(false);
     }

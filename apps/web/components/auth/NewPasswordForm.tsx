@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { passwordSchema } from "@mel/core";
+import { passwordSchema, userErrorMessage } from "@mel/core";
 import { updatePassword } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -35,7 +35,7 @@ export function NewPasswordForm() {
       router.replace("/perfil");
       router.refresh();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Não deu certo agora. Tente novamente.");
+      setFormError(userErrorMessage(err, "Não deu certo agora. Tente novamente."));
       setPending(false);
     }
   }

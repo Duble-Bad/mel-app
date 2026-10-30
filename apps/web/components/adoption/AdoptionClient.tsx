@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HOUSING, HOUSING_LABELS, interestSchema, fieldErrors, type Housing } from "@mel/core";
+import { fieldErrors, type Housing, HOUSING, HOUSING_LABELS, interestSchema, userErrorMessage } from "@mel/core";
 import { setAdoptionStatus, submitAdoptionInterest } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -41,7 +41,7 @@ export function InterestForm({ code, petName }: { code: string; petName: string 
       const conv = await submitAdoptionInterest(getBrowserClient(), code, parsed.data);
       router.push(`/conversas/${conv}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos enviar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos enviar agora. Tente de novo."));
       setBusy(false);
     }
   }
@@ -94,7 +94,7 @@ export function AdoptionStatusControls({ code, status }: { code: string; status:
       toast({ tone: "success", title: next === "ADOPTED" ? "Que alegria! Marcado como adotado." : "Status atualizado." });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos atualizar.");
+      setError(userErrorMessage(err, "Não conseguimos atualizar."));
     } finally {
       setBusy(false);
     }

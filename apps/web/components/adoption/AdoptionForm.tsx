@@ -2,25 +2,7 @@
 
 import { Camera, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  adoptionInputSchema,
-  fieldErrors,
-  PET_COLORS,
-  PET_SEXES,
-  PET_SIZES,
-  publicAreaFrom,
-  SEX_LABELS,
-  SIZE_LABELS,
-  SPECIES,
-  SPECIES_LABELS,
-  TEMPERAMENT_LABELS,
-  TEMPERAMENTS,
-  type PetColor,
-  type PetSex,
-  type PetSize,
-  type Species,
-  type Temperament,
-} from "@mel/core";
+import { adoptionInputSchema, fieldErrors, PET_COLORS, PET_SEXES, PET_SIZES, type PetColor, type PetSex, type PetSize, publicAreaFrom, SEX_LABELS, SIZE_LABELS, type Species, SPECIES, SPECIES_LABELS, type Temperament, TEMPERAMENT_LABELS, TEMPERAMENTS, userErrorMessage } from "@mel/core";
 import { createAdoption, uploadAdoptionPhoto } from "@mel/data";
 import { prepareImage } from "@/lib/images";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -111,7 +93,7 @@ export function AdoptionForm({ userId }: { userId: string }) {
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- página nova com o anúncio em análise
       window.location.assign(`/adocao/${code}?novo=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos publicar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos publicar agora. Tente de novo."));
       setBusy(null);
     }
   }

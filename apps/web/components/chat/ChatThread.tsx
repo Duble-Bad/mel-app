@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { formatChatTime, MESSAGE_MAX, mentionsPayment, messageBodySchema, peerLabel, type ChatMessage, type Conversation } from "@mel/core";
+import { type ChatMessage, type Conversation, formatChatTime, mentionsPayment, MESSAGE_MAX, messageBodySchema, peerLabel, userErrorMessage } from "@mel/core";
 import { markConversationRead, sendMessage, setConversationBlocked, subscribeToMessages } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -67,7 +67,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
       append(await sendMessage(getBrowserClient(), c.id, myId, parsed.data));
       setBody("");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Não conseguimos enviar. Verifique a conexão e tente de novo.";
+      const message = userErrorMessage(err, "Não conseguimos enviar. Verifique a conexão e tente de novo.");
       if (message === BLOCKED_MESSAGE) setClosed(true);
       else setError(message);
     } finally {
@@ -83,7 +83,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
       setBlockedByMe(blocked);
       setConfirmBlock(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos atualizar. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos atualizar. Tente de novo."));
     } finally {
       setBlockBusy(false);
     }

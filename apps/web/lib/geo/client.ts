@@ -1,6 +1,6 @@
 "use client";
 
-import { createMapTilerGeocoder, geolocationErrorMessage, type Geocoder, type LatLng } from "@mel/core";
+import { createMapTilerGeocoder, geolocationErrorMessage, UserFacingError, type Geocoder, type LatLng } from "@mel/core";
 
 let geocoder: Geocoder | undefined;
 
@@ -17,7 +17,8 @@ export interface CurrentPosition {
   accuracyMeters: number;
 }
 
-export class GeolocationError extends Error {}
+/** Mensagem de localização já escrita para a pessoa (permissão, sinal, aparelho). */
+export class GeolocationError extends UserFacingError {}
 
 /**
  * Posição atual pelo GPS do aparelho, uma única vez (sem rastreamento contínuo —

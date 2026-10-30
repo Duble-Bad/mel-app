@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_LABELS, businessInputSchema, fieldErrors, type BusinessCategory } from "@mel/core";
+import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_LABELS, type BusinessCategory, businessInputSchema, fieldErrors, userErrorMessage } from "@mel/core";
 import { createBusiness, uploadBusinessLogo } from "@mel/data";
 import { prepareImage } from "@/lib/images";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -64,7 +64,7 @@ export function BusinessForm({ userId }: { userId: string }) {
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- página nova do parceiro (em análise)
       window.location.assign(`/parceiros/${code}?novo=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos enviar agora. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos enviar agora. Tente de novo."));
       setBusy(null);
     }
   }

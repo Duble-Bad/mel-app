@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { REPORT_REASON_LABELS, REPORT_REASONS, reportSchema, type ReportReason } from "@mel/core";
+import { REPORT_REASON_LABELS, REPORT_REASONS, type ReportReason, reportSchema, userErrorMessage } from "@mel/core";
 import { reportConversation } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -38,7 +38,7 @@ export function ReportDialog({ conversationId, onReported }: { conversationId: s
       setDone(true);
       onReported(parsed.data.block);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos enviar a denúncia. Tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos enviar a denúncia. Tente de novo."));
     } finally {
       setBusy(false);
     }

@@ -4,17 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Heart, MapPin } from "lucide-react";
 import { useState } from "react";
-import {
-  describeSighting,
-  fieldErrors,
-  FOUND_HOW,
-  FOUND_HOW_LABELS,
-  formatDateTimeBr,
-  reunionSchema,
-  timeAgo,
-  type FoundHow,
-  type TimelineSighting,
-} from "@mel/core";
+import { describeSighting, fieldErrors, formatDateTimeBr, FOUND_HOW, FOUND_HOW_LABELS, type FoundHow, reunionSchema, timeAgo, type TimelineSighting, userErrorMessage } from "@mel/core";
 import { confirmReunion } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -73,7 +63,7 @@ export function ReunionFlow({ code, petName, photoUrl, sightings }: ReunionFlowP
       await confirmReunion(getBrowserClient(), code, parsed.data);
       router.replace(`/alerta/${code}?reencontro=1`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não conseguimos confirmar agora. Verifique a conexão e tente de novo.");
+      setError(userErrorMessage(err, "Não conseguimos confirmar agora. Verifique a conexão e tente de novo."));
       setBusy(false);
     }
   }
