@@ -8,7 +8,7 @@ import { pathToFileURL } from "node:url";
 import { checkManifest, openReadOnly, scanForSeedData } from "../schema-audit/catalog.mjs";
 import { assertProdTarget, maskRef } from "./prod-target.mjs";
 
-export const EXPECTED_MIGRATIONS = 27;
+export const EXPECTED_MIGRATIONS = 28;
 
 /** Checks do GitHub que precisam estar verdes no commit que vai para produção. */
 export const REQUIRED_CHECKS = ["Verificações rápidas (tipos, lint, unitários)", "Banco (RLS) e ponta a ponta", "Banco do zero, auditoria e testes"];

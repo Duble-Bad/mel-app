@@ -3,6 +3,21 @@ import { DataError, type MelClient } from "./client";
 
 const BUCKET = "sighting-media";
 
+/**
+ * Limpeza de fotos órfãs (chave secreta): apaga do bucket as fotos que nenhum
+ * avistamento ou encontrado usa há mais de 24 h. Devolve quantas apagou.
+ */
+export async function purgeOrphanSightingMedia(service: MelClient, limit = 100): Promise<number> {
+  const rpc = service.rpc as unknown as (fn: string, args: Record<string, unknown>) => PromiseLike<{ data: string[] | null; error: { message: string; code?: string } | null }>;
+  const { data, error } = await rpc.call(service, "list_orphan_sighting_media", { p_limit: limit });
+  if (error) throw new DataError(error.message, error.code);
+  const paths = data ?? [];
+  if (!paths.length) return 0;
+  const { error: removeError } = await service.storage.from(BUCKET).remove(paths);
+  if (removeError) throw new DataError(removeError.message, undefined, { context: "upload" });
+  return paths.length;
+}
+
 /** Envia a foto do avistamento (já reduzida, sem EXIF) na pasta da sessão. */
 export async function uploadSightingPhoto(client: MelClient, userId: string, image: Blob): Promise<string> {
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";

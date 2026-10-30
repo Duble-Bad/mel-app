@@ -108,6 +108,10 @@
     {
       "file": "20261030180000_global_abuse_limits.sql",
       "sha256": "afd42cd85fa2b312538c697486cbed67defb232f140af2d07876faf83bdd563d"
+    },
+    {
+      "file": "20261030190000_orphan_media_cleanup.sql",
+      "sha256": "56e38bc4adf890690e35fe5f93f62d106d71544ea5368cf0365bd6e7304c40ba"
     }
   ]
 }

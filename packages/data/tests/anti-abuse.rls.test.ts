@@ -11,7 +11,7 @@ import { saveGuardianSettings } from "../src/guardian";
 import { activateLostCase, startLostCase, updateLostCase } from "../src/lostCases";
 import { reportContent } from "../src/moderation";
 import { createPet } from "../src/pets";
-import { createSighting, getTimeline } from "../src/sightings";
+import { createSighting, getTimeline, purgeOrphanSightingMedia } from "../src/sightings";
 import { anonClient, createTestUser, serviceClient } from "./helpers";
 import type { MelClient } from "../src/client";
 
@@ -165,6 +165,34 @@ describe("Ataque E: spam de upload", () => {
     // Libera para os outros testes: apaga as fotos órfãs desta rodada.
     const mine = results.flat().filter((r) => !r.error).map((r) => r.path);
     await serviceClient().storage.from("sighting-media").remove(mine);
+  });
+});
+
+describe("Fotos órfãs: limpeza pelo servidor", () => {
+  const listOrphans = (client: MelClient, minAge: string) =>
+    (client.rpc as unknown as (fn: string, a: object) => PromiseLike<{ data: string[] | null; error: unknown }>).call(client, "list_orphan_sighting_media", {
+      p_limit: 1000,
+      p_min_age: minAge,
+    });
+
+  it("só a chave secreta lista; órfã aparece, foto usada em envio não; a limpeza respeita as 24 h", async () => {
+    const a = await alert("Orfas");
+    const orphan = await upload(account.client, account.id);
+    const used = await upload(account.client, account.id);
+    await createSighting(account.client, sighting(a.code, { photoPath: used.path }));
+
+    expect((await listOrphans(account.client, "0 seconds")).error).not.toBeNull();
+    expect((await listOrphans(anonClient(), "0 seconds")).error).not.toBeNull();
+
+    const { data, error } = await listOrphans(serviceClient(), "0 seconds");
+    expect(error).toBeNull();
+    expect(data).toContain(orphan.path);
+    expect(data).not.toContain(used.path);
+    // Padrão (24 h): foto recém-enviada ainda não é órfã — quem subiu pode estar enviando.
+    expect((await listOrphans(serviceClient(), "24 hours")).data).not.toContain(orphan.path);
+    await purgeOrphanSightingMedia(serviceClient());
+    const { data: still } = await serviceClient().storage.from("sighting-media").list(account.id);
+    expect(still?.map((f) => `${account.id}/${f.name}`)).toContain(orphan.path);
   });
 });
 
