@@ -100,7 +100,7 @@ export function expectedFromMigrations(files) {
 export const EXPECTED_BUCKETS = [
   ["avatars", "true", String(2 * 1024 * 1024), "image/webp,image/jpeg,image/png"],
   ["pet-photos", "true", String(5 * 1024 * 1024), "image/webp,image/jpeg,image/png"],
-  ["sighting-media", "true", String(5 * 1024 * 1024), "image/webp,image/jpeg,image/png"],
+  ["sighting-media", "true", String(2 * 1024 * 1024), "image/webp,image/jpeg,image/png"],
 ];
 
 // ------------------------------------------------------------------- catálogo
