@@ -81,7 +81,10 @@ export function ReportButton({ type, targetKey, compact = false }: { type: Repor
             setReason(v);
             setError(null);
           }}
-          options={REPORT_REASONS.map((r) => ({ value: r, label: REPORT_REASON_LABELS[r] }))}
+          options={REPORT_REASONS.map((r) => ({
+            value: r,
+            label: r === "fake" && type === "business" ? "Informação falsa sobre a empresa" : REPORT_REASON_LABELS[r],
+          }))}
         />
         <TextareaField label="Detalhes" optional rows={3} maxLength={1000} value={details} onChange={(e) => setDetails(e.target.value)} />
         {error && <Alert tone="error">{error}</Alert>}
