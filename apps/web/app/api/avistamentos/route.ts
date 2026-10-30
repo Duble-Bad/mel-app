@@ -36,7 +36,11 @@ export async function POST(request: NextRequest) {
     const id = await createSighting(await createSessionClient(), parsed.data);
     return json(201, { id });
   } catch (err) {
-    if (err instanceof DataError && err.code === "P0429") return json(429, { error: err.message });
+    if (err instanceof DataError && err.code === "P0429") {
+      // Sem conteúdo nem IP: só que um limite foi atingido (calibrar limites).
+      console.warn("[api/avistamentos] limite atingido", { user: user.id });
+      return json(429, { error: err.message });
+    }
     if (err instanceof DataError && (err.code === "22023" || err.code === "42501")) return json(422, { error: err.message });
     console.error("[api/avistamentos] falhou", err);
     return json(500, { error: "Não conseguimos enviar agora. Verifique a conexão e tente de novo." });

@@ -10,7 +10,7 @@ import { audit, checkManifest, compareFingerprint, fingerprint, openReadOnly, re
 import { assertProdTarget, maskRef } from "./prod-target.mjs";
 
 /** Números que o schema da MEL tem que ter (validados na reconstrução do zero). */
-export const EXPECTED = { migrations: 26, tabelas: 24, politicas_public: 60, politicas_storage: 9, enums: 16, funcoes_public: 40, funcoes_private: 49, triggers: 26 };
+export const EXPECTED = { migrations: 27, tabelas: 24, politicas_public: 60, politicas_storage: 9, enums: 16, funcoes_public: 40, funcoes_private: 51, triggers: 26 };
 
 /**
  * Funções de PLATAFORMA (não são migrations da MEL) aceitas no mel-prod.

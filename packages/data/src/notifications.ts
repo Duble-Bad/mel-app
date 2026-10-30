@@ -64,12 +64,19 @@ export function toAppNotification(row: Row): AppNotification {
   }
   if (row.kind === "match_new") {
     const owner = p.to === "owner";
+    const count = p.count ?? 1;
     return {
       id: row.id,
       kind: "match_new",
-      title: owner ? `Radar MEL: possível correspondência para ${pet}` : "Radar MEL: pode ser um pet procurado",
+      title: owner
+        ? count > 1
+          ? `Radar MEL: ${count} possíveis correspondências para ${pet}`
+          : `Radar MEL: possível correspondência para ${pet}`
+        : "Radar MEL: pode ser um pet procurado",
       body: owner
-        ? "Alguém encontrou um animal parecido. Confira as fotos."
+        ? count > 1
+          ? "Há novos animais parecidos no Radar. Confira as fotos."
+          : "Alguém encontrou um animal parecido. Confira as fotos."
         : `O animal que você publicou parece com ${pet}, que está sendo procurado.`,
       href: owner ? "/perfil/correspondencias" : `/encontrado/${p.found_code}#radar`,
       readAt: row.read_at,
@@ -99,11 +106,18 @@ export function toAppNotification(row: Row): AppNotification {
       createdAt: row.created_at,
     };
   }
+  // Um aviso não lido por alerta; o contador sobe a cada avistamento novo.
+  const sightings = p.count ?? 1;
   return {
     id: row.id,
     kind: "sighting_new",
-    title: `🟡 Novo avistamento de ${pet}`,
-    body: p.place_label ? `Visto perto de ${p.place_label}.` : "Alguém viu seu pet. Confira no mapa.",
+    title: sightings > 1 ? `🟡 ${sightings} novos avistamentos de ${pet}` : `🟡 Novo avistamento de ${pet}`,
+    body:
+      sightings > 1
+        ? `Há novos avistamentos sobre seu alerta${p.place_label ? `, o último perto de ${p.place_label}` : ""}. Confira na linha do tempo.`
+        : p.place_label
+          ? `Visto perto de ${p.place_label}.`
+          : "Alguém viu seu pet. Confira no mapa.",
     href: `/alerta/${p.code}#linha-do-tempo`,
     readAt: row.read_at,
     createdAt: row.created_at,
@@ -140,8 +154,16 @@ export async function markAllNotificationsRead(client: MelClient, userId: string
   if (error) throw new DataError(error.message, error.code);
 }
 
-/** Avisa em tempo real quando chega uma notificação nova (Supabase Realtime + RLS). */
-export function subscribeToNotifications(client: MelClient, userId: string, onNew: (n: AppNotification) => void) {
+/**
+ * Avisa em tempo real quando chega uma notificação nova (Supabase Realtime + RLS).
+ * Avisos agrupados (avistamentos, mensagens, Radar) chegam como atualização de
+ * um aviso ainda não lido: `grouped` = true (o sino não conta de novo).
+ */
+export function subscribeToNotifications(
+  client: MelClient,
+  userId: string,
+  onNew: (n: AppNotification, info: { grouped: boolean }) => void,
+) {
   const channel = client
     // Nome único por assinatura: duas telas ouvindo o mesmo usuário (sininho e
     // página do alerta) com o mesmo nome reaproveitariam o canal já assinado e
@@ -150,7 +172,16 @@ export function subscribeToNotifications(client: MelClient, userId: string, onNe
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-      (msg) => onNew(toAppNotification(msg.new as Row)),
+      (msg) => onNew(toAppNotification(msg.new as Row), { grouped: false }),
+    )
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+      (msg) => {
+        const row = msg.new as Row;
+        // Marcar como lido também é UPDATE: não é aviso novo.
+        if (!row.read_at) onNew(toAppNotification(row), { grouped: true });
+      },
     );
   // O Realtime aplica RLS: precisa do token da sessão ANTES de assinar, senão
   // conecta como visitante e o banco (corretamente) não entrega nada.

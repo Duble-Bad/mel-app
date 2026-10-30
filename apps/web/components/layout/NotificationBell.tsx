@@ -8,7 +8,9 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 /** Sininho com contador de não lidas, atualizado em tempo real. */
 export function NotificationBell({ userId, initialUnread }: { userId: string; initialUnread: number }) {
   const [unread, setUnread] = useState(initialUnread);
-  useEffect(() => subscribeToNotifications(getBrowserClient(), userId, () => setUnread((n) => n + 1)), [userId]);
+  useEffect(() => subscribeToNotifications(getBrowserClient(), userId, (_n, { grouped }) => {
+        if (!grouped) setUnread((n) => n + 1);
+      }), [userId]);
 
   const label = unread > 0 ? `Notificações: ${unread} não lida${unread > 1 ? "s" : ""}` : "Notificações";
   return (

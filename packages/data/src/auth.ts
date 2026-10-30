@@ -156,11 +156,17 @@ export async function linkGoogleToAnonymous(client: MelClient, redirectTo: strin
 /**
  * Garante uma sessão para quem só quer ajudar (avistamento, "encontrei"),
  * sem pedir cadastro. Reaproveita a sessão existente, real ou anônima.
+ *
+ * Criar sessão anônima é a porta das sessões descartáveis: com o captcha do
+ * Supabase Auth ligado (lançamento), quem chama passa `captchaToken` aqui —
+ * é o único ponto do app que cria sessão anônima. Sem token, segue como hoje.
  */
-export async function ensureSession(client: MelClient) {
+export async function ensureSession(client: MelClient, opts: { captchaToken?: string } = {}) {
   const { data } = await client.auth.getUser();
   if (data.user) return data.user;
-  const { data: anon, error } = await client.auth.signInAnonymously();
+  const { data: anon, error } = await client.auth.signInAnonymously(
+    opts.captchaToken ? { options: { captchaToken: opts.captchaToken } } : undefined,
+  );
   if (error || !anon.user) fail(error);
   return anon.user;
 }

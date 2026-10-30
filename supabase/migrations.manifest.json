@@ -104,6 +104,10 @@
     {
       "file": "20261030160000_adoption_partner_moderation.sql",
       "sha256": "2db5f7d08ddad29e4b261de7f6bdf6d8d61dfcd0e5fd5bf19ddd572ce17c47d8"
+    },
+    {
+      "file": "20261030180000_global_abuse_limits.sql",
+      "sha256": "afd42cd85fa2b312538c697486cbed67defb232f140af2d07876faf83bdd563d"
     }
   ]
 }
