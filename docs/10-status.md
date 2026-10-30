@@ -1,6 +1,6 @@
 # MEL — Onde estamos (status e próximos passos)
 
-> Atualizado em 2026-10-29. Último commit de código verificado: `021a5a1` (CI verde nos 3 checks obrigatórios).
+> Atualizado em 2026-10-30. Último commit de código verificado: `e17a9c3` (CI verde nos 3 checks obrigatórios).
 > Leia isto primeiro ao retomar o projeto.
 
 ## Resumo
@@ -11,7 +11,7 @@
 
 ## Último CI
 
-`021a5a1` — Google com sessão anônima (`linkIdentity`): ✅ verde nos 3 checks obrigatórios (Verificações rápidas · Banco (RLS) e ponta a ponta · Banco do zero, auditoria e testes, que roda o teste de vínculo com manual linking + Google fictício).
+`e17a9c3` — e-mail do Auth (`/auth/confirmar`, templates pt-BR): ✅ verde nos 3 checks. "Banco do zero" roda também um segundo arranque com "Confirm email" ON + Mailpit: 4/4 (cadastro, e-mail duplicado neutro, recuperação, anônimo → conta).
 
 ## Linha do tempo da produção
 
