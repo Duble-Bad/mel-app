@@ -25,7 +25,7 @@ export default function PrintPosterPage({ params }: PageProps<"/alerta/[code]/ca
 async function PrintPoster({ code }: { code: string }) {
   if (!/^[a-z2-9]{6}$/i.test(code)) notFound();
   const c = await getPublicLostCase(createPublicClient(), code);
-  if (!c) notFound();
+  if (!c || c.status === "CLOSED") notFound();
   const p = posterContent(c);
   const url = `${await siteOrigin()}${alertPath(c.code)}`;
   const qr = await qrDataUrl(url, 600);

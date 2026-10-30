@@ -48,6 +48,8 @@ export interface PublicLostCase {
   lostAtUncertain: boolean;
   publishedAt: string | null;
   foundAt: string | null;
+  /** Encerrado pelo tutor sem reencontro (status CLOSED). */
+  closedAt: string | null;
   /** Reencontro (status FOUND). */
   foundHow: FoundHow | null;
   foundAreaLabel: string | null;

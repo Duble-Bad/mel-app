@@ -24,7 +24,7 @@ export default function PosterPage({ params }: PageProps<"/alerta/[code]/cartaz"
 async function PosterContent({ code }: { code: string }) {
   if (!/^[a-z2-9]{6}$/i.test(code)) notFound();
   const c = await getPublicLostCase(createPublicClient(), code);
-  if (!c) notFound();
+  if (!c || c.status === "CLOSED") notFound();
   const base = `/alerta/${c.code}/cartaz`;
 
   return (

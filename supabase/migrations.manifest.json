@@ -96,6 +96,10 @@
     {
       "file": "20261030120000_radar_public_distance.sql",
       "sha256": "6075922be955c45004fb091d95484b9a808462f573e8ed637c07f9ee97392934"
+    },
+    {
+      "file": "20261030140000_lost_case_close_edit.sql",
+      "sha256": "188522a7e1d2c04b353e4d996a32e870a3fabc7d1c658bb9118f8ec6042f0ada"
     }
   ]
 }

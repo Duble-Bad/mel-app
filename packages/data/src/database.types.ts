@@ -694,6 +694,7 @@ export type Database = {
       lost_cases: {
         Row: {
           city: string | null
+          closed_at: string | null
           contact_chat: boolean
           contact_phone: string | null
           contact_phone_public: boolean
@@ -729,6 +730,7 @@ export type Database = {
         }
         Insert: {
           city?: string | null
+          closed_at?: string | null
           contact_chat?: boolean
           contact_phone?: string | null
           contact_phone_public?: boolean
@@ -764,6 +766,7 @@ export type Database = {
         }
         Update: {
           city?: string | null
+          closed_at?: string | null
           contact_chat?: boolean
           contact_phone?: string | null
           contact_phone_public?: boolean

@@ -27,29 +27,43 @@ interface WizardProps {
   profile: { id: string; city: string | null; state: string | null };
   pets: Pet[];
   draft: LostCase | null;
+  /**
+   * "edit": alerta já ATIVO — só onde, quando, detalhes e contato (sem trocar o
+   * pet nem ativar de novo). Cada "Continuar" já vale no alerta publicado.
+   */
+  mode?: "create" | "edit";
 }
 
-export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
+/** Passos ao editar um alerta ativo (o pet e a ativação não mudam). */
+const EDIT_STEPS: LostStep[] = ["where", "when", "details", "contact"];
+
+export function LostWizard({ profile, pets: initialPets, draft, mode = "create" }: WizardProps) {
   const router = useRouter();
+  const editing = mode === "edit";
+  const steps = editing ? EDIT_STEPS : LOST_STEPS;
   const [pets, setPets] = useState(initialPets);
   const [lostCase, setLostCase] = useState<LostCase | null>(draft);
-  const [step, setStep] = useState<LostStep>(() => firstIncompleteStep(draft));
+  const [step, setStep] = useState<LostStep>(() => (editing ? "where" : firstIncompleteStep(draft)));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const index = LOST_STEPS.indexOf(step);
+  const index = steps.indexOf(step);
   const pet = pets.find((p) => p.id === lostCase?.petId) ?? null;
 
-  /** Salva o passo no rascunho e avança. Erros aparecem; nada se perde em silêncio. */
-  async function save(patch: LostCasePatch, next: LostStep) {
+  /** Salva o passo e avança (ou, ao editar, termina no alerta). Erros aparecem; nada se perde em silêncio. */
+  async function save(patch: LostCasePatch, next: LostStep | "done") {
     if (!lostCase) return;
     setBusy(true);
     setError(null);
     try {
       setLostCase(await updateLostCase(getBrowserClient(), lostCase.id, patch));
       setSaved(true);
+      if (next === "done") {
+        router.push(`/alerta/${lostCase.code}?editado=1`);
+        return;
+      }
       setStep(next);
       window.scrollTo({ top: 0 });
     } catch (err) {
@@ -97,19 +111,19 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
     }
   }
 
-  const back = index > 0 ? () => setStep(LOST_STEPS[index - 1]!) : undefined;
+  const back = index > 0 ? () => setStep(steps[index - 1]!) : undefined;
 
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-sm text-text-secondary">
           <span>
-            Passo {index + 1} de {LOST_STEPS.length}
+            {editing && "Editar alerta · "}Passo {index + 1} de {steps.length}
           </span>
-          {saved && <span role="status">✓ Rascunho salvo</span>}
+          {saved && <span role="status">{editing ? "✓ Alterações salvas" : "✓ Rascunho salvo"}</span>}
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
-          <div className="h-full bg-status-lost-solid transition-all" style={{ width: `${((index + 1) / LOST_STEPS.length) * 100}%` }} />
+          <div className="h-full bg-status-lost-solid transition-all" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
         </div>
         <h1 className="text-2xl font-bold">{TITLES[step]}</h1>
         {pet && step !== "pet" && (
@@ -146,7 +160,13 @@ export function LostWizard({ profile, pets: initialPets, draft }: WizardProps) {
         <DetailsStep lostCase={lostCase} busy={busy} onBack={back} onNext={(patch) => save(patch, "contact")} />
       )}
       {step === "contact" && lostCase && (
-        <ContactStep lostCase={lostCase} busy={busy} onBack={back} onNext={(patch) => save(patch, "review")} />
+        <ContactStep
+          lostCase={lostCase}
+          busy={busy}
+          onBack={back}
+          onNext={(patch) => save(patch, editing ? "done" : "review")}
+          submitLabel={editing ? "Salvar alterações" : undefined}
+        />
       )}
       {step === "review" && lostCase && pet && (
         <ReviewStep lostCase={lostCase} pet={pet} busy={busy} onEdit={setStep} onActivate={activate} />
@@ -452,11 +472,13 @@ function ContactStep({
   busy,
   onBack,
   onNext,
+  submitLabel,
 }: {
   lostCase: LostCase;
   busy: boolean;
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
+  submitLabel?: string;
 }) {
   const [chat, setChat] = useState(lostCase.contactChat);
   const [whatsapp, setWhatsapp] = useState(lostCase.contactWhatsappPublic);
@@ -518,7 +540,9 @@ function ContactStep({
         <strong>Cuidado com golpes.</strong> Desconfie de quem pedir PIX ou dinheiro antes de mostrar o animal. A MEL nunca
         pede pagamento.
       </Alert>
-      <Nav busy={busy} onBack={onBack} />
+      <Nav busy={busy} onBack={onBack}>
+        {submitLabel ?? "Continuar"}
+      </Nav>
     </form>
   );
 }

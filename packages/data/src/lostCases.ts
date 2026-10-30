@@ -121,7 +121,7 @@ export async function listMyLostCases(client: MelClient, ownerId: string): Promi
     .from("lost_cases")
     .select(COLUMNS)
     .eq("owner_id", ownerId)
-    .in("status", ["DRAFT", "ACTIVE", "FOUND"])
+    .in("status", ["DRAFT", "ACTIVE", "FOUND", "CLOSED"])
     .order("created_at", { ascending: false })
     .returns<CaseRow[]>();
   if (error) fail(error);
@@ -168,6 +168,36 @@ export async function discardDraft(client: MelClient, id: string): Promise<void>
   if (error) fail(error);
 }
 
+/** O próprio alerta (do tutor logado) pelo código curto, para editar. */
+export async function getMyLostCaseByCode(client: MelClient, code: string): Promise<LostCase | null> {
+  const { data, error } = await client.from("lost_cases").select(COLUMNS).eq("short_code", code.toLowerCase()).returns<CaseRow[]>().maybeSingle();
+  if (error) fail(error);
+  return data ? toCase(data) : null;
+}
+
+/**
+ * ENCERRAR ALERTA (sem reencontro): ACTIVE → CLOSED. Só o dono (RLS). Repetir
+ * num alerta já encerrado é inofensivo; reencontrado ou de outra pessoa, não.
+ * Reencontro é outro fluxo (confirmReunion) — este não conta como reencontro.
+ */
+export async function closeLostCase(client: MelClient, code: string): Promise<void> {
+  const { data, error } = await client
+    .from("lost_cases")
+    .update({ status: "CLOSED" satisfies LostStatus })
+    .eq("short_code", code.toLowerCase())
+    .eq("status", "ACTIVE")
+    .select("status");
+  if (error) fail(error);
+  if (data.length) return;
+  // Nada mudou: já estava encerrado (ok), ou não é dela, ou já foi reencontrado.
+  const { data: current, error: readError } = await client.from("lost_cases").select("status").eq("short_code", code.toLowerCase()).maybeSingle();
+  if (readError) fail(readError);
+  if (current?.status === "CLOSED") return;
+  // Não é o dono (inclusive moderação, que lê mas não encerra por aqui): nada mudou.
+  if (!current || current.status === "ACTIVE") throw new DataError("Você não pode encerrar este alerta.", "42501", { trusted: true });
+  throw new DataError("Este alerta não está mais ativo.", "22023", { trusted: true });
+}
+
 /** ATIVAR ALERTA MEL: o banco valida onde/quando e registra a publicação. */
 export async function activateLostCase(client: MelClient, id: string): Promise<LostCase> {
   const { data, error } = await client
@@ -191,6 +221,7 @@ interface PublicCaseJson {
   lost_at: string | null;
   lost_at_uncertain: boolean;
   published_at: string | null;
+  closed_at: string | null;
   found_at: string | null;
   found_how: PublicLostCase["foundHow"];
   found_area_label: string | null;
@@ -242,6 +273,7 @@ export async function getPublicLostCase(client: MelClient, code: string): Promis
     lostAt: c.lost_at,
     lostAtUncertain: c.lost_at_uncertain,
     publishedAt: c.published_at,
+    closedAt: c.closed_at,
     foundAt: c.found_at,
     foundHow: c.found_how ?? null,
     foundAreaLabel: c.found_area_label ?? null,
@@ -253,7 +285,7 @@ export async function getPublicLostCase(client: MelClient, code: string): Promis
     areaLabel: c.area_label,
     city: c.city,
     state: c.state,
-    wearing: c.wearing,
+    wearing: c.wearing ?? [],
     notes: c.notes,
     contactChat: c.contact_chat,
     contactWhatsapp: c.contact_whatsapp,

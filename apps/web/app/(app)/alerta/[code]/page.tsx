@@ -25,10 +25,12 @@ import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
 import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
+import { CloseLostCaseButton } from "@/components/lost/CloseLostCaseButton";
+import { ButtonLink } from "@/components/ui/Button";
 import { ReportButton } from "@/components/report/ReportButton";
 import { LiveSightings } from "@/components/sighting/LiveSightings";
 import { Timeline } from "@/components/sighting/Timeline";
-import { Heart } from "lucide-react";
+import { Heart, Pencil } from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -39,6 +41,8 @@ export async function generateMetadata({ params }: PageProps<"/alerta/[code]">):
   const { code } = await params;
   const c = isCode(code) ? await getPublicLostCase(createPublicClient(), code).catch(() => null) : null;
   if (!c) return { title: "Alerta não encontrado", robots: { index: false } };
+  // Encerrado pelo tutor: página só histórica, sem prévia de "procura-se" e fora das buscas.
+  if (c.status === "CLOSED") return { title: `Alerta encerrado: ${c.pet.name}`, description: "Este alerta foi encerrado pelo tutor.", robots: { index: false, follow: false } };
   const title = c.status === "FOUND" ? `ENCONTRADO: ${c.pet.name}` : `PERDIDO: ${c.pet.name}`;
   const description = [
     petSummary(c.pet),
@@ -105,6 +109,16 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
       <div className="flex flex-col gap-6 px-4">
         {c.status === "FOUND" && <ReunionBanner c={c} celebrate={c.isOwner && Boolean(query.reencontro)} />}
 
+        {c.status === "CLOSED" && (
+          <Alert tone="info">
+            <strong>Este alerta foi encerrado pelo tutor.</strong>
+            {c.closedAt && ` Encerrado em ${formatDateTimeBr(c.closedAt)}.`}
+            {c.isOwner && " Os avistamentos e as conversas continuam guardados aqui para você."}
+          </Alert>
+        )}
+
+        {c.isOwner && query.editado && c.status === "ACTIVE" && <Alert tone="success">Alterações salvas.</Alert>}
+
         {c.isOwner && query.novo && (
           <Alert tone="success">
             <strong>Alerta MEL ativado.</strong> Agora outras pessoas poderão ajudar na busca. Compartilhe para alcançar
@@ -114,7 +128,13 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 
         <header className="flex flex-col gap-2">
           <div>
-            {c.status === "FOUND" ? <StatusBadge status="found">Encontrado</StatusBadge> : <StatusBadge status="lost">Perdido</StatusBadge>}
+            {c.status === "FOUND" ? (
+              <StatusBadge status="found">Encontrado</StatusBadge>
+            ) : c.status === "CLOSED" ? (
+              <StatusBadge status="draft">Encerrado</StatusBadge>
+            ) : (
+              <StatusBadge status="lost">Perdido</StatusBadge>
+            )}
           </div>
           <h1 className="text-3xl font-bold">{c.pet.name}</h1>
           <p className="text-lg text-text-secondary">{petSummary(c.pet)}</p>
@@ -143,6 +163,16 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
             Meu pet foi encontrado
           </Link>
         )}
+        {c.isOwner && c.status === "ACTIVE" && (
+          // Reencontro é a ação positiva; editar é normal; encerrar é secundária (com confirmação).
+          <div className="-mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <ButtonLink href={`/alerta/${c.code}/editar`} variant="secondary" size="md" className="sm:w-auto sm:px-6">
+              <Pencil aria-hidden="true" className="size-4" strokeWidth={2} />
+              Editar alerta
+            </ButtonLink>
+            <CloseLostCaseButton code={c.code} petName={c.pet.name} />
+          </div>
+        )}
 
         {!c.isOwner && c.status === "ACTIVE" && (
           <Link
@@ -153,12 +183,14 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
           </Link>
         )}
 
+        {c.status !== "CLOSED" && (
         <section aria-labelledby="compartilhar" className="flex flex-col gap-2">
           <h2 id="compartilhar" className="font-bold">
             {c.status === "FOUND" ? "Compartilhe a boa notícia" : c.isOwner ? "Compartilhe para alcançar mais pessoas" : "Ajude compartilhando"}
           </h2>
           <ShareAlert lostCase={c} path={alertPath(c.code)} />
         </section>
+        )}
 
         <Contact c={c} />
 
@@ -195,6 +227,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
           </section>
         )}
 
+        {(c.status !== "CLOSED" || c.isOwner) && (
         <section aria-labelledby="linha-do-tempo-titulo" id="linha-do-tempo" className="flex scroll-mt-4 flex-col gap-2">
           <h2 id="linha-do-tempo-titulo" className="font-bold">
             Linha do tempo
@@ -208,14 +241,15 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
             closed={c.status !== "ACTIVE"}
           />
         </section>
+        )}
 
-        {c.isOwner && user && <LiveSightings userId={user.id} code={c.code} />}
+        {c.isOwner && user && c.status === "ACTIVE" && <LiveSightings userId={user.id} code={c.code} />}
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-text-secondary">
             MEL ID {c.pet.melId} · Alerta {c.code}
           </p>
-          {!c.isOwner && <ReportButton type="lost_case" targetKey={c.code} />}
+          {!c.isOwner && c.status !== "CLOSED" && <ReportButton type="lost_case" targetKey={c.code} />}
         </div>
       </div>
     </article>

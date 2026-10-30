@@ -128,7 +128,9 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
                 <span className="text-sm text-text-secondary">
                   {c.status === "DRAFT"
                     ? "Rascunho — toque para continuar"
-                    : c.publishedAt
+                    : c.status === "CLOSED"
+                      ? "Encerrado por você"
+                      : c.publishedAt
                       ? `Publicado ${timeAgo(c.publishedAt)}`
                       : ""}
                 </span>
@@ -137,6 +139,8 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
                 <StatusBadge status="draft">Rascunho</StatusBadge>
               ) : c.status === "FOUND" ? (
                 <StatusBadge status="found">Encontrado</StatusBadge>
+              ) : c.status === "CLOSED" ? (
+                <StatusBadge status="draft">Encerrado</StatusBadge>
               ) : (
                 <StatusBadge status="lost">Perdido</StatusBadge>
               )}

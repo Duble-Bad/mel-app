@@ -24,7 +24,8 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     console.error("[cartaz] falha ao carregar alerta", err);
     return new Response("Não conseguimos gerar o cartaz agora.", { status: 503 });
   }
-  if (!c) return new Response("Cartaz não encontrado.", { status: 404 });
+  // Encerrado pelo tutor: não há mais "procura-se" para divulgar.
+  if (!c || c.status === "CLOSED") return new Response("Cartaz não encontrado.", { status: 404 });
 
   const url = `${await siteOrigin()}${alertPath(c.code)}`;
   const box = photoBox(formato);
