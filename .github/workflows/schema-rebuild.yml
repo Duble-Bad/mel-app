@@ -109,6 +109,9 @@ jobs:
         run: |
           npx supabase stop --no-backup
           sed -i '/^\[auth.email\]/,/^\[/ s/^enable_confirmations = false/enable_confirmations = true/' supabase/config.toml
+          # O Auth só esconde "e-mail já cadastrado" quando NENHUMA confirmação é
+          # automática (e-mail e telefone; signup.go). O telefone segue desligado.
+          sed -i '/^\[auth.sms\]/,/^\[/ s/^enable_confirmations = false/enable_confirmations = true/' supabase/config.toml
           grep -n '^enable_confirmations' supabase/config.toml
           npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
           npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb2.env

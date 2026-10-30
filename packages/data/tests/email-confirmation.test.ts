@@ -82,6 +82,8 @@ describe.skipIf(!enabled)("Confirm email ON (disposable Auth + Mailpit)", () => 
     expect(again.error).not.toBeNull();
   });
 
+  // O Auth só devolve a resposta neutra (usuário "fantasma") quando nenhuma
+  // confirmação é automática — e-mail E telefone (signup.go). O CI liga as duas.
   it("an email that already has an account gets the same neutral answer and no second user", async () => {
     const email = newEmail("dup");
     const { data, error } = await serviceClient().auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });

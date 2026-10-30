@@ -69,7 +69,7 @@ Todos os links vão para `{{ .SiteURL }}/auth/confirmar?token_hash={{ .TokenHash
 4. Criar a chave de envio restrita e preencher **SMTP Settings** (colando a chave só no painel).
 5. Colar os 3 templates e assuntos; "Email OTP Expiration" 3600 s.
 6. Teste manual com uma conta de teste sua: recuperação de senha (com "Confirm email" ainda OFF) — e-mail chega, não cai em spam, link abre `/auth/confirmar`, senha nova funciona.
-7. **"Confirm email" ON.** Testar: cadastro novo (mensagem "confira seu e-mail", link em outro aparelho, onboarding); visitante sem conta que cria conta (link "Confirme seu e-mail", mesma conta, contribuições mantidas).
+7. **"Confirm email" ON.** Testar também um cadastro com e-mail que já tem conta: o esperado é a orientação neutra ("confira seu e-mail"); se aparecer "Já existe uma conta", o servidor está revelando porque a confirmação de telefone está automática — verificar a opção em Phone e me avisar. Testar: cadastro novo (mensagem "confira seu e-mail", link em outro aparelho, onboarding); visitante sem conta que cria conta (link "Confirme seu e-mail", mesma conta, contribuições mantidas).
 8. Rate limit de e-mail para 100/h e Resend Pro **antes** de abrir ao público.
 9. Depois de 1–2 semanas de relatórios DMARC limpos: `p=quarantine`.
 10. Só então seguir para o Google OAuth.

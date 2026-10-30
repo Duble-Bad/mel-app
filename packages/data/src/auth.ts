@@ -88,10 +88,11 @@ export async function signUpWithPassword(
   const { data, error } = await client.auth.signUp({ email, password, ...(Object.keys(options).length ? { options } : {}) });
   if (error || !data.user) fail(error);
   const hasSession = Boolean(data.session);
-  // E-mail já cadastrado: com "Confirm email" OFF o Supabase já recusa acima
-  // (user_already_exists). Com ele ON, devolve um usuário "fantasma" (sem
-  // identidades e sem sessão) de propósito, para não revelar quem tem conta:
-  // a tela mostra a mesma orientação neutra de "confira seu e-mail".
+  // E-mail já cadastrado: se alguma confirmação for automática (e-mail OU
+  // telefone), o Supabase já recusa acima (user_already_exists). Com todas
+  // ligadas, devolve um usuário "fantasma" (sem identidades e sem sessão) de
+  // propósito, para não revelar quem tem conta: a tela mostra a mesma
+  // orientação neutra de "confira seu e-mail".
   if (data.user.identities?.length === 0 && hasSession) throw new AuthError("user_already_exists");
   return { user: data.user, hasSession, needsEmailConfirmation: !hasSession, convertedFromAnonymous: false };
 }
