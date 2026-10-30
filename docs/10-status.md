@@ -83,7 +83,7 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 ## Pendências conhecidas (antes do lançamento público)
 
-- **Migrations 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade) e 25 (`20261030140000_lost_case_close_edit`, ciclo de vida do alerta) aplicadas só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 25).
+- **Migrations 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade), 25 (`20261030140000_lost_case_close_edit`, ciclo de vida do alerta) e 26 (`20261030160000_adoption_partner_moderation`, moderação de adoção e parceiros) aplicadas só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 26).
 
 - Captcha do Supabase Auth: código precisa passar `captchaToken` (signInAnonymously, signUp, signIn, reset) antes de ligar.
 - SMTP próprio (recuperação de senha, depois "Confirm email" — o código já mostra "confira seu e-mail").

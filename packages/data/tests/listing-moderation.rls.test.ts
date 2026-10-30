@@ -1,7 +1,7 @@
 // Moderação de adoção e parceiros: conteúdo aprovado não muda sem revisão,
 // a nota é só da moderação, e anúncio/empresa aprovados podem ser denunciados
 // e tirados do ar pelo painel.
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { adoptionInputSchema, businessInputSchema } from "@mel/core";
 import { createAdoption, getAdoption, listAdoptions, reviewAdoption, setAdoptionStatus } from "../src/adoption";
 import { listAdminReports, moderate, reportContent } from "../src/moderation";
@@ -42,6 +42,12 @@ const statusOf = async (table: "adoption_listings" | "businesses", code: string)
 beforeAll(async () => {
   [owner, moderator, visitor] = await Promise.all([createTestUser("lm-owner"), createTestUser("lm-mod"), createTestUser("lm-visitor")]);
   await serviceClient().from("profiles").update({ role: "moderator" } as never).eq("id", moderator.id);
+});
+
+// Limites por conta (5 anúncios/dia, 5 empresas): cada teste apaga o que criou.
+afterEach(async () => {
+  await serviceClient().from("adoption_listings").delete().eq("owner_id", owner.id);
+  await serviceClient().from("businesses").delete().eq("owner_id", owner.id);
 });
 
 afterAll(async () => {
@@ -95,7 +101,6 @@ describe("partners: any public field of an approved business goes back to review
     expect(error).toBeNull();
     expect((await statusOf("businesses", code)).status).toBe("PENDING_REVIEW");
     expect((await listBusinesses(anonClient(), POA, { radiusM: 2000 })).map((b) => b.code)).not.toContain(code);
-    await serviceClient().from("businesses").delete().eq("short_code", code); // limite de 5 por conta
   });
 
   it("the owner cannot write the note, the status or the plan", async () => {
@@ -105,7 +110,6 @@ describe("partners: any public field of an approved business goes back to review
       expect(error, JSON.stringify(patch)).not.toBeNull();
     }
     expect(await statusOf("businesses", code)).toMatchObject({ status: "PENDING_REVIEW", review_note: null });
-    await serviceClient().from("businesses").delete().eq("short_code", code);
   });
 });
 
