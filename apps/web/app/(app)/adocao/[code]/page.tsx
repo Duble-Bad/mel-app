@@ -8,6 +8,7 @@ import { getAdoption } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AdoptionStatusControls } from "@/components/adoption/AdoptionClient";
+import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/States";
@@ -132,7 +133,10 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
             <p className="whitespace-pre-line text-text-secondary">{a.requirements}</p>
           </section>
         )}
-        <p className="text-sm text-text-secondary">Adoção na MEL é sempre gratuita. Desconfie de qualquer cobrança e denuncie.</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-text-secondary">Adoção na MEL é sempre gratuita. Desconfie de qualquer cobrança e denuncie.</p>
+          {!a.isOwner && (open || a.status === "ADOPTED") && <ReportButton type="adoption" targetKey={a.code} />}
+        </div>
       </div>
     </article>
   );

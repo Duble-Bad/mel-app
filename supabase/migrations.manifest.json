@@ -100,6 +100,10 @@
     {
       "file": "20261030140000_lost_case_close_edit.sql",
       "sha256": "188522a7e1d2c04b353e4d996a32e870a3fabc7d1c658bb9118f8ec6042f0ada"
+    },
+    {
+      "file": "20261030160000_adoption_partner_moderation.sql",
+      "sha256": "2db5f7d08ddad29e4b261de7f6bdf6d8d61dfcd0e5fd5bf19ddd572ce17c47d8"
     }
   ]
 }

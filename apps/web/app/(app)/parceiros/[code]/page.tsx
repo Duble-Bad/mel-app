@@ -9,6 +9,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
 import { NewOfferForm, OfferActions } from "@/components/partners/PartnerClient";
+import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
 
@@ -131,7 +132,10 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
           {b.isOwner && approved && <NewOfferForm code={b.code} />}
         </section>
       )}
-      <p className="text-sm text-text-secondary">Parceiro revisado pela equipe da MEL. Ofertas marcadas como “Patrocinado” são divulgação paga ou apoio à rede.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-text-secondary">Parceiro revisado pela equipe da MEL. Ofertas marcadas como “Patrocinado” são divulgação paga ou apoio à rede.</p>
+        {!b.isOwner && approved && <ReportButton type="business" targetKey={b.code} />}
+      </div>
     </article>
   );
 }

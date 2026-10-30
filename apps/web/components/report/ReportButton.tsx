@@ -16,6 +16,8 @@ const TITLES: Record<ReportableTarget, string> = {
   lost_case: "Denunciar este alerta",
   found_case: "Denunciar esta publicação",
   sighting: "Denunciar este avistamento",
+  adoption: "Denunciar este anúncio",
+  business: "Denunciar este parceiro",
 };
 
 /** "Denunciar" em 1 toque, em qualquer conteúdo público. Funciona sem conta. */

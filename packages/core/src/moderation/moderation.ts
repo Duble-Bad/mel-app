@@ -1,10 +1,10 @@
 import type { ReportReason } from "../chat/chat";
 
 /** Conteúdo público denunciável fora do chat. */
-export const REPORTABLE = ["lost_case", "found_case", "sighting"] as const;
+export const REPORTABLE = ["lost_case", "found_case", "sighting", "adoption", "business"] as const;
 export type ReportableTarget = (typeof REPORTABLE)[number];
 
-export type ReportTargetType = ReportableTarget | "user" | "adoption" | "message" | "business";
+export type ReportTargetType = ReportableTarget | "user" | "message";
 
 export const REPORT_TARGET_LABELS: Record<string, string> = {
   lost_case: "Alerta",
