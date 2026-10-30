@@ -83,6 +83,8 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 ## Pendências conhecidas (antes do lançamento público)
 
+- **Migration 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade) aplicada só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 24).
+
 - Captcha do Supabase Auth: código precisa passar `captchaToken` (signInAnonymously, signUp, signIn, reset) antes de ligar.
 - SMTP próprio (recuperação de senha, depois "Confirm email" — o código já mostra "confira seu e-mail").
 - Nome do perfil de quem vincula Google a uma sessão anônima fica vazio até o onboarding (o onboarding pede).
