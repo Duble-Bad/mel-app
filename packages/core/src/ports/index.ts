@@ -46,6 +46,16 @@ export interface MapProvider {
   mount(el: HTMLElement, opts: MapOptions): Promise<MapHandle>;
 }
 
+/**
+ * Contrato que todo fornecedor de geocodificação precisa cumprir (ver
+ * docs/13-mapas-fornecedores.md). A privacidade depende do FORMATO:
+ * - `label`: só o 1º trecho antes da vírgula pode ser o lugar exato (rua com
+ *   número, condomínio, loja). O banco publica o rótulo sem esse trecho
+ *   (private.public_area_from_label, migration 30): número em trecho próprio
+ *   ("Rua X, 123, …") vazaria.
+ * - `neighborhood`, `city`, `state`: só área (bairro, cidade, UF), nunca rua ou
+ *   lugar — viram o rótulo público do alerta (publicAreaFrom).
+ */
 export interface GeocodeResult {
   /** Endereço curto para exibir ("Rua X, Bairro, Cidade – UF"). */
   label: string;
