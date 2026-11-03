@@ -2,8 +2,8 @@
 
 import { Flag } from "lucide-react";
 import { useState } from "react";
-import { REPORT_REASON_LABELS, REPORT_REASONS, type ReportableTarget, type ReportReason, userErrorMessage } from "@mel/core";
-import { ensureSession, reportContent } from "@mel/data";
+import { REPORT_REASON_LABELS, REPORT_REASONS, type ReportableTarget, type ReportReason, UserFacingError, userErrorMessage } from "@mel/core";
+import { ensureSession } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { ChoiceGroup } from "@/components/ui/Choice";
 import { TextareaField } from "@/components/ui/Field";
 import { useToast } from "@/components/ui/Toast";
+import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 const TITLES: Record<ReportableTarget, string> = {
   lost_case: "Denunciar este alerta",
@@ -28,6 +29,7 @@ export function ReportButton({ type, targetKey, compact = false }: { type: Repor
   const [details, setDetails] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const captcha = useCaptchaToken();
 
   async function submit() {
     if (!reason) {
@@ -38,14 +40,27 @@ export function ReportButton({ type, targetKey, compact = false }: { type: Repor
     setError(null);
     try {
       const client = getBrowserClient();
-      await ensureSession(client);
-      await reportContent(client, { type, key: targetKey }, { reason, details: details.trim() || null });
+      // Sem cadastro: criar a sessão pede um token do captcha; a rota pede outro
+      // (só para sessão anônima — conta real já passou pelo captcha ao entrar).
+      const user = await ensureSession(client, { captchaToken: () => takeCaptchaToken(captcha) });
+      const turnstileToken = user.is_anonymous ? await takeCaptchaToken(captcha) : null;
+      const res = await fetch("/api/denuncias", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, key: targetKey, reason, details: details.trim() || null, turnstileToken }),
+      });
+      if (!res.ok) {
+        const { error: message } = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new UserFacingError(message ?? "Não conseguimos enviar agora. Tente de novo.");
+      }
       setOpen(false);
       setReason(null);
       setDetails("");
       toast({ tone: "success", title: "Denúncia enviada.", description: "A equipe da MEL vai analisar. Obrigado por proteger a rede." });
     } catch (err) {
+      // O motivo e os detalhes ficam preenchidos para tentar de novo.
       setError(userErrorMessage(err, "Não conseguimos enviar agora. Tente de novo."));
+      captcha.reset();
     } finally {
       setBusy(false);
     }
@@ -88,6 +103,8 @@ export function ReportButton({ type, targetKey, compact = false }: { type: Repor
         />
         <TextareaField label="Detalhes" optional rows={3} maxLength={1000} value={details} onChange={(e) => setDetails(e.target.value)} />
         {error && <Alert tone="error">{error}</Alert>}
+        {/* Só monta com o painel aberto: ninguém carrega o Turnstile só por ver o botão. */}
+        {open && <Turnstile key={captcha.key} onToken={captcha.setToken} onError={setError} />}
         <Button variant="danger" onClick={submit} loading={busy} loadingText="Enviando…">
           Enviar denúncia
         </Button>

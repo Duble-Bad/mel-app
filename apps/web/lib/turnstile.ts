@@ -1,4 +1,5 @@
 import "server-only";
+import { verifyTurnstileToken } from "@mel/core";
 
 /** Verifica o token do Cloudflare Turnstile no servidor (nunca confiar no navegador). */
 export async function verifyTurnstile(token: string | undefined, remoteIp?: string | null): Promise<boolean> {
@@ -7,15 +8,8 @@ export async function verifyTurnstile(token: string | undefined, remoteIp?: stri
     console.error("[turnstile] TURNSTILE_SECRET_KEY ausente: envios bloqueados até configurar.");
     return false;
   }
-  if (!token) return false;
-  const body = new URLSearchParams({ secret, response: token });
-  if (remoteIp) body.set("remoteip", remoteIp);
-  try {
-    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body });
-    const data = (await res.json()) as { success?: boolean };
-    return data.success === true;
-  } catch (err) {
-    console.error("[turnstile] verificação falhou", err);
-    return false;
-  }
+  const verdict = await verifyTurnstileToken({ secret, token, remoteIp });
+  // Só os códigos do Cloudflare (sem token nem IP): ajuda a separar robô de token expirado.
+  if (!verdict.ok && token) console.warn("[turnstile] reprovado", { codes: verdict.codes });
+  return verdict.ok;
 }

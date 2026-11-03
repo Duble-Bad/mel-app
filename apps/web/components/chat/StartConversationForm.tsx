@@ -6,7 +6,7 @@ import { ensureSession } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
+import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 /** 1ª mensagem para o tutor. Sem cadastro: sessão anônima + captcha. */
 export function StartConversationForm({ code, petName, needsCaptcha }: { code: string; petName: string; needsCaptcha: boolean }) {
@@ -23,20 +23,12 @@ export function StartConversationForm({ code, petName, needsCaptcha }: { code: s
       setError(parsed.error.issues[0]!.message);
       return;
     }
-    let turnstileToken: string | null = null;
-    if (needsCaptcha) {
-      setBusy("Confirmando que você não é um robô…");
-      turnstileToken = await captcha.waitForToken();
-      if (!turnstileToken) {
-        setBusy(null);
-        setError("Não conseguimos confirmar que você não é um robô. Verifique a conexão e toque em enviar de novo.");
-        captcha.reset();
-        return;
-      }
-    }
-    setBusy("Enviando…");
     try {
-      await ensureSession(getBrowserClient());
+      // Sem cadastro: criar a sessão pede um token do captcha; a rota pede outro.
+      setBusy("Confirmando que você não é um robô…");
+      await ensureSession(getBrowserClient(), { captchaToken: () => takeCaptchaToken(captcha) });
+      const turnstileToken = needsCaptcha ? await takeCaptchaToken(captcha) : null;
+      setBusy("Enviando…");
       const res = await fetch("/api/conversas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

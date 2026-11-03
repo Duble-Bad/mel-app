@@ -8,12 +8,14 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
+import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 export function ResetRequestForm() {
   const [error, setError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const captcha = useCaptchaToken();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,7 +29,7 @@ export function ResetRequestForm() {
     setPending(true);
     try {
       const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/perfil/nova-senha")}`;
-      await requestPasswordReset(getBrowserClient(), parsed.data, redirectTo);
+      await requestPasswordReset(getBrowserClient(), parsed.data, redirectTo, { captchaToken: () => takeCaptchaToken(captcha) });
       setSentTo(parsed.data);
     } catch (err) {
       setFormError(userErrorMessage(err, "Não deu certo agora. Tente novamente."));
@@ -63,6 +65,7 @@ export function ResetRequestForm() {
         required
         error={error}
       />
+      <Turnstile key={captcha.key} onToken={captcha.setToken} onError={setFormError} />
       <Button type="submit" loading={pending} loadingText="Enviando…">
         Enviar link
       </Button>

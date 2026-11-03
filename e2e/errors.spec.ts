@@ -28,7 +28,7 @@ test("a page that fails to load shows a friendly screen, and 'Tentar novamente' 
   await expect(page.getByRole("heading", { name: "Página carregada" })).toBeVisible();
 });
 
-test("an action that fails with a raw RLS error shows a friendly inline message and the page stays up", async ({ page }) => {
+test("an action whose server fails with a raw technical error shows a friendly inline message and the page stays up", async ({ page }) => {
   test.setTimeout(120_000);
   const tutor = await createTutorWithActiveAlert("err-inline", { petName: "Biscoito" });
   created.push(tutor.email);
@@ -41,12 +41,12 @@ test("an action that fails with a raw RLS error shows a friendly inline message 
   await page.getByRole("button", { name: "Entrar" }).click();
   await expect(page.getByRole("heading", { name: "Biscoito", level: 1 })).toBeVisible({ timeout: 60_000 });
 
-  // O Supabase responde exatamente como numa violação de RLS.
-  await page.route("**/rest/v1/rpc/report_content", (route) =>
+  // A denúncia passa pelo servidor (captcha): simula o servidor quebrando com uma página técnica.
+  await page.route("**/api/denuncias", (route) =>
     route.fulfill({
-      status: 403,
-      contentType: "application/json",
-      body: JSON.stringify({ code: "42501", details: null, hint: null, message: 'new row violates row-level security policy for table "found_cases"' }),
+      status: 500,
+      contentType: "text/html",
+      body: '<pre>Error: new row violates row-level security policy for table "found_cases" (42501) at report (route.ts:1)</pre>',
     }),
   );
 
@@ -55,7 +55,9 @@ test("an action that fails with a raw RLS error shows a friendly inline message 
   await sheet.getByText("Pediu dinheiro ou parece golpe").click();
   await sheet.getByRole("button", { name: "Enviar denúncia" }).click();
 
-  await expect(sheet.getByText("Você não tem permissão para fazer isso.")).toBeVisible();
+  await expect(sheet.getByText("Não conseguimos enviar agora. Tente de novo.")).toBeVisible();
+  // O motivo escolhido continua marcado para reenviar.
+  await expect(sheet.getByRole("radio", { name: "Pediu dinheiro ou parece golpe" })).toBeChecked();
   expect(await page.locator("body").innerText()).not.toMatch(TECHNICAL);
   // Erro na ação, não na página: o alerta continua na tela e o formulário pode ser reenviado.
   await expect(page.getByRole("heading", { name: "Biscoito", level: 1 })).toBeVisible();

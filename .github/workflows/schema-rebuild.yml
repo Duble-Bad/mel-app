@@ -121,6 +121,27 @@ jobs:
           MEL_TEST_CONFIRM=1 npx vitest run --config vitest.db.config.ts tests/email-confirmation.test.ts 2>&1 | tee /tmp/confirm.txt
           exit "${PIPESTATUS[0]}"
 
+      # Terceiro arranque com o captcha do Auth LIGADO (Turnstile), como ficará a
+      # produção: sem token o Auth recusa; o código do app manda o token onde o Auth
+      # exige (tests/captcha.test.ts). Segredo de TESTE público do Cloudflare (aprova
+      # o token de teste) — não é segredo. "Confirm email" volta a ficar desligado.
+      - name: Captcha do Auth ligado (Turnstile de teste)
+        id: captcha
+        continue-on-error: true
+        run: |
+          npx supabase stop --no-backup
+          sed -i '/^\[auth.email\]/,/^\[/ s/^enable_confirmations = true/enable_confirmations = false/' supabase/config.toml
+          sed -i '/^\[auth.sms\]/,/^\[/ s/^enable_confirmations = true/enable_confirmations = false/' supabase/config.toml
+          printf '\n[auth.captcha]\nenabled = true\nprovider = "turnstile"\nsecret = "1x0000000000000000000000000000000AA"\n' >> supabase/config.toml
+          grep -A2 '^\[auth.captcha\]' supabase/config.toml
+          npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
+          npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb3.env
+          set -a; . /tmp/sb3.env; set +a
+          export NEXT_PUBLIC_SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${PUBLISHABLE_KEY:-$ANON_KEY}" SUPABASE_SECRET_KEY="${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+          cd packages/data
+          MEL_TEST_CAPTCHA=1 npx vitest run --config vitest.db.config.ts tests/captcha.test.ts 2>&1 | tee /tmp/captcha.txt
+          exit "${PIPESTATUS[0]}"
+
       - name: Relatório
         if: always()
         run: |
@@ -131,10 +152,12 @@ jobs:
               console.log(`testes de banco: ${r.numTotalTests} executados, ${r.numPassedTests} aprovados, ${r.numFailedTests} falharam` + (failed.length ? "\nFALHAS:\n" + failed.join("\n") : ""));
             } catch { console.log("testes de banco: relatório JSON ausente"); }')
           {
-            echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }} confirm=${{ steps.confirm.outcome }}"
+            echo "RESULTADOS: audit=${{ steps.audit.outcome }} parity=${{ steps.parity.outcome }} drift=${{ steps.drift.outcome }} unit=${{ steps.unit.outcome }} db=${{ steps.db.outcome }} confirm=${{ steps.confirm.outcome }} captcha=${{ steps.captcha.outcome }}"
             echo "$db_summary"
             echo "confirmação de e-mail ON: $(sed 's/\x1b\[[0-9;]*m//g' /tmp/confirm.txt 2>/dev/null | grep -E 'Tests +[0-9]' | tr -s ' ')"
             sed 's/\x1b\[[0-9;]*m//g' /tmp/confirm.txt 2>/dev/null | grep -E '^ *(FAIL|×|✗)|Error:|AssertionError|Expected|Received|^ *[-+] ' | head -40 || true
+            echo "captcha do Auth ligado: $(sed 's/\x1b\[[0-9;]*m//g' /tmp/captcha.txt 2>/dev/null | grep -E 'Tests +[0-9]' | tr -s ' ')"
+            sed 's/\x1b\[[0-9;]*m//g' /tmp/captcha.txt 2>/dev/null | grep -E '^ *(FAIL|×|✗)|Error:|AssertionError|Expected|Received' | head -40 || true
             sed 's/\x1b\[[0-9;]*m//g' /tmp/unit.txt > /tmp/unit-plain.txt
             echo "unitários: $(grep -E 'Tests +[0-9]+ passed|Tests +[0-9]+ failed' /tmp/unit-plain.txt | tr -s ' ' | paste -sd ';' -) | trava: $(grep -E '^ℹ (pass|fail)' /tmp/unit-plain.txt | paste -sd ' ' -)"
           } > /tmp/summary.txt
@@ -145,7 +168,7 @@ jobs:
           cat /tmp/summary.txt schema-audit-report.md 2>/dev/null >> "$GITHUB_STEP_SUMMARY"
 
       - name: Falhar se alguma verificação falhou
-        if: steps.audit.outcome != 'success' || steps.parity.outcome != 'success' || steps.drift.outcome != 'success' || steps.unit.outcome != 'success' || steps.db.outcome != 'success' || steps.confirm.outcome != 'success'
+        if: steps.audit.outcome != 'success' || steps.parity.outcome != 'success' || steps.drift.outcome != 'success' || steps.unit.outcome != 'success' || steps.db.outcome != 'success' || steps.confirm.outcome != 'success' || steps.captcha.outcome != 'success'
         run: exit 1
 
       - if: always()

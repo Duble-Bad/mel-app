@@ -94,3 +94,18 @@ export function useCaptchaToken() {
   }, [setToken]);
   return { token, setToken, waitForToken, reset, key };
 }
+
+export const CAPTCHA_FAILED = "Não conseguimos confirmar que você não é um robô. Verifique a conexão e toque de novo para tentar.";
+
+/**
+ * Pega o token atual (uso único) e já remonta o widget para o próximo: um envio
+ * pode precisar de dois (criar a sessão sem cadastro no Supabase Auth e a rota
+ * do servidor). Sem token (falhou, expirou e não renovou, sem rede): erro
+ * amigável — quem chama mantém o que a pessoa preencheu.
+ */
+export async function takeCaptchaToken(captcha: Pick<ReturnType<typeof useCaptchaToken>, "waitForToken" | "reset">): Promise<string> {
+  const token = await captcha.waitForToken();
+  captcha.reset();
+  if (!token) throw new UserFacingError(CAPTCHA_FAILED);
+  return token;
+}

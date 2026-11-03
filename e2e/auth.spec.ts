@@ -192,3 +192,11 @@ test("theme: follows the device by default, can be switched, and is applied befo
   await expect(html).toHaveAttribute("data-theme", "dark");
   await ctx.close();
 });
+
+test("password recovery goes through the anti-robot check and never reveals who has an account", async ({ page }) => {
+  await page.goto("/entrar/recuperar");
+  const email = `ninguem+${crypto.randomUUID().slice(0, 8)}@exemplo.com`;
+  await page.getByLabel("E-mail").fill(email);
+  await page.getByRole("button", { name: "Enviar link" }).click();
+  await expect(page.getByText(`Se existir uma conta com ${email}`, { exact: false })).toBeVisible({ timeout: 30_000 });
+});

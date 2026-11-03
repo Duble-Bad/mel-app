@@ -22,6 +22,8 @@ const AUTH_MESSAGES: Record<string, string> = {
   bad_jwt: SESSION_EXPIRED,
   user_not_found: SESSION_EXPIRED,
   no_authorization: SESSION_EXPIRED,
+  // Captcha do Supabase Auth recusado (token ausente, inválido, expirado ou já usado).
+  captcha_failed: "Não conseguimos confirmar que você não é um robô. Toque de novo para tentar.",
   manual_linking_disabled:
     "Continuar com Google mantendo suas contribuições não está disponível agora. Crie a conta com e-mail e senha para manter o que você enviou.",
   // Conversão da sessão sem cadastro (veja signUpWithPassword).
@@ -40,13 +42,24 @@ export class AuthError extends DataError {
   }
 }
 
+/**
+ * Token do captcha do Supabase Auth (Turnstile). De uso único: pode vir pronto
+ * ou como função, chamada só quando o Auth realmente vai precisar dele (assim
+ * quem já tem sessão não gasta um desafio). Sem captcha ligado no projeto, o
+ * Auth ignora o token.
+ */
+export type CaptchaToken = string | (() => Promise<string>);
+const resolveCaptcha = async (t: CaptchaToken | undefined) => (typeof t === "function" ? await t() : t);
+const captchaOption = (token: string | undefined) => (token ? { captchaToken: token } : {});
+
 function fail(error: { code?: string; name?: string } | null): never {
   // Sem sessão no cliente, o supabase-js não manda código, só o nome do erro.
   throw new AuthError(error?.code ?? (error?.name === "AuthSessionMissingError" ? "session_missing" : undefined));
 }
 
-export async function signInWithPassword(client: MelClient, { email, password }: Credentials) {
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
+export async function signInWithPassword(client: MelClient, { email, password }: Credentials, { captchaToken }: { captchaToken?: CaptchaToken } = {}) {
+  const token = await resolveCaptcha(captchaToken);
+  const { data, error } = await client.auth.signInWithPassword({ email, password, options: captchaOption(token) });
   if (error || !data.user) fail(error);
   return data.user;
 }
@@ -76,7 +89,7 @@ export type SignUpResult = {
 export async function signUpWithPassword(
   client: MelClient,
   { email, password, displayName }: Credentials & { displayName?: string },
-  { emailRedirectTo }: { emailRedirectTo?: string } = {},
+  { emailRedirectTo, captchaToken }: { emailRedirectTo?: string; captchaToken?: CaptchaToken } = {},
 ): Promise<SignUpResult> {
   // Sessão guardada no aparelho (sem rede): decide o caminho. Se o servidor não
   // aceitar mais essa sessão, a conversão falha com erro claro — nunca cai em
@@ -85,7 +98,13 @@ export async function signUpWithPassword(
   if (stored.session?.user.is_anonymous) return convertAnonymousUser(client, { email, password, displayName }, emailRedirectTo);
 
   // O nome vai nos metadados: o trigger handle_new_user já o grava no perfil.
-  const options = { ...(displayName ? { data: { full_name: displayName } } : {}), ...(emailRedirectTo ? { emailRedirectTo } : {}) };
+  // Captcha só no cadastro novo: a conversão (updateUser) usa a sessão anônima, que já passou por ele.
+  const token = await resolveCaptcha(captchaToken);
+  const options = {
+    ...(displayName ? { data: { full_name: displayName } } : {}),
+    ...(emailRedirectTo ? { emailRedirectTo } : {}),
+    ...captchaOption(token),
+  };
   const { data, error } = await client.auth.signUp({ email, password, ...(Object.keys(options).length ? { options } : {}) });
   if (error || !data.user) fail(error);
   const hasSession = Boolean(data.session);
@@ -159,20 +178,21 @@ export async function linkGoogleToAnonymous(client: MelClient, redirectTo: strin
  *
  * Criar sessão anônima é a porta das sessões descartáveis: com o captcha do
  * Supabase Auth ligado (lançamento), quem chama passa `captchaToken` aqui —
- * é o único ponto do app que cria sessão anônima. Sem token, segue como hoje.
+ * é o único ponto do app que cria sessão anônima. O token só é pedido (se vier
+ * como função) quando não há sessão.
  */
-export async function ensureSession(client: MelClient, opts: { captchaToken?: string } = {}) {
+export async function ensureSession(client: MelClient, opts: { captchaToken?: CaptchaToken } = {}) {
   const { data } = await client.auth.getUser();
   if (data.user) return data.user;
-  const { data: anon, error } = await client.auth.signInAnonymously(
-    opts.captchaToken ? { options: { captchaToken: opts.captchaToken } } : undefined,
-  );
+  const token = await resolveCaptcha(opts.captchaToken);
+  const { data: anon, error } = await client.auth.signInAnonymously(token ? { options: { captchaToken: token } } : undefined);
   if (error || !anon.user) fail(error);
   return anon.user;
 }
 
-export async function requestPasswordReset(client: MelClient, email: string, redirectTo: string) {
-  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+export async function requestPasswordReset(client: MelClient, email: string, redirectTo: string, { captchaToken }: { captchaToken?: CaptchaToken } = {}) {
+  const token = await resolveCaptcha(captchaToken);
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo, ...captchaOption(token) });
   if (error) fail(error);
 }
 

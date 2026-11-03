@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ChoiceGroup } from "@/components/ui/Choice";
 import { TextareaField, TextField } from "@/components/ui/Field";
 import { ProgressSteps } from "@/components/ui/ProgressSteps";
-import { Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
+import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 type Step = "photo" | "where" | "when" | "looks" | "now" | "review";
 const STEPS: Step[] = ["photo", "where", "when", "looks", "now", "review"];
@@ -103,18 +103,11 @@ export function FoundWizard({ sawOnly }: { sawOnly: boolean }) {
       return;
     }
     setError(null);
-    setBusy("Confirmando que você não é um robô…");
-    const token = await captcha.waitForToken();
-    if (!token) {
-      setBusy(null);
-      setError("Não conseguimos confirmar que você não é um robô. Verifique a conexão e tente de novo.");
-      captcha.reset();
-      return;
-    }
     const supabase = getBrowserClient();
     try {
-      setBusy("Publicando…");
-      await ensureSession(supabase);
+      // Sessão sem cadastro: criá-la pede um token do captcha (quem já tem sessão não gasta).
+      setBusy("Confirmando que você não é um robô…");
+      await ensureSession(supabase, { captchaToken: () => takeCaptchaToken(captcha) });
       let photoPath: string | null = null;
       if (photo) {
         setBusy("Enviando foto…");
@@ -125,11 +118,13 @@ export function FoundWizard({ sawOnly }: { sawOnly: boolean }) {
           setError("A foto não foi enviada, mas vamos publicar mesmo assim.");
         }
       }
+      setBusy("Confirmando que você não é um robô…");
+      const turnstileToken = await takeCaptchaToken(captcha);
       setBusy("Publicando e procurando no Radar MEL…");
       const res = await fetch("/api/encontrados", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken: token }),
+        body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken }),
       });
       const data = (await res.json().catch(() => ({}))) as { code?: string; error?: string };
       if (!res.ok || !data.code) throw new UserFacingError(data.error ?? "Não conseguimos publicar agora. Tente de novo.");

@@ -10,7 +10,7 @@ import { LocationPicker, type PickedLocation } from "@/components/location/Locat
 import { Alert } from "@/components/ui/Alert";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { TextField } from "@/components/ui/Field";
-import { Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
+import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 // Rosa dos ventos: Norte em cima, Oeste à esquerda… "Não sei" no centro.
 const COMPASS: (Direction | null)[] = [null, "N", null, "W", "unknown", "E", null, "S", null];
@@ -46,20 +46,12 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
       return;
     }
     setErrors({});
-    setBusy("Confirmando que você não é um robô…");
-    const captchaToken = await captcha.waitForToken();
-    if (!captchaToken) {
-      setBusy(null);
-      setError("Não conseguimos confirmar que você não é um robô. Verifique a conexão e toque em enviar de novo.");
-      captcha.reset();
-      return;
-    }
-
     const supabase = getBrowserClient();
     try {
       // Sem cadastro: uma sessão anônima identifica o envio (sem pedir dados).
-      setBusy("Enviando…");
-      await ensureSession(supabase);
+      // Criá-la pede um token do captcha; quem já tem sessão não gasta nenhum.
+      setBusy("Confirmando que você não é um robô…");
+      await ensureSession(supabase, { captchaToken: () => takeCaptchaToken(captcha) });
       let photoPath: string | null = null;
       if (photo) {
         setBusy("Enviando foto…");
@@ -70,11 +62,13 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
           setError("A foto não foi enviada, mas vamos mandar o avistamento mesmo assim.");
         }
       }
+      setBusy("Confirmando que você não é um robô…");
+      const turnstileToken = await takeCaptchaToken(captcha);
       setBusy("Enviando…");
       const res = await fetch("/api/avistamentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken: captchaToken }),
+        body: JSON.stringify({ ...parsed.data, photoPath, turnstileToken }),
       });
       if (!res.ok) {
         const { error: message } = (await res.json().catch(() => ({}))) as { error?: string };

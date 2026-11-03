@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { PasswordField, TextField } from "@/components/ui/Field";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Divider } from "@/components/ui/Surface";
+import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 type Mode = "signin" | "signup";
 type FieldName = "displayName" | "email" | "password";
@@ -42,6 +43,8 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(returned?.message ?? null);
   const [pending, setPending] = useState<"form" | "google" | null>(null);
+  // Captcha do Supabase Auth (cadastro e login por senha). O Google não passa por ele.
+  const captcha = useCaptchaToken();
   // Com "Confirm email" ligado no Supabase, a conta só vale depois do link.
   const [confirmEmailFor, setConfirmEmailFor] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -94,13 +97,14 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
       const supabase = getBrowserClient();
       if (isSignup) {
         const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-        const result = await signUpWithPassword(supabase, parsed.data, { emailRedirectTo });
+        // Token só é pedido no cadastro novo; quem converte a sessão sem cadastro não gasta.
+        const result = await signUpWithPassword(supabase, parsed.data, { emailRedirectTo, captchaToken: () => takeCaptchaToken(captcha) });
         if (!result.hasSession) {
           setConfirmEmailFor(parsed.data.email);
           setPending(null);
           return;
         }
-      } else await signInWithPassword(supabase, parsed.data);
+      } else await signInWithPassword(supabase, parsed.data, { captchaToken: () => takeCaptchaToken(captcha) });
 
       const profile = await getMyProfile(supabase);
       const destination = needsOnboarding(profile) ? `/onboarding?next=${encodeURIComponent(next)}` : next;
@@ -233,6 +237,7 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
           }
         />
 
+        <Turnstile key={captcha.key} onToken={captcha.setToken} onError={setFormError} />
         <Button
           type="submit"
           className="mt-1"

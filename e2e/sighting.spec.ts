@@ -129,3 +129,42 @@ test("the server refuses sightings without the anti-robot check", async ({ reque
   expect(res.status()).toBe(403);
   expect((await res.json()).error).toMatch(/não é um robô/);
 });
+
+test("an anonymous visitor reports with the anti-robot check; the report API refuses a direct call without it", async ({ page }) => {
+  const tutor = await createTutorWithActiveAlert("report-captcha", "Bolota");
+  created.push(tutor.email);
+  await page.goto(`/alerta/${tutor.code}`);
+  await page.getByRole("button", { name: "Denunciar" }).first().click();
+  const sheet = page.getByRole("dialog", { name: "Denunciar este alerta" });
+  await sheet.getByText("Spam ou propaganda").click();
+  await sheet.getByRole("button", { name: "Enviar denúncia" }).click();
+  await expect(page.getByText("Denúncia enviada.")).toBeVisible({ timeout: 30_000 });
+
+  // Mesma sessão anônima, chamando a rota direto sem o token: recusado.
+  const direct = await page.request.post("/api/denuncias", { data: { type: "lost_case", key: tutor.code, reason: "spam" } });
+  expect(direct.status()).toBe(403);
+  expect((await direct.json()).error).toMatch(/não é um robô/);
+  // Token inventado também não passa? Só o Cloudflare decide — aqui o segredo é o de TESTE
+  // (aprova qualquer token); token inválido/expirado está nos testes de verifyTurnstileToken.
+});
+
+test("if the anti-robot check cannot load, the sighting form explains and keeps what was typed", async ({ page }) => {
+  test.setTimeout(60_000);
+  const tutor = await createTutorWithActiveAlert("sight-nocaptcha", "Pingo");
+  created.push(tutor.email);
+  await page.route("https://challenges.cloudflare.com/**", (route) => route.abort());
+  await mockGeocoding(page);
+  await page.goto(`/avistamento/${tutor.code}`);
+  await expect(page.getByText(/verificação antirrobô/)).toBeVisible();
+
+  await page.getByRole("button", { name: /Usar minha localização atual/ }).click();
+  await expect(page.getByTestId("picked-label")).toContainText("perto de Rua Santa Teresa");
+  await page.getByRole("radio", { name: "Agora" }).check({ force: true });
+  await page.getByLabel(/Mais alguma coisa/).fill("Estava perto da banca de jornal.");
+  await page.getByRole("button", { name: /Enviar avistamento/i }).click();
+
+  await expect(page.getByText(/Não conseguimos confirmar que você não é um robô/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByLabel(/Mais alguma coisa/)).toHaveValue("Estava perto da banca de jornal.");
+  await expect(page.getByRole("button", { name: /Enviar avistamento/i })).toBeEnabled();
+  await expect(page.getByText("O tutor já foi avisado.")).toHaveCount(0);
+});

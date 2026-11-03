@@ -8,7 +8,7 @@
 
 | # | Item | Por quê |
 |---|---|---|
-| 1.1 | **Captcha do Supabase Auth no código**: `captchaToken` em `ensureSession` (sessão anônima), cadastro, login e recuperação de senha; widget Turnstile também no "Denunciar" (`ReportButton`) | Ligar o captcha no painel sem isso quebra avistamento, chat, encontrado, denúncia e login. Sem captcha, sessões anônimas descartáveis ficam contidas só pelo limite por IP e pelos tetos da migration 27 |
+| 1.1 | ✅ **Feito (2026-11-03, Launch Readiness 1).** **Captcha do Supabase Auth no código**: `captchaToken` em `ensureSession` (sessão anônima), cadastro, login e recuperação de senha; widget Turnstile também no "Denunciar" (`ReportButton`) | Ligar o captcha no painel sem isso quebra avistamento, chat, encontrado, denúncia e login. Sem captcha, sessões anônimas descartáveis ficam contidas só pelo limite por IP e pelos tetos da migration 27 |
 
 As correções escolhidas na auditoria final para antes do Feature Freeze ficam fora desta lista (são produto, não configuração).
 
@@ -41,7 +41,7 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | 4.3 | **SMTP próprio** (Resend, e-mail da MEL) + templates pt-BR + depois **"Confirm email" ON** | Sem SMTP, a recuperação de senha não chega a ninguém. Passo a passo no `11` |
 | 4.4 | Google OAuth (só depois do 4.3) + manual linking + `NEXT_PUBLIC_AUTH_GOOGLE=on` | Tela de consentimento publicada com links de `/privacidade` e `/termos` |
 | 4.5 | Rate limits de Auth: anônimos **30/h por IP** (o `mel-dev` está em 300/h só para testes), logins nos padrões | |
-| 4.6 | Captcha do Auth (Turnstile) | **Só depois do 1.1** |
+| 4.6 | Captcha do Auth: Authentication → Bot and Abuse Protection → Turnstile, com o **segredo de produção** do Turnstile (o mesmo par de 5.1) | O código (1.1) já está pronto. Ligar **depois** do deploy do app com as chaves de produção (5.1): a site key do app e o segredo no Supabase têm de ser do mesmo widget. Conferir no smoke test: avistamento, chat, encontrado, denúncia, cadastro, login e recuperação |
 
 ## 5. Chaves de terceiros
 
