@@ -52,9 +52,13 @@ export interface PushPayload {
   tag: string;
 }
 
-export function pushPayload(n: { id: string; title: string; body: string; href: string }): PushPayload {
+/** Push de avistamento: aparece na tela bloqueada, então nada de local nem texto de quem enviou. */
+export const SIGHTING_PUSH_BODY = "Alguém informou que viu seu pet. Abra a MEL para ver a pista.";
+
+export function pushPayload(n: { id: string; kind?: string; title: string; body: string; href: string }): PushPayload {
   const clip = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1)}…` : s);
-  return { title: clip(n.title, 70), body: clip(n.body, 140), url: n.href.startsWith("/") ? n.href : "/", tag: n.id };
+  const body = n.kind === "sighting_new" ? SIGHTING_PUSH_BODY : n.body;
+  return { title: clip(n.title, 70), body: clip(body, 140), url: n.href.startsWith("/") ? n.href : "/", tag: n.id };
 }
 
 export const radiusLabel = (m: number) => `${m / 1000} km`;

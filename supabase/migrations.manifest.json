@@ -116,6 +116,10 @@
     {
       "file": "20261103120000_sighting_privacy.sql",
       "sha256": "6abccbfc418b8731314f86c2a14c14675a87e7f807d6bf4a72a515dcb2e8f8ce"
+    },
+    {
+      "file": "20261103160000_tutor_push_public_place.sql",
+      "sha256": "d304641b697da5cf2be5a3d9e81ebe0ddc942b77970020a89a1977f029b24bfe"
     }
   ]
 }

@@ -17,7 +17,7 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | # | Item | Observação |
 |---|---|---|
 | 2.1 | Checks verdes no commit que vai para produção | Pre-flight confere pela API do GitHub |
-| 2.2 | Aplicar as migrations **24–29** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade. Pre-flight e pós-deploy já esperam 29 |
+| 2.2 | Aplicar as migrations **24–30** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade; 30 traz o push do tutor. Pre-flight e pós-deploy já esperam 30 |
 | 2.3 | Pós-deploy aprovado (catálogo + impressão digital) | Reprovado → não seguir |
 | 2.4 | `scripts/sighting-media-neutral-names.mjs` (listar → `--apply` → conferir 0/0) | Passo a passo no `08`. Se listar 0 e 0, nada a fazer |
 
@@ -29,6 +29,7 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | 3.2 | `NEXT_PUBLIC_SITE_URL=https://<domínio>` **no build** (no `.env.example` ela está comentada, porque no dev não é necessária) | Sem ela, o QR do cartaz e a prévia do link (og:image) podem apontar para `*.vercel.app` |
 | 3.3 | Secrets do servidor: `SUPABASE_SECRET_KEY`, `PUSH_DISPATCH_SECRET`, `TURNSTILE_SECRET_KEY`, `VAPID_PRIVATE_KEY` | Nunca no repositório |
 | 3.4 | Variáveis públicas: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_MAPTILER_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_AUTH_GOOGLE` | Públicas entram no build: mudar exige novo deploy |
+| 3.6 | **Content-Security-Policy completa** (hoje só `frame-ancestors`; os outros headers de segurança já estão no `next.config.ts`) | Levantar as origens reais: Supabase (REST, Auth, Realtime wss, Storage), MapTiler (API, tiles, fontes, worker blob), Turnstile (script e iframe), Google (OAuth) e os scripts inline do Next (nonce). Testar em modo `Report-Only` antes de impor |
 | 3.5 | **Agendador** chamando `POST /api/push/dispatch` com `Bearer $PUSH_DISPATCH_SECRET` | Reenvia push que ficou para trás e **apaga as fotos órfãs** do `sighting-media`. Sem ele, nada é apagado |
 
 ## 4. Supabase `mel-prod` (painel — nunca `supabase config push`)

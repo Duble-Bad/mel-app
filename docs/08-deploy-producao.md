@@ -1,6 +1,6 @@
 # MEL — Deploy de schema em produção (`mel-prod`)
 
-> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–29** (24 e 29 são P0 de privacidade), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
+> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–30** (24 e 29 são P0 de privacidade; 30 traz o push do tutor e o rótulo público do avistamento), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
 > Só rode com autorização explícita do dono do projeto.
 
 Este procedimento aplica **somente as migrations versionadas** (`supabase/migrations`) no `mel-prod`.
@@ -68,7 +68,7 @@ O `deploy-schema.mjs`, em ordem:
 - `MEL_PROD_DB_URL` é um banco Supabase (direto `db.<ref>.supabase.co` ou pooler `postgres.<ref>@…pooler.supabase.com:5432`) **do mesmo ref**.
 - Certificado SSL presente (conexão com `rejectUnauthorized: true`).
 - Fora de CI; ref de produção **fora** de `MEL_SAFE_TARGET_REFS`, do `supabase link` e do `.env.local`; `NEXT_PUBLIC_SUPABASE_URL` do terminal não aponta para produção.
-- Exatamente as migrations do repositório (hoje **29**, `EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`), idênticas ao manifesto `supabase/migrations.manifest.json` (nome, ordem e hash).
+- Exatamente as migrations do repositório (hoje **30**, `EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`), idênticas ao manifesto `supabase/migrations.manifest.json` (nome, ordem e hash).
 - Nenhum dado de seed/demo nas migrations (INSERT só em `storage.buckets` e `public.plans`; nada de `exemplo.com`/demo/seed/COPY/TRUNCATE).
 - Impressão digital de referência versionada (`supabase/schema-fingerprint.json`).
 - Branch `main`, working tree limpa, HEAD = `origin/main`.
@@ -80,12 +80,12 @@ O `deploy-schema.mjs`, em ordem:
 
 Transação **READ ONLY**, só catálogo — não cria usuários nem dados.
 
-- 29 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
+- 30 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
 - 24 tabelas; RLS habilitado nas 24; primary key em todas.
 - 60 políticas em `public` + 9 em `storage.objects` (nomes idênticos às migrations).
-- 41 funções `public` + 53 `private` (nomes idênticos); SECURITY DEFINER sempre com `search_path`.
+- 41 funções `public` + 55 `private` (nomes idênticos); SECURITY DEFINER sempre com `search_path`.
 - 27 triggers, incluindo `on_auth_user_created` e `on_auth_user_converted` em `auth.users`.
-- 16 enums; 47 índices declarados.
+- 16 enums; 49 índices declarados.
 - Sem grant de escrita para `anon`; `anon` sem acesso ao schema `private`.
 - 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 2 MB desde a migration 27; públicos; webp/jpeg/png).
 - Realtime: `public.messages` e `public.notifications`.

@@ -216,7 +216,40 @@ describe("utilidade da pista", () => {
     const offset = distanceMeters(CORNER, forPublic!.position);
     expect(offset).toBeGreaterThan(0);
     expect(offset).toBeLessThanOrEqual(180); // meia diagonal da célula de 250 m
-    // O nome da rua continua público: a pista "por aqui" segue útil para vizinhos.
-    expect(forPublic!.placeLabel).toBe("Rua da Bahia, Centro, Belo Horizonte – MG");
+    // Rua exata só para o tutor; o público fica com bairro e cidade (migration 30).
+    expect(forTutor!.placeLabel).toBe("Rua da Bahia, Centro, Belo Horizonte – MG");
+    expect(forPublic!.placeLabel).toBe("Centro, Belo Horizonte – MG");
+  });
+});
+
+describe("rótulo do local (migration 30)", () => {
+  it("avistamento dentro de um condomínio: tutor e autor veem o lugar; visitante e outras contas, só bairro e cidade (RPC direta)", async () => {
+    const poi = "Condomínio Residencial Jardim das Acácias, Savassi, Belo Horizonte – MG";
+    const s = await anonymous();
+    const id = await createSighting(s.client, sighting(code, { placeLabel: poi, seenAt: minutesAgo(2) }));
+    const label = async (client: MelClient) =>
+      ((await raw(client, code)) as unknown as { id: string; place_label: string | null }[]).find((i) => i.id === id)!.place_label;
+
+    expect(await label(tutor.client)).toBe(poi);
+    expect(await label(s.client)).toBe(poi);
+    expect(await label(moderator.client)).toBe(poi);
+    for (const client of [anonClient(), stranger.client, (await anonymous()).client]) {
+      const shown = await label(client);
+      expect(shown).toBe("Savassi, Belo Horizonte – MG");
+      expect(shown).not.toMatch(/Condomínio|Acácias/);
+    }
+    // Nem a linha do tempo inteira do visitante menciona o condomínio.
+    expect(JSON.stringify(await raw(anonClient(), code))).not.toMatch(/Condomínio|Acácias/);
+  });
+
+  it("sem bairro, só a cidade; nome solto (pode ser o lugar exato) não sai", async () => {
+    const s = await anonymous();
+    const a = await createSighting(s.client, sighting(code, { placeLabel: "Edifício Solar, Belo Horizonte – MG", seenAt: minutesAgo(1) }));
+    const b = await createSighting(s.client, sighting(code, { placeLabel: "Edifício Solar", seenAt: minutesAgo(1) }));
+    const items = (await raw(anonClient(), code)) as unknown as { id: string; place_label: string | null }[];
+    expect(items.find((i) => i.id === a)!.place_label).toBe("Belo Horizonte – MG");
+    expect(items.find((i) => i.id === b)!.place_label).toBeNull();
+    const { data } = await serviceClient().from("sightings").select("place_label").eq("id", b).single();
+    expect(data!.place_label).toBe("Edifício Solar"); // o dado original não muda
   });
 });

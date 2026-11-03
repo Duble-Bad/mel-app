@@ -41,3 +41,15 @@ test("the brand story leads to 'Nossa origem' with the real Mel", async ({ page 
   await expect(page.getByRole("img", { name: /A Mel, uma pequena Yorkshire/ })).toBeVisible();
   await expect(page.getByText("Porque quando um animal desaparece, ninguém deveria precisar procurá-lo sozinho.")).toBeVisible();
 });
+
+test("security headers on pages, images and the OAuth callback (no framing, no sniffing)", async ({ request }) => {
+  for (const path of ["/", "/mapa", "/alerta/zzzzzz/cartaz/square", "/auth/callback"]) {
+    const res = await request.get(path, { maxRedirects: 0 });
+    const h = res.headers();
+    expect(h["x-frame-options"], path).toBe("DENY");
+    expect(h["content-security-policy"], path).toContain("frame-ancestors 'none'");
+    expect(h["x-content-type-options"], path).toBe("nosniff");
+    expect(h["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
+    expect(h["permissions-policy"], path).toContain("geolocation=(self)");
+  }
+});

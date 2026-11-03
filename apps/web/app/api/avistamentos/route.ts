@@ -1,6 +1,7 @@
-import { type NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 import { sightingInputSchema } from "@mel/core";
 import { createSighting, DataError } from "@mel/data";
+import { dispatchPushQueue } from "@/lib/push/dispatch";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -34,6 +35,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const id = await createSighting(await createSessionClient(), parsed.data);
+    // O banco já enfileirou o push do tutor; envia depois de responder.
+    after(() => dispatchPushQueue().catch((err) => console.error("[api/avistamentos] push falhou", err)));
     return json(201, { id });
   } catch (err) {
     if (err instanceof DataError && err.code === "P0429") {

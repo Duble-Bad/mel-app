@@ -1370,6 +1370,7 @@ export type Database = {
           point: unknown
           public_lat: number
           public_lng: number
+          public_place_label: string | null
           reporter_id: string | null
           seen_at: string
           states: Database["public"]["Enums"]["sighting_state"][]
@@ -1388,6 +1389,7 @@ export type Database = {
           point?: unknown
           public_lat: number
           public_lng: number
+          public_place_label?: string | null
           reporter_id?: string | null
           seen_at: string
           states?: Database["public"]["Enums"]["sighting_state"][]
@@ -1406,6 +1408,7 @@ export type Database = {
           point?: unknown
           public_lat?: number
           public_lng?: number
+          public_place_label?: string | null
           reporter_id?: string | null
           seen_at?: string
           states?: Database["public"]["Enums"]["sighting_state"][]

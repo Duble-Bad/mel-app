@@ -7,6 +7,7 @@ import { type ChatMessage, type Conversation, formatChatTime, mentionsPayment, M
 import { markConversationRead, sendMessage, setConversationBlocked, subscribeToMessages } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
+import { kickPushDispatch } from "@/lib/push/client";
 import { AntiScamNotice } from "./AntiScamNotice";
 import { ReportDialog } from "./ReportDialog";
 
@@ -66,6 +67,8 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
     try {
       append(await sendMessage(getBrowserClient(), c.id, myId, parsed.data));
       setBody("");
+      // Conversa de alerta: o banco enfileirou o push de quem recebe; pede o envio.
+      if (c.context !== "adoption") kickPushDispatch();
     } catch (err) {
       const message = userErrorMessage(err, "Não conseguimos enviar. Verifique a conexão e tente de novo.");
       if (message === BLOCKED_MESSAGE) setClosed(true);

@@ -31,6 +31,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { ReportButton } from "@/components/report/ReportButton";
 import { LiveSightings } from "@/components/sighting/LiveSightings";
 import { Timeline } from "@/components/sighting/Timeline";
+import { TutorPushPrompt } from "@/components/lost/TutorPushPrompt";
 import { Heart, Pencil } from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
@@ -126,6 +127,8 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
             ainda mais pessoas.
           </Alert>
         )}
+
+        {c.isOwner && c.status === "ACTIVE" && <TutorPushPrompt />}
 
         <header className="flex flex-col gap-2">
           <div>

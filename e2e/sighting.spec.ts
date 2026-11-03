@@ -32,6 +32,11 @@ test("a visitor WITHOUT an account reports a sighting; the tutor sees it live, o
   await signInAs(tutorPage, tutor.email, alertPath);
   await expect(tutorPage.getByText("Ainda não há avistamentos.")).toBeVisible();
   await expect(tutorPage.getByRole("link", { name: /Eu vi este pet/i })).toHaveCount(0); // não para o próprio tutor
+  // Convite para avisos no celular: só com um toque do tutor; "Agora não" não atrapalha nada.
+  const pushPrompt = tutorPage.getByTestId("tutor-push");
+  await expect(pushPrompt).toContainText("Receber avisos no celular");
+  await pushPrompt.getByRole("button", { name: "Agora não" }).click();
+  await expect(pushPrompt).toHaveCount(0);
 
   // Visitante: navegador limpo, sem conta.
   const ctx = await browser.newContext({

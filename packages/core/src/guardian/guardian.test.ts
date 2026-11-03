@@ -49,4 +49,16 @@ describe("pushPayload", () => {
     expect(p.body).toHaveLength(140);
     expect(pushPayload({ id: "n2", title: "t", body: "b", href: "https://evil.example" }).url).toBe("/");
   });
+
+  it("sighting push never carries the place or the reporter's text (lock screen)", () => {
+    const p = pushPayload({
+      id: "n3",
+      kind: "sighting_new",
+      title: "🟡 Novo avistamento de Mel",
+      body: "Visto perto de Condomínio Jardim das Flores, Sé, São Paulo – SP.",
+      href: "/alerta/abc234#linha-do-tempo",
+    });
+    expect(p.body).toBe("Alguém informou que viu seu pet. Abra a MEL para ver a pista.");
+    expect(JSON.stringify(p)).not.toMatch(/Condomínio|Sé/);
+  });
 });
