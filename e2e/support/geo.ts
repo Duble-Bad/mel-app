@@ -5,6 +5,17 @@ import searchFixture from "../../packages/core/src/geo/__fixtures__/maptiler-sea
 /** GPS simulado: Praça da Sé (local público). */
 export const SE = { latitude: -23.55052, longitude: -46.633308 };
 
+/**
+ * O Chromium automatizado perde a geolocalização simulada ao sair de uma página
+ * que carregou o widget do Turnstile (iframe da Cloudflare) — ex.: a tela de
+ * entrar. Só acontece com o GPS simulado; reaplica a cada navegação.
+ */
+export function keepGeolocation(page: Page, coords: { latitude: number; longitude: number } = SE) {
+  page.on("framenavigated", (frame) => {
+    if (frame === page.mainFrame()) void page.context().setGeolocation(coords).catch(() => {});
+  });
+}
+
 /** Busca de endereço com respostas reais gravadas do MapTiler: sem rede e sem gastar cota. */
 export async function mockGeocoding(page: Page, status = 200) {
   await page.route("https://api.maptiler.com/geocoding/**", (route) => {

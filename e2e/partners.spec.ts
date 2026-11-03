@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mockGeocoding, SE } from "./support/geo";
+import { mockGeocoding, SE, keepGeolocation } from "./support/geo";
 import { createUser, deleteUserByEmail, setRole, TEST_PASSWORD } from "./support/users";
 
 test.use({ geolocation: SE, permissions: ["geolocation"] });
+test.beforeEach(({ page }) => keepGeolocation(page, SE));
 
 const created: string[] = [];
 test.afterAll(async () => {

@@ -1,12 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { createTutorWithActiveAlert } from "./support/alerts";
-import { mockGeocoding } from "./support/geo";
+import { mockGeocoding, keepGeolocation } from "./support/geo";
 import { createUser, deleteUserByEmail, TEST_PASSWORD } from "./support/users";
 
 // Região própria (Rio de Janeiro): outros testes criam alertas na Sé e poderiam
 // esgotar o limite diário de avisos deste Guardião.
 const RIO = { latitude: -22.9068, longitude: -43.1729 };
 test.use({ geolocation: RIO, permissions: ["geolocation"] });
+test.beforeEach(({ page }) => keepGeolocation(page, RIO));
 
 const created: string[] = [];
 test.afterAll(async () => {
