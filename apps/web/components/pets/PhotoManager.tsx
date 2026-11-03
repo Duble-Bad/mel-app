@@ -3,6 +3,15 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { MAX_PET_PHOTOS, type PetPhoto } from "@mel/core";
 
+// Sugestões, não exigências: nenhuma foto além da que a pessoa quiser enviar é obrigatória.
+const PHOTO_TIPS = [
+  "Rosto de frente.",
+  "Corpo inteiro, de lado.",
+  "Uma foto de agora, mostrando como está hoje.",
+  "Marcas que o diferenciam: manchas, cicatriz, coleira.",
+  "Se a aparência muda muito com a tosa ou o pelo crescido, uma foto de cada jeito.",
+] as const;
+
 const MAX_INPUT_BYTES = 20 * 1024 * 1024;
 
 interface PhotoManagerProps {
@@ -51,9 +60,15 @@ export function PhotoManager({
         <p className="font-semibold">
           Fotos <span className="font-normal text-text-secondary">(até {MAX_PET_PHOTOS})</span>
         </p>
-        <p className="text-sm text-text-secondary">
-          Uma foto nítida do rosto e outra do corpo inteiro ajudam muito quem estiver procurando.
-        </p>
+        <p className="text-sm text-text-secondary">Fotos nítidas e recentes ajudam alguém a reconhecer o pet na rua.</p>
+        <details className="text-sm" data-testid="photo-tips">
+          <summary className="min-h-10 cursor-pointer py-2 font-semibold text-link underline-offset-4 hover:underline">Quais fotos ajudam mais</summary>
+          <ul className="flex list-disc flex-col gap-1 pb-1 pl-5 text-text-secondary">
+            {PHOTO_TIPS.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </details>
       </div>
 
       {total > 0 && (

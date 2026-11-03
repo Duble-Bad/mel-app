@@ -26,9 +26,16 @@ export interface PosterContent {
   /** Só existe se o tutor autorizou contato público no alerta. */
   contact: string | null;
   cta: string;
+  /** O que fazer (só no PROCURA-SE): corresponde ao botão real da página do alerta. */
+  action: string | null;
   code: string;
+  /** Código do alerta para digitar quando não dá para escanear (maiúsculas: mais legível; a rota aceita). */
+  displayCode: string;
   found: boolean;
 }
+
+/** Texto do botão da página do alerta que abre o formulário de avistamento. */
+export const SIGHTING_BUTTON_LABEL = "Eu vi este pet";
 
 const truncate = (text: string, max: number) => (text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`);
 
@@ -53,8 +60,10 @@ export function posterContent(c: Pick<PublicLostCase, "status" | "pet" | "areaLa
     when: c.lostAt ? `Desde ${formatDateTimeBr(c.lostAt)}` : null,
     marks: marks ? truncate(marks, 140) : null,
     contact: phone ? `${c.contactWhatsapp ? "WhatsApp" : "Telefone"}: ${formatBrPhone(phone)}` : null,
-    cta: found ? "Obrigado a todos que ajudaram!" : "VIU ESTE PET? ESCANEIE",
+    cta: found ? "Obrigado a todos que ajudaram!" : "VIU ESTE PET?",
+    action: found ? null : `Escaneie o QR Code e toque em “${SIGHTING_BUTTON_LABEL}”.`,
     code: c.code,
+    displayCode: c.code.toUpperCase(),
     found,
   };
 }

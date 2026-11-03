@@ -21,15 +21,17 @@ export function photoBox(format: PosterFormat): { width: number; height: number 
   const { width, height } = POSTER_FORMATS[format];
   if (format === "landscape" || format === "og") return { width: Math.round(width * 0.42), height };
   if (format === "story") return { width, height: Math.round(height * 0.5) };
-  return { width, height: Math.round(height * 0.38) };
+  // Quadrado: a foto cede um pouco de altura para o "VIU ESTE PET?" e o código caberem.
+  return { width, height: Math.round(height * 0.34) };
 }
 
 /** Tamanhos de texto (px na base 1080) por formato — o quadrado precisa caber tudo. */
+// O quadrado não tem espaço para a assinatura da MEL: a URL já leva o domínio.
 const TYPE = {
-  square: { headline: 76, name: 84, details: 34, line: 34, small: 30, marks: 28, qr: 170, cta: 36, contact: 30, url: 24, brand: 26, pad: 40, gap: 8 },
-  story: { headline: 96, name: 120, details: 40, line: 40, small: 36, marks: 32, qr: 230, cta: 42, contact: 36, url: 26, brand: 30, pad: 48, gap: 14 },
-  landscape: { headline: 84, name: 104, details: 40, line: 40, small: 36, marks: 32, qr: 220, cta: 40, contact: 34, url: 26, brand: 30, pad: 48, gap: 12 },
-  og: { headline: 84, name: 104, details: 40, line: 40, small: 36, marks: 32, qr: 170, cta: 40, contact: 34, url: 26, brand: 30, pad: 48, gap: 12 },
+  square: { headline: 76, name: 84, details: 34, line: 34, small: 30, marks: 28, qr: 190, cta: 46, action: 28, contact: 28, url: 24, code: 32, brand: 0, pad: 40, gap: 8 },
+  story: { headline: 96, name: 120, details: 40, line: 40, small: 36, marks: 32, qr: 250, cta: 60, action: 36, contact: 36, url: 28, code: 40, brand: 30, pad: 48, gap: 14 },
+  landscape: { headline: 84, name: 104, details: 40, line: 40, small: 36, marks: 32, qr: 240, cta: 56, action: 30, contact: 34, url: 26, code: 36, brand: 30, pad: 48, gap: 12 },
+  og: { headline: 84, name: 104, details: 40, line: 40, small: 36, marks: 32, qr: 190, cta: 52, action: 32, contact: 32, url: 26, code: 34, brand: 0, pad: 48, gap: 12 },
 } as const;
 
 export function Poster({ format, content, photo, qr, url }: PosterProps) {
@@ -40,6 +42,9 @@ export function Poster({ format, content, photo, qr, url }: PosterProps) {
   const accent = content.found ? colors["status-found"] : colors["status-lost"];
   const box = photoBox(format);
   const t = TYPE[format];
+  // "mel.app/alerta/" + código (o código vai em destaque, para digitar).
+  const shown = url.replace(/^https?:\/\//, "");
+  const urlPrefix = shown.slice(0, shown.length - content.code.length);
 
   const Photo = (
     <div
@@ -88,13 +93,20 @@ export function Poster({ format, content, photo, qr, url }: PosterProps) {
 
       <div style={{ display: "flex", alignItems: "center", gap: s(28) }}>
         <img src={qr} alt="QR Code do alerta" width={s(t.qr)} height={s(t.qr)} />
-        <div style={{ display: "flex", flexDirection: "column", gap: s(8), flex: 1 }}>
-          <div style={{ display: "flex", fontSize: s(t.cta), fontWeight: 800, color: accent }}>{content.cta}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: s(6), flex: 1 }}>
+          <div style={{ display: "flex", fontSize: s(t.cta), fontWeight: 800, color: accent, lineHeight: 1.05 }}>{content.cta}</div>
+          {content.action && (
+            <div style={{ display: "flex", fontSize: s(t.action), fontWeight: 700, color: colors["text-primary"], lineHeight: 1.2 }}>{content.action}</div>
+          )}
           {content.contact && <div style={{ display: "flex", fontSize: s(t.contact), fontWeight: 700, color: colors["text-primary"] }}>{content.contact}</div>}
-          <div style={{ display: "flex", fontSize: s(26), color: colors["text-secondary"] }}>{url.replace(/^https?:\/\//, "")}</div>
-          <div style={{ display: "flex", fontSize: s(t.brand), fontWeight: 800, color: colors["primary"] }}>
-            MEL · Uma rede inteira procurando com você.
+          {/* Sem câmera? O código do alerta em destaque, no fim do endereço. */}
+          <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", color: colors["text-secondary"] }}>
+            <span style={{ fontSize: s(t.url) }}>{urlPrefix}</span>
+            <span style={{ fontSize: s(t.code), fontWeight: 800, color: colors["text-primary"], letterSpacing: s(2) }}>{content.displayCode}</span>
           </div>
+          {t.brand > 0 && (
+            <div style={{ display: "flex", fontSize: s(t.brand), fontWeight: 800, color: colors["primary"] }}>MEL · Uma rede inteira procurando com você.</div>
+          )}
         </div>
       </div>
     </div>

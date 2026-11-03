@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { type ChatMessage, type Conversation, formatChatTime, mentionsPayment, MESSAGE_MAX, messageBodySchema, peerLabel, userErrorMessage } from "@mel/core";
+import { type ChatMessage, type Conversation, formatChatTime, mentionsPayment, MESSAGE_MAX, messageBodySchema, PAYMENT_WARNING, peerLabel, userErrorMessage } from "@mel/core";
 import { markConversationRead, sendMessage, setConversationBlocked, subscribeToMessages } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
@@ -157,7 +157,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
             </button>
           )}
         </div>
-        <AntiScamNotice />
+        <AntiScamNotice canReport />
       </header>
 
       <div className="flex flex-1 flex-col gap-3 px-4 py-4">
@@ -178,7 +178,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
                 <span className="mt-0.5 text-xs text-text-secondary">{formatChatTime(m.createdAt)}</span>
                 {!mine && mentionsPayment(m.body) && (
                   <p data-testid="payment-warning" className="mt-1 max-w-[85%] text-sm font-semibold text-status-lost">
-                    ⚠️ Pedido de dinheiro? Nunca pague antes de ver o animal pessoalmente. Se suspeitar, toque em Denunciar.
+                    ⚠️ {PAYMENT_WARNING}
                   </p>
                 )}
               </li>

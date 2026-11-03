@@ -29,8 +29,16 @@ describe("posterContent", () => {
       lastSeen: "Visto por último: Sé, São Paulo – SP",
       when: "Desde 28/10 às 22:04",
       marks: "Lacinho rosa na cabeça.",
-      cta: "VIU ESTE PET? ESCANEIE",
+      cta: "VIU ESTE PET?",
+      action: "Escaneie o QR Code e toque em “Eu vi este pet”.",
+      displayCode: "ABC234",
     });
+  });
+
+  it("the found poster thanks instead of asking for sightings", () => {
+    const p = posterContent({ ...base, status: "FOUND" });
+    expect(p.cta).toBe("Obrigado a todos que ajudaram!");
+    expect(p.action).toBeNull();
   });
 
   it("never prints a phone unless the tutor authorized it", () => {

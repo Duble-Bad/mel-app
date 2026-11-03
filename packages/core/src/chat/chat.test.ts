@@ -17,9 +17,11 @@ describe("mentionsPayment", () => {
     "R$ 150 e devolvo",
     "quero a recompensa antes",
     "tem uma taxa de transporte",
+    "me passa o código que chegou no seu celular",
+    "vai chegar um SMS, me fala o número",
   ])("flags %s", (text) => expect(mentionsPayment(text)).toBe(true));
 
-  it.each(["Vi ela perto da padaria às 14h", "Ela está bem, tomou água", "Pode passar aqui amanhã?"])(
+  it.each(["Vi ela perto da padaria às 14h", "Ela está bem, tomou água", "Pode passar aqui amanhã?", "O código do alerta é ABC234"])(
     "does not flag %s",
     (text) => expect(mentionsPayment(text)).toBe(false),
   );

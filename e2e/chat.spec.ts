@@ -40,6 +40,14 @@ test("a visitor WITHOUT an account talks to the tutor in real time; no phone is 
   await visitor.getByRole("link", { name: /Conversar com o tutor/ }).click();
   await expect(visitor.getByRole("heading", { name: "Conversar com o tutor de Mel" })).toBeVisible();
   await expect(visitor.getByTestId("anti-scam")).toContainText("A MEL nunca pede pagamento");
+  // Passo a passo do reencontro: fechado (não empurra o formulário), abre num toque.
+  const tips = visitor.getByTestId("anti-scam").getByText("Antes de sair, peça uma foto ou vídeo de agora do animal.");
+  await expect(tips).toBeHidden();
+  await visitor.getByText("Como se proteger no reencontro").click();
+  await expect(tips).toBeVisible();
+  await expect(visitor.getByTestId("anti-scam")).toContainText("Ligue 190");
+  // Antes de a conversa existir não há botão Denunciar: a dica não aparece.
+  await expect(visitor.getByTestId("anti-scam")).not.toContainText("Toque em Denunciar");
 
   // Mensagem vazia explica o que falta.
   await visitor.getByRole("button", { name: "Enviar mensagem" }).click();
@@ -52,6 +60,8 @@ test("a visitor WITHOUT an account talks to the tutor in real time; no phone is 
   await expect(visitor.getByRole("heading", { name: "Tutor(a) de Mel" })).toBeVisible();
   await expect(messages(visitor)).toHaveCount(1);
   await expect(visitor.getByTestId("anti-scam")).toBeVisible();
+  await visitor.getByTestId("anti-scam").getByText("Como se proteger no reencontro").click();
+  await expect(visitor.getByTestId("anti-scam")).toContainText("Algo estranho na conversa? Toque em Denunciar.");
   await expect(visitor.getByText(/Você está sem cadastro/)).toBeVisible();
 
   // Voltar ao alerta e tocar de novo em "Conversar" retoma a mesma conversa.
@@ -81,7 +91,7 @@ test("a visitor WITHOUT an account talks to the tutor in real time; no phone is 
   await composer(visitor).fill("Estou com ela. Manda um PIX de R$ 200 que eu levo.");
   await visitor.getByRole("button", { name: "Enviar", exact: true }).click();
   await expect(messages(tutorPage)).toHaveCount(3, { timeout: 20_000 });
-  await expect(tutorPage.getByTestId("payment-warning")).toContainText("Nunca pague antes de ver o animal");
+  await expect(tutorPage.getByTestId("payment-warning")).toContainText("Não pague nada antes de estar com o animal");
   // Quem escreveu não vê o aviso sobre a própria mensagem.
   await expect(visitor.getByTestId("payment-warning")).toHaveCount(0);
 

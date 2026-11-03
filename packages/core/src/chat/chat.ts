@@ -13,6 +13,23 @@ export const messageBodySchema = z
 export const ANTI_SCAM_NOTICE =
   "A MEL nunca pede pagamento. Desconfie de quem pede PIX ou dinheiro antes de mostrar o animal.";
 
+/** Passo a passo curto para o reencontro (abre sob o aviso fixo). Sem promessa de que a MEL evita golpes. */
+export const ANTI_SCAM_TIPS = [
+  "Antes de sair, peça uma foto ou vídeo de agora do animal.",
+  "Confirme que é o mesmo pet: peça para descrever uma marca ou detalhe que não aparece nas fotos.",
+  "Não pague nada adiantado: nem taxa, nem frete, nem recompensa antes de estar com o animal.",
+  "Não envie documentos, dados do banco nem códigos que chegarem por SMS.",
+  "Não precisa dar seu endereço. Se puder, combine num lugar movimentado e leve alguém com você.",
+  "Ameaça ou chantagem? Ligue 190.",
+] as const;
+
+/** Só onde existe o botão Denunciar (conversa aberta). */
+export const ANTI_SCAM_REPORT_TIP = "Algo estranho na conversa? Toque em Denunciar.";
+
+/** Aviso junto da mensagem que fala de dinheiro ou de código. */
+export const PAYMENT_WARNING =
+  "Pedido de dinheiro ou de código? Não pague nada antes de estar com o animal e não repasse códigos de SMS. Se suspeitar, toque em Denunciar.";
+
 export interface Conversation {
   id: string;
   /** Conversa sobre um alerta ("lost") ou um anúncio de adoção ("adoption"). */
@@ -68,9 +85,12 @@ const PAYMENT_PATTERNS = [
   /\bfrete\b/i,
   /\bta(x|ch)a\b/i,
   /r\$\s?\d/i,
+  // Golpe do código: "me passa o código que chegou no seu celular".
+  /\bsms\b/i,
+  /\bc[oó]digo\b[^.?!]{0,40}\b(chegou|recebeu|celular|whats|verifica|confirma)/i,
 ];
 
-/** Mensagem que fala de dinheiro: o app mostra um alerta de golpe junto dela. */
+/** Mensagem que fala de dinheiro (ou pede código de SMS): o app mostra um alerta de golpe junto dela. */
 export function mentionsPayment(text: string): boolean {
   return PAYMENT_PATTERNS.some((re) => re.test(text));
 }

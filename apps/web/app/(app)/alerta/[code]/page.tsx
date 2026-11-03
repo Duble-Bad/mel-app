@@ -11,6 +11,7 @@ import {
   formatDateTimeBr,
   petSummary,
   SEX_LABELS,
+  SIGHTING_BUTTON_LABEL,
   SIZE_LABELS,
   timeAgo,
   WEARING_LABELS,
@@ -179,7 +180,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
             href={`/avistamento/${c.code}`}
             className="inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-lg bg-status-sighting-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card"
           >
-            <span aria-hidden="true">👁</span> Eu vi este pet
+            <span aria-hidden="true">👁</span> {SIGHTING_BUTTON_LABEL}
           </Link>
         )}
 
