@@ -1,13 +1,33 @@
 # MEL — Onde estamos (status e próximos passos)
 
-> Atualizado em 2026-11-03. Último commit de código verificado: `3f62ebf` (CI verde nos 3 checks obrigatórios).
+> Atualizado em 2026-11-03. **MVP em Feature Freeze desde o commit `46f3238`** (CI verde nos 3 checks obrigatórios).
 > Leia isto primeiro ao retomar o projeto. Para o lançamento, a lista completa está em [12-checklist-lancamento.md](12-checklist-lancamento.md).
+
+## 🧊 MVP Feature Freeze (2026-11-03)
+
+Autorizado pelo dono sobre o commit **`46f3238`**. Estado congelado:
+
+- **30 migrations**, todas aplicadas no `mel-dev` e validadas do zero (impressão digital versionada); **24–30 pendentes no `mel-prod`**.
+- **P0 encerrados:** Radar Privacy (24) e Sighting Privacy (29, completado na 30 com o rótulo público do avistamento).
+- **P1 encerrados:** tratamento de erros, ciclo de vida do alerta (25), moderação de adoção/parceiros (26), anti-abuso (27) e limpeza de fotos órfãs (28).
+- **Quick wins do benchmark:** cartaz acionável, antigolpe concreto, orientação de fotos do pet.
+- **Pacote pré-freeze:** push para o tutor (avistamento, mensagem, Radar), rótulo público do avistamento (30), headers de segurança, mapa sob demanda.
+- **CI verde** em `46f3238`: verificações rápidas; banco contra o `mel-dev` (23 arquivos ✅, 2 pulados) + E2E 70/70; reconstrução do zero (24 arquivos ✅, 1 pulado; impressão digital idêntica).
+- **`mel-prod` intocado** desde o primeiro deploy (23 migrations, 2026-10-29).
+
+**Regra a partir deste marco:** nenhuma funcionalidade nova entra no MVP. Só podem ser autorizadas, uma a uma e separadamente:
+
+1. correções de **segurança**;
+2. correções de **regressão**;
+3. **requisitos indispensáveis ao lançamento** ([12-checklist-lancamento.md](12-checklist-lancamento.md) — ex.: captcha do Auth no código, CSP completa).
+
+Ideias de produto (MEL ID + QR permanente, Ponto de Apoio, CTA de instalação do PWA, vitrine de reencontros, contadores públicos, Alerta Turbinado, monetização, plaquinha/NFC…) ficam para depois do lançamento.
 
 ## Resumo
 
-- **Produto (M1–M16): concluído** em desenvolvimento ([06-milestones.md](06-milestones.md)).
+- **Produto (M1–M16): concluído** em desenvolvimento ([06-milestones.md](06-milestones.md)); **Feature Freeze** em `46f3238` (acima).
 - **Produção:** schema aplicado e verificado no `mel-prod` (pós-deploy 100% ✅). Auth básico ajustado pelo dono no painel (abaixo). O app não está publicado.
-- **Etapa atual:** M17 — configuração de produção. Código de Auth pronto (conversão anônimo → conta por e-mail e por Google). **Google no `mel-prod` só depois de SMTP próprio + "Confirm email" ON** (risco de conta pré-criada, abaixo). **Próximo: comprar o domínio** — sem ele não há SMTP de produção ([11-email-producao.md](11-email-producao.md)). Preparar o client no Google Cloud já pode.
+- **Etapa atual:** Feature Freeze concluído; **próxima etapa: preparação de produção (M17), ainda não iniciada** — só com autorização do dono. M17 — configuração de produção. Código de Auth pronto (conversão anônimo → conta por e-mail e por Google). **Google no `mel-prod` só depois de SMTP próprio + "Confirm email" ON** (risco de conta pré-criada, abaixo). **Próximo: comprar o domínio** — sem ele não há SMTP de produção ([11-email-producao.md](11-email-producao.md)). Preparar o client no Google Cloud já pode.
 
 ## ⏸️ Produção pausada (decisão de 2026-10-30)
 
@@ -15,7 +35,9 @@ Todo o trabalho de produção está **pausado** até o produto estar funcionalme
 
 ## Último CI
 
-`3f62ebf` — P0 privacidade dos avistamentos (migration 29 + impressão digital): ✅ verde nos 3 checks. Reconstrução do zero com auditoria, impressão digital idêntica, paridade, drift e testes de banco; CI contra o `mel-dev`: banco 22 arquivos ✅ (2 pulados, como sempre: `email-confirmation` e `google-linking`), E2E 69/69 ✅, inclusive o avistamento com os textos novos e a legenda "localização aproximada". O commit anterior (`246fcf2`) ficou vermelho só pela impressão digital ainda não versionada e pelo limite antigo de sessões anônimas do `mel-dev` (30/h).
+`46f3238` — marco do Feature Freeze: ✅ verde nos 3 checks (banco contra o `mel-dev` 23 arquivos ✅ / 2 pulados, 185 testes; E2E 70/70; reconstrução do zero 24 arquivos ✅ / 1 pulado, impressão digital idêntica).
+
+Anterior: `3f62ebf` — P0 privacidade dos avistamentos (migration 29 + impressão digital): ✅ verde nos 3 checks. Reconstrução do zero com auditoria, impressão digital idêntica, paridade, drift e testes de banco; CI contra o `mel-dev`: banco 22 arquivos ✅ (2 pulados, como sempre: `email-confirmation` e `google-linking`), E2E 69/69 ✅, inclusive o avistamento com os textos novos e a legenda "localização aproximada". O commit anterior (`246fcf2`) ficou vermelho só pela impressão digital ainda não versionada e pelo limite antigo de sessões anônimas do `mel-dev` (30/h).
 
 ## Linha do tempo da produção
 
@@ -93,6 +115,32 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 - Limite de sessões anônimas do **mel-dev**: **300/h por IP** desde 2026-11-03 (era 30/h e o CI falhava com `over_request_rate_limit` quando testes locais e o CI rodavam na mesma hora). Só no `mel-dev`: no `mel-prod` continua baixo (30/h), junto com o captcha previsto para o lançamento.
 - Usuários anônimos órfãos (quem entra numa conta existente): limpeza futura.
 - **Revisão final — `pet-photos` com o UUID do dono no caminho** (`<uuid>/…`, bucket público; vale também para fotos de adoção e logo de parceiro). Quem ajuda não aparece mais ali (avistamentos/encontrados usam o `sighting-media` com nome neutro desde a migration 29), mas o UUID liga entre si o conteúdo público da mesma pessoa: alerta, anúncio de adoção e empresa parceira (que tem nome e endereço públicos). Impacto: baixo/médio — o conteúdo já é público e assumido pelo dono; o ganho do atacante é ligar perfis (ex.: tutor do alerta ↔ dono da empresa). Recomendação: mesma solução do `sighting-media` (nome neutro + posse pelo `owner_id`), num pacote próprio — mexe nas políticas do bucket, nos triggers de fotos de pet, adoção e parceiro e na exclusão de conta.
+
+## Pendências C/D (fora do MVP — auditoria final de 2026-11-03)
+
+Não entram no Feature Freeze. Cada uma só volta se virar correção de segurança/regressão ou requisito de lançamento, com autorização.
+
+**C — corrigir só se for muito barato:**
+- Pets públicos legíveis direto pelo REST com `owner_id` (e enumeração); logo de parceiro com o UUID do dono no caminho.
+- Radar lista alertas FOUND e encontrados REUNITED/CLOSED sem selo de status (`get_my_matches`).
+- HTML inválido no `LostWizard` (`<div>` dentro de `<p>`, botão dentro de `<dl>`) → aviso de hidratação.
+- Isolamento dos testes no `mel-dev`: a limpeza do E2E apaga todo anônimo criado durante a execução (inclusive de um CI simultâneo); CI sem `concurrency`.
+- Push: segredo do despachante comparado sem `timingSafeEqual`; endpoint de inscrição sem lista de hosts permitidos.
+- `metadataBase` / `og:url` / canonical.
+- Moderador suspenso continua moderador; moderador pode suspender um admin.
+- Atalho para `/admin` no perfil de quem modera.
+
+**D — pós-lançamento:**
+- Suspensão incompleta (não bloqueia editar o já publicado, denunciar, Guardião, pets e upload).
+- 404 com status 200 nas rotas dinâmicas (`notFound()` dentro de `<Suspense>`).
+- `robots.txt`, sitemap, OG da home.
+- `pet-photos` com nome neutro (correção completa, ~8–12 h, com migration) — item "Revisão final" acima.
+- Fotos substituídas de adoção e logo ficam órfãs no Storage; usuários anônimos antigos nunca expiram.
+- Skip link; alvos de toque secundários < 44 px (zoom do mapa, links de texto).
+- Fila de push: item preso em `SENDING` não volta; envio sequencial.
+- Prévia do cartaz gera 3 PNGs grandes; `getPublicLostCase` roda 2× por visita.
+
+**Configurações e código necessários ao lançamento:** [12-checklist-lancamento.md](12-checklist-lancamento.md) — captcha do Auth no código, CSP completa, migrations 24–30 + script das fotos antigas, domínio, `NEXT_PUBLIC_SITE_URL` no build, Site URL/redirects, SMTP + "Confirm email", Google OAuth, Turnstile/MapTiler/VAPID de produção, agendador do push, secrets, rate limits de produção, primeiro moderador, revisão jurídica e smoke test.
 
 ## Proibido em produção (sempre)
 
