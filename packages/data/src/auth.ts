@@ -95,7 +95,7 @@ export async function signUpWithPassword(
   // aceitar mais essa sessão, a conversão falha com erro claro — nunca cai em
   // silêncio num cadastro novo que deixaria as contribuições para trás.
   const { data: stored } = await client.auth.getSession();
-  if (stored.session?.user.is_anonymous) return convertAnonymousUser(client, { email, password, displayName }, emailRedirectTo);
+  if (stored.session?.user.is_anonymous) return convertAnonymousUser(client, { email, password, displayName }, emailRedirectTo, captchaToken);
 
   // O nome vai nos metadados: o trigger handle_new_user já o grava no perfil.
   // Captcha só no cadastro novo: a conversão (updateUser) usa a sessão anônima, que já passou por ele.
@@ -121,6 +121,7 @@ async function convertAnonymousUser(
   client: MelClient,
   { email, password, displayName }: Credentials & { displayName?: string },
   emailRedirectTo: string | undefined,
+  captchaToken: CaptchaToken | undefined,
 ): Promise<SignUpResult> {
   const { data, error } = await client.auth.updateUser(
     { email, password, ...(displayName ? { data: { full_name: displayName } } : {}) },
@@ -138,7 +139,16 @@ async function convertAnonymousUser(
   const { error: refreshError } = await client.auth.refreshSession();
   if (refreshError) {
     // A conta já existe com o mesmo id; entrar com a senha recém-criada também resolve.
-    const { error: signInError } = await client.auth.signInWithPassword({ email, password });
+    // Com o captcha do Auth ligado, esse login pede um token — só aqui, só quando a
+    // renovação falhou. Sem token (desafio indisponível) ou login recusado: nada de
+    // repetir o updateUser nem criar outra conta; a pessoa entra com e-mail e senha.
+    let token: string | undefined;
+    try {
+      token = await resolveCaptcha(captchaToken);
+    } catch {
+      throw new AuthError("conversion_session_refresh_failed");
+    }
+    const { error: signInError } = await client.auth.signInWithPassword({ email, password, options: captchaOption(token) });
     if (signInError) throw new AuthError("conversion_session_refresh_failed");
   }
 

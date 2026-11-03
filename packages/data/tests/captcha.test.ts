@@ -6,8 +6,10 @@
 // direto, sem o app.
 import { createClient } from "@supabase/supabase-js";
 import { afterAll, describe, expect, it, vi } from "vitest";
+import { foundInputSchema } from "@mel/core";
 import { ensureSession, requestPasswordReset, signInWithPassword, signUpWithPassword } from "../src/auth";
 import type { MelClient } from "../src/client";
+import { createFoundCase } from "../src/found";
 import { serviceClient } from "./helpers";
 
 const enabled = process.env.MEL_TEST_CAPTCHA === "1";
@@ -23,6 +25,39 @@ const device = (): MelClient =>
   createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+/** "Aparelho" em que a renovação da sessão falha (só ela): força o login de reserva da conversão. */
+const deviceFailingRefresh = (): MelClient =>
+  createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) =>
+        String(input instanceof Request ? input.url : input).includes("grant_type=refresh_token")
+          ? Promise.resolve(new Response(JSON.stringify({ code: 400, error_code: "refresh_token_not_found", msg: "Invalid Refresh Token" }), { status: 400, headers: { "Content-Type": "application/json" } }))
+          : fetch(input, init),
+    },
+  });
+
+/** Sessão anônima com uma contribuição (encontrado) que precisa continuar dela depois da conversão. */
+async function anonymousWithContribution(client: MelClient) {
+  const anon = await ensureSession(client, { captchaToken: TOKEN });
+  users.push(anon.id);
+  const found = await createFoundCase(
+    client,
+    anon.id,
+    foundInputSchema.parse({ species: "cat", size: "small", sex: "unknown", colorPrimary: "cinza", position: { lat: -15.79, lng: -47.88 }, areaLabel: "Brasília – DF", foundAt: new Date(Date.now() - 600_000).toISOString(), custody: "with_me" }),
+  );
+  return { anon, found };
+}
+
+/** A conta convertida: mesmo id, e-mail gravado, não é mais anônima, contribuição dela. */
+async function expectSameAccount(anonId: string, email: string, foundCode: string) {
+  const { data } = await serviceClient().auth.admin.getUserById(anonId);
+  expect(data.user?.email).toBe(email);
+  expect(data.user?.is_anonymous).toBe(false);
+  const { data: f } = await serviceClient().from("found_cases").select("reporter_id").eq("short_code", foundCode).single();
+  expect((f as { reporter_id: string }).reporter_id).toBe(anonId);
+}
 
 afterAll(async () => {
   if (!enabled) return;
@@ -96,5 +131,37 @@ describe.skipIf(!enabled)("captcha do Auth ligado (Turnstile)", () => {
     const { data, error } = await serviceClient().auth.admin.createUser({ email: newEmail("cap-admin"), password: PASSWORD, email_confirm: true });
     expect(error).toBeNull();
     users.push(data.user!.id);
+  });
+
+  describe("conversão anônimo → conta quando a renovação da sessão falha", () => {
+    it("renovação falha + token válido: o login de reserva usa o captcha; mesmo id, contribuição mantida, sem conta nova", async () => {
+      const client = deviceFailingRefresh();
+      const { anon, found } = await anonymousWithContribution(client);
+      const email = newEmail("cap-fallback-ok");
+      const ask = vi.fn(async () => TOKEN);
+      const r = await signUpWithPassword(client, { email, password: PASSWORD }, { captchaToken: ask });
+      expect(r).toMatchObject({ convertedFromAnonymous: true, hasSession: true });
+      expect(r.user.id).toBe(anon.id);
+      expect(ask).toHaveBeenCalledOnce();
+      await expectSameAccount(anon.id, email, found);
+    });
+
+    it.each([
+      ["token ausente", async () => ""],
+      ["Turnstile indisponível (sem token)", async () => {
+        throw new Error("desafio indisponível");
+      }],
+    ])("renovação falha + %s: nada de login silencioso; recuperação amigável e a conta fica", async (_why, ask) => {
+      const client = deviceFailingRefresh();
+      const { anon, found } = await anonymousWithContribution(client);
+      const email = newEmail("cap-fallback-no");
+      await expect(signUpWithPassword(client, { email, password: PASSWORD }, { captchaToken: ask })).rejects.toThrow(
+        "Sua conta foi criada e suas contribuições foram mantidas. Entre com seu e-mail e senha para continuar.",
+      );
+      await expectSameAccount(anon.id, email, found);
+      // Entrar depois, com um desafio novo, abre a MESMA conta (o e-mail é único: não há outra).
+      const back = await signInWithPassword(device(), { email, password: PASSWORD }, { captchaToken: TOKEN });
+      expect(back.id).toBe(anon.id);
+    });
   });
 });

@@ -85,7 +85,54 @@ describe("signUpWithPassword with an anonymous session (conversion)", () => {
   it("falls back to signing in when the token refresh fails", async () => {
     const { client, auth } = fakeClient({ refreshSession: vi.fn(async () => ({ data: { session: null }, error: authError(undefined, "AuthRetryableFetchError") })) });
     expect(await signUpWithPassword(client, creds)).toMatchObject({ convertedFromAnonymous: true });
-    expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: creds.email, password: creds.password });
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: creds.email, password: creds.password, options: {} });
+  });
+
+  // Captcha do Auth ligado: o login de reserva também precisa de token.
+  const refreshFails = () => vi.fn(async () => ({ data: { session: null }, error: authError("refresh_token_not_found") }));
+
+  it("session renewed normally: no challenge is asked for", async () => {
+    const ask = vi.fn(async () => "token");
+    const { client, auth } = fakeClient();
+    expect(await signUpWithPassword(client, creds, { captchaToken: ask })).toMatchObject({ convertedFromAnonymous: true, hasSession: true });
+    expect(ask).not.toHaveBeenCalled();
+    expect(auth.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("renewal fails: the fallback sign-in carries a fresh captcha token; same id, no second updateUser, no new account", async () => {
+    const ask = vi.fn(async () => "token-novo");
+    const { client, auth } = fakeClient({ refreshSession: refreshFails() });
+    const r = await signUpWithPassword(client, creds, { captchaToken: ask });
+    expect(r).toMatchObject({ user: { id: ANON_ID }, hasSession: true, convertedFromAnonymous: true });
+    expect(ask).toHaveBeenCalledOnce();
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: creds.email, password: creds.password, options: { captchaToken: "token-novo" } });
+    expect(auth.updateUser).toHaveBeenCalledOnce();
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["token ausente/inválido: o Auth recusa o login", { ask: vi.fn(async () => ""), signIn: vi.fn(async () => ({ data: { user: null }, error: authError("captcha_failed") })) }],
+    ["token inválido ou expirado", { ask: vi.fn(async () => "velho"), signIn: vi.fn(async () => ({ data: { user: null }, error: authError("captcha_failed") })) }],
+  ])("%s → recuperação amigável, conta preservada, nada repetido", async (_why, { ask, signIn }) => {
+    const { client, auth } = fakeClient({ refreshSession: refreshFails(), signInWithPassword: signIn });
+    await expect(signUpWithPassword(client, creds, { captchaToken: ask })).rejects.toThrow(
+      "Sua conta foi criada e suas contribuições foram mantidas. Entre com seu e-mail e senha para continuar.",
+    );
+    expect(auth.updateUser).toHaveBeenCalledOnce();
+    expect(auth.signUp).not.toHaveBeenCalled();
+  });
+
+  it("Turnstile indisponível (o desafio não entrega token): recuperação amigável, sem login silencioso", async () => {
+    const ask = vi.fn(async () => {
+      throw new Error("sem token");
+    });
+    const { client, auth } = fakeClient({ refreshSession: refreshFails() });
+    const err = await signUpWithPassword(client, creds, { captchaToken: ask }).catch((e) => e);
+    expect(err).toBeInstanceOf(AuthError);
+    expect(err.code).toBe("conversion_session_refresh_failed");
+    expect(auth.signInWithPassword).not.toHaveBeenCalled();
+    expect(auth.updateUser).toHaveBeenCalledOnce();
+    expect(auth.signUp).not.toHaveBeenCalled();
   });
 
   it("explains that the account exists when refresh and sign-in both fail", async () => {

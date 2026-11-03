@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { authReturnMessage, credentialsSchema, fieldErrors, needsOnboarding, safeNextPath, signUpSchema, userErrorMessage } from "@mel/core";
-import { getMyProfile, linkGoogleToAnonymous, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
+import { AuthError, getMyProfile, linkGoogleToAnonymous, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -113,6 +113,9 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
       // de volta para /entrar — a tela ficaria presa em "Entrando…".
       window.location.assign(destination);
     } catch (error) {
+      // Conta criada (mesmo id, contribuições mantidas), mas a sessão não abriu sozinha:
+      // vai para "Entrar" com e-mail e senha já preenchidos — um toque (e um novo desafio) resolve.
+      if (error instanceof AuthError && error.code === "conversion_session_refresh_failed") setMode("signin");
       setFormError(userErrorMessage(error, "Não deu certo agora. Tente novamente."));
       setPending(null);
     }
