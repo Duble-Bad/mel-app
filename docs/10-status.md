@@ -1,6 +1,6 @@
 # MEL — Onde estamos (status e próximos passos)
 
-> Atualizado em 2026-10-30. Último commit de código verificado: `e17a9c3` (CI verde nos 3 checks obrigatórios).
+> Atualizado em 2026-11-03. Último commit de código verificado: `3f62ebf` (CI verde nos 3 checks obrigatórios).
 > Leia isto primeiro ao retomar o projeto.
 
 ## Resumo
@@ -15,7 +15,7 @@ Todo o trabalho de produção está **pausado** até o produto estar funcionalme
 
 ## Último CI
 
-`e17a9c3` — e-mail do Auth (`/auth/confirmar`, templates pt-BR): ✅ verde nos 3 checks. "Banco do zero" roda também um segundo arranque com "Confirm email" ON + Mailpit: 4/4 (cadastro, e-mail duplicado neutro, recuperação, anônimo → conta).
+`3f62ebf` — P0 privacidade dos avistamentos (migration 29 + impressão digital): ✅ verde nos 3 checks. Reconstrução do zero com auditoria, impressão digital idêntica, paridade, drift e testes de banco; CI contra o `mel-dev`: banco 22 arquivos ✅ (2 pulados, como sempre: `email-confirmation` e `google-linking`), E2E 69/69 ✅, inclusive o avistamento com os textos novos e a legenda "localização aproximada". O commit anterior (`246fcf2`) ficou vermelho só pela impressão digital ainda não versionada e pelo limite antigo de sessões anônimas do `mel-dev` (30/h).
 
 ## Linha do tempo da produção
 
@@ -90,7 +90,7 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 - Limites anti-abuso (migration 27) estão calibrados para o MVP; revisar com os eventos `abuse_guard` (tabela `events`, 30 dias) e os avisos `limite atingido` nos logs das rotas.
 - SMTP próprio (recuperação de senha, depois "Confirm email" — o código já mostra "confira seu e-mail").
 - Nome do perfil de quem vincula Google a uma sessão anônima fica vazio até o onboarding (o onboarding pede).
-- Limite de sessões anônimas do **mel-dev** (30/h por IP): a suíte do CI está perto; se o CI falhar com `over_request_rate_limit`, subir o limite no mel-dev.
+- Limite de sessões anônimas do **mel-dev**: **300/h por IP** desde 2026-11-03 (era 30/h e o CI falhava com `over_request_rate_limit` quando testes locais e o CI rodavam na mesma hora). Só no `mel-dev`: no `mel-prod` continua baixo (30/h), junto com o captcha previsto para o lançamento.
 - Usuários anônimos órfãos (quem entra numa conta existente): limpeza futura.
 - **Revisão final — `pet-photos` com o UUID do dono no caminho** (`<uuid>/…`, bucket público; vale também para fotos de adoção e logo de parceiro). Quem ajuda não aparece mais ali (avistamentos/encontrados usam o `sighting-media` com nome neutro desde a migration 29), mas o UUID liga entre si o conteúdo público da mesma pessoa: alerta, anúncio de adoção e empresa parceira (que tem nome e endereço públicos). Impacto: baixo/médio — o conteúdo já é público e assumido pelo dono; o ganho do atacante é ligar perfis (ex.: tutor do alerta ↔ dono da empresa). Recomendação: mesma solução do `sighting-media` (nome neutro + posse pelo `owner_id`), num pacote próprio — mexe nas políticas do bucket, nos triggers de fotos de pet, adoção e parceiro e na exclusão de conta.
 
