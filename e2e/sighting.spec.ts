@@ -28,7 +28,9 @@ test("a visitor WITHOUT an account reports a sighting; the tutor sees it live, o
   created.push(tutor.email);
   const alertPath = `/alerta/${tutor.code}`;
 
-  // Tutor está com o alerta aberto.
+  // Tutor está com o alerta aberto. Notificações "ainda não decididas", como num celular
+  // novo: o Chromium sem interface sempre responde "denied" (e aí o convite não aparece).
+  await tutorPage.addInitScript(() => Object.defineProperty(Notification, "permission", { get: () => "default" }));
   await signInAs(tutorPage, tutor.email, alertPath);
   await expect(tutorPage.getByText("Ainda não há avistamentos.")).toBeVisible();
   await expect(tutorPage.getByRole("link", { name: /Eu vi este pet/i })).toHaveCount(0); // não para o próprio tutor
