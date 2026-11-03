@@ -1,7 +1,7 @@
 # MEL — Onde estamos (status e próximos passos)
 
 > Atualizado em 2026-11-03. Último commit de código verificado: `3f62ebf` (CI verde nos 3 checks obrigatórios).
-> Leia isto primeiro ao retomar o projeto.
+> Leia isto primeiro ao retomar o projeto. Para o lançamento, a lista completa está em [12-checklist-lancamento.md](12-checklist-lancamento.md).
 
 ## Resumo
 
@@ -74,12 +74,12 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 3. **URLs:** Site URL e Redirect URLs (`/auth/callback`) do domínio final.
 4. **SMTP** próprio (Resend; e-mail da MEL, nunca de terceiros/empregador), templates pt-BR do repositório e então **"Confirm email" ON** — passo a passo em [11-email-producao.md](11-email-producao.md). Sem SMTP, a recuperação de senha não chega a usuários reais — **bloqueia o lançamento público**.
 5. **Google OAuth:** passo a passo acima (depois do item 4).
-6. **MapTiler:** chave de produção restrita ao domínio.
-7. **Web Push:** gerar par VAPID novo para produção (nunca reutilizar o do dev); agendador de push (`PUSH_DISPATCH_SECRET`).
+6. **MapTiler:** chave de produção restrita ao domínio. **Turnstile:** site key e secret de produção restritas ao domínio (as do dev são as chaves de teste, que sempre aprovam).
+7. **Web Push:** gerar par VAPID novo para produção (nunca reutilizar o do dev); agendador de push (`PUSH_DISPATCH_SECRET`), que também **apaga as fotos órfãs** do `sighting-media` (sem ele, nada é apagado).
 8. **Secrets do servidor** na hospedagem (`SUPABASE_SECRET_KEY` etc.), nunca no repositório.
-9. **Domínio** e deploy do app.
-10. **Primeiro moderador:** `npm run admin:role -- <email> moderator --confirm-target=<ref>` (único script administrativo permitido em produção, com o ref digitado).
-11. Smoke test manual como usuário real (sem seed, sem E2E contra produção).
+9. **Domínio** e deploy do app, com `NEXT_PUBLIC_SITE_URL=https://<domínio>` **no build** (sem ela, o QR do cartaz e a prévia do link podem apontar para `*.vercel.app`).
+10. **Primeiro moderador:** `npm run admin:role -- <email> moderator --confirm-target=<ref>`. Scripts administrativos permitidos em produção, sempre com o ref digitado: este e o `sighting-media-neutral-names.mjs` (passo do [deploy de schema](08-deploy-producao.md), depois da migration 29).
+11. Smoke test manual como usuário real (sem seed, sem E2E contra produção), incluindo a **prévia do alerta no WhatsApp** (imagem aparece, tamanho e tempo a frio), push num celular real e e-mail de recuperação.
 
 ## Pendências conhecidas (antes do lançamento público)
 
@@ -96,7 +96,7 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 ## Proibido em produção (sempre)
 
-`supabase link` · `supabase config push` · `db reset` · `migration repair` · seed · E2E/testes destrutivos · editar as 23 migrations · colocar o `mel-prod` em `MEL_SAFE_TARGET_REFS` · SQL manual/alterações de schema pelo painel · enfraquecer travas. Segredos nunca em arquivo versionado, chat ou log.
+`supabase link` · `supabase config push` · `db reset` · `migration repair` · seed · E2E/testes destrutivos · editar migrations já aplicadas · colocar o `mel-prod` em `MEL_SAFE_TARGET_REFS` · SQL manual/alterações de schema pelo painel · enfraquecer travas. Segredos nunca em arquivo versionado, chat ou log.
 
 ## Como retomar
 
@@ -106,4 +106,4 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 ## Documentos
 
-[Migrations](09-migrations.md) · [Deploy de produção](08-deploy-producao.md) · [E-mail de produção](11-email-producao.md) · [Milestones](06-milestones.md) · [Decisões](decisoes.md) · [Banco (planejamento)](03-database.md)
+[Checklist de lançamento](12-checklist-lancamento.md) · [Migrations](09-migrations.md) · [Deploy de produção](08-deploy-producao.md) · [E-mail de produção](11-email-producao.md) · [Milestones](06-milestones.md) · [Decisões](decisoes.md) · [Banco (planejamento)](03-database.md)

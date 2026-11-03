@@ -1,6 +1,6 @@
 # MEL — Deploy de schema em produção (`mel-prod`)
 
-> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29.
+> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–29** (24 e 29 são P0 de privacidade), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
 > Só rode com autorização explícita do dono do projeto.
 
 Este procedimento aplica **somente as migrations versionadas** (`supabase/migrations`) no `mel-prod`.
@@ -68,7 +68,7 @@ O `deploy-schema.mjs`, em ordem:
 - `MEL_PROD_DB_URL` é um banco Supabase (direto `db.<ref>.supabase.co` ou pooler `postgres.<ref>@…pooler.supabase.com:5432`) **do mesmo ref**.
 - Certificado SSL presente (conexão com `rejectUnauthorized: true`).
 - Fora de CI; ref de produção **fora** de `MEL_SAFE_TARGET_REFS`, do `supabase link` e do `.env.local`; `NEXT_PUBLIC_SUPABASE_URL` do terminal não aponta para produção.
-- Exatamente 23 migrations, idênticas ao manifesto `supabase/migrations.manifest.json` (nome, ordem e hash).
+- Exatamente as migrations do repositório (hoje **29**, `EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`), idênticas ao manifesto `supabase/migrations.manifest.json` (nome, ordem e hash).
 - Nenhum dado de seed/demo nas migrations (INSERT só em `storage.buckets` e `public.plans`; nada de `exemplo.com`/demo/seed/COPY/TRUNCATE).
 - Impressão digital de referência versionada (`supabase/schema-fingerprint.json`).
 - Branch `main`, working tree limpa, HEAD = `origin/main`.
@@ -80,20 +80,20 @@ O `deploy-schema.mjs`, em ordem:
 
 Transação **READ ONLY**, só catálogo — não cria usuários nem dados.
 
-- 23 migrations registradas, na ordem dos arquivos.
+- 29 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
 - 24 tabelas; RLS habilitado nas 24; primary key em todas.
 - 60 políticas em `public` + 9 em `storage.objects` (nomes idênticos às migrations).
-- 40 funções `public` + 46 `private` (nomes idênticos); SECURITY DEFINER sempre com `search_path`.
-- 24 triggers, incluindo `on_auth_user_created` e `on_auth_user_converted` em `auth.users`.
-- 16 enums; 45 índices declarados.
+- 41 funções `public` + 53 `private` (nomes idênticos); SECURITY DEFINER sempre com `search_path`.
+- 27 triggers, incluindo `on_auth_user_created` e `on_auth_user_converted` em `auth.users`.
+- 16 enums; 47 índices declarados.
 - Sem grant de escrita para `anon`; `anon` sem acesso ao schema `private`.
-- 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB; públicos; webp/jpeg/png).
+- 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 2 MB desde a migration 27; públicos; webp/jpeg/png).
 - Realtime: `public.messages` e `public.notifications`.
 - **Drift:** impressão digital (definição completa de colunas, constraints, índices, funções, grants, triggers, políticas, RLS, enums, buckets, publication) idêntica à do banco reconstruído do zero.
 
 ### Objetos de plataforma (não são migrations da MEL)
 
-O `mel-prod` tem objetos que **não** fazem parte das 23 migrations. Eles foram auditados (READ ONLY, 2026-10-29) e são aceitos **só** pela definição exata, fixada em `scripts/prod/postdeploy-check.mjs`.
+O `mel-prod` tem objetos que **não** fazem parte das migrations. Eles foram auditados (READ ONLY, 2026-10-29) e são aceitos **só** pela definição exata, fixada em `scripts/prod/postdeploy-check.mjs`.
 
 **`public.rls_auto_enable()` + event trigger `ensure_rls`**
 
@@ -118,6 +118,29 @@ A chamada como `anon` roda dentro da transação READ ONLY, num savepoint sempre
 
 Pode ser rodado sozinho, a qualquer momento:
 `node scripts/prod/postdeploy-check.mjs --production --expect-ref=<ref do mel-prod>` (mesmas variáveis).
+
+## Depois do pós-deploy: fotos antigas do sighting-media (migration 29)
+
+Só depois do pós-deploy aprovado com a migration 29 aplicada. Antes dela, o caminho das fotos de avistamento e de encontrado começava pelo UUID de quem enviou (`<sessão>/<uuid>.ext`), um pseudônimo público. O script renomeia essas fotos para o nome neutro (`<uuid>.ext`) e atualiza o avistamento/encontrado que as usa; referência a arquivo que já não existe é limpa. Idempotente.
+
+É um script administrativo (como o `admin:role`): altera dados existentes, então só com autorização do dono. Num **PowerShell novo**, na raiz do repositório. As variáveis do terminal valem mais que o `.env.local` (que aponta para o dev):
+
+```powershell
+$env:NEXT_PUBLIC_SUPABASE_URL = 'https://<ref do mel-prod>.supabase.co'
+$s = Read-Host 'Secret key do mel-prod' -AsSecureString
+$env:SUPABASE_SECRET_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR([Runtime.InteropServices.Marshal]::SecureStringToBSTR($s)); Remove-Variable s
+
+# 1) Só lista (não altera nada). Se der 0 e 0, pare aqui.
+node scripts/sighting-media-neutral-names.mjs --confirm-target=<ref do mel-prod>
+# 2) Renomeia
+node scripts/sighting-media-neutral-names.mjs --apply --confirm-target=<ref do mel-prod>
+# 3) Confere: as duas contagens devem ser 0
+node scripts/sighting-media-neutral-names.mjs --confirm-target=<ref do mel-prod>
+
+Remove-Item Env:NEXT_PUBLIC_SUPABASE_URL, Env:SUPABASE_SECRET_KEY
+```
+
+Sem `--confirm-target` com o ref completo, a trava recusa. No `mel-dev` já rodou em 2026-11-03 (11 fotos renomeadas, 71 referências a arquivos inexistentes limpas).
 
 ## Proibido em produção
 

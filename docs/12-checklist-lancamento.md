@@ -1,0 +1,66 @@
+# MEL — Checklist de lançamento
+
+> Consolidada na auditoria final do MVP (2026-11-03). Tudo aqui depende do lançamento: **não** é bug do DEV.
+> Nada desta lista foi executado. Cada item de produção precisa de autorização do dono; segredos só ele manuseia.
+> Detalhes de cada item: [10-status.md](10-status.md) (M17), [08-deploy-producao.md](08-deploy-producao.md) (schema), [11-email-producao.md](11-email-producao.md) (SMTP).
+
+## 1. Código que precisa existir antes de ligar a configuração
+
+| # | Item | Por quê |
+|---|---|---|
+| 1.1 | **Captcha do Supabase Auth no código**: `captchaToken` em `ensureSession` (sessão anônima), cadastro, login e recuperação de senha; widget Turnstile também no "Denunciar" (`ReportButton`) | Ligar o captcha no painel sem isso quebra avistamento, chat, encontrado, denúncia e login. Sem captcha, sessões anônimas descartáveis ficam contidas só pelo limite por IP e pelos tetos da migration 27 |
+
+As correções escolhidas na auditoria final para antes do Feature Freeze ficam fora desta lista (são produto, não configuração).
+
+## 2. Schema (`mel-prod`) — procedimento de [08-deploy-producao.md](08-deploy-producao.md)
+
+| # | Item | Observação |
+|---|---|---|
+| 2.1 | Checks verdes no commit que vai para produção | Pre-flight confere pela API do GitHub |
+| 2.2 | Aplicar as migrations **24–29** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade. Pre-flight e pós-deploy já esperam 29 |
+| 2.3 | Pós-deploy aprovado (catálogo + impressão digital) | Reprovado → não seguir |
+| 2.4 | `scripts/sighting-media-neutral-names.mjs` (listar → `--apply` → conferir 0/0) | Passo a passo no `08`. Se listar 0 e 0, nada a fazer |
+
+## 3. Hospedagem do app (Vercel)
+
+| # | Item | Observação |
+|---|---|---|
+| 3.1 | Domínio próprio + deploy do app | Pré-requisito do SMTP, do Google e das chaves restritas por domínio |
+| 3.2 | `NEXT_PUBLIC_SITE_URL=https://<domínio>` **no build** (no `.env.example` ela está comentada, porque no dev não é necessária) | Sem ela, o QR do cartaz e a prévia do link (og:image) podem apontar para `*.vercel.app` |
+| 3.3 | Secrets do servidor: `SUPABASE_SECRET_KEY`, `PUSH_DISPATCH_SECRET`, `TURNSTILE_SECRET_KEY`, `VAPID_PRIVATE_KEY` | Nunca no repositório |
+| 3.4 | Variáveis públicas: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_MAPTILER_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_AUTH_GOOGLE` | Públicas entram no build: mudar exige novo deploy |
+| 3.5 | **Agendador** chamando `POST /api/push/dispatch` com `Bearer $PUSH_DISPATCH_SECRET` | Reenvia push que ficou para trás e **apaga as fotos órfãs** do `sighting-media`. Sem ele, nada é apagado |
+
+## 4. Supabase `mel-prod` (painel — nunca `supabase config push`)
+
+| # | Item | Observação |
+|---|---|---|
+| 4.1 | API: schemas expostos sem `private` | |
+| 4.2 | Site URL + Redirect URLs (`/auth/callback**`) do domínio | Os templates de e-mail usam `{{ .SiteURL }}` |
+| 4.3 | **SMTP próprio** (Resend, e-mail da MEL) + templates pt-BR + depois **"Confirm email" ON** | Sem SMTP, a recuperação de senha não chega a ninguém. Passo a passo no `11` |
+| 4.4 | Google OAuth (só depois do 4.3) + manual linking + `NEXT_PUBLIC_AUTH_GOOGLE=on` | Tela de consentimento publicada com links de `/privacidade` e `/termos` |
+| 4.5 | Rate limits de Auth: anônimos **30/h por IP** (o `mel-dev` está em 300/h só para testes), logins nos padrões | |
+| 4.6 | Captcha do Auth (Turnstile) | **Só depois do 1.1** |
+
+## 5. Chaves de terceiros
+
+| # | Item | Observação |
+|---|---|---|
+| 5.1 | Turnstile de produção (site key + secret) restrito ao domínio | As do dev são as chaves de **teste** (sempre aprovam) |
+| 5.2 | MapTiler de produção restrita ao domínio | Acompanhar a cota: a página do alerta carrega o mapa |
+| 5.3 | VAPID novo para produção | Nunca reutilizar o do dev |
+
+## 6. Operação e validação
+
+| # | Item | Observação |
+|---|---|---|
+| 6.1 | Primeiro moderador: `npm run admin:role -- <email> moderator --confirm-target=<ref>` | |
+| 6.2 | Revisão jurídica de termos e privacidade | Incluir o que fica depois da exclusão de conta (avistamentos anônimos, com local e texto) |
+| 6.3 | Smoke test manual como usuário real | Alerta → cartaz → compartilhar no WhatsApp (**conferir a prévia**: imagem aparece, tamanho e tempo a frio); avistamento anônimo; chat; push num celular real (no iPhone, com a MEL na Tela de Início); e-mail de recuperação de senha |
+| 6.4 | Concluir o M17 em [10-status.md](10-status.md) | |
+
+## Fora do caminho crítico (pós-lançamento)
+
+- `pet-photos` com nome neutro (UUID do dono no caminho público) — ver pendência em [10-status.md](10-status.md).
+- Limpeza de usuários anônimos antigos/órfãos.
+- Isolamento dos testes no `mel-dev` (a limpeza do E2E apaga todo anônimo criado durante a execução, inclusive de um CI simultâneo; marcar os anônimos de teste e pôr `concurrency` no CI).
