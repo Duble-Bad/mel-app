@@ -1,7 +1,7 @@
 # MEL — Migrations do banco
 
 Fonte única do schema: `supabase/migrations/*.sql`, aplicadas em ordem de nome (timestamp).
-Estado: **28 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev` e no `mel-prod` (2026-10-29); a 24ª (Radar v2), a 25ª (ciclo de vida do alerta) a 26ª (moderação de adoção e parceiros) a 27ª (anti-abuso) e a 28ª (limpeza de fotos órfãs) só no `mel-dev` — **pendentes para produção** (fase de lançamento).
+Estado: **29 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev` e no `mel-prod` (2026-10-29); a 24ª (Radar v2), a 25ª (ciclo de vida do alerta) a 26ª (moderação de adoção e parceiros) a 27ª (anti-abuso), a 28ª (limpeza de fotos órfãs) e a 29ª (privacidade dos avistamentos) só no `mel-dev` — **pendentes para produção** (fase de lançamento).
 
 ## Regras
 
@@ -43,8 +43,9 @@ Estado: **28 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev
 | 26 | `20261030160000_adoption_partner_moderation.sql` | P1 auditoria | Moderação de adoção e parceiros: mudar conteúdo de anúncio aprovado (mesmo junto com o status) ou qualquer campo público de parceiro aprovado volta para revisão; `review_note` (e status/plano do parceiro) só pela moderação; denúncia de anúncio e de parceiro; "ocultar" remove o anúncio (`REMOVED`) ou suspende o parceiro (`SUSPENDED`). **Pendente no `mel-prod`.** |
 | 27 | `20261030180000_global_abuse_limits.sql` | P1 auditoria | Anti-abuso com sessões anônimas descartáveis: sino agrupado (avistamentos e Radar), teto de conversas anônimas por alerta, mensagem repetida, push de Guardião vindo de anônimo, denúncias anônimas agrupadas, cota de fotos em `sighting-media`, eventos `abuse_guard`. **Pendente no `mel-prod`.** |
 | 28 | `20261030190000_orphan_media_cleanup.sql` | P1 auditoria | `list_orphan_sighting_media` (só chave secreta): fotos do `sighting-media` sem avistamento/encontrado há mais de 24 h; o agendador do push apaga pelo Storage API. **Pendente no `mel-prod`.** |
+| 29 | `20261103120000_sighting_privacy.sql` | P0 auditoria | Privacidade dos avistamentos: `sightings.public_lat/public_lng` (grade de 250 m, derivado por trigger, sem grant de escrita, backfill); linha do tempo devolve o ponto exato só ao tutor, à moderação e ao autor; fotos do `sighting-media` com nome neutro (`<uuid>.ext`) e posse pelo `owner_id` do Storage (política, cota e triggers de avistamento/encontrado); caminho antigo (`<sessão>/…`) não sai para o público. **Pendente no `mel-prod`** — no lançamento, rodar `scripts/sighting-media-neutral-names.mjs` (com `--confirm-target`) se houver fotos antigas. |
 
-Inventário resultante (banco reconstruído = `mel-prod`): 24 tabelas, 291 colunas, 43 FKs, 16 enums, 40 funções `public` + 46 `private`, 24 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 60 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
+Inventário resultante (banco reconstruído = `mel-prod`): 24 tabelas, 291 colunas, 43 FKs, 16 enums, 41 funções `public` + 53 `private`, 27 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 60 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
 
 ## Garantias versionadas
 
@@ -60,7 +61,7 @@ Inventário resultante (banco reconstruído = `mel-prod`): 24 tabelas, 291 colun
 1. `npx supabase migration new <nome>` e escreva o SQL (com RLS, grants e `search_path`).
 2. `npm run db:push` (só aplica no `mel-dev`; a trava recusa qualquer outro alvo) e `npm run db:types`.
 3. Testes: `npm run check`, `npm run test:db`, E2E se tocar em fluxo.
-4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 28).
+4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 29).
 5. Push na `main`. O workflow de reconstrução gera `schema-fingerprint.generated.json`; versione-o como `supabase/schema-fingerprint.json` (ou rode `node scripts/schema-audit/audit.mjs --write-fingerprint` contra um Supabase local).
 6. Produção: só com autorização explícita, pelo procedimento de [08-deploy-producao.md](08-deploy-producao.md).
 

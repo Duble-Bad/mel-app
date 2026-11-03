@@ -99,7 +99,7 @@ business_category  : pet_shop | vet | clinic | hospital | grooming | hotel | day
 | pet_private_details | **somente dono** | dono | dono |
 | lost_cases | público via `public_lost_cases_v` se status ∈ (ACTIVE, FOUND); tabela base: dono + admin | dono do pet | dono (status), admin |
 | found_cases | público via view (sem `point`, sem `verification_hint`); base: reporter + admin | autenticado (inclui anônimo) + rate limit | reporter, admin |
-| sightings | público se `status = VISIBLE` e caso público | autenticado (inclui anônimo) + rate limit | reporter; dono do caso pode ocultar |
+| sightings | público se `status = VISIBLE` e caso público — só o ponto aproximado (`public_lat/public_lng`, 250 m); exato só para tutor, moderação e autor | autenticado (inclui anônimo) + rate limit | reporter; dono do caso pode ocultar |
 | case_matches | dono do lost_case e reporter do found_case | só service role | partes (status VIEWED/DISMISSED) |
 | conversations / messages | só membros (e não bloqueados) | membro | remetente oculta a própria; admin |
 | notifications | próprio | service role | próprio (`read_at`) |

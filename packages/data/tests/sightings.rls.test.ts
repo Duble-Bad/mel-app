@@ -79,13 +79,16 @@ describe("sending a sighting without an account", () => {
     expect(error).not.toBeNull();
   });
 
-  it("rejects drafts, the future and photos from someone else's folder", async () => {
+  it("rejects drafts, the future and photos that are not the sender's own upload", async () => {
     const visitor = await anonymousReporter();
     await expect(createSighting(visitor.client, sighting({ code: draftCode }))).rejects.toThrow("não está mais ativo");
     await expect(
       createSighting(visitor.client, sighting({ seenAt: new Date(Date.now() + 3600_000).toISOString() })),
     ).rejects.toThrow("futuro");
     await expect(createSighting(visitor.client, sighting({ photoPath: `${tutor.id}/x.webp` }))).rejects.toThrow(
+      "Foto inválida",
+    );
+    await expect(createSighting(visitor.client, sighting({ photoPath: `${crypto.randomUUID()}.webp` }))).rejects.toThrow(
       "Foto inválida",
     );
   });

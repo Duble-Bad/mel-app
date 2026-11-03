@@ -53,6 +53,21 @@ export async function deleteAccount(service: MelClient, userId: string): Promise
       if (error) fail(error);
     }
   }
+  // Fotos de avistamento/encontrado com nome neutro não ficam na pasta da pessoa:
+  // saem pelos envios dela. As que nunca foram usadas viram órfãs e a limpeza apaga.
+  const sent = await Promise.all(
+    (["sightings", "found_cases"] as const).map((table) =>
+      service.from(table).select("photo_path").eq("reporter_id", userId).not("photo_path", "is", null),
+    ),
+  );
+  const photos = sent.flatMap(({ data, error }) => {
+    if (error) fail(error);
+    return (data ?? []).map((r) => r.photo_path as string).filter((p) => !p.includes("/"));
+  });
+  for (let i = 0; i < photos.length; i += 100) {
+    const { error } = await service.storage.from("sighting-media").remove(photos.slice(i, i + 100));
+    if (error) fail(error);
+  }
   const { error: e1 } = await service.from("sightings").update({ photo_path: null } as never).eq("reporter_id", userId);
   if (e1) fail(e1);
   const { error } = await service.auth.admin.deleteUser(userId);

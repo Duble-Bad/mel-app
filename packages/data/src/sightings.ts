@@ -17,10 +17,14 @@ export async function purgeOrphanSightingMedia(service: MelClient, limit = 100):
   return paths.length;
 }
 
-/** Envia a foto do avistamento (já reduzida, sem EXIF) na pasta da sessão. */
-export async function uploadSightingPhoto(client: MelClient, userId: string, image: Blob): Promise<string> {
+/**
+ * Envia a foto do avistamento/encontrado (já reduzida, sem EXIF). Nome neutro,
+ * na raiz do bucket: a URL pública não carrega nada de quem enviou (a posse fica
+ * no owner_id do Storage).
+ */
+export async function uploadSightingPhoto(client: MelClient, image: Blob): Promise<string> {
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const path = `${crypto.randomUUID()}.${ext}`;
   const { error } = await client.storage.from(BUCKET).upload(path, image, {
     contentType: image.type,
     cacheControl: "31536000",
@@ -57,6 +61,7 @@ interface TimelineJson {
   seen_at: string;
   lat: number;
   lng: number;
+  point_is_exact: boolean;
   place_label: string | null;
   direction: Direction;
   states: SightingState[];
@@ -67,7 +72,11 @@ interface TimelineJson {
   can_reply: boolean | null;
 }
 
-/** Avistamentos de um alerta, em ordem cronológica (ocultos só para o tutor). */
+/**
+ * Avistamentos de um alerta, em ordem cronológica (ocultos só para o tutor).
+ * Ponto exato só para o tutor, o autor e a moderação; os demais recebem o
+ * aproximado (o banco decide).
+ */
 export async function getTimeline(client: MelClient, code: string): Promise<TimelineSighting[]> {
   const { data, error } = await client.rpc("get_lost_case_timeline", { p_code: code });
   if (error) throw new DataError(error.message, error.code);
@@ -75,6 +84,7 @@ export async function getTimeline(client: MelClient, code: string): Promise<Time
     id: s.id,
     seenAt: s.seen_at,
     position: { lat: s.lat, lng: s.lng },
+    pointIsExact: s.point_is_exact === true,
     placeLabel: s.place_label,
     direction: s.direction,
     states: s.states,

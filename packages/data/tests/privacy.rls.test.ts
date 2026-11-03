@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { TERMS_VERSION } from "@mel/core";
+import { foundInputSchema, TERMS_VERSION } from "@mel/core";
+import { createFoundCase } from "../src/found";
 import { acceptTerms, deleteAccount, exportMyData, listMyConsents } from "../src/privacy";
+import { uploadSightingPhoto } from "../src/sightings";
 import { anonClient, createTestUser, serviceClient } from "./helpers";
 
 type U = Awaited<ReturnType<typeof createTestUser>>;
@@ -37,9 +39,17 @@ describe("privacy (LGPD)", () => {
     await victim.client.storage.from("avatars").upload(`${victim.id}/a.png`, png);
     await victim.client.storage.from("pet-photos").upload(`${victim.id}/parceiros/logo.png`, png);
     await acceptTerms(victim.client, victim.id);
+    // Foto de encontrado com nome neutro (fora da pasta da pessoa): sai pelo envio.
+    const photo = await uploadSightingPhoto(victim.client, new Blob([new Uint8Array([137, 80, 78, 71])], { type: "image/png" }));
+    await createFoundCase(victim.client, victim.id, foundInputSchema.parse({
+      species: "cat", size: "small", sex: "unknown", colorPrimary: "cinza", position: { lat: -8.0476, lng: -34.877 },
+      areaLabel: "Recife – PE", foundAt: new Date(Date.now() - 600_000).toISOString(), custody: "with_me", photoPath: photo,
+    }));
 
     const service = serviceClient();
     await deleteAccount(service, victim.id);
+    const { data: media } = await service.storage.from("sighting-media").list("", { search: photo });
+    expect(media ?? []).toHaveLength(0);
 
     const { data: files } = await service.storage.from("pet-photos").list(`${victim.id}/parceiros`);
     expect(files ?? []).toHaveLength(0);

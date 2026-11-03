@@ -112,6 +112,10 @@
     {
       "file": "20261030190000_orphan_media_cleanup.sql",
       "sha256": "56e38bc4adf890690e35fe5f93f62d106d71544ea5368cf0365bd6e7304c40ba"
+    },
+    {
+      "file": "20261103120000_sighting_privacy.sql",
+      "sha256": "6abccbfc418b8731314f86c2a14c14675a87e7f807d6bf4a72a515dcb2e8f8ce"
     }
   ]
 }

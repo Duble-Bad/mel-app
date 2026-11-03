@@ -114,12 +114,12 @@ export function FoundWizard({ sawOnly }: { sawOnly: boolean }) {
     const supabase = getBrowserClient();
     try {
       setBusy("Publicando…");
-      const user = await ensureSession(supabase);
+      await ensureSession(supabase);
       let photoPath: string | null = null;
       if (photo) {
         setBusy("Enviando foto…");
         try {
-          photoPath = await uploadSightingPhoto(supabase, user.id, await prepareImage(photo));
+          photoPath = await uploadSightingPhoto(supabase, await prepareImage(photo));
         } catch (err) {
           console.error("[FoundWizard] foto falhou", err);
           setError("A foto não foi enviada, mas vamos publicar mesmo assim.");

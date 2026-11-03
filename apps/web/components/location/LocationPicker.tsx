@@ -24,6 +24,8 @@ interface LocationPickerProps {
   defaultCenter?: LatLng;
   /** Aviso de privacidade exibido junto ao mapa. */
   privacyNote?: ReactNode;
+  /** Quando usar o GPS (exibido logo abaixo do botão). */
+  gpsHint?: ReactNode;
 }
 
 // Centro de São Paulo: ponto de partida genérico quando nada mais é conhecido.
@@ -33,7 +35,7 @@ const FALLBACK_CENTER: LatLng = { lat: -23.5505, lng: -46.6333 };
  * "Onde foi?" — GPS em um toque, busca de endereço, pino arrastável e toque no
  * mapa. Funciona mesmo se o mapa não carregar (GPS e busca continuam valendo).
  */
-export function LocationPicker({ value, onChange, defaultCenter, privacyNote }: LocationPickerProps) {
+export function LocationPicker({ value, onChange, defaultCenter, privacyNote, gpsHint }: LocationPickerProps) {
   const searchId = useId();
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapHandle | null>(null);
@@ -180,6 +182,7 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote }: 
       <Button variant="secondary" onClick={useGps} loading={gpsPending} loadingText="Procurando você…">
         <span aria-hidden="true">📍</span> Usar minha localização atual
       </Button>
+      {gpsHint && <p className="-mt-1 text-sm text-text-secondary">{gpsHint}</p>}
 
       <div className="relative flex flex-col gap-1.5">
         <label htmlFor={searchId} className="font-semibold">

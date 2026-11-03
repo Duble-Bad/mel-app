@@ -69,6 +69,8 @@ export interface TimelineSighting {
   id: string;
   seenAt: string;
   position: LatLng;
+  /** Falso: ponto aproximado (grade de 250 m) — quem não é tutor, autor nem moderação. */
+  pointIsExact: boolean;
   placeLabel: string | null;
   direction: Direction;
   states: SightingState[];

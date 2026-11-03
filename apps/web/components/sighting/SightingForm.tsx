@@ -59,12 +59,12 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
     try {
       // Sem cadastro: uma sessão anônima identifica o envio (sem pedir dados).
       setBusy("Enviando…");
-      const user = await ensureSession(supabase);
+      await ensureSession(supabase);
       let photoPath: string | null = null;
       if (photo) {
         setBusy("Enviando foto…");
         try {
-          photoPath = await uploadSightingPhoto(supabase, user.id, await prepareImage(photo));
+          photoPath = await uploadSightingPhoto(supabase, await prepareImage(photo));
         } catch (err) {
           console.error("[SightingForm] foto falhou", err);
           setError("A foto não foi enviada, mas vamos mandar o avistamento mesmo assim.");
@@ -131,13 +131,15 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
         <h2 id="onde" className="text-lg font-bold">
           Onde você viu?
         </h2>
+        <p className="font-semibold">Marque onde o pet estava, não onde você está.</p>
         <LocationPicker
           value={where}
           onChange={(v) => {
             setWhere(v);
             setErrors((e) => ({ ...e, position: "" }));
           }}
-          privacyNote="O local que você marcar aparece no alerta. Seus dados pessoais, não."
+          gpsHint="Use só se você estiver no lugar onde viu o pet."
+          privacyNote="A localização aproximada pode aparecer publicamente. O ponto exato fica só com o tutor do alerta."
         />
         {errors.position && <p className="font-medium text-danger">{errors.position}</p>}
       </section>
@@ -211,8 +213,12 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Ex.: entrou num terreno; estava perto do ponto de ônibus."
+          aria-describedby="sighting-notes-hint"
           className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
         />
+        <p id="sighting-notes-hint" className="text-sm text-text-secondary">
+          Não escreva seu endereço, número da casa, apartamento ou outros dados pessoais.
+        </p>
       </div>
 
       <div data-testid="captcha-state" data-state={captcha.token ? "ok" : "pending"}>

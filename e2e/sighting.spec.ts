@@ -45,6 +45,11 @@ test("a visitor WITHOUT an account reports a sighting; the tutor sees it live, o
   await visitor.goto(alertPath);
   await visitor.getByRole("link", { name: /Eu vi este pet/i }).click();
   await expect(visitor.getByRole("heading", { name: "Você viu Mel?" })).toBeVisible();
+  // Privacidade de quem ajuda: marcar o pet, não a própria casa.
+  await expect(visitor.getByText("Marque onde o pet estava, não onde você está.")).toBeVisible();
+  await expect(visitor.getByText("Use só se você estiver no lugar onde viu o pet.")).toBeVisible();
+  await expect(visitor.getByText("O ponto exato fica só com o tutor do alerta.", { exact: false })).toBeVisible();
+  await expect(visitor.getByText(/Não escreva seu endereço, número da casa, apartamento/)).toBeVisible();
 
   await visitor.getByRole("button", { name: /Usar minha localização atual/ }).click();
   await expect(visitor.getByTestId("picked-label")).toContainText("perto de Rua Santa Teresa");
@@ -66,8 +71,17 @@ test("a visitor WITHOUT an account reports a sighting; the tutor sees it live, o
   // ≥ 1: o Radar MEL pode somar avisos de outros testes rodando em paralelo na mesma região.
   await expect(tutorPage.getByTestId("unread-count")).toHaveText(/^[1-9]/);
 
-  // Mapa com o ponto do avistamento ligado ao último local conhecido.
+  // Mapa com o ponto do avistamento ligado ao último local conhecido — exato para o tutor.
   await expect(tutorPage.getByRole("button", { name: /Avistamento: avistamento 1/ })).toBeVisible();
+  await expect(tutorPage.getByText(/ligados por linha tracejada em ordem de horário\.$/)).toBeVisible();
+
+  // Outra pessoa (sem sessão): o mesmo avistamento, em localização aproximada.
+  const strangerCtx = await browser.newContext({ baseURL: "http://localhost:3100", ...test.info().project.use });
+  const stranger = await strangerCtx.newPage();
+  await stranger.goto(alertPath);
+  await expect(stranger.getByTestId("timeline-sighting")).toHaveCount(1);
+  await expect(stranger.getByText(/\(localização aproximada\)/)).toBeVisible();
+  await strangerCtx.close();
 
   // Visitante volta ao alerta e vê a pista publicada.
   await visitor.getByRole("link", { name: "Ver o alerta e a linha do tempo" }).click();

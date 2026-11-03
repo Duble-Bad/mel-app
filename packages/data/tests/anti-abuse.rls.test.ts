@@ -51,8 +51,9 @@ async function alert(name: string) {
   return { id: a.id, code: a.code };
 }
 
-async function upload(client: MelClient, id: string) {
-  const path = `${id}/${crypto.randomUUID()}.png`;
+// Nome neutro (migration 29): a posse fica no owner_id do Storage, não no caminho.
+async function upload(client: MelClient) {
+  const path = `${crypto.randomUUID()}.png`;
   const { error } = await client.storage.from("sighting-media").upload(path, png(), { contentType: "image/png" });
   if (!error) uploaded.push(path);
   return { path, error };
@@ -91,11 +92,11 @@ describe("Ataque A: uma sessão anônima repete a mesma ação", () => {
   it("upload: no máximo 3 fotos sem envio por sessão; usar a foto num avistamento libera outra", async () => {
     const a = await alert("Fotos");
     const s = await realAnonymous();
-    const ok = [await upload(s.client, s.id), await upload(s.client, s.id), await upload(s.client, s.id)];
+    const ok = [await upload(s.client), await upload(s.client), await upload(s.client)];
     expect(ok.map((r) => r.error)).toEqual([null, null, null]);
-    expect((await upload(s.client, s.id)).error).not.toBeNull();
+    expect((await upload(s.client)).error).not.toBeNull();
     await createSighting(s.client, sighting(a.code, { photoPath: ok[0]!.path }));
-    expect((await upload(s.client, s.id)).error).toBeNull();
+    expect((await upload(s.client)).error).toBeNull();
   });
 });
 
@@ -144,24 +145,26 @@ describe("Ataque D: spam de conversa/mensagem", () => {
 });
 
 describe("Ataque E: spam de upload", () => {
-  it("só imagem pequena, com nome de arquivo do app, na própria pasta", async () => {
+  it("só imagem pequena, com nome de arquivo do app (neutro, sem pasta da sessão)", async () => {
     const u = crowd[2]!;
     const bad = [
-      await u.client.storage.from("sighting-media").upload(`${u.id}/qualquer-nome.png`, png(), { contentType: "image/png" }),
-      await u.client.storage.from("sighting-media").upload(`${u.id}/${crypto.randomUUID()}.html`, new Blob(["<h1>x</h1>"], { type: "text/html" }), { contentType: "text/html" }),
-      await u.client.storage.from("sighting-media").upload(`${u.id}/${crypto.randomUUID()}.png`, new Blob([new Uint8Array(2 * 1024 * 1024 + 1)], { type: "image/png" }), { contentType: "image/png" }),
+      await u.client.storage.from("sighting-media").upload(`qualquer-nome.png`, png(), { contentType: "image/png" }),
+      await u.client.storage.from("sighting-media").upload(`${crypto.randomUUID()}.html`, new Blob(["<h1>x</h1>"], { type: "text/html" }), { contentType: "text/html" }),
+      await u.client.storage.from("sighting-media").upload(`${crypto.randomUUID()}.png`, new Blob([new Uint8Array(2 * 1024 * 1024 + 1)], { type: "image/png" }), { contentType: "image/png" }),
+      // Formato antigo (pasta da sessão = pseudônimo público): recusado.
+      await u.client.storage.from("sighting-media").upload(`${u.id}/${crypto.randomUUID()}.png`, png(), { contentType: "image/png" }),
     ];
-    expect(bad.map((r) => r.error !== null)).toEqual([true, true, true]);
+    expect(bad.map((r) => r.error !== null)).toEqual([true, true, true, true]);
   });
 
   it("trocar de sessão não dá armazenamento ilimitado: 60 fotos sem envio por hora somando as anônimas", async () => {
     // 20 sessões × 3 fotos sem envio = 60; a próxima sessão anônima (sem nada pendente) já não consegue.
-    const results = await Promise.all(crowd.slice(0, 20).map(async (u) => [await upload(u.client, u.id), await upload(u.client, u.id), await upload(u.client, u.id)]));
+    const results = await Promise.all(crowd.slice(0, 20).map(async (u) => [await upload(u.client), await upload(u.client), await upload(u.client)]));
     const okCount = results.flat().filter((r) => !r.error).length;
     expect(okCount).toBeGreaterThanOrEqual(57); // outras sessões anônimas do mesmo teste podem ter pendências
-    expect((await upload(crowd[20]!.client, crowd[20]!.id)).error).not.toBeNull();
+    expect((await upload(crowd[20]!.client)).error).not.toBeNull();
     // Quem tem conta não entra no teto das anônimas.
-    expect((await upload(account.client, account.id)).error).toBeNull();
+    expect((await upload(account.client)).error).toBeNull();
     // Libera para os outros testes: apaga as fotos órfãs desta rodada.
     const mine = results.flat().filter((r) => !r.error).map((r) => r.path);
     await serviceClient().storage.from("sighting-media").remove(mine);
@@ -174,8 +177,8 @@ describe("Fotos órfãs: limpeza pelo servidor", () => {
 
   it("só a chave secreta lista; órfã aparece, foto usada em envio não; a limpeza respeita as 24 h", async () => {
     const a = await alert("Orfas");
-    const orphan = await upload(account.client, account.id);
-    const used = await upload(account.client, account.id);
+    const orphan = await upload(account.client);
+    const used = await upload(account.client);
     await createSighting(account.client, sighting(a.code, { photoPath: used.path }));
 
     expect((await listOrphans(account.client, "0 seconds")).error).not.toBeNull();
@@ -188,8 +191,8 @@ describe("Fotos órfãs: limpeza pelo servidor", () => {
     // Padrão (24 h): foto recém-enviada ainda não é órfã — quem subiu pode estar enviando.
     expect((await listOrphans(serviceClient(), "24 hours")).data).not.toContain(orphan.path);
     await purgeOrphanSightingMedia(serviceClient());
-    const { data: still } = await serviceClient().storage.from("sighting-media").list(account.id);
-    expect(still?.map((f) => `${account.id}/${f.name}`)).toContain(orphan.path);
+    const { data: still } = await serviceClient().storage.from("sighting-media").list("", { search: orphan.path });
+    expect(still?.map((f) => f.name)).toContain(orphan.path);
   });
 });
 
@@ -225,7 +228,7 @@ describe("Caso legítimo: alerta viral com muita gente ajudando", () => {
     const helpers = [...crowd, account];
     const ids = await Promise.all(
       helpers.map(async (u, i) => {
-        const photo = await upload(u.client, u.id);
+        const photo = await upload(u.client);
         expect(photo.error).toBeNull();
         return createSighting(u.client, sighting(a.code, { seenAt: minutesAgo(5 + i), photoPath: photo.path, position: near(0.001 * (i % 5)) }));
       }),
