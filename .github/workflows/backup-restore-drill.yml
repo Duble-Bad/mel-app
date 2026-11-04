@@ -35,8 +35,9 @@ jobs:
       - name: Conexão hospedada mal configurada é recusada antes de conectar (URLs fictícias)
         run: |
           . scripts/backup/db-url-guard.sh
-          ! check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
-          ! check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+          # "if" e não "!": com bash -e, uma linha com "!" nunca falha o passo.
+          if check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require"; then exit 1; fi
+          if check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"; then exit 1; fi
           check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
           echo "ok: transaction pooler e conexão sem TLS recusados; session pooler com TLS aceito"
 
@@ -74,7 +75,7 @@ jobs:
       - name: O arquivo está criptografado (texto sintético conhecido não aparece; aparece depois de abrir)
         run: |
           head -c 21 "$BACKUP_FILE" | grep -q '^age-encryption.org/v1'
-          ! zcat -f "$BACKUP_FILE" 2>/dev/null | grep -aq 'Mensagem sintética'
+          if zcat -f "$BACKUP_FILE" 2>/dev/null | grep -aq 'Mensagem sintética'; then exit 1; fi
           age -d -i /tmp/poc-key.txt "$BACKUP_FILE" | tar -xzOf - ./data.sql | grep -aq 'Mensagem sintética'
           echo "ok: ilegível sem a chave; legível com ela"
 
@@ -82,9 +83,9 @@ jobs:
         run: |
           cp "$BACKUP_FILE" /tmp/tampered.age
           printf '\x00' | dd of=/tmp/tampered.age bs=1 seek=200 conv=notrunc 2>/dev/null
-          ! age -d -i /tmp/poc-key.txt /tmp/tampered.age > /dev/null 2>&1
+          if age -d -i /tmp/poc-key.txt /tmp/tampered.age > /dev/null 2>&1; then exit 1; fi
           age-keygen -o /tmp/other-key.txt 2>/dev/null
-          ! age -d -i /tmp/other-key.txt "$BACKUP_FILE" > /dev/null 2>&1
+          if age -d -i /tmp/other-key.txt "$BACKUP_FILE" > /dev/null 2>&1; then exit 1; fi
           echo "ok: adulteração e chave errada recusadas"
 
       - name: Destruir o banco A e subir o banco B do zero (só migrations, como um projeto novo)
