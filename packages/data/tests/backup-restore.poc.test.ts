@@ -4,8 +4,12 @@
 //                           pet, fotos, alerta, avistamento anônimo, encontrado,
 //                           conversa, Guardião) e grava o gabarito em
 //                           $MEL_BACKUP_POC_DIR/expected.json (fora do backup);
+//   MEL_BACKUP_POC=mutate → ainda no banco A: arquivo novo, arquivo SUBSTITUÍDO
+//                           (upsert, que a política do avatar permite) e arquivo
+//                           apagado; grava o gabarito novo em expected-latest.json;
 //   MEL_BACKUP_POC=verify → no banco B (recriado do zero e restaurado do backup)
-//                           confere Auth, RLS, funções, privacidade e arquivos.
+//                           confere Auth, RLS, funções, privacidade e arquivos
+//                           contra $MEL_BACKUP_POC_EXPECTED (padrão expected.json).
 // Nenhum dado real: e-mails @exemplo.com, senhas geradas na hora.
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -19,7 +23,7 @@ import type { MelClient } from "../src/client";
 import { createFoundCase, getPublicFoundCase } from "../src/found";
 import { saveGuardianSettings } from "../src/guardian";
 import { activateLostCase, getPublicLostCase, nearbyLostCases, startLostCase, updateLostCase } from "../src/lostCases";
-import { addPetPhoto, createPet, getPet, getPetPrivateDetails, savePetPrivateDetails } from "../src/pets";
+import { addPetPhoto, createPet, getPet, getPetPrivateDetails, removePetPhoto, savePetPrivateDetails } from "../src/pets";
 import { uploadAvatar } from "../src/profiles";
 import { createSighting, getTimeline, uploadSightingPhoto } from "../src/sightings";
 import { anonClient, serviceClient } from "./helpers";
@@ -60,6 +64,8 @@ interface Expected {
   privateMarks: string;
   /** bucket/caminho → sha256 do conteúdo enviado. */
   files: Record<string, string>;
+  /** bucket/caminho que NÃO pode voltar (apagado antes do backup). */
+  deleted?: string[];
 }
 
 const options = { auth: { persistSession: false, autoRefreshToken: false } };
@@ -151,8 +157,41 @@ describe.runIf(phase === "seed")("backup PoC — dados sintéticos no banco A", 
   });
 });
 
+describe.runIf(phase === "mutate")("backup PoC — mudanças nos arquivos do banco A", () => {
+  it("inclui, substitui e apaga arquivos (e o que o banco referencia acompanha)", async () => {
+    const x: Expected = JSON.parse(readFileSync(join(dir, "expected.json"), "utf8"));
+    const tutor = await signIn(x.tutor);
+    const random = () => crypto.getRandomValues(new Uint8Array(64));
+    const files = { ...x.files };
+
+    // Inclusão: foto nova do pet (original + miniatura).
+    const before = (await getPet(tutor, x.petId))!;
+    const [full, thumb] = [random(), random()];
+    await addPetPhoto(tutor, before, { full: new Blob([full], { type: "image/png" }), thumb: new Blob([thumb], { type: "image/png" }) }, 1);
+    const added = (await getPet(tutor, x.petId))!.photos.find((p) => p.id !== before.photos[0]!.id)!;
+    files[storageKey(added.url)] = sha(full);
+    files[storageKey(added.thumbUrl)] = sha(thumb);
+
+    // Exclusão: a foto original sai (linha e arquivos); a nova vira a principal.
+    const old = before.photos[0]!;
+    await removePetPhoto(tutor, old.id);
+    const deleted = [storageKey(old.url), storageKey(old.thumbUrl)];
+    for (const k of deleted) delete files[k];
+
+    // Substituição no MESMO caminho (o app não faz, mas a política do avatar permite).
+    const avatarKey = Object.keys(files).find((k) => k.startsWith("avatars/"))!;
+    const replaced = random();
+    const { error } = await tutor.storage.from("avatars").upload(avatarKey.slice("avatars/".length), new Blob([replaced], { type: "image/png" }), { upsert: true, contentType: "image/png" });
+    expect(error).toBeNull();
+    files[avatarKey] = sha(replaced);
+
+    writeFileSync(join(dir, "expected-latest.json"), JSON.stringify({ ...x, files, deleted } satisfies Expected));
+    expect(Object.keys(files)).toHaveLength(5);
+  });
+});
+
 describe.runIf(phase === "verify")("backup PoC — banco B restaurado", () => {
-  const e = (): Expected => JSON.parse(readFileSync(join(dir, "expected.json"), "utf8"));
+  const e = (): Expected => JSON.parse(readFileSync(join(dir, process.env.MEL_BACKUP_POC_EXPECTED ?? "expected.json"), "utf8"));
 
   it("Auth: as contas entram com a MESMA senha e o MESMO id; a sessão anônima continua (refresh token)", async () => {
     const x = e();
@@ -202,8 +241,14 @@ describe.runIf(phase === "verify")("backup PoC — banco B restaurado", () => {
       expect(error, key).toBeNull();
       expect(sha(new Uint8Array(await data!.arrayBuffer())), key).toBe(hash);
     }
-    // A foto do pet continua acessível pelo caminho gravado no banco (referência íntegra).
+    // O que foi apagado antes do backup não volta.
+    for (const key of x.deleted ?? []) {
+      const [bucket, ...rest] = key.split("/");
+      const { error } = await serviceClient().storage.from(bucket!).download(rest.join("/"));
+      expect(error, key).not.toBeNull();
+    }
+    // As fotos do pet continuam acessíveis pelos caminhos gravados no banco (referência íntegra).
     const pet = (await getPet(await signIn(x.tutor), x.petId))!;
-    expect(storageKey(pet.photos[0]!.url) in x.files).toBe(true);
+    for (const p of pet.photos) expect(storageKey(p.url) in x.files).toBe(true);
   });
 });

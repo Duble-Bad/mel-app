@@ -1,10 +1,10 @@
 name: Ensaio de backup e restauração (dados sintéticos)
 
-# Prova que scripts/backup/backup.sh + restore.sh recuperam a MEL inteira:
-# banco A (local, descartável) com dados SINTÉTICOS → backup criptografado →
-# A destruído → banco B novo (só migrations) → restauração → conferências.
-# Só manual. Nenhum segredo de projeto: não alcança o mel-dev nem o mel-prod.
-# Repositório público: nada de dados reais aqui, nem artefatos do backup.
+# Prova scripts/backup (repositório incremental + restauração) de ponta a ponta,
+# em Supabase LOCAIS e descartáveis, só com dados SINTÉTICOS. Só manual. Nenhum
+# segredo de projeto: não alcança o mel-dev nem o mel-prod. Repositório público:
+# nada de dados reais aqui, nem artefatos do backup (o "repositório de backups"
+# é uma pasta do runner, que some com ele).
 on:
   workflow_dispatch:
 
@@ -13,12 +13,16 @@ permissions:
 
 jobs:
   drill:
-    name: Backup → destruir → restaurar → conferir
+    name: Backup incremental → falhas → restaurar → retenção
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       MEL_BACKUP_POC_DIR: /tmp/poc
-      BACKUP_OUT: /tmp/poc-out
+      BACKUP_REPO: /tmp/repo
+      BACKUP_AGE_IDENTITY: /tmp/poc-key.txt
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -26,11 +30,24 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Ferramentas (age, imagem do psql 17)
+      - name: Ferramentas (age, rclone, imagem do psql 17)
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq age >/dev/null
-          age --version
+          sudo apt-get update -qq && sudo apt-get install -y -qq age rclone >/dev/null
+          age --version; rclone version | head -1
           docker pull -q postgres:17
+          cat > /tmp/lib.sh <<'EOF'
+          set -euo pipefail
+          blobs() { find "$BACKUP_REPO/blobs" -name '*.age' 2>/dev/null | wc -l; }
+          points() { node scripts/backup/incremental.mjs list; }
+          expect_fail() { if "$@" > /tmp/out.txt 2>&1; then echo "deveria ter falhado: $*"; cat /tmp/out.txt; exit 1; fi; }
+          supa_env() {
+            npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb.env
+            set -a; . /tmp/sb.env; set +a
+            export NEXT_PUBLIC_SUPABASE_URL="$API_URL" SUPABASE_URL="$API_URL" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${PUBLISHABLE_KEY:-$ANON_KEY}" SUPABASE_SECRET_KEY="${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+          }
+          poc() { (cd packages/data && MEL_BACKUP_POC="$1" npx vitest run --config vitest.db.config.ts tests/backup-restore.poc.test.ts); }
+          fresh_db() { npx supabase stop --no-backup >/dev/null; npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy >/dev/null; }
+          EOF
 
       - name: Conexão hospedada mal configurada é recusada antes de conectar (URLs fictícias)
         run: |
@@ -41,90 +58,131 @@ jobs:
           check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
           echo "ok: transaction pooler e conexão sem TLS recusados; session pooler com TLS aceito"
 
-      - name: Banco A (Supabase local + migrations)
-        run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
-
-      - name: Variáveis do banco local (chaves padrão do Supabase local)
+      - name: Banco A com dados sintéticos e chave age só deste ensaio
         run: |
-          npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb.env
-          set -a; . /tmp/sb.env; set +a
-          {
-            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
-            echo "SUPABASE_URL=$API_URL"
-            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
-            echo "SUPABASE_SECRET_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}"
-            echo "DB_URL=$DB_URL"
-          } >> "$GITHUB_ENV"
+          . /tmp/lib.sh
+          npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy >/dev/null
+          supa_env
+          poc seed
+          age-keygen -o "$BACKUP_AGE_IDENTITY" 2>/dev/null
+          echo "BACKUP_AGE_RECIPIENT=$(age-keygen -y "$BACKUP_AGE_IDENTITY")" >> "$GITHUB_ENV"
 
-      - name: Dados sintéticos no banco A
-        working-directory: packages/data
-        run: MEL_BACKUP_POC=seed npx vitest run --config vitest.db.config.ts tests/backup-restore.poc.test.ts
-
-      - name: Chave age só deste ensaio (some com o runner)
+      - name: 1) primeiro backup completo; 2) segundo sem mudanças não baixa nada
         run: |
-          age-keygen -o /tmp/poc-key.txt 2>/dev/null
-          echo "BACKUP_AGE_RECIPIENT=$(age-keygen -y /tmp/poc-key.txt)" >> "$GITHUB_ENV"
+          . /tmp/lib.sh; supa_env
+          bash scripts/backup/backup.sh | tee /tmp/b1.txt
+          grep -q "5 novos/alterados enviados" /tmp/b1.txt
+          [ "$(blobs)" = 5 ]
+          sleep 1
+          bash scripts/backup/backup.sh | tee /tmp/b2.txt
+          grep -q "0 novos/alterados enviados (0 bytes baixados), 5 já no repositório" /tmp/b2.txt
+          [ "$(blobs)" = 5 ]
+          # Tudo no repositório é cifrado: texto sintético conhecido não aparece em lugar nenhum.
+          if grep -raq 'Mensagem sintética' "$BACKUP_REPO"; then echo "texto às claras no repositório"; exit 1; fi
+          echo "P1=$(points | sed -n 1p)" >> "$GITHUB_ENV"
+          echo "ok: completo (5 blobs) e incremental sem mudanças (0 baixados)"
 
-      - name: Backup
+      - name: 3) inclusão, substituição e exclusão — com um backup interrompido no meio do envio
         run: |
-          start=$SECONDS
-          bash scripts/backup/backup.sh
-          echo "BACKUP_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
-          echo "BACKUP_FILE=$(ls "$BACKUP_OUT"/mel-backup-*.tar.gz.age)" >> "$GITHUB_ENV"
+          . /tmp/lib.sh; supa_env
+          poc mutate
+          sleep 1
+          BACKUP_TEST_INTERRUPT_AFTER_BLOBS=1 expect_fail bash scripts/backup/backup.sh
+          grep -q "interrompido de propósito" /tmp/out.txt
+          [ "$(points | wc -l)" = 2 ]   # o interrompido não virou ponto
+          [ "$(blobs)" = 6 ]            # 1 dos 3 novos chegou antes da queda
+          bash scripts/backup/backup.sh | tee /tmp/b3.txt
+          grep -q "5 no Storage; 2 novos/alterados enviados" /tmp/b3.txt   # retomou: só os 2 que faltavam
+          grep -q "3 já no repositório" /tmp/b3.txt
+          [ "$(blobs)" = 8 ]            # o avatar antigo e a foto apagada continuam para os pontos anteriores
+          echo "ok: retomada sem reenviar; antigos preservados"
 
-      - name: O arquivo está criptografado (texto sintético conhecido não aparece; aparece depois de abrir)
+      - name: 4) backup interrompido antes de selar não aparece como completo
         run: |
-          head -c 21 "$BACKUP_FILE" | grep -q '^age-encryption.org/v1'
-          if zcat -f "$BACKUP_FILE" 2>/dev/null | grep -aq 'Mensagem sintética'; then exit 1; fi
-          age -d -i /tmp/poc-key.txt "$BACKUP_FILE" | tar -xzOf - ./data.sql | grep -aq 'Mensagem sintética'
-          echo "ok: ilegível sem a chave; legível com ela"
+          . /tmp/lib.sh; supa_env
+          sleep 1
+          BACKUP_TEST_INTERRUPT_BEFORE_OK=1 expect_fail bash scripts/backup/backup.sh
+          [ "$(points | wc -l)" = 3 ]
+          [ "$(ls "$BACKUP_REPO"/snapshots/*.tar.gz.age | wc -l)" = 4 ]   # o arquivo existe, mas sem .ok
+          echo "ok: parcial nunca é ponto"
 
-      - name: Arquivo adulterado ou chave errada não abre
+      - name: 5) perda de TODOS os manifestos — o backup seguinte não rebaixa nada (o índice é a lista de blobs)
         run: |
-          cp "$BACKUP_FILE" /tmp/tampered.age
-          printf '\x00' | dd of=/tmp/tampered.age bs=1 seek=200 conv=notrunc 2>/dev/null
-          if age -d -i /tmp/poc-key.txt /tmp/tampered.age > /dev/null 2>&1; then exit 1; fi
-          age-keygen -o /tmp/other-key.txt 2>/dev/null
-          if age -d -i /tmp/other-key.txt "$BACKUP_FILE" > /dev/null 2>&1; then exit 1; fi
-          echo "ok: adulteração e chave errada recusadas"
+          . /tmp/lib.sh; supa_env
+          mv "$BACKUP_REPO/snapshots" /tmp/snapshots-guardados
+          sleep 1
+          bash scripts/backup/backup.sh | tee /tmp/b5.txt
+          grep -q "0 novos/alterados enviados (0 bytes baixados), 5 já no repositório" /tmp/b5.txt
+          mv "$BACKUP_REPO"/snapshots/* /tmp/snapshots-guardados/ && rmdir "$BACKUP_REPO/snapshots"
+          mv /tmp/snapshots-guardados "$BACKUP_REPO/snapshots"
+          [ "$(points | wc -l)" = 4 ]
+          echo "P_LATEST=$(points | tail -1)" >> "$GITHUB_ENV"
+          echo "ok: sem manifesto, nada baixado de novo"
 
-      - name: Destruir o banco A e subir o banco B do zero (só migrations, como um projeto novo)
+      - name: 6) restaurar um ponto ANTERIOR (antes das mudanças) num banco B novo
         run: |
-          npx supabase stop --no-backup
-          npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
+          . /tmp/lib.sh
+          fresh_db; supa_env
+          BACKUP_POINT="$P1" RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh | tee /tmp/r1.txt
+          grep -q "ok: ponto $P1" /tmp/r1.txt
+          MEL_BACKUP_POC_EXPECTED=expected.json poc verify
+          echo "ok: ponto anterior com a foto original e o avatar antigo"
 
-      # "localhost" em vez de "127.0.0.1": outra URL de projeto, como numa
-      # restauração em projeto novo (exercita a troca da URL dos avatares).
-      - name: Restaurar no banco B
-        env:
-          BACKUP_AGE_IDENTITY: /tmp/poc-key.txt
-          SUPABASE_URL: http://localhost:54321
+      - name: 7) banco B novo; sem confirmação, blob corrompido ou snapshot adulterado — recusado sem tocar no banco
         run: |
-          start=$SECONDS
-          set -o pipefail
-          bash scripts/backup/restore.sh | tee /tmp/restore.txt
-          echo "RESTORE_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
-          grep -q "avatares apontados para o projeto novo: 1" /tmp/restore.txt
+          . /tmp/lib.sh
+          fresh_db; supa_env
+          expect_fail bash scripts/backup/restore.sh
+          grep -q "confirme o destino" /tmp/out.txt
+          key="$(head -1 "$BACKUP_REPO/snapshots/$P_LATEST.refs")"
+          cp "$BACKUP_REPO/blobs/$key.age" /tmp/blob.bak
+          printf '\x00' | dd of="$BACKUP_REPO/blobs/$key.age" bs=1 seek=100 conv=notrunc 2>/dev/null
+          expect_fail node scripts/backup/incremental.mjs verify latest
+          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
+          grep -q "nada foi restaurado" /tmp/out.txt
+          cp /tmp/blob.bak "$BACKUP_REPO/blobs/$key.age"
+          cp "$BACKUP_REPO/snapshots/$P1.tar.gz.age" /tmp/snap.bak
+          printf '\x00' | dd of="$BACKUP_REPO/snapshots/$P1.tar.gz.age" bs=1 seek=300 conv=notrunc 2>/dev/null
+          expect_fail node scripts/backup/incremental.mjs verify "$P1"
+          grep -q "não confere com o .ok" /tmp/out.txt
+          cp /tmp/snap.bak "$BACKUP_REPO/snapshots/$P1.tar.gz.age"
+          node scripts/backup/incremental.mjs verify "$P1"
+          node scripts/backup/incremental.mjs verify latest
+          [ "$(docker run --rm --network host postgres:17 psql "$DB_URL" -At -c 'select count(*) from auth.users')" = 0 ]
+          echo "ok: recusas antes de qualquer escrita; banco B continua vazio"
+
+      - name: 8) .refs perdido suspende a retenção; rebuild-refs refaz; retenção de 30 dias
+        run: |
+          . /tmp/lib.sh; supa_env
+          rm "$BACKUP_REPO/snapshots/$P1.refs"
+          expect_fail node scripts/backup/incremental.mjs prune 30
+          grep -q "retenção suspensa" /tmp/out.txt
+          node scripts/backup/incremental.mjs rebuild-refs
+          # Envelhece os 2 primeiros pontos (40 e 39 dias) e todos os blobs (40 dias).
+          i=40
+          for s in $(points | head -2); do
+            old="$(date -u -d "-$i days" +%Y%m%dT%H%M%SZ)"; i=$((i - 1))
+            for ext in ok refs tar.gz.age; do mv "$BACKUP_REPO/snapshots/$s.$ext" "$BACKUP_REPO/snapshots/$old.$ext"; done
+          done
+          find "$BACKUP_REPO/blobs" -type f -exec touch -d '-40 days' {} +
+          node scripts/backup/incremental.mjs prune 30 | tee /tmp/prune.txt
+          grep -q "2 pontos mantidos, 2 apagados, 3 blobs sem uso apagados" /tmp/prune.txt
+          [ "$(blobs)" = 5 ]   # foto apagada (2) e avatar antigo (1) saíram; os 5 atuais ficam
+          node scripts/backup/incremental.mjs verify latest
+          echo "ok: retenção apaga só o que nenhum ponto mantido usa"
+
+      - name: 9) restaurar o ponto MAIS RECENTE depois da retenção; Auth, RLS, privacidade, arquivos, referências
+        run: |
+          . /tmp/lib.sh; supa_env
+          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh | tee /tmp/r2.txt
+          grep -q "avatares apontados para o projeto novo: 1" /tmp/r2.txt
+          grep -q "0 com dono diferente" /tmp/r2.txt
+          MEL_BACKUP_POC_EXPECTED=expected-latest.json poc verify
+          node scripts/schema-audit/audit.mjs > /tmp/audit.txt; grep -q "impressão digital idêntica" /tmp/audit.txt
+          echo "ok: ponto mais recente com a foto nova, o avatar substituído e sem a foto apagada"
 
       - name: Restaurar de novo por cima é recusado
-        env:
-          BACKUP_AGE_IDENTITY: /tmp/poc-key.txt
         run: |
-          if bash scripts/backup/restore.sh > /tmp/again.txt 2>&1; then echo "deveria recusar"; exit 1; fi
-          grep -q "já tem contas" /tmp/again.txt && echo "ok: recusado"
-
-      - name: Schema, RLS, funções e grants idênticos às migrations (auditoria + impressão digital)
-        run: node scripts/schema-audit/audit.mjs
-
-      - name: Auth, RLS, privacidade, relações e arquivos no banco B
-        working-directory: packages/data
-        run: MEL_BACKUP_POC=verify npx vitest run --config vitest.db.config.ts tests/backup-restore.poc.test.ts
-
-      - name: Resumo
-        if: always()
-        run: |
-          {
-            echo "### Ensaio de backup e restauração"
-            echo "- backup: ${BACKUP_SECONDS:-?} s · restauração: ${RESTORE_SECONDS:-?} s"
-            echo "- tamanho do arquivo criptografado: $(stat -c %s "${BACKUP_FILE:-/dev/null}" 2>/dev/null || echo ?) bytes"
-          } >> "$GITHUB_STEP_SUMMARY"
+          . /tmp/lib.sh; supa_env
+          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
+          grep -q "já tem contas" /tmp/out.txt && echo "ok: recusado"

@@ -1,31 +1,35 @@
 #!/usr/bin/env bash
-# Restaura um backup da MEL (backup.sh) num projeto NOVO e VAZIO.
+# Restaura um ponto do repositório de backups da MEL num projeto NOVO e VAZIO.
 #
 # Pré-requisito: no destino, as migrations versionadas já aplicadas (as mesmas
 # do backup) e nenhum dado (nenhuma conta). Nunca restaura por cima de banco em uso.
 #
 # Entrada (variáveis de ambiente; nunca impressas):
 #   DB_URL, SUPABASE_URL, SUPABASE_SECRET_KEY   do projeto DE DESTINO
-#   BACKUP_FILE            o .tar.gz.age
+#   RESTORE_CONFIRM        o host de SUPABASE_URL, digitado: confirmação explícita do destino
+#   BACKUP_REPO            repositório (rclone)
+#   BACKUP_POINT           data do ponto (padrão: o mais recente completo)
 #   BACKUP_AGE_IDENTITY    arquivo com a chave PRIVADA age
-# Requer: docker, node, npx supabase, age.
+# Requer: docker, node, npx supabase, age, rclone.
 set -euo pipefail
 umask 077
-: "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_FILE:?}" "${BACKUP_AGE_IDENTITY:?}"
+: "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_REPO:?}" "${BACKUP_AGE_IDENTITY:?}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/db-url-guard.sh"
 check_db_url "$DB_URL"
+TARGET_HOST="$(printf %s "$SUPABASE_URL" | sed -E 's#^[a-z]+://([^/:]+).*#\1#')"
+if [ "${RESTORE_CONFIRM:-}" != "$TARGET_HOST" ]; then
+  echo "[restore] ABORTADO: confirme o destino com RESTORE_CONFIRM=<host da SUPABASE_URL>." >&2
+  exit 1
+fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 START=$SECONDS
 
 psql_() { docker run --rm -i --network host -e DB_URL -v "$WORK:/w" postgres:17 sh -c 'psql "$DB_URL" -X -v ON_ERROR_STOP=1 -q "$@"' psql "$@"; }
 
-if [ -f "$BACKUP_FILE.sha256" ]; then
-  ( cd "$(dirname "$BACKUP_FILE")" && sha256sum -c --quiet "$(basename "$BACKUP_FILE").sha256" )
-fi
-echo "[restore] descriptografando"
-age -d -i "$BACKUP_AGE_IDENTITY" "$BACKUP_FILE" | tar -C "$WORK" -xzf -
+echo "[restore] abrindo e conferindo o ponto (antes de tocar no destino)"
+node "$HERE/incremental.mjs" fetch "${BACKUP_POINT:-latest}" "$WORK"
 
 echo "[restore] conferindo o destino"
 psql_ -At -c "select version from supabase_migrations.schema_migrations order by version" > "$WORK/target-migrations.txt"
@@ -59,31 +63,38 @@ fi
 echo "[restore] arquivos do Storage"
 SUPABASE_URL="$SUPABASE_URL" SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" node "$HERE/storage.mjs" import "$WORK/storage"
 
-echo "[restore] dono e data originais de cada arquivo (posse do sighting-media, faxina de órfãs)"
-UPDATED="$(psql_ -At <<'SQL'
+echo "[restore] dono e data originais de cada arquivo"
+RESULT="$(psql_ -At -F' ' <<'SQL'
 create temp table b (bucket_id text, name text, owner uuid, owner_id text, created_at timestamptz, updated_at timestamptz);
 \copy b from '/w/objects.csv' csv
-with u as (
-  update storage.objects o
-     set owner = b.owner, owner_id = b.owner_id, created_at = b.created_at, updated_at = b.updated_at
-    from b where o.bucket_id = b.bucket_id and o.name = b.name
-  returning 1)
-select count(*) from u;
+update storage.objects o
+   set owner = b.owner, owner_id = b.owner_id, created_at = b.created_at, updated_at = b.updated_at
+  from b where o.bucket_id = b.bucket_id and o.name = b.name;
+-- arquivos restaurados; com dono diferente do original; sem registro de dono (enviado entre o dump e a listagem)
+select (select count(*) from storage.objects),
+       (select count(*) from storage.objects o join b using (bucket_id, name) where o.owner_id is distinct from b.owner_id),
+       (select count(*) from storage.objects o where not exists (select 1 from b where b.bucket_id = o.bucket_id and b.name = o.name));
 SQL
 )"
-EXPECTED="$(wc -l < "$WORK/objects.csv")"
-echo "[restore] arquivos com dono/data restaurados: $UPDATED/$EXPECTED"
-[ "$UPDATED" = "$EXPECTED" ] || { echo "[restore] FALHA: nem todo arquivo voltou com o dono original" >&2; exit 1; }
+read -r TOTAL WRONG NOREC <<< "$RESULT"
+FILES="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).length)' "$WORK/storage/files.json")"
+echo "[restore] arquivos: $TOTAL no destino, $FILES no ponto, $WRONG com dono diferente, $NOREC sem registro de dono"
+[ "$TOTAL" = "$FILES" ] && [ "$WRONG" = "0" ] || { echo "[restore] FALHA: arquivos ou donos não conferem" >&2; exit 1; }
 
-echo "[restore] conferindo linhas por tabela"
-psql_ -At -F, -f - > "$WORK/target-counts.csv" < "$HERE/counts.sql"
-if ! diff "$WORK/counts.csv" "$WORK/target-counts.csv" > "$WORK/counts.diff"; then
-  echo "[restore] FALHA: contagens diferentes (tabela,linhas):" >&2
-  cat "$WORK/counts.diff" >&2
-  exit 1
-fi
-echo "[restore] $(wc -l < "$WORK/counts.csv") tabelas com as mesmas contagens"
+echo "[restore] conferindo linhas por tabela (contagem do próprio dump)"
+psql_ -At -F, -f - < "$HERE/counts.sql" > "$WORK/target-counts.csv"
+MISMATCH=0
+COMPARED=0
+while IFS=, read -r table rows; do
+  got="$(awk -F, -v t="$table" '$1 == t { print $2 }' "$WORK/target-counts.csv")"
+  # Escopo: o de counts.sql (public, auth, storage, sem tabelas internas que mudam sozinhas).
+  [ -n "$got" ] || continue
+  COMPARED=$((COMPARED + 1))
+  if [ "$got" != "$rows" ]; then echo "[restore] diferente: $table (ponto $rows, destino ${got:-ausente})" >&2; MISMATCH=1; fi
+done < "$WORK/dump-counts.csv"
+[ "$MISMATCH" = "0" ] || { echo "[restore] FALHA: contagens diferentes" >&2; exit 1; }
+echo "[restore] $COMPARED tabelas com as mesmas contagens do dump"
 
 echo "[restore] referências do banco × arquivos"
 SUPABASE_URL="$SUPABASE_URL" SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" node "$HERE/storage.mjs" check
-echo "[restore] ok em $((SECONDS - START)) s"
+echo "[restore] ok: ponto $(cat "$WORK/point.txt") em $((SECONDS - START)) s"

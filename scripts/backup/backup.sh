@@ -1,29 +1,23 @@
 #!/usr/bin/env bash
-# Backup completo da MEL (banco + Auth + arquivos do Storage), criptografado com age.
+# Backup da MEL (banco + Auth + arquivos do Storage) num repositório incremental,
+# criptografado com age. Ver incremental.mjs (estrutura) e docs/14-backup-restauracao.md.
 #
 # Entrada (variáveis de ambiente; nunca impressas):
 #   DB_URL                 conexão Postgres (Session pooler, porta 5432, ?sslmode=require)
 #   SUPABASE_URL           URL da API do projeto
 #   SUPABASE_SECRET_KEY    chave secreta (lê o Storage)
 #   BACKUP_AGE_RECIPIENT   chave PÚBLICA age (age1…); a privada fica fora daqui
-#   BACKUP_OUT             pasta de saída
-# Saída: $BACKUP_OUT/mel-backup-<data>.tar.gz.age e um .sha256 ao lado.
-# Requer: docker, node, npx supabase, age.
+#   BACKUP_REPO            destino do rclone (pasta local ou bucket, ex.: r2:mel-backup)
+# Requer: docker, node, npx supabase, age, rclone.
 #
-# O que vai no arquivo:
-#   data.sql      dados de public, auth (contas, identidades, sessões) e demais
-#                 schemas do Supabase que o CLI inclui; sem o que as migrations já
-#                 criam (buckets, planos) e sem storage.objects (vem com os arquivos)
-#   schema.sql    schema atual (referência/perícia: a restauração usa as migrations)
-#   migrations.txt versões aplicadas (a restauração exige as mesmas)
-#   counts.csv    linhas por tabela (conferência depois de restaurar)
-#   objects.csv   dono e data de cada arquivo (storage.objects)
-#   source-url.txt URL do projeto (avatar_url guarda a URL completa)
-#   storage/      os arquivos, nos mesmos caminhos, + files.json com sha256
-# Logs: só totais, tamanhos e tempos. Nada de dados, caminhos ou segredos.
+# Ordem (consistência): 1) dump do banco; 2) lista e envia os arquivos; 3) dono e data
+# dos arquivos; 4) sela o ponto. Tudo que o dump referencia já existia em 1 e é
+# listado em 2, a não ser que tenha sido apagado nesses segundos; arquivo novo entre 1
+# e 2 fica sem referência (órfão, que a faxina apaga). O ponto só vale com o .ok,
+# escrito por último: backup interrompido nunca aparece como completo.
 set -euo pipefail
 umask 077
-: "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_AGE_RECIPIENT:?}" "${BACKUP_OUT:?}"
+: "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_AGE_RECIPIENT:?}" "${BACKUP_REPO:?}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE/db-url-guard.sh"
 check_db_url "$DB_URL"
@@ -35,24 +29,22 @@ START=$SECONDS
 # psql 17 num container (o banco é Postgres 17); a conexão vai por variável.
 psql_() { docker run --rm -i --network host -e DB_URL -v "$WORK:/w" postgres:17 sh -c 'psql "$DB_URL" -X -v ON_ERROR_STOP=1 -q "$@"' psql "$@"; }
 
-echo "[backup] dados (pg_dump via Supabase CLI)"
+echo "[backup] 1/4 banco (pg_dump via Supabase CLI)"
 npx supabase db dump --db-url "$DB_URL" --data-only --use-copy \
   -x storage.objects -x storage.buckets -x storage.buckets_vectors -x storage.vector_indexes -x storage.migrations \
   -x public.plans -x auth.schema_migrations -x supabase_migrations.schema_migrations -x supabase_migrations.seed_files \
   -f "$WORK/data.sql" >/dev/null
-echo "[backup] schema (referência)"
 npx supabase db dump --db-url "$DB_URL" -f "$WORK/schema.sql" >/dev/null
-
+node "$HERE/dump-counts.mjs" "$WORK/data.sql" > "$WORK/dump-counts.csv"
 printf %s "$SUPABASE_URL" > "$WORK/source-url.txt"
 psql_ -At -c "select version from supabase_migrations.schema_migrations order by version" > "$WORK/migrations.txt"
-psql_ -At -F, -f - > "$WORK/counts.csv" < "$HERE/counts.sql"
+
+echo "[backup] 2/4 arquivos do Storage (só os novos ou alterados)"
+node "$HERE/incremental.mjs" store-files "$WORK"
+
+echo "[backup] 3/4 dono e data de cada arquivo"
 psql_ -c "\copy (select bucket_id, name, owner, owner_id, created_at, updated_at from storage.objects order by bucket_id, name) to '/w/objects.csv' csv"
 
-echo "[backup] arquivos do Storage"
-SUPABASE_URL="$SUPABASE_URL" SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" node "$HERE/storage.mjs" export "$WORK/storage"
-
-mkdir -p "$BACKUP_OUT"
-OUT="$BACKUP_OUT/mel-backup-$STAMP.tar.gz.age"
-tar -C "$WORK" -czf - . | age -r "$BACKUP_AGE_RECIPIENT" -o "$OUT"
-( cd "$BACKUP_OUT" && sha256sum "$(basename "$OUT")" > "$(basename "$OUT").sha256" )
-echo "[backup] ok: $(basename "$OUT") ($(stat -c %s "$OUT") bytes), $(wc -l < "$WORK/migrations.txt") migrations, $(wc -l < "$WORK/counts.csv") tabelas, $((SECONDS - START)) s"
+echo "[backup] 4/4 selando o ponto"
+node "$HERE/incremental.mjs" seal "$WORK" "$STAMP"
+echo "[backup] ok: ponto $STAMP, $(wc -l < "$WORK/migrations.txt") migrations, $(wc -l < "$WORK/dump-counts.csv") tabelas, $((SECONDS - START)) s"
