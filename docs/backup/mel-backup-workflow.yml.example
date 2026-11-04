@@ -1,0 +1,88 @@
+# MODELO — workflow do repositório PRIVADO `mel-backup` (ver docs/15-ativacao-backup.md).
+# Não roda aqui: está fora de .github/workflows de propósito. Copiar para
+# .github/workflows/backup.yml do repositório privado SÓ na ativação autorizada.
+#
+# O repositório privado guarda apenas este arquivo (e um README). Os scripts vêm do
+# mel-app público num commit FIXO (MEL_APP_REF), revisado: mudança no repositório
+# público não entra no backup sem alguém trocar este SHA.
+name: Backup diário da MEL
+
+on:
+  workflow_dispatch:
+  # Ativação: descomentar SÓ depois do 1º backup manual + restauração comprovada.
+  # schedule:
+  #   - cron: "17 6 * * *"   # 03:17 em Brasília
+  # Sem pull_request/push: nada de código de terceiros rodando com os secrets.
+
+permissions: {}
+
+concurrency:
+  group: mel-backup-repo   # backup e retenção nunca ao mesmo tempo
+  cancel-in-progress: false
+
+env:
+  MEL_APP_REF: "<SHA do commit revisado do mel-app>"
+  BACKUP_REPO: "bk:<nome-do-bucket>/mel"
+  # rclone configurado por variáveis (nenhum arquivo de configuração no disco do runner).
+  RCLONE_CONFIG_BK_TYPE: b2
+
+jobs:
+  backup:
+    if: github.repository == '<dono>/mel-backup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: backup   # secrets do backup diário (chave B2 SEM deleteFiles)
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: Duble-Bad/mel-app
+          ref: ${{ env.MEL_APP_REF }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      - name: Ferramentas
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age rclone >/dev/null && docker pull -q postgres:17
+      - name: Backup (dados + arquivos novos), sem imprimir dados
+        env:
+          DB_URL: ${{ secrets.DB_URL }}                         # Session pooler, porta 5432, ?sslmode=require
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}   # chave PÚBLICA
+          RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_WRITE_KEY_ID }}
+          RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_WRITE_KEY }}
+        run: bash scripts/backup/backup.sh
+      - name: Conferência do ponto (sem a chave privada)
+        env:
+          RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_WRITE_KEY_ID }}
+          RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_WRITE_KEY }}
+        run: node scripts/backup/incremental.mjs verify latest
+      - name: Ping de vida (só se tudo deu certo)
+        env:
+          PING_URL: ${{ secrets.HEALTHCHECK_URL }}
+        run: curl -fsS -m 10 --retry 3 "$PING_URL" > /dev/null
+      # Nunca: actions/upload-artifact, cache de diretórios de trabalho, "set -x", "env" ou "printenv".
+
+  retention:
+    needs: backup
+    if: github.repository == '<dono>/mel-backup'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: retencao   # secrets SEPARADOS: chave B2 COM deleteFiles, só aqui
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: Duble-Bad/mel-app
+          ref: ${{ env.MEL_APP_REF }}
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq rclone >/dev/null
+      - name: Retenção de 30 dias
+        env:
+          RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_PRUNE_KEY_ID }}
+          RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_PRUNE_KEY }}
+        run: node scripts/backup/incremental.mjs prune 30
