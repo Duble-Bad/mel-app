@@ -1,5 +1,10 @@
 # 16 — Guia de ativação do backup (para o proprietário)
 
+> **2L (04/11/2026): os passos 2 e 3 (Backblaze B2) estão SUSPENSOS.** O proprietário
+> decidiu que os backups ficam fisicamente em São Paulo, e o B2 não tem região no Brasil.
+> Recomendação atual: Oracle OCI `sa-saopaulo-1` (ver [17-armazenamento-sao-paulo.md](17-armazenamento-sao-paulo.md));
+> este guia será refeito para o provedor aprovado. Os passos 1, 4, 6 e 7 continuam valendo.
+
 Passo a passo para configurar o backup privado da MEL **sem programar** e **sem passar
 nenhuma credencial para ninguém** (nem para Claude, ChatGPT, e-mail ou arquivo do projeto).
 Painéis conferidos nas documentações oficiais em 04/11/2026; se a tela estiver diferente,
