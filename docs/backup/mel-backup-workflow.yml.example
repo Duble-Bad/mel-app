@@ -1,37 +1,57 @@
-# MODELO — workflow do repositório PRIVADO `mel-backup` (ver docs/15-ativacao-backup.md).
-# Não roda aqui: está fora de .github/workflows de propósito. Copiar para
-# .github/workflows/backup.yml do repositório privado SÓ na ativação autorizada.
+# MODELO — workflow do repositório PRIVADO `mel-backup` (guia: docs/16-guia-backup.md).
+# Não roda aqui: está fora de .github/workflows de propósito. No repositório privado,
+# vai para .github/workflows/backup.yml SÓ na ativação autorizada.
 #
 # O repositório privado guarda apenas este arquivo (e um README). Os scripts vêm do
 # mel-app público num commit FIXO (MEL_APP_REF), revisado: mudança no repositório
 # público não entra no backup sem alguém trocar este SHA.
-name: Backup diário da MEL
+#
+# Secrets (Settings → Secrets and variables → Actions → New repository secret).
+# No GitHub Free, repositório privado NÃO tem Environments: os secrets são do repositório.
+#   DB_URL                 Session pooler do Supabase, porta 5432, terminando em ?sslmode=require
+#   SUPABASE_URL           https://<ref>.supabase.co
+#   SUPABASE_SECRET_KEY    chave secreta (sb_secret_…)
+#   BACKUP_AGE_RECIPIENT   chave PÚBLICA age (age1…) — a privada NUNCA vai para o GitHub
+#   B2_KEY_ID / B2_KEY     chave do Backblaze restrita ao bucket
+#   B2_BUCKET              nome do bucket
+#   HEALTHCHECK_URL        https://hc-ping.com/<uuid>
+name: Backup da MEL
 
 on:
   workflow_dispatch:
+    inputs:
+      tarefa:
+        description: "O que fazer"
+        type: choice
+        options: [backup, verificacao-completa]
+        default: backup
   # Ativação: descomentar SÓ depois do 1º backup manual + restauração comprovada.
   # schedule:
-  #   - cron: "17 6 * * *"   # 03:17 em Brasília
+  #   - cron: "17 6 * * *"   # backup diário, 03:17 em Brasília
+  #   - cron: "47 7 1 * *"   # verificação completa, dia 1 de cada mês
   # Sem pull_request/push: nada de código de terceiros rodando com os secrets.
 
-permissions: {}
+permissions:
+  contents: read   # só para o checkout; nada de escrita
 
 concurrency:
-  group: mel-backup-repo   # backup e retenção nunca ao mesmo tempo
+  group: mel-backup-repo   # backup, retenção e verificação nunca ao mesmo tempo
   cancel-in-progress: false
 
 env:
   MEL_APP_REF: "<SHA do commit revisado do mel-app>"
-  BACKUP_REPO: "bk:<nome-do-bucket>/mel"
-  # rclone configurado por variáveis (nenhum arquivo de configuração no disco do runner).
-  RCLONE_CONFIG_BK_TYPE: b2
+  RCLONE_CONFIG_BK_TYPE: b2   # rclone configurado por variáveis: nenhum arquivo de configuração no disco
 
 jobs:
   backup:
     if: github.repository == '<dono>/mel-backup'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: backup   # secrets do backup diário (chave B2 SEM deleteFiles)
+    env:
+      BACKUP_REPO: bk:${{ secrets.B2_BUCKET }}/mel
+      RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_KEY_ID }}
+      RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_KEY }}
+      FULL: ${{ github.event.schedule == '47 7 1 * *' || inputs.tarefa == 'verificacao-completa' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -41,51 +61,34 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - run: npm ci --ignore-scripts
+      - run: npm ci   # igual ao ensaio (testado)
       - name: Ferramentas
         run: sudo apt-get update -qq && sudo apt-get install -y -qq age rclone >/dev/null && docker pull -q postgres:17
+
       - name: Backup (dados + arquivos novos), sem imprimir dados
+        if: env.FULL != 'true'
         env:
-          DB_URL: ${{ secrets.DB_URL }}                         # Session pooler, porta 5432, ?sslmode=require
+          DB_URL: ${{ secrets.DB_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}   # chave PÚBLICA
-          RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_WRITE_KEY_ID }}
-          RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_WRITE_KEY }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
           BACKUP_RESULT_FILE: ${{ runner.temp }}/point.txt   # só existe se o ponto for ÍNTEGRO
         run: bash scripts/backup/backup.sh
-      - name: Conferência do ponto RECÉM-CRIADO (não "latest": um ponto antigo não pode mascarar a falha de hoje)
-        env:
-          RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_WRITE_KEY_ID }}
-          RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_WRITE_KEY }}
-        run: node scripts/backup/incremental.mjs verify "$(cat "$RUNNER_TEMP/point.txt")"
-      # Backup incompleto (.incomplete) faz o passo de backup falhar: os passos seguintes,
-      # inclusive o ping, não rodam, e o healthchecks.io alerta pela falta do ping.
+      - name: Conferência rápida do ponto RECÉM-CRIADO (não "latest"; sem baixar os blobs)
+        if: env.FULL != 'true'
+        run: node scripts/backup/incremental.mjs verify "$(cat "$RUNNER_TEMP/point.txt")" --quick
+      - name: Retenção de 30 dias (só depois de um backup íntegro)
+        if: env.FULL != 'true'
+        run: node scripts/backup/incremental.mjs prune 30
+
+      - name: Verificação completa do ponto mais recente (baixa e confere todos os blobs)
+        if: env.FULL == 'true'
+        run: node scripts/backup/incremental.mjs verify latest
+
+      # Qualquer falha acima (inclusive backup INCOMPLETO) interrompe o job: o ping não
+      # sai e o healthchecks.io alerta pela falta dele.
       - name: Ping de vida (só se tudo deu certo)
         env:
           PING_URL: ${{ secrets.HEALTHCHECK_URL }}
         run: curl -fsS -m 10 --retry 3 "$PING_URL" > /dev/null
-      # Nunca: actions/upload-artifact, cache de diretórios de trabalho, "set -x", "env" ou "printenv".
-
-  retention:
-    needs: backup
-    if: github.repository == '<dono>/mel-backup'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: retencao   # secrets SEPARADOS: chave B2 COM deleteFiles, só aqui
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          repository: Duble-Bad/mel-app
-          ref: ${{ env.MEL_APP_REF }}
-          persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - run: npm ci --ignore-scripts
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq rclone >/dev/null
-      - name: Retenção de 30 dias
-        env:
-          RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_PRUNE_KEY_ID }}
-          RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_PRUNE_KEY }}
-        run: node scripts/backup/incremental.mjs prune 30
+      # Nunca: actions/upload-artifact, cache de pastas de trabalho, "set -x", "env" ou "printenv".

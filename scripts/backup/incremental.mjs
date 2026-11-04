@@ -22,7 +22,8 @@
 //   node incremental.mjs store-files <trabalho>          envia os blobs novos; grava storage/manifest.json
 //   node incremental.mjs seal <trabalho> <data>           cifra o ponto, grava .refs e por fim .ok
 //   node incremental.mjs list [--incomplete]              pontos íntegros (ou os incompletos)
-//   node incremental.mjs verify <data|latest>             confere snapshot e blobs (sem a chave privada)
+//   node incremental.mjs verify <data|latest> [--quick]   confere snapshot e blobs (sem a chave privada);
+//                                                         --quick não baixa os blobs (uso diário: egress)
 //   node incremental.mjs fetch <data|latest> <trabalho>   confere tudo e abre o ponto (precisa da chave)
 //   node incremental.mjs prune <dias>                     retenção: apaga pontos velhos e blobs sem uso
 //   node incremental.mjs rebuild-refs                     refaz os .refs a partir dos snapshots (precisa da chave)
@@ -67,6 +68,16 @@ function put(name, buf) {
   run("rclone", ["copyto", tmp, remote(name)]);
 }
 const get = (name) => run("rclone", ["cat", remote(name)]);
+
+/** Todos os .sha256 dos blobs, numa única chamada (são poucos bytes cada). */
+function sidecars() {
+  const dir = mkdtempSync(join(scratch, "sc-"));
+  spawnSync("rclone", ["copy", "--include", "*.age.sha256", remote("blobs"), dir], { maxBuffer: 1024 ** 3 });
+  return (key) => {
+    const file = join(dir, `${key}.age.sha256`);
+    return existsSync(file) ? readFileSync(file, "utf8").trim() : null;
+  };
+}
 const del = (name) => run("rclone", ["deletefile", remote(name)]);
 
 // --- age ----------------------------------------------------------------------
@@ -124,6 +135,7 @@ async function storeFiles(work) {
   const admin = storageClient();
   const objects = await listStorage(admin);
   const present = new Set(list("blobs").map((f) => f.name));
+  const shaOf = sidecars();
   const interruptAfter = Number(process.env.BACKUP_TEST_INTERRUPT_AFTER_BLOBS ?? "-1"); // só para o ensaio
   let fresh = 0;
   let reused = 0;
@@ -134,8 +146,9 @@ async function storeFiles(work) {
     const name = `blobs/${key}.age`;
     let cipherSha;
     // Blob só conta como existente se o .sha256 (escrito depois dele) também existir.
-    if (present.has(`${key}.age`) && present.has(`${key}.age.sha256`)) {
-      cipherSha = String(get(`${name}.sha256`)).trim();
+    const known = present.has(`${key}.age`) ? shaOf(key) : null;
+    if (known) {
+      cipherSha = known;
       reused++;
     } else {
       if (fresh === interruptAfter) fail("ensaio: backup interrompido de propósito no meio do envio");
@@ -240,20 +253,22 @@ function checkBlobs(files) {
   return bad;
 }
 
-function verify(which) {
+function verify(which, quick) {
   const stamp = pick(which);
   const { ok } = checkedSnapshot(stamp);
   // Sem a chave privada, os blobs são conferidos pelo .refs (cujo hash está no .ok).
   const refs = get(`snapshots/${stamp}.refs`);
   if (sha256(refs) !== ok.refs) fail(`ponto ${stamp}: .refs não confere com o .ok`);
   const present = new Set(list("blobs").map((f) => f.name));
+  const shaOf = sidecars();
   let bad = 0;
   for (const key of String(refs).split("\n").filter(Boolean)) {
-    if (!present.has(`${key}.age`) || !present.has(`${key}.age.sha256`)) bad++;
-    else if (sha256(get(`blobs/${key}.age`)) !== String(get(`blobs/${key}.age.sha256`)).trim()) bad++;
+    if (!present.has(`${key}.age`) || !shaOf(key)) bad++;
+    // Rápido (diário): só presença. Completo (mensal): baixa e confere o hash de cada blob.
+    else if (!quick && sha256(get(`blobs/${key}.age`)) !== shaOf(key)) bad++;
   }
-  if (bad) fail(`ponto ${stamp}: ${bad} blobs ausentes ou corrompidos`);
-  console.log(`[repo] ponto ${stamp} íntegro: ${ok.files} arquivos`);
+  if (bad) fail(`ponto ${stamp}: ${bad} blobs ausentes${quick ? "" : " ou corrompidos"}`);
+  console.log(`[repo] ponto ${stamp} íntegro${quick ? " (rápido: presença, sem baixar os blobs)" : ""}: ${ok.files} arquivos`);
 }
 
 function fetchPoint(which, work) {
@@ -361,7 +376,7 @@ try {
     run("tar", ["-C", dir, "-xzf", "-", "./storage/missing-refs.json"], decrypt(get(`snapshots/${a}.tar.gz.age`)));
     for (const k of JSON.parse(readFileSync(join(dir, "storage", "missing-refs.json"), "utf8"))) console.log(k);
   }
-  else if (cmd === "verify" && a) verify(a);
+  else if (cmd === "verify" && a) verify(a, b === "--quick");
   else if (cmd === "fetch" && a && b) fetchPoint(a, b);
   else if (cmd === "prune" && a) prune(a);
   else if (cmd === "rebuild-refs") rebuildRefs();

@@ -20,13 +20,13 @@ consultados em 04/11/2026 nas páginas oficiais; reconfirmar no dia.
   Os scripts vêm do `mel-app` público num **commit fixo revisado** (`MEL_APP_REF`).
 - **Nunca commitar:** dumps, arquivos do Storage, pastas de trabalho, `.env*`, chave
   privada age, configuração do rclone com chaves, saídas de `verify`/`fetch`.
-- **Secrets** (em *Environments*, não no repositório):
-  - `backup`: `DB_URL` (Session pooler, porta 5432, `?sslmode=require`), `SUPABASE_URL`,
-    `SUPABASE_SECRET_KEY`, `BACKUP_AGE_RECIPIENT` (pública), `B2_WRITE_KEY_ID`/`B2_WRITE_KEY`
-    (bucket único; `listFiles`, `readFiles`, `writeFiles`, **sem** `deleteFiles`), `HEALTHCHECK_URL`.
-  - `retencao`: `B2_PRUNE_KEY_ID`/`B2_PRUNE_KEY` (mesmo bucket, com `deleteFiles`).
-  - A chave **privada** age nunca vai para o GitHub (gerenciador de senhas + cópia offline).
-- **Permissões:** `permissions: {}` (o job não precisa do token do GitHub);
+- **Secrets do repositório** (2K: no GitHub Free, repositório privado **não tem Environments**):
+  `DB_URL` (Session pooler, porta 5432, `?sslmode=require`), `SUPABASE_URL`,
+  `SUPABASE_SECRET_KEY`, `BACKUP_AGE_RECIPIENT` (pública), `B2_KEY_ID`/`B2_KEY` (chave
+  "Read and Write" restrita ao bucket e ao prefixo `mel/`), `B2_BUCKET`, `HEALTHCHECK_URL`.
+  A chave **privada** age e a chave B2 "Read Only" de restauração nunca vão para o GitHub.
+  Guia passo a passo: [16-guia-backup.md](16-guia-backup.md).
+- **Permissões:** `permissions: contents: read` (só o checkout);
   `persist-credentials: false`; `if: github.repository == '<dono>/mel-backup'`.
 - **Pull requests:** o workflow não tem gatilho `pull_request`/`push`; só `workflow_dispatch`
   (e `schedule` depois da ativação). Repositório privado, sem colaboradores além do dono.
@@ -48,10 +48,10 @@ consultados em 04/11/2026 nas páginas oficiais; reconfirmar no dia.
 | Proteção contra exclusão | versões guardadas por padrão; Object Lock sem custo | bucket locks (disponibilidade no plano **pendente**) |
 | Região | EUA, Canadá, UE (escolhida na criação, definitiva); sem América do Sul | dica de localização sem América do Sul; jurisdição UE/EUA |
 
-**Recomendação: B2.** Sem cartão, com teto de gasto, transações grátis e chave do backup
-diário **sem permissão de apagar** (a retenção usa outra chave, em outro *Environment*).
-Regra de ciclo de vida do bucket: "manter só a última versão" com
-`daysFromHidingToDeleting: 7` — o que a retenção apaga fica recuperável por 7 dias e
+**Recomendação: B2.** Sem cartão, com teto de gasto e transações grátis. Chave pelo painel:
+"Read and Write" restrita ao bucket e ao prefixo (o painel não oferece escrita sem apagar;
+pela linha de comando é possível, opcional). Apagar pelo rclone só **oculta**; regra de
+ciclo de vida "Keep prior versions for this number of days" = 7 — o que a retenção apaga fica recuperável por 7 dias e
 depois some (exclusão total em até ~37 dias; registrar na política de privacidade).
 Os dados saem do Brasil **cifrados** com chave que fica só com o dono (transferência
 internacional: citar na política de privacidade). Ambos cabem na franquia (< 2 GB no 1º ano).

@@ -50,7 +50,7 @@ jobs:
           # Igual ao workflow diário: ping só se o backup terminou E o ponto recém-criado passou no verify.
           daily() {
             rm -f /tmp/point.txt /tmp/ping
-            BACKUP_RESULT_FILE=/tmp/point.txt bash scripts/backup/backup.sh && node scripts/backup/incremental.mjs verify "$(cat /tmp/point.txt)" && touch /tmp/ping
+            BACKUP_RESULT_FILE=/tmp/point.txt bash scripts/backup/backup.sh && node scripts/backup/incremental.mjs verify "$(cat /tmp/point.txt)" --quick && touch /tmp/ping
           }
           EOF
 
@@ -193,9 +193,14 @@ jobs:
           cp "$BACKUP_REPO/blobs/$key.age" /tmp/blob.bak
           printf '\x00' | dd of="$BACKUP_REPO/blobs/$key.age" bs=1 seek=100 conv=notrunc 2>/dev/null
           expect_fail node scripts/backup/incremental.mjs verify "$P_LATEST"
+          node scripts/backup/incremental.mjs verify "$P_LATEST" --quick   # o rápido não baixa: não vê corrupção (por isso o completo mensal)
           BACKUP_POINT="$P_LATEST" RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
           grep -q "nada foi restaurado" /tmp/out.txt
           cp /tmp/blob.bak "$BACKUP_REPO/blobs/$key.age"
+          mv "$BACKUP_REPO/blobs/$key.age" /tmp/blob.moved                  # blob sumido: o rápido vê
+          expect_fail node scripts/backup/incremental.mjs verify "$P_LATEST" --quick
+          grep -q "1 blobs ausentes" /tmp/out.txt
+          mv /tmp/blob.moved "$BACKUP_REPO/blobs/$key.age"
           cp "$BACKUP_REPO/snapshots/$P1.tar.gz.age" /tmp/snap.bak
           printf '\x00' | dd of="$BACKUP_REPO/snapshots/$P1.tar.gz.age" bs=1 seek=300 conv=notrunc 2>/dev/null
           expect_fail node scripts/backup/incremental.mjs verify "$P1"
