@@ -8,10 +8,10 @@ consultados em 04/11/2026 nas páginas oficiais; reconfirmar no dia.
 
 | Pergunta | Resposta |
 |---|---|
-| Arquivo referenciado pelo banco que some antes da cópia | Detectado: as referências vêm do **próprio dump** (`dump-inspect.mjs`); o que não está no manifesto é **registrado** no ponto (`missing-refs.json`, e o total no `.ok`) com aviso no log. A restauração confere isso **antes** de tocar no destino e, no fim, aceita só as registradas. |
+| Arquivo referenciado pelo banco que some antes da cópia | Detectado: as referências vêm do **próprio dump** (`dump-inspect.mjs`). Desde a 2J, faltando qualquer arquivo o ponto vira `.incomplete` (nunca `.ok`), o backup **falha** e não há ping; o ponto fica guardado só para diagnóstico (`incremental.mjs missing <data>`, local, com a chave). |
 | Arquivo novo ou alterado durante a execução | Novo depois da listagem: entra no próximo ponto (no ponto atual, sem linha no banco, seria órfão). Substituído entre a listagem e o download: o tamanho diferente aborta o backup (sem `.ok`); mesmo tamanho fica com o conteúdo mais novo sob a chave antiga (risco aceito, raro: o app nunca substitui arquivos). |
 | `.ok` só depois das verificações | Sim: depois do snapshot e do `.refs`, e só se **todo** blob do manifesto (e o `.sha256`) estiver no repositório. |
-| Ponto completo que falha depois por referência quebrada | **Era possível (corrigido em 2I):** a conferência só acontecia no fim da restauração, depois da carga dos dados. Agora é registrada no backup e reconciliada antes da carga. Ensaio: cenário 5b/10. |
+| Ponto completo que falha depois por referência quebrada | **Era possível (corrigido em 2I/2J):** agora só ponto sem nenhuma referência quebrada recebe `.ok` (`status: complete`); verify e restauração recusam `.incomplete` antes de qualquer escrita. |
 | Retenção ao mesmo tempo que o backup | Poderia apagar um blob reaproveitado ainda sem `.ok`. Evitado por: backup e retenção no mesmo workflow, em sequência, com `concurrency`; o selo confere os blobs antes do `.ok`; a retenção só apaga blob com mais de 30 dias. |
 
 ## 2. Repositório privado `mel-backup`
@@ -104,5 +104,6 @@ JWT/OAuth/SMTP de um projeto novo hospedado.
 | Estado | Exige |
 |---|---|
 | **READY** (hoje) | Scripts, ensaio sintético verde, modelo de workflow, procedimento, decisão de fornecedor |
+| Backup incompleto | Falha explícita: `backup.sh` sai com erro, sem `BACKUP_RESULT_FILE`; o workflow confere o ponto **recém-criado** (não `latest`) antes do ping; retenção não roda (`needs: backup`). Uma referência quebrada **permanente** na origem impede novos pontos íntegros até ser corrigida: o alerta do ping avisa no mesmo dia. |
 | **TESTED** | 1 backup hospedado com `verify` íntegro no bucket real; 1 restauração isolada (Supabase local) com conferências verdes; chave privada guardada e testada; bucket privado com teto e ciclo de vida |
 | **ACTIVE** | `schedule` diário ligado; ping de vida com alerta por e-mail; retenção rodando e conferida após 31 dias; ensaio sintético mensal (este repositório) e restauração real trimestral (passo 8) registrados em `10-status.md` |

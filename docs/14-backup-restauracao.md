@@ -212,3 +212,15 @@ Armazenamento: cada arquivo uma vez, mais as versões substituídas por até 30 
 **Ainda não comprovado:** tudo contra projeto hospedado (bloqueio da 2G) e o rclone com
 bucket real (o ensaio usa pasta local, mesmo código).
 
+## 9. Integridade do ponto (2J, 04/11/2026)
+
+Ponto **íntegro** = `.ok` com `status: "complete"` e `missingRefs: 0`: toda referência do
+banco tem arquivo, todo blob conferido. Faltando arquivo referenciado, o ponto recebe
+`.incomplete` no lugar do `.ok`, `backup.sh` **falha** (sem ping de sucesso), `verify` e
+a restauração o recusam antes de gravar, ele nunca é "o mais recente" e a retenção só
+considera pontos íntegros (o último íntegro fica, mesmo com incompletos mais novos).
+Incompletos ficam 30 dias para diagnóstico (`incremental.mjs missing <data>`, local, com a
+chave privada) e não protegem blobs. Ensaio run `41885817981`: falha sem ping (5b), volta
+ao íntegro (5c), recusa do incompleto (7), retenção com incompleto mais novo (8),
+restauração do íntegro mais recente (9) — e todos os cenários anteriores verdes.
+
