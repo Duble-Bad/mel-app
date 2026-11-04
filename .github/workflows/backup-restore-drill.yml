@@ -84,13 +84,18 @@ jobs:
           npx supabase stop --no-backup
           npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
 
+      # "localhost" em vez de "127.0.0.1": outra URL de projeto, como numa
+      # restauração em projeto novo (exercita a troca da URL dos avatares).
       - name: Restaurar no banco B
         env:
           BACKUP_AGE_IDENTITY: /tmp/poc-key.txt
+          SUPABASE_URL: http://localhost:54321
         run: |
           start=$SECONDS
-          bash scripts/backup/restore.sh
+          set -o pipefail
+          bash scripts/backup/restore.sh | tee /tmp/restore.txt
           echo "RESTORE_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
+          grep -q "avatares apontados para o projeto novo: 1" /tmp/restore.txt
 
       - name: Restaurar de novo por cima é recusado
         env:

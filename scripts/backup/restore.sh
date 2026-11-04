@@ -40,6 +40,20 @@ fi
 echo "[restore] dados (uma transação; gatilhos desligados durante a carga)"
 psql_ --single-transaction -c "set session_replication_role = replica" -f /w/data.sql >/dev/null
 
+# avatar_url guarda a URL completa do projeto: num projeto novo, aponta para o novo.
+SOURCE_URL="$(cat "$WORK/source-url.txt")"
+if [ "$SOURCE_URL" != "$SUPABASE_URL" ]; then
+  MOVED="$(psql_ -At -v old="$SOURCE_URL/storage/v1/object/public/avatars/" -v new="$SUPABASE_URL/storage/v1/object/public/avatars/" <<'SQL'
+with u as (
+  update public.profiles set avatar_url = :'new' || substr(avatar_url, length(:'old') + 1)
+   where starts_with(avatar_url, :'old')
+  returning 1)
+select count(*) from u;
+SQL
+)"
+  echo "[restore] avatares apontados para o projeto novo: $MOVED"
+fi
+
 echo "[restore] arquivos do Storage"
 SUPABASE_URL="$SUPABASE_URL" SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" node "$HERE/storage.mjs" import "$WORK/storage"
 

@@ -18,6 +18,7 @@
 #   migrations.txt versões aplicadas (a restauração exige as mesmas)
 #   counts.csv    linhas por tabela (conferência depois de restaurar)
 #   objects.csv   dono e data de cada arquivo (storage.objects)
+#   source-url.txt URL do projeto (avatar_url guarda a URL completa)
 #   storage/      os arquivos, nos mesmos caminhos, + files.json com sha256
 # Logs: só totais, tamanhos e tempos. Nada de dados, caminhos ou segredos.
 set -euo pipefail
@@ -40,6 +41,7 @@ npx supabase db dump --db-url "$DB_URL" --data-only --use-copy \
 echo "[backup] schema (referência)"
 npx supabase db dump --db-url "$DB_URL" -f "$WORK/schema.sql" >/dev/null
 
+printf %s "$SUPABASE_URL" > "$WORK/source-url.txt"
 psql_ -At -c "select version from supabase_migrations.schema_migrations order by version" > "$WORK/migrations.txt"
 psql_ -At -F, -f - > "$WORK/counts.csv" < "$HERE/counts.sql"
 psql_ -c "\copy (select bucket_id, name, owner, owner_id, created_at, updated_at from storage.objects order by bucket_id, name) to '/w/objects.csv' csv"
