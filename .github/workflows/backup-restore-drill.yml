@@ -38,7 +38,7 @@ jobs:
           cat > /tmp/lib.sh <<'EOF'
           set -euo pipefail
           blobs() { find "$BACKUP_REPO/blobs" -name '*.age' 2>/dev/null | wc -l; }
-          points() { node scripts/backup/incremental.mjs list; }
+          points() { node scripts/backup/incremental.mjs list "$@"; }
           expect_fail() { if "$@" > /tmp/out.txt 2>&1; then echo "deveria ter falhado: $*"; cat /tmp/out.txt; exit 1; fi; }
           supa_env() {
             npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb.env
@@ -47,6 +47,11 @@ jobs:
           }
           poc() { (cd packages/data && MEL_BACKUP_POC="$1" npx vitest run --config vitest.db.config.ts tests/backup-restore.poc.test.ts); }
           fresh_db() { npx supabase stop --no-backup >/dev/null; npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy >/dev/null; }
+          # Igual ao workflow diário: ping só se o backup terminou E o ponto recém-criado passou no verify.
+          daily() {
+            rm -f /tmp/point.txt /tmp/ping
+            BACKUP_RESULT_FILE=/tmp/point.txt bash scripts/backup/backup.sh && node scripts/backup/incremental.mjs verify "$(cat /tmp/point.txt)" && touch /tmp/ping
+          }
           EOF
 
       - name: Conexão hospedada mal configurada é recusada antes de conectar (URLs fictícias)
@@ -70,9 +75,12 @@ jobs:
       - name: 1) primeiro backup completo; 2) segundo sem mudanças não baixa nada
         run: |
           . /tmp/lib.sh; supa_env
-          bash scripts/backup/backup.sh | tee /tmp/b1.txt
+          daily 2>&1 | tee /tmp/b1.txt
           grep -q "5 novos/alterados enviados" /tmp/b1.txt
           [ "$(blobs)" = 5 ]
+          [ -e /tmp/ping ]                                                       # sucesso → ping
+          grep -q '"status":"complete"' "$BACKUP_REPO/snapshots/$(cat /tmp/point.txt).ok"
+          grep -q '"missingRefs":0' "$BACKUP_REPO/snapshots/$(cat /tmp/point.txt).ok"
           sleep 1
           bash scripts/backup/backup.sh | tee /tmp/b2.txt
           grep -q "0 novos/alterados enviados (0 bytes baixados), 5 já no repositório" /tmp/b2.txt
@@ -119,23 +127,52 @@ jobs:
           echo "P_LATEST=$(points | tail -1)" >> "$GITHUB_ENV"
           echo "ok: sem manifesto, nada baixado de novo"
 
-      - name: 5b) referência quebrada na origem (arquivo some, linha fica) — ponto registra e a restauração não é surpreendida
+      - name: 5b) arquivo referenciado some (a linha fica) — backup FALHA, ponto .incomplete, sem ping
+        run: |
+          . /tmp/lib.sh; supa_env
+          node --input-type=module -e '
+            import { createClient } from "@supabase/supabase-js";
+            import { readFileSync, writeFileSync } from "node:fs";
+            const x = JSON.parse(readFileSync(process.env.MEL_BACKUP_POC_DIR + "/expected-latest.json", "utf8"));
+            const key = Object.keys(x.files).find((k) => k.startsWith("sighting-media/")).slice("sighting-media/".length);
+            const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+            const { data, error: e1 } = await admin.storage.from("sighting-media").download(key);
+            if (e1) throw e1;
+            writeFileSync("/tmp/removed.bin", Buffer.from(await data.arrayBuffer()));   // para a correção em 5c
+            writeFileSync("/tmp/removed.key", key);
+            const { error } = await admin.storage.from("sighting-media").remove([key]);
+            if (error) throw error;'
+          sleep 1
+          if daily > /tmp/b5b.txt 2>&1; then cat /tmp/b5b.txt; echo "deveria falhar"; exit 1; fi
+          cat /tmp/b5b.txt
+          grep -q "FALHA: 1 referências do banco sem arquivo" /tmp/b5b.txt
+          grep -q "INCOMPLETO" /tmp/b5b.txt
+          [ ! -e /tmp/ping ] && [ ! -e /tmp/point.txt ]                            # nada de sucesso
+          P_BROKEN="$(points --incomplete | tail -1)"
+          [ -n "$P_BROKEN" ] && [ ! -e "$BACKUP_REPO/snapshots/$P_BROKEN.ok" ]
+          grep -q '"status":"incomplete"' "$BACKUP_REPO/snapshots/$P_BROKEN.incomplete"
+          [ "$(points | tail -1)" = "$P_LATEST" ]                                 # "latest" continua o último íntegro
+          expect_fail node scripts/backup/incremental.mjs verify "$P_BROKEN"
+          grep -q "INCOMPLETO" /tmp/out.txt
+          node scripts/backup/incremental.mjs missing "$P_BROKEN" | grep -qc "^sighting-media/"   # diagnóstico local (com a chave)
+          echo "P_BROKEN=$P_BROKEN" >> "$GITHUB_ENV"
+          echo "ok: falha explícita; ponto guardado como incompleto; nenhum sinal de sucesso"
+
+      - name: 5c) arquivo de volta — o backup seguinte é íntegro de novo
         run: |
           . /tmp/lib.sh; supa_env
           node --input-type=module -e '
             import { createClient } from "@supabase/supabase-js";
             import { readFileSync } from "node:fs";
-            const x = JSON.parse(readFileSync(process.env.MEL_BACKUP_POC_DIR + "/expected-latest.json", "utf8"));
-            const key = Object.keys(x.files).find((k) => k.startsWith("sighting-media/"));
             const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
-            const { error } = await admin.storage.from("sighting-media").remove([key.slice("sighting-media/".length)]);
+            const { error } = await admin.storage.from("sighting-media").upload(readFileSync("/tmp/removed.key", "utf8"), readFileSync("/tmp/removed.bin"), { contentType: "image/png" });
             if (error) throw error;'
           sleep 1
-          bash scripts/backup/backup.sh 2>&1 | tee /tmp/b5b.txt
-          grep -q "AVISO: 1 referências do banco sem arquivo na origem" /tmp/b5b.txt
-          grep -q '"missingRefs":1' "$BACKUP_REPO/snapshots/$(points | tail -1).ok"
-          echo "P_BROKEN=$(points | tail -1)" >> "$GITHUB_ENV"
-          echo "ok: ponto selado com a referência quebrada registrada"
+          daily 2>&1 | tee /tmp/b5c.txt
+          [ -e /tmp/ping ]
+          [ "$(points | tail -1)" = "$(cat /tmp/point.txt)" ] && [ "$(cat /tmp/point.txt)" != "$P_LATEST" ]
+          echo "P_FIXED=$(cat /tmp/point.txt)" >> "$GITHUB_ENV"
+          echo "ok: íntegro de novo, com ping"
 
       - name: 6) restaurar um ponto ANTERIOR (antes das mudanças) num banco B novo
         run: |
@@ -166,6 +203,8 @@ jobs:
           cp /tmp/snap.bak "$BACKUP_REPO/snapshots/$P1.tar.gz.age"
           node scripts/backup/incremental.mjs verify "$P1"
           node scripts/backup/incremental.mjs verify "$P_LATEST"
+          BACKUP_POINT="$P_BROKEN" RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
+          grep -q "INCOMPLETO" /tmp/out.txt
           [ "$(docker run --rm --network host postgres:17 psql "$DB_URL" -At -c 'select count(*) from auth.users')" = 0 ]
           echo "ok: recusas antes de qualquer escrita; banco B continua vazio"
 
@@ -184,16 +223,30 @@ jobs:
           done
           find "$BACKUP_REPO/blobs" -type f -exec touch -d '-40 days' {} +
           node scripts/backup/incremental.mjs prune 30 | tee /tmp/prune.txt
-          grep -q "3 pontos mantidos, 2 apagados, 3 blobs sem uso apagados" /tmp/prune.txt
-          [ "$(blobs)" = 5 ]   # foto apagada (2) e avatar antigo (1) saíram; os 5 atuais ficam
+          grep -q "3 pontos mantidos, 2 apagados, 3 blobs sem uso apagados; 1 incompletos guardados para diagnóstico" /tmp/prune.txt
+          [ "$(blobs)" = 6 ]   # foto apagada (2) e avatar antigo (1) saíram; ficam os 5 atuais + o arquivo reenviado em 5c
+          [ -e "$BACKUP_REPO/snapshots/$P_BROKEN.incomplete" ] && [ -e "$BACKUP_REPO/snapshots/$P_BROKEN.tar.gz.age" ]
+          # Cópia do repositório: TODOS os pontos íntegros velhos e um incompleto mais novo.
+          # A retenção mantém o último íntegro (e o incompleto, para diagnóstico).
+          rm -rf /tmp/repo2 && cp -a "$BACKUP_REPO" /tmp/repo2
+          i=60
+          for s in $(BACKUP_REPO=/tmp/repo2 points); do
+            old="$(date -u -d "-$i days" +%Y%m%dT%H%M%SZ)"; i=$((i - 1))
+            for ext in ok refs tar.gz.age; do mv "/tmp/repo2/snapshots/$s.$ext" "/tmp/repo2/snapshots/$old.$ext"; done
+          done
+          BACKUP_REPO=/tmp/repo2 node scripts/backup/incremental.mjs prune 30 | tee /tmp/prune2.txt
+          grep -q "1 pontos mantidos" /tmp/prune2.txt && grep -q "1 incompletos guardados" /tmp/prune2.txt
+          [ "$(BACKUP_REPO=/tmp/repo2 points | wc -l)" = 1 ]
+          BACKUP_REPO=/tmp/repo2 node scripts/backup/incremental.mjs verify latest
           node scripts/backup/incremental.mjs verify "$P_LATEST"
           node scripts/backup/incremental.mjs verify latest
-          echo "ok: retenção apaga só o que nenhum ponto mantido usa"
+          echo "ok: retenção apaga só o que nenhum ponto mantido usa; o último íntegro fica mesmo com um incompleto mais novo"
 
-      - name: 9) restaurar o ponto completo mais recente depois da retenção; Auth, RLS, privacidade, arquivos, referências
+      - name: 9) restaurar o ponto íntegro mais recente (o de depois da correção) após a retenção; Auth, RLS, privacidade, arquivos, referências
         run: |
           . /tmp/lib.sh; supa_env
-          BACKUP_POINT="$P_LATEST" RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh | tee /tmp/r2.txt
+          [ "$(points | tail -1)" = "$P_FIXED" ]
+          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh | tee /tmp/r2.txt
           grep -q "avatares apontados para o projeto novo: 1" /tmp/r2.txt
           grep -q "0 com dono diferente" /tmp/r2.txt
           MEL_BACKUP_POC_EXPECTED=expected-latest.json poc verify
@@ -205,12 +258,3 @@ jobs:
           . /tmp/lib.sh; supa_env
           RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
           grep -q "já tem contas" /tmp/out.txt && echo "ok: recusado"
-
-      - name: 10) restaurar o ponto com a referência quebrada registrada — conclui, sem falhar no fim
-        run: |
-          . /tmp/lib.sh
-          fresh_db; supa_env
-          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh 2>&1 | tee /tmp/r3.txt
-          grep -q "ok: ponto $P_BROKEN" /tmp/r3.txt
-          grep -q "só as 1 referências sem arquivo já registradas no backup" /tmp/r3.txt
-          echo "ok: a referência quebrada é conhecida antes da carga e conferida depois"

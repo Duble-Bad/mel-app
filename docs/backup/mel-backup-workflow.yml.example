@@ -52,12 +52,15 @@ jobs:
           BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}   # chave PÚBLICA
           RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_WRITE_KEY_ID }}
           RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_WRITE_KEY }}
+          BACKUP_RESULT_FILE: ${{ runner.temp }}/point.txt   # só existe se o ponto for ÍNTEGRO
         run: bash scripts/backup/backup.sh
-      - name: Conferência do ponto (sem a chave privada)
+      - name: Conferência do ponto RECÉM-CRIADO (não "latest": um ponto antigo não pode mascarar a falha de hoje)
         env:
           RCLONE_CONFIG_BK_ACCOUNT: ${{ secrets.B2_WRITE_KEY_ID }}
           RCLONE_CONFIG_BK_KEY: ${{ secrets.B2_WRITE_KEY }}
-        run: node scripts/backup/incremental.mjs verify latest
+        run: node scripts/backup/incremental.mjs verify "$(cat "$RUNNER_TEMP/point.txt")"
+      # Backup incompleto (.incomplete) faz o passo de backup falhar: os passos seguintes,
+      # inclusive o ping, não rodam, e o healthchecks.io alerta pela falta do ping.
       - name: Ping de vida (só se tudo deu certo)
         env:
           PING_URL: ${{ secrets.HEALTHCHECK_URL }}

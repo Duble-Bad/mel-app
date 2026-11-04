@@ -7,8 +7,12 @@
 //   blobs/<chave>.age.sha256   sha256 do CIFRADO (confere sem a chave privada)
 //   snapshots/<data>.tar.gz.age  banco + manifesto (caminho → blob) de um ponto
 //   snapshots/<data>.refs      chaves dos blobs que o ponto usa (sem dados)
-//   snapshots/<data>.ok        escrito POR ÚLTIMO: sha256 do snapshot e do .refs.
-//                              Sem .ok, o ponto não existe (backup parcial)
+//   snapshots/<data>.ok        escrito POR ÚLTIMO e SÓ para ponto íntegro (toda
+//                              referência do banco tem arquivo): sha256 do snapshot e do
+//                              .refs, status "complete". Sem .ok, o ponto não existe
+//   snapshots/<data>.incomplete  no lugar do .ok quando falta arquivo referenciado: o ponto
+//                              fica guardado para diagnóstico, mas nunca é "o mais
+//                              recente", não passa no verify e não é restaurado
 //
 // <chave> = sha256(bucket, caminho, eTag, tamanho, updated_at): calculável pela
 // listagem do Storage, sem baixar. Arquivo substituído → outra chave → blob novo; o
@@ -17,11 +21,13 @@
 //
 //   node incremental.mjs store-files <trabalho>          envia os blobs novos; grava storage/manifest.json
 //   node incremental.mjs seal <trabalho> <data>           cifra o ponto, grava .refs e por fim .ok
-//   node incremental.mjs list                             pontos completos
+//   node incremental.mjs list [--incomplete]              pontos íntegros (ou os incompletos)
 //   node incremental.mjs verify <data|latest>             confere snapshot e blobs (sem a chave privada)
 //   node incremental.mjs fetch <data|latest> <trabalho>   confere tudo e abre o ponto (precisa da chave)
 //   node incremental.mjs prune <dias>                     retenção: apaga pontos velhos e blobs sem uso
 //   node incremental.mjs rebuild-refs                     refaz os .refs a partir dos snapshots (precisa da chave)
+//   node incremental.mjs missing <data>                   diagnóstico LOCAL: caminhos sem arquivo de um ponto
+//                                                         incompleto (precisa da chave; não rodar no CI)
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -172,13 +178,18 @@ function seal(work, stamp) {
   // origem): o ponto é fiel ao que existia, mas fica REGISTRADO, e a restauração confere.
   const missing = missingRefs(work, files);
   writeFileSync(join(work, "storage", "missing-refs.json"), JSON.stringify(missing));
-  if (missing.length) console.warn(`[repo] AVISO: ${missing.length} referências do banco sem arquivo na origem (registradas no ponto)`);
   const archive = encrypt(run("tar", ["-C", work, "-czf", "-", "."]));
   const refs = Buffer.from(`${[...new Set(files.map((f) => f.blob))].sort().join("\n")}\n`);
   put(`snapshots/${stamp}.tar.gz.age`, archive);
   put(`snapshots/${stamp}.refs`, refs);
   if (process.env.BACKUP_TEST_INTERRUPT_BEFORE_OK === "1") fail("ensaio: backup interrompido antes de marcar como completo");
-  put(`snapshots/${stamp}.ok`, Buffer.from(JSON.stringify({ snapshot: sha256(archive), refs: sha256(refs), files: files.length, missingRefs: missing.length })));
+  const marker = { snapshot: sha256(archive), refs: sha256(refs), files: files.length, missingRefs: missing.length };
+  if (missing.length) {
+    // Guardado para diagnóstico, nunca como ponto válido; o backup FALHA (sem ping de sucesso).
+    put(`snapshots/${stamp}.incomplete`, Buffer.from(JSON.stringify({ ...marker, status: "incomplete" })));
+    fail(`FALHA: ${missing.length} referências do banco sem arquivo — ponto ${stamp} INCOMPLETO (guardado para diagnóstico, não é backup válido)`);
+  }
+  put(`snapshots/${stamp}.ok`, Buffer.from(JSON.stringify({ ...marker, status: "complete" })));
   console.log(`[repo] ponto ${stamp} completo: ${files.length} arquivos, snapshot ${archive.length} bytes`);
 }
 
@@ -191,10 +202,22 @@ const complete = () =>
     .filter((s) => STAMP.test(s))
     .sort();
 
+/** Pontos marcados .incomplete (falta arquivo referenciado). */
+const incomplete = () =>
+  list("snapshots")
+    .map((f) => f.name)
+    .filter((n) => n.endsWith(".incomplete"))
+    .map((n) => n.slice(0, -".incomplete".length))
+    .filter((s) => STAMP.test(s))
+    .sort();
+
 function pick(which) {
   const points = complete();
   const stamp = which === "latest" ? points.at(-1) : which;
+  if (stamp && incomplete().includes(stamp)) fail(`ponto ${stamp} INCOMPLETO (referências sem arquivo): não é backup válido`);
   if (!stamp || !points.includes(stamp)) fail(`ponto ${which} não existe ou está incompleto (sem .ok)`);
+  const ok = JSON.parse(String(get(`snapshots/${stamp}.ok`)));
+  if (ok.status !== "complete" || ok.missingRefs) fail(`ponto ${stamp}: marcador .ok sem status íntegro`);
   return stamp;
 }
 
@@ -242,10 +265,9 @@ function fetchPoint(which, work) {
   // Tudo conferido ANTES de qualquer escrita no destino.
   const recorded = JSON.parse(readFileSync(join(work, "storage", "missing-refs.json"), "utf8"));
   const missing = missingRefs(work, files);
-  if (JSON.stringify(missing) !== JSON.stringify(recorded))
-    fail(`ponto ${stamp}: referências sem arquivo (${missing.length}) diferentes das registradas no backup (${recorded.length}) — nada foi restaurado`);
-  writeFileSync(join(work, "expected-missing-refs.txt"), String(missing.length));
-  if (missing.length) console.warn(`[repo] AVISO: o ponto tem ${missing.length} referências sem arquivo, registradas no backup`);
+  if (missing.length || recorded.length)
+    fail(`ponto ${stamp}: ${Math.max(missing.length, recorded.length)} referências do banco sem arquivo — nada foi restaurado`);
+  writeFileSync(join(work, "expected-missing-refs.txt"), "0");
   const bad = checkBlobs(files);
   if (bad) fail(`ponto ${stamp}: ${bad} blobs ausentes ou corrompidos — nada foi restaurado`);
   const out = [];
@@ -288,11 +310,16 @@ function prune(days) {
     for (const k of String(refs).split("\n").filter(Boolean)) used.add(k);
   }
   for (const s of drop) for (const ext of [".ok", ".refs", ".tar.gz.age"]) del(`snapshots/${s}${ext}`);
-  // Sobras de backups interrompidos (sem .ok) com mais de 1 dia também saem.
+  // Pontos .incomplete ficam para diagnóstico pelo mesmo prazo e depois saem; não
+  // contam como "mais novo" nem protegem blobs. Sobras de backup interrompido (sem
+  // marcador nenhum) saem após 1 dia.
+  const broken = incomplete();
   const files = list("snapshots");
   for (const f of files) {
-    const s = f.name.replace(/\.(ok|refs|tar\.gz\.age)$/, "");
-    if (!points.includes(s) && f.modTime < Date.now() - 86_400_000) del(`snapshots/${f.name}`);
+    const s = f.name.replace(/\.(ok|incomplete|refs|tar\.gz\.age)$/, "");
+    if (keep.includes(s)) continue;
+    const expired = broken.includes(s) ? stampTime(s) < limit : f.modTime < Date.now() - 86_400_000;
+    if (expired) del(`snapshots/${f.name}`);
   }
   // Blob sem uso só sai se também for velho: um backup em andamento pode tê-lo acabado de enviar.
   let removed = 0;
@@ -303,7 +330,8 @@ function prune(days) {
       if (f.name.endsWith(".age")) removed++;
     }
   }
-  console.log(`[repo] retenção de ${days} dias: ${keep.length} pontos mantidos, ${drop.length} apagados, ${removed} blobs sem uso apagados`);
+  const brokenKept = broken.filter((s) => stampTime(s) >= limit).length;
+  console.log(`[repo] retenção de ${days} dias: ${keep.length} pontos mantidos, ${drop.length} apagados, ${removed} blobs sem uso apagados; ${brokenKept} incompletos guardados para diagnóstico`);
 }
 
 function rebuildRefs() {
@@ -326,7 +354,13 @@ const [cmd, a, b] = process.argv.slice(2);
 try {
   if (cmd === "store-files" && a) await storeFiles(a);
   else if (cmd === "seal" && a && b) seal(a, b);
-  else if (cmd === "list") console.log(complete().join("\n"));
+  else if (cmd === "list") console.log((a === "--incomplete" ? incomplete() : complete()).join("\n"));
+  else if (cmd === "missing" && a) {
+    if (!incomplete().includes(a)) fail(`ponto ${a} não está marcado como incompleto`);
+    const dir = mkdtempSync(join(scratch, "mi-"));
+    run("tar", ["-C", dir, "-xzf", "-", "./storage/missing-refs.json"], decrypt(get(`snapshots/${a}.tar.gz.age`)));
+    for (const k of JSON.parse(readFileSync(join(dir, "storage", "missing-refs.json"), "utf8"))) console.log(k);
+  }
   else if (cmd === "verify" && a) verify(a);
   else if (cmd === "fetch" && a && b) fetchPoint(a, b);
   else if (cmd === "prune" && a) prune(a);

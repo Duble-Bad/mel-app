@@ -7,14 +7,16 @@
 #   SUPABASE_URL           URL da API do projeto
 #   SUPABASE_SECRET_KEY    chave secreta (lê o Storage)
 #   BACKUP_AGE_RECIPIENT   chave PÚBLICA age (age1…); a privada fica fora daqui
-#   BACKUP_REPO            destino do rclone (pasta local ou bucket, ex.: r2:mel-backup)
+#   BACKUP_REPO            destino do rclone (pasta local ou bucket, ex.: bk:bucket/mel)
+#   BACKUP_RESULT_FILE     (opcional) recebe a data do ponto criado, SÓ se íntegro
 # Requer: docker, node, npx supabase, age, rclone.
 #
 # Ordem (consistência): 1) dump do banco; 2) lista e envia os arquivos; 3) dono e data
 # dos arquivos; 4) sela o ponto. Tudo que o dump referencia já existia em 1 e é
 # listado em 2, a não ser que tenha sido apagado nesses segundos; arquivo novo entre 1
 # e 2 fica sem referência (órfão, que a faxina apaga). O ponto só vale com o .ok,
-# escrito por último: backup interrompido nunca aparece como completo.
+# escrito por último e só se toda referência do banco tiver arquivo; se faltar
+# algum, o ponto vira .incomplete e este script FALHA (saída diferente de 0).
 set -euo pipefail
 umask 077
 : "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_AGE_RECIPIENT:?}" "${BACKUP_REPO:?}"
@@ -47,4 +49,5 @@ psql_ -c "\copy (select bucket_id, name, owner, owner_id, created_at, updated_at
 
 echo "[backup] 4/4 selando o ponto"
 node "$HERE/incremental.mjs" seal "$WORK" "$STAMP"
+[ -z "${BACKUP_RESULT_FILE:-}" ] || printf %s "$STAMP" > "$BACKUP_RESULT_FILE"
 echo "[backup] ok: ponto $STAMP, $(wc -l < "$WORK/migrations.txt") migrations, $(wc -l < "$WORK/dump-counts.csv") tabelas, $((SECONDS - START)) s"
