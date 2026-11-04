@@ -151,15 +151,34 @@ async function storeFiles(work) {
   console.log(`[repo] arquivos: ${files.length} no Storage; ${fresh} novos/alterados enviados (${bytes} bytes baixados), ${reused} já no repositório`);
 }
 
+/** Referências do banco (do próprio dump) sem arquivo no manifesto. */
+function missingRefs(work, files) {
+  const have = new Set(files.map((f) => `${f.bucket}/${f.path}`));
+  return JSON.parse(readFileSync(join(work, "dump-refs.json"), "utf8"))
+    .map((r) => `${r.bucket}/${r.path}`)
+    .filter((k) => !have.has(k))
+    .sort();
+}
+
 function seal(work, stamp) {
   if (!STAMP.test(stamp)) fail("data inválida");
   const files = JSON.parse(readFileSync(join(work, "storage", "manifest.json"), "utf8"));
+  // Todo blob do manifesto precisa estar no repositório (com o .sha256) ANTES do .ok:
+  // uma retenção rodando ao mesmo tempo, ou um envio perdido, não vira ponto "completo".
+  const present = new Set(list("blobs").map((f) => f.name));
+  const absent = files.filter((f) => !present.has(`${f.blob}.age`) || !present.has(`${f.blob}.age.sha256`)).length;
+  if (absent) fail(`${absent} blobs do manifesto não estão no repositório — ponto NÃO selado`);
+  // Referência do banco sem arquivo (apagado entre o dump e a listagem, ou já quebrada na
+  // origem): o ponto é fiel ao que existia, mas fica REGISTRADO, e a restauração confere.
+  const missing = missingRefs(work, files);
+  writeFileSync(join(work, "storage", "missing-refs.json"), JSON.stringify(missing));
+  if (missing.length) console.warn(`[repo] AVISO: ${missing.length} referências do banco sem arquivo na origem (registradas no ponto)`);
   const archive = encrypt(run("tar", ["-C", work, "-czf", "-", "."]));
   const refs = Buffer.from(`${[...new Set(files.map((f) => f.blob))].sort().join("\n")}\n`);
   put(`snapshots/${stamp}.tar.gz.age`, archive);
   put(`snapshots/${stamp}.refs`, refs);
   if (process.env.BACKUP_TEST_INTERRUPT_BEFORE_OK === "1") fail("ensaio: backup interrompido antes de marcar como completo");
-  put(`snapshots/${stamp}.ok`, Buffer.from(JSON.stringify({ snapshot: sha256(archive), refs: sha256(refs), files: files.length })));
+  put(`snapshots/${stamp}.ok`, Buffer.from(JSON.stringify({ snapshot: sha256(archive), refs: sha256(refs), files: files.length, missingRefs: missing.length })));
   console.log(`[repo] ponto ${stamp} completo: ${files.length} arquivos, snapshot ${archive.length} bytes`);
 }
 
@@ -221,6 +240,12 @@ function fetchPoint(which, work) {
   run("tar", ["-C", work, "-xzf", "-"], decrypt(archive));
   const files = JSON.parse(readFileSync(join(work, "storage", "manifest.json"), "utf8"));
   // Tudo conferido ANTES de qualquer escrita no destino.
+  const recorded = JSON.parse(readFileSync(join(work, "storage", "missing-refs.json"), "utf8"));
+  const missing = missingRefs(work, files);
+  if (JSON.stringify(missing) !== JSON.stringify(recorded))
+    fail(`ponto ${stamp}: referências sem arquivo (${missing.length}) diferentes das registradas no backup (${recorded.length}) — nada foi restaurado`);
+  writeFileSync(join(work, "expected-missing-refs.txt"), String(missing.length));
+  if (missing.length) console.warn(`[repo] AVISO: o ponto tem ${missing.length} referências sem arquivo, registradas no backup`);
   const bad = checkBlobs(files);
   if (bad) fail(`ponto ${stamp}: ${bad} blobs ausentes ou corrompidos — nada foi restaurado`);
   const out = [];

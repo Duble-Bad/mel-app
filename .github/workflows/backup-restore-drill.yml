@@ -119,6 +119,24 @@ jobs:
           echo "P_LATEST=$(points | tail -1)" >> "$GITHUB_ENV"
           echo "ok: sem manifesto, nada baixado de novo"
 
+      - name: 5b) referência quebrada na origem (arquivo some, linha fica) — ponto registra e a restauração não é surpreendida
+        run: |
+          . /tmp/lib.sh; supa_env
+          node --input-type=module -e '
+            import { createClient } from "@supabase/supabase-js";
+            import { readFileSync } from "node:fs";
+            const x = JSON.parse(readFileSync(process.env.MEL_BACKUP_POC_DIR + "/expected-latest.json", "utf8"));
+            const key = Object.keys(x.files).find((k) => k.startsWith("sighting-media/"));
+            const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SECRET_KEY, { auth: { persistSession: false } });
+            const { error } = await admin.storage.from("sighting-media").remove([key.slice("sighting-media/".length)]);
+            if (error) throw error;'
+          sleep 1
+          bash scripts/backup/backup.sh 2>&1 | tee /tmp/b5b.txt
+          grep -q "AVISO: 1 referências do banco sem arquivo na origem" /tmp/b5b.txt
+          grep -q '"missingRefs":1' "$BACKUP_REPO/snapshots/$(points | tail -1).ok"
+          echo "P_BROKEN=$(points | tail -1)" >> "$GITHUB_ENV"
+          echo "ok: ponto selado com a referência quebrada registrada"
+
       - name: 6) restaurar um ponto ANTERIOR (antes das mudanças) num banco B novo
         run: |
           . /tmp/lib.sh
@@ -137,8 +155,8 @@ jobs:
           key="$(head -1 "$BACKUP_REPO/snapshots/$P_LATEST.refs")"
           cp "$BACKUP_REPO/blobs/$key.age" /tmp/blob.bak
           printf '\x00' | dd of="$BACKUP_REPO/blobs/$key.age" bs=1 seek=100 conv=notrunc 2>/dev/null
-          expect_fail node scripts/backup/incremental.mjs verify latest
-          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
+          expect_fail node scripts/backup/incremental.mjs verify "$P_LATEST"
+          BACKUP_POINT="$P_LATEST" RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
           grep -q "nada foi restaurado" /tmp/out.txt
           cp /tmp/blob.bak "$BACKUP_REPO/blobs/$key.age"
           cp "$BACKUP_REPO/snapshots/$P1.tar.gz.age" /tmp/snap.bak
@@ -147,7 +165,7 @@ jobs:
           grep -q "não confere com o .ok" /tmp/out.txt
           cp /tmp/snap.bak "$BACKUP_REPO/snapshots/$P1.tar.gz.age"
           node scripts/backup/incremental.mjs verify "$P1"
-          node scripts/backup/incremental.mjs verify latest
+          node scripts/backup/incremental.mjs verify "$P_LATEST"
           [ "$(docker run --rm --network host postgres:17 psql "$DB_URL" -At -c 'select count(*) from auth.users')" = 0 ]
           echo "ok: recusas antes de qualquer escrita; banco B continua vazio"
 
@@ -166,15 +184,16 @@ jobs:
           done
           find "$BACKUP_REPO/blobs" -type f -exec touch -d '-40 days' {} +
           node scripts/backup/incremental.mjs prune 30 | tee /tmp/prune.txt
-          grep -q "2 pontos mantidos, 2 apagados, 3 blobs sem uso apagados" /tmp/prune.txt
+          grep -q "3 pontos mantidos, 2 apagados, 3 blobs sem uso apagados" /tmp/prune.txt
           [ "$(blobs)" = 5 ]   # foto apagada (2) e avatar antigo (1) saíram; os 5 atuais ficam
+          node scripts/backup/incremental.mjs verify "$P_LATEST"
           node scripts/backup/incremental.mjs verify latest
           echo "ok: retenção apaga só o que nenhum ponto mantido usa"
 
-      - name: 9) restaurar o ponto MAIS RECENTE depois da retenção; Auth, RLS, privacidade, arquivos, referências
+      - name: 9) restaurar o ponto completo mais recente depois da retenção; Auth, RLS, privacidade, arquivos, referências
         run: |
           . /tmp/lib.sh; supa_env
-          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh | tee /tmp/r2.txt
+          BACKUP_POINT="$P_LATEST" RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh | tee /tmp/r2.txt
           grep -q "avatares apontados para o projeto novo: 1" /tmp/r2.txt
           grep -q "0 com dono diferente" /tmp/r2.txt
           MEL_BACKUP_POC_EXPECTED=expected-latest.json poc verify
@@ -186,3 +205,12 @@ jobs:
           . /tmp/lib.sh; supa_env
           RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 expect_fail bash scripts/backup/restore.sh
           grep -q "já tem contas" /tmp/out.txt && echo "ok: recusado"
+
+      - name: 10) restaurar o ponto com a referência quebrada registrada — conclui, sem falhar no fim
+        run: |
+          . /tmp/lib.sh
+          fresh_db; supa_env
+          RESTORE_CONFIRM=localhost SUPABASE_URL=http://localhost:54321 bash scripts/backup/restore.sh 2>&1 | tee /tmp/r3.txt
+          grep -q "ok: ponto $P_BROKEN" /tmp/r3.txt
+          grep -q "só as 1 referências sem arquivo já registradas no backup" /tmp/r3.txt
+          echo "ok: a referência quebrada é conhecida antes da carga e conferida depois"

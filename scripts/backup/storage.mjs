@@ -116,11 +116,13 @@ async function check() {
     missing += lost;
     console.log(`[check] ${bucket}: ${wanted.size} referenciados, ${stored.size} arquivos, ${lost} referências sem arquivo, ${orphans} arquivos sem referência`);
   }
-  if (missing) {
-    console.error(`[check] FALHA: ${missing} referências do banco apontam para arquivos ausentes`);
+  // Na restauração: o número de referências sem arquivo que o próprio backup registrou.
+  const expected = Number(process.env.CHECK_EXPECTED_MISSING ?? "0");
+  if (missing !== expected) {
+    console.error(`[check] FALHA: ${missing} referências do banco apontam para arquivos ausentes (esperado: ${expected})`);
     process.exit(1);
   }
-  console.log("[check] ok: toda referência do banco tem arquivo");
+  console.log(expected ? `[check] ok: só as ${expected} referências sem arquivo já registradas no backup` : "[check] ok: toda referência do banco tem arquivo");
 }
 
 async function stats() {

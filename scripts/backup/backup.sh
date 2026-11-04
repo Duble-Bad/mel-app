@@ -35,8 +35,8 @@ npx supabase db dump --db-url "$DB_URL" --data-only --use-copy \
   -x public.plans -x auth.schema_migrations -x supabase_migrations.schema_migrations -x supabase_migrations.seed_files \
   -f "$WORK/data.sql" >/dev/null
 npx supabase db dump --db-url "$DB_URL" -f "$WORK/schema.sql" >/dev/null
-node "$HERE/dump-counts.mjs" "$WORK/data.sql" > "$WORK/dump-counts.csv"
 printf %s "$SUPABASE_URL" > "$WORK/source-url.txt"
+node "$HERE/dump-inspect.mjs" "$WORK/data.sql" "$WORK" "$SUPABASE_URL"
 psql_ -At -c "select version from supabase_migrations.schema_migrations order by version" > "$WORK/migrations.txt"
 
 echo "[backup] 2/4 arquivos do Storage (só os novos ou alterados)"

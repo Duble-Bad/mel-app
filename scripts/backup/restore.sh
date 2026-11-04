@@ -96,5 +96,6 @@ done < "$WORK/dump-counts.csv"
 echo "[restore] $COMPARED tabelas com as mesmas contagens do dump"
 
 echo "[restore] referências do banco × arquivos"
-SUPABASE_URL="$SUPABASE_URL" SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" node "$HERE/storage.mjs" check
+# Referências sem arquivo: só as que o backup registrou (conferidas antes da carga).
+CHECK_EXPECTED_MISSING="$(cat "$WORK/expected-missing-refs.txt")" SUPABASE_URL="$SUPABASE_URL" SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY" node "$HERE/storage.mjs" check
 echo "[restore] ok: ponto $(cat "$WORK/point.txt") em $((SECONDS - START)) s"
