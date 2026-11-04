@@ -147,7 +147,7 @@ describe.runIf(phase === "seed")("backup PoC — dados sintéticos no banco A", 
     };
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "expected.json"), JSON.stringify(expected));
-    expect(Object.keys(files)).toHaveLength(6);
+    expect(Object.keys(files)).toHaveLength(5); // avatar, foto e miniatura do pet, avistamento, encontrado
   });
 });
 
