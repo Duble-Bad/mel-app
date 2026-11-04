@@ -31,9 +31,10 @@ Launch Readiness 2E (04/11/2026). **O Supabase Free não tem backup automático*
 - **Armazenamento:** Backblaze B2 (10 GB grátis) ou Cloudflare R2 (10 GB grátis,
   sem custo de saída). Chave de acesso restrita a um bucket, só escrita se o
   fornecedor permitir (B2 permite chave só `writeFiles`). *Termos e cadastro não verificados.*
-- **Retenção (LGPD):** 30 dias corridos, apagados pela regra de ciclo de vida do
-  bucket. Uma exclusão de conta some dos backups em até 30 dias; registrar isso na
-  política de privacidade. Sem cópias mensais longas.
+- **Retenção (LGPD):** 30 dias, pelo comando `prune 30` do próprio repositório (seção 8).
+  **Não** usar regra de ciclo de vida do bucket por idade: um arquivo enviado há 40 dias e
+  ainda no ar é usado pelo ponto de hoje. Uma exclusão de conta some dos backups em até
+  30 dias; registrar isso na política de privacidade.
 - **Monitoramento:** e-mail de falha do GitHub Actions + "ping de vida"
   (ex.: healthchecks.io grátis) que avisa se o backup **não** rodar. *Não configurado.*
 - **Logs:** os scripts só imprimem totais, tamanhos e tempos; nunca caminhos, dados ou segredos.
@@ -141,4 +142,73 @@ contents: read`); (2) secrets: `DB_URL` (pooler, sslmode), `SUPABASE_URL`,
 (5) primeiro backup manual + restauração num projeto **descartável** (criar, testar,
 apagar — fica no limite de 2 projetos do Free só se um dos atuais estiver pausado,
 como o `mel-prod` hoje) antes de ligar o agendamento.
+
+## 8. Backup incremental (2H, 04/11/2026)
+
+Substitui o "baixar tudo todo dia" da 2E. Código: `scripts/backup/incremental.mjs`
+(repositório via rclone: pasta local no ensaio, bucket B2/R2 em produção).
+
+**Repositório:**
+
+| Caminho | Conteúdo |
+|---|---|
+| `blobs/<chave>.age` | um arquivo do Storage, cifrado (age) |
+| `blobs/<chave>.age.sha256` | sha256 do cifrado: confere sem a chave privada |
+| `snapshots/<data>.tar.gz.age` | o ponto: dump do banco, contagens, dono/data dos arquivos e o manifesto (caminho → blob) |
+| `snapshots/<data>.refs` | chaves dos blobs que o ponto usa (sem dados) |
+| `snapshots/<data>.ok` | escrito **por último**: sha256 do snapshot e do `.refs`. Sem `.ok`, o ponto não existe |
+
+- **Chave do blob** = sha256(bucket, caminho, eTag, tamanho, `updated_at`), calculável pela
+  listagem do Storage. Só o que não está em `blobs/` é baixado. O app nunca substitui
+  arquivo (`upsert: false` em todo upload), mas a política do avatar permite substituir:
+  substituído → outra chave → blob novo; o antigo continua para os pontos anteriores.
+- **Sem índice frágil:** o "já tenho" é a listagem de `blobs/`. Perder todos os snapshots
+  não faz o próximo backup baixar tudo de novo (testado).
+- **Integridade antes de restaurar:** snapshot × `.ok`; cada blob × sha256 do manifesto
+  (cifrado, autenticado); age recusa cifrado alterado; tamanho × manifesto. Qualquer falha
+  → nada é escrito no destino.
+- **Restauração exige** `RESTORE_CONFIRM=<host do destino>`, destino com as mesmas
+  migrations e sem contas.
+
+**Consistência banco × arquivos:** ordem fixa — dump do banco → listagem/envio dos
+arquivos → dono/data (`storage.objects`) → selo. Tudo que o dump referencia já existia no
+dump e é listado logo depois; a janela de segundos só pode (a) deixar sem arquivo algo
+apagado nesse intervalo — aparece no `storage.mjs check` da restauração — ou (b) incluir
+arquivo novo sem linha no banco (órfão, a faxina apaga). As contagens conferidas são as
+**do próprio dump** (`dump-counts.mjs`), não de uma consulta separada no banco vivo.
+
+**Retenção (`prune 30`):** apaga pontos com mais de 30 dias (o mais novo fica sempre,
+mesmo velho: backup parado não apaga tudo) e blobs que **nenhum ponto mantido** usa
+(pelos `.refs`, cada um conferido com o seu `.ok`) e que também tenham mais de 30 dias
+(um backup em andamento pode ter acabado de enviá-lo). `.refs` ausente ou adulterado
+**suspende** a retenção. Sobras de backup interrompido (sem `.ok`) saem após 1 dia.
+
+**Manifesto perdido ou corrompido:** cada ponto é independente; se um snapshot se perde,
+os outros continuam restauráveis. `.refs` perdido: `rebuild-refs` (com a chave privada)
+refaz a partir dos snapshots e confere com o `.ok`. O próximo backup recria tudo do zero
+sem rebaixar arquivos.
+
+**Transferência (egress do Supabase):** o banco inteiro por dia (dump, pequeno) + só os
+arquivos **novos ou substituídos**. Ex.: piloto com 50 fotos novas/dia (~250 KB cada,
+original + miniatura) ≈ 12 MB/dia ≈ 0,4 GB/mês, contra ~30 × o Storage inteiro antes.
+Armazenamento: cada arquivo uma vez, mais as versões substituídas por até 30 dias.
+
+**Ensaio (run `41861445673`, verde, só dados sintéticos):**
+
+| Cenário | Resultado |
+|---|---|
+| 1º backup completo | 5 arquivos enviados |
+| 2º sem mudanças | 0 baixados, 5 reaproveitados |
+| Inclusão + substituição + exclusão, com backup interrompido no meio do envio | interrompido não vira ponto; o seguinte envia só os 2 que faltavam |
+| Interrompido antes de selar | arquivo existe, mas não é ponto |
+| Perda de todos os snapshots | próximo backup: 0 baixados |
+| Restaurar ponto anterior | foto original e avatar antigo de volta; 53 tabelas = dump; 5/5 arquivos, 0 dono errado; 0 referência quebrada; Auth, RLS, privacidade |
+| Sem confirmação / blob corrompido / snapshot adulterado | recusados; banco de destino continua vazio |
+| `.refs` perdido | retenção suspensa; `rebuild-refs` refaz |
+| Retenção de 30 dias (pontos e blobs envelhecidos) | 2 pontos e 3 blobs sem uso apagados; os 5 em uso ficam |
+| Restaurar o ponto mais recente depois da retenção | foto nova, avatar substituído, foto apagada ausente; auditoria/impressão digital idênticas |
+| Restaurar por cima | recusado |
+
+**Ainda não comprovado:** tudo contra projeto hospedado (bloqueio da 2G) e o rclone com
+bucket real (o ensaio usa pasta local, mesmo código).
 
