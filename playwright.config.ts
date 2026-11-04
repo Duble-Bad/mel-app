@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 import { assertSafeTarget } from "./scripts/lib/safe-target.mjs";
@@ -8,6 +9,8 @@ if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 assertSafeTarget(process.env.NEXT_PUBLIC_SUPABASE_URL, "testes E2E");
 
 const PORT = 3100;
+// Segredo do agendador só desta execução (nunca o real). Herdado pelos workers.
+process.env.MEL_E2E_SCHEDULER_SECRET ??= `e2e-${randomUUID()}`;
 const isCI = !!process.env.CI;
 
 export default defineConfig({
@@ -36,7 +39,8 @@ export default defineConfig({
     url: `http://localhost:${PORT}/api/health`,
     reuseExistingServer: !isCI,
     // Habilita páginas internas de verificação (ex.: /dev/local). Nunca em produção.
-    env: { MEL_DEV_ROUTES: "1" },
+    // Agendador com o segredo desta execução; sem a chave VAPID privada nenhum push real sai (o despacho responde 503).
+    env: { MEL_DEV_ROUTES: "1", CRON_SECRET: process.env.MEL_E2E_SCHEDULER_SECRET, VAPID_PRIVATE_KEY: "" },
     timeout: 180_000,
   },
 });

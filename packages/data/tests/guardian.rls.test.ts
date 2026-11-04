@@ -122,4 +122,21 @@ describe("push queue", () => {
     const { data } = await service.from("push_subscriptions").select("last_success_at").eq("endpoint", endpoint).single();
     expect((data as { last_success_at: string | null }).last_success_at).not.toBeNull();
   });
+
+  it("two schedulers at the same time never claim the same item; a repeat run does not resend", async () => {
+    const service = serviceClient();
+    // Dois itens garantidos na fila (sem depender do limite diário do Guardião).
+    const [n] = await guardianAlerts(nearGuardian);
+    const { error } = await service.from("push_outbox" as never).insert([1, 2].map(() => ({ notification_id: n!.id, user_id: nearGuardian.id })) as never);
+    expect(error).toBeNull();
+    const [a, b] = await Promise.all([claimPushBatch(service, 1), claimPushBatch(service, 1)]);
+    const first = [...a, ...b].map((j) => j.outboxId);
+    expect(a).toHaveLength(1);
+    expect(b).toHaveLength(1);
+    expect(new Set(first).size).toBe(2);
+    // Já reservados (SENDING): a próxima execução não os pega de novo, nem antes de concluídos.
+    const again = await claimPushBatch(service, 200);
+    expect(again.map((j) => j.outboxId).filter((id) => first.includes(id))).toEqual([]);
+    for (const j of [...a, ...b, ...again]) await finishPush(service, j.outboxId, "SKIPPED", "teste");
+  });
 });

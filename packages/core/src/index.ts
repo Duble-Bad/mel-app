@@ -21,4 +21,5 @@ export * from "./moderation/moderation";
 export * from "./adoption/adoption";
 export * from "./partners/partners";
 export * from "./privacy/privacy";
+export * from "./security/scheduler";
 export * from "./security/turnstile";

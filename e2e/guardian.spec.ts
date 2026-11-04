@@ -72,3 +72,62 @@ test("the push dispatcher refuses visitors without a session", async ({ request 
   const res = await request.post("/api/push/dispatch");
   expect(res.status()).toBe(401);
 });
+
+test.describe("scheduler (Vercel Cron: GET with Authorization: Bearer)", () => {
+  // Segredo desta execução (playwright.config.ts); o servidor de teste não tem a
+  // chave VAPID privada: autorizado responde 503 "push desativado", sem push real.
+  const secret = process.env.MEL_E2E_SCHEDULER_SECRET!;
+  const bearer = { Authorization: `Bearer ${secret}` };
+
+  test("GET without the secret, with a wrong one, or with the secret in the URL is refused", async ({ request }) => {
+    for (const res of await Promise.all([
+      request.get("/api/push/dispatch"),
+      request.get("/api/push/dispatch", { headers: { Authorization: `Bearer ${secret}x` } }),
+      request.get("/api/push/dispatch", { headers: { Authorization: "Bearer " } }),
+      request.get(`/api/push/dispatch?secret=${secret}`),
+      request.get(`/api/push/dispatch?token=${secret}&authorization=Bearer%20${secret}`),
+    ])) {
+      expect(res.status()).toBe(401);
+      expect(await res.text()).not.toContain(secret);
+    }
+  });
+
+  test("GET and POST with the secret run the job; repeated and simultaneous runs are fine", async ({ request }) => {
+    const runs = await Promise.all([
+      request.get("/api/push/dispatch", { headers: bearer }),
+      request.get("/api/push/dispatch", { headers: bearer }),
+      request.post("/api/push/dispatch", { headers: bearer }),
+    ]);
+    runs.push(await request.get("/api/push/dispatch", { headers: bearer }));
+    for (const res of runs) {
+      expect(res.status()).toBe(503);
+      expect(res.headers()["cache-control"]).toBe("no-store");
+      const body = await res.json();
+      expect(body).toMatchObject({ sent: 0, disabled: expect.stringContaining("VAPID") });
+      // A faxina de fotos órfãs rodou (número) ou falhou sem derrubar o push (null).
+      expect(body).toHaveProperty("orphansRemoved");
+      expect(JSON.stringify(body)).not.toContain(secret);
+    }
+  });
+
+  test("a logged-in session does not authorize GET (a link elsewhere can't trigger it)", async ({ page }) => {
+    const user = await createUser("sched-get", { onboarded: true });
+    created.push(user.email);
+    await page.goto("/entrar?next=/perfil");
+    await page.getByLabel("E-mail").fill(user.email);
+    await page.getByLabel("Senha", { exact: true }).fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await expect(page).toHaveURL((url) => url.pathname === "/perfil");
+    // Chamadas de dentro da página logada, como o app faz.
+    const call = (method: string) =>
+      page.evaluate(async (m) => {
+        const res = await fetch("/api/push/dispatch", { method: m });
+        return { status: res.status, body: await res.json() };
+      }, method);
+    // POST com sessão continua disparando o push (sem faxina).
+    const post = await call("POST");
+    expect(post.status).toBe(503);
+    expect(post.body).not.toHaveProperty("orphansRemoved");
+    expect((await call("GET")).status).toBe(401);
+  });
+});

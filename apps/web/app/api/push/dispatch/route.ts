@@ -1,39 +1,64 @@
 import { type NextRequest } from "next/server";
-import { getSessionUser } from "@/lib/session";
+import { isSchedulerAuthorized, runScheduledMaintenance } from "@mel/core";
 import { purgeOrphanSightingMedia } from "@mel/data";
-import { dispatchPushQueue } from "@/lib/push/dispatch";
+import { getSessionUser } from "@/lib/session";
+import { dispatchPushQueue, type DispatchResult } from "@/lib/push/dispatch";
 import { createServiceClient } from "@/lib/supabase/service";
 
-/** Apaga fotos órfãs antigas do sighting-media. Falha aqui não impede o push. */
-async function cleanOrphanMedia() {
+/**
+ * Agendador: `Authorization: Bearer <segredo>`, com PUSH_DISPATCH_SECRET ou
+ * CRON_SECRET (o Vercel Cron manda este sozinho, via GET). Segredo na URL não
+ * vale. O cabeçalho nunca vai para log.
+ */
+function fromScheduler(request: NextRequest): boolean {
+  return isSchedulerAuthorized(request.headers.get("authorization"), [process.env.PUSH_DISPATCH_SECRET, process.env.CRON_SECRET]);
+}
+
+const unauthorized = () => Response.json({ error: "Não autorizado." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+
+function respond(result: DispatchResult, extra?: { orphansRemoved: number | null }) {
+  return Response.json({ ...result, ...extra }, { status: result.disabled ? 503 : 200, headers: { "Cache-Control": "no-store" } });
+}
+
+/** Apaga fotos órfãs antigas do sighting-media (só o agendador). */
+async function cleanOrphans(): Promise<number> {
   const service = createServiceClient();
-  if (!service) return;
+  return service ? purgeOrphanSightingMedia(service) : 0;
+}
+
+/**
+ * Agendador (faxina de fotos órfãs + push que ficou para trás). Só envia o que
+ * o banco já decidiu enviar; cada item é reservado no banco (SKIP LOCKED), então
+ * execuções próximas ou simultâneas não duplicam envio.
+ */
+async function scheduled() {
   try {
-    const removed = await purgeOrphanSightingMedia(service);
-    if (removed) console.info("[manutenção] fotos órfãs apagadas", { removed });
+    const { dispatch, orphansRemoved } = await runScheduledMaintenance({ cleanOrphans, dispatch: () => dispatchPushQueue() });
+    return respond(dispatch, { orphansRemoved });
   } catch (err) {
-    console.error("[manutenção] limpeza de fotos órfãs falhou", err);
+    console.error("[api/push/dispatch] falhou", err);
+    return Response.json({ error: "Não foi possível processar os avisos agora." }, { status: 500, headers: { "Cache-Control": "no-store" } });
   }
 }
 
 /**
- * Processa a fila de push. Chamado logo após ações que geram avisos (alerta
- * ativado) e, em produção, também por um agendador com
- * `Authorization: Bearer $PUSH_DISPATCH_SECRET`. Só envia o que o banco já
- * decidiu enviar (destinatários e antispam ficam no banco). Na chamada do
- * agendador, também apaga fotos órfãs antigas do sighting-media.
+ * GET: só o agendador (Vercel Cron). Sessão não autoriza GET — um link ou
+ * imagem em outro site não dispara nada em nome de quem está logado.
+ */
+export async function GET(request: NextRequest) {
+  if (!fromScheduler(request)) return unauthorized();
+  return scheduled();
+}
+
+/**
+ * POST: o agendador (segredo) ou o app logo após ações que geram avisos
+ * (sessão) — este só dispara o push, sem faxina.
  */
 export async function POST(request: NextRequest) {
-  const secret = process.env.PUSH_DISPATCH_SECRET;
-  const bearer = request.headers.get("authorization") === `Bearer ${secret}` && Boolean(secret);
-  if (!bearer && !(await getSessionUser())) {
-    return Response.json({ error: "Não autorizado." }, { status: 401 });
-  }
+  if (fromScheduler(request)) return scheduled();
+  if (!(await getSessionUser())) return unauthorized();
   try {
-    // Só o agendador (segredo) faz a faxina; quem chama logado só dispara o push.
-    if (bearer) await cleanOrphanMedia();
-    const result = await dispatchPushQueue();
-    return Response.json(result, { status: result.disabled ? 503 : 200 });
+    return respond(await dispatchPushQueue());
   } catch (err) {
     console.error("[api/push/dispatch] falhou", err);
     return Response.json({ error: "Não foi possível processar os avisos agora." }, { status: 500 });

@@ -30,7 +30,8 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | 3.3 | Secrets do servidor: `SUPABASE_SECRET_KEY`, `PUSH_DISPATCH_SECRET`, `TURNSTILE_SECRET_KEY`, `VAPID_PRIVATE_KEY` | Nunca no repositório |
 | 3.4 | Variáveis públicas: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_MAPTILER_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_AUTH_GOOGLE` | Públicas entram no build: mudar exige novo deploy |
 | 3.6 | **Content-Security-Policy completa** (hoje só `frame-ancestors`; os outros headers de segurança já estão no `next.config.ts`) | Levantar as origens reais: Supabase (REST, Auth, Realtime wss, Storage), MapTiler (API, tiles, fontes, worker blob), Turnstile (script e iframe), Google (OAuth) e os scripts inline do Next (nonce). Testar em modo `Report-Only` antes de impor |
-| 3.5 | **Agendador** chamando `POST /api/push/dispatch` com `Bearer $PUSH_DISPATCH_SECRET` | Reenvia push que ficou para trás e **apaga as fotos órfãs** do `sighting-media`. Sem ele, nada é apagado |
+| 3.5 | **Agendador** (código pronto, 2C): `CRON_SECRET` (≥ 32 caracteres) na Vercel + `"crons": [{ "path": "/api/push/dispatch", "schedule": "0 9 * * *" }]` em `apps/web/vercel.json` (Hobby: 1×/dia; 09:00 UTC = 06:00 em Brasília). Outro agendador: `GET`/`POST` com `Authorization: Bearer $PUSH_DISPATCH_SECRET` | Reenvia push que ficou para trás e **apaga as fotos órfãs** do `sighting-media`. Sem ele, nada é apagado. Conferir no log da Vercel a 1ª execução (200) |
+| 3.7 | **Região das funções**: `apps/web/vercel.json` já pede `gru1` (São Paulo, junto do Supabase `sa-east-1`). Exige *Root Directory* = `apps/web` no projeto Vercel | Confirmar no 1º deploy: painel → Deployment → Functions → Region `gru1` (sem isso, o padrão é `iad1`, EUA) |
 
 ## 4. Supabase `mel-prod` (painel — nunca `supabase config push`)
 
