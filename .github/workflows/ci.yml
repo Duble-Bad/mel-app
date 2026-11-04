@@ -26,6 +26,15 @@ jobs:
     name: Banco (RLS) e ponta a ponta
     needs: static
     runs-on: ubuntu-latest
+    # Único job que usa o mel-dev (banco compartilhado): um por vez em todo o
+    # repositório (push, PR e manual). Nunca cancela quem está rodando — ele
+    # pode estar criando ou limpando dados. Limite do GitHub: só 1 espera na
+    # fila; se chegar outro, o que esperava é cancelado ANTES de começar (nunca
+    # tocou no banco) e o mais novo assume. Os demais jobs e workflows (estático,
+    # reconstrução do schema, ensaio de backup) usam Supabase local e não esperam.
+    concurrency:
+      group: mel-dev-shared-database
+      cancel-in-progress: false
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
