@@ -1,0 +1,116 @@
+name: Ensaio de backup e restauração (dados sintéticos)
+
+# Prova que scripts/backup/backup.sh + restore.sh recuperam a MEL inteira:
+# banco A (local, descartável) com dados SINTÉTICOS → backup criptografado →
+# A destruído → banco B novo (só migrations) → restauração → conferências.
+# Só manual. Nenhum segredo de projeto: não alcança o mel-dev nem o mel-prod.
+# Repositório público: nada de dados reais aqui, nem artefatos do backup.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    name: Backup → destruir → restaurar → conferir
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MEL_BACKUP_POC_DIR: /tmp/poc
+      BACKUP_OUT: /tmp/poc-out
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Ferramentas (age, imagem do psql 17)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq age >/dev/null
+          age --version
+          docker pull -q postgres:17
+
+      - name: Banco A (Supabase local + migrations)
+        run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
+
+      - name: Variáveis do banco local (chaves padrão do Supabase local)
+        run: |
+          npx supabase status -o env 2>/dev/null | grep -E '^[A-Z_]+=' > /tmp/sb.env
+          set -a; . /tmp/sb.env; set +a
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
+            echo "SUPABASE_SECRET_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+            echo "DB_URL=$DB_URL"
+          } >> "$GITHUB_ENV"
+
+      - name: Dados sintéticos no banco A
+        working-directory: packages/data
+        run: MEL_BACKUP_POC=seed npx vitest run --config vitest.db.config.ts tests/backup-restore.poc.test.ts
+
+      - name: Chave age só deste ensaio (some com o runner)
+        run: |
+          age-keygen -o /tmp/poc-key.txt 2>/dev/null
+          echo "BACKUP_AGE_RECIPIENT=$(age-keygen -y /tmp/poc-key.txt)" >> "$GITHUB_ENV"
+
+      - name: Backup
+        run: |
+          start=$SECONDS
+          bash scripts/backup/backup.sh
+          echo "BACKUP_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
+          echo "BACKUP_FILE=$(ls "$BACKUP_OUT"/mel-backup-*.tar.gz.age)" >> "$GITHUB_ENV"
+
+      - name: O arquivo está criptografado (texto sintético conhecido não aparece; aparece depois de abrir)
+        run: |
+          head -c 21 "$BACKUP_FILE" | grep -q '^age-encryption.org/v1'
+          ! zcat -f "$BACKUP_FILE" 2>/dev/null | grep -aq 'Mensagem sintética'
+          age -d -i /tmp/poc-key.txt "$BACKUP_FILE" | tar -xzOf - ./data.sql | grep -aq 'Mensagem sintética'
+          echo "ok: ilegível sem a chave; legível com ela"
+
+      - name: Arquivo adulterado ou chave errada não abre
+        run: |
+          cp "$BACKUP_FILE" /tmp/tampered.age
+          printf '\x00' | dd of=/tmp/tampered.age bs=1 seek=200 conv=notrunc 2>/dev/null
+          ! age -d -i /tmp/poc-key.txt /tmp/tampered.age > /dev/null 2>&1
+          age-keygen -o /tmp/other-key.txt 2>/dev/null
+          ! age -d -i /tmp/other-key.txt "$BACKUP_FILE" > /dev/null 2>&1
+          echo "ok: adulteração e chave errada recusadas"
+
+      - name: Destruir o banco A e subir o banco B do zero (só migrations, como um projeto novo)
+        run: |
+          npx supabase stop --no-backup
+          npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
+
+      - name: Restaurar no banco B
+        env:
+          BACKUP_AGE_IDENTITY: /tmp/poc-key.txt
+        run: |
+          start=$SECONDS
+          bash scripts/backup/restore.sh
+          echo "RESTORE_SECONDS=$((SECONDS - start))" >> "$GITHUB_ENV"
+
+      - name: Restaurar de novo por cima é recusado
+        env:
+          BACKUP_AGE_IDENTITY: /tmp/poc-key.txt
+        run: |
+          if bash scripts/backup/restore.sh > /tmp/again.txt 2>&1; then echo "deveria recusar"; exit 1; fi
+          grep -q "já tem contas" /tmp/again.txt && echo "ok: recusado"
+
+      - name: Schema, RLS, funções e grants idênticos às migrations (auditoria + impressão digital)
+        run: node scripts/schema-audit/audit.mjs
+
+      - name: Auth, RLS, privacidade, relações e arquivos no banco B
+        working-directory: packages/data
+        run: MEL_BACKUP_POC=verify npx vitest run --config vitest.db.config.ts tests/backup-restore.poc.test.ts
+
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Ensaio de backup e restauração"
+            echo "- backup: ${BACKUP_SECONDS:-?} s · restauração: ${RESTORE_SECONDS:-?} s"
+            echo "- tamanho do arquivo criptografado: $(stat -c %s "${BACKUP_FILE:-/dev/null}" 2>/dev/null || echo ?) bytes"
+          } >> "$GITHUB_STEP_SUMMARY"
