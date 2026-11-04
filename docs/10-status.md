@@ -7,7 +7,7 @@
 
 Autorizado pelo dono sobre o commit **`46f3238`**. Estado congelado:
 
-- **30 migrations**, todas aplicadas no `mel-dev` e validadas do zero (impressão digital versionada); **24–30 pendentes no `mel-prod`**.
+- **31 migrations**, todas aplicadas no `mel-dev` e validadas do zero (impressão digital versionada); **24–31 pendentes no `mel-prod`**.
 - **P0 encerrados:** Radar Privacy (24) e Sighting Privacy (29, completado na 30 com o rótulo público do avistamento).
 - **P1 encerrados:** tratamento de erros, ciclo de vida do alerta (25), moderação de adoção/parceiros (26), anti-abuso (27) e limpeza de fotos órfãs (28).
 - **Quick wins do benchmark:** cartaz acionável, antigolpe concreto, orientação de fotos do pet.
@@ -105,11 +105,11 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 ## Pendências conhecidas (antes do lançamento público)
 
-- **Migrations 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade), 25 (`20261030140000_lost_case_close_edit`, ciclo de vida do alerta) 26 (`20261030160000_adoption_partner_moderation`, moderação de adoção e parceiros) 27 (`20261030180000_global_abuse_limits`, anti-abuso), 28 (`20261030190000_orphan_media_cleanup`, limpeza de fotos órfãs) 29 (`20261103120000_sighting_privacy`, privacidade dos avistamentos — P0) e 30 (`20261103160000_tutor_push_public_place`, push do tutor e rótulo público do avistamento) aplicadas só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 30). Depois da 29, no lançamento: `node scripts/sighting-media-neutral-names.mjs` (lista; `--apply --confirm-target=<ref>` renomeia fotos antigas, se houver).
+- **Migrations 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade), 25 (`20261030140000_lost_case_close_edit`, ciclo de vida do alerta) 26 (`20261030160000_adoption_partner_moderation`, moderação de adoção e parceiros) 27 (`20261030180000_global_abuse_limits`, anti-abuso), 28 (`20261030190000_orphan_media_cleanup`, limpeza de fotos órfãs) 29 (`20261103120000_sighting_privacy`, privacidade dos avistamentos — P0) 30 (`20261103160000_tutor_push_public_place`, push do tutor e rótulo público do avistamento) e 31 (`20261104120000_push_outbox_recovery`, recuperação de push preso) aplicadas só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 31). Depois da 29, no lançamento: `node scripts/sighting-media-neutral-names.mjs` (lista; `--apply --confirm-target=<ref>` renomeia fotos antigas, se houver).
 
 - Captcha do Supabase Auth (Turnstile) — fecha a criação de sessões anônimas em série, a origem das sessões descartáveis. **Pronto no código (2026-11-03):** `captchaToken` em `ensureSession` (sessão anônima), cadastro, login e recuperação de senha; o token só é pedido quando o Auth precisa (quem já tem sessão não gasta), e o formulário pega outro para a rota. Denúncia também com Turnstile (`/api/denuncias`). Provado contra o Auth real com captcha ligado (fase do CI `schema-rebuild`, `tests/captcha.test.ts`). Falta só ligar no painel do `mel-prod`. As rotas `/api/avistamentos`, `/api/encontrados` e `/api/conversas` já verificam Turnstile no servidor (`lib/turnstile.ts`; DEV usa as chaves de teste da Cloudflare).
 - Agendador do push (`GET`/`POST /api/push/dispatch` com `Authorization: Bearer` + `CRON_SECRET` ou `PUSH_DISPATCH_SECRET`; GET é o do Vercel Cron) também apaga as fotos órfãs do `sighting-media` (mais de 24 h sem avistamento/encontrado, até 100 por chamada). **Código pronto (2C, 2026-11-04)**; o Cron não está ligado — configurar no lançamento (checklist 3.5). Região `gru1` em `apps/web/vercel.json`, a confirmar no 1º deploy (3.7).
-- Item de push que fica em `SENDING` (execução interrompida no meio, ex.: timeout da função) não volta para a fila: some sem envio. Correção mínima, a autorizar: migration que devolve a `PENDING` itens em `SENDING` há mais de 15 min dentro do `claim_push_batch`.
+- Push preso em `SENDING` (despacho interrompido no meio): **resolvido no `mel-dev` (migration 31, 2D, 2026-11-04)** — reserva expira em 15 min e volta à fila, até 3 vezes e só para avisos de até 6 h; depois, `FAILED`. Não é entrega única: se o serviço de push aceitar e o processo cair antes de registrar, o push pode sair 2 vezes (o `tag` da notificação faz o aparelho substituir em vez de empilhar).
 - Limites anti-abuso (migration 27) estão calibrados para o MVP; revisar com os eventos `abuse_guard` (tabela `events`, 30 dias) e os avisos `limite atingido` nos logs das rotas.
 - SMTP próprio (recuperação de senha, depois "Confirm email" — o código já mostra "confira seu e-mail").
 - Nome do perfil de quem vincula Google a uma sessão anônima fica vazio até o onboarding (o onboarding pede).
@@ -138,7 +138,7 @@ Não entram no Feature Freeze. Cada uma só volta se virar correção de seguran
 - `pet-photos` com nome neutro (correção completa, ~8–12 h, com migration) — item "Revisão final" acima.
 - Fotos substituídas de adoção e logo ficam órfãs no Storage; usuários anônimos antigos nunca expiram.
 - Skip link; alvos de toque secundários < 44 px (zoom do mapa, links de texto).
-- Fila de push: item preso em `SENDING` não volta; envio sequencial.
+- Fila de push: envio sequencial; reenvio de item abandonado pode duplicar (raro; ver migration 31).
 - Prévia do cartaz gera 3 PNGs grandes; `getPublicLostCase` roda 2× por visita.
 
 **Configurações e código necessários ao lançamento:** [12-checklist-lancamento.md](12-checklist-lancamento.md) — captcha do Auth no código, CSP completa, migrations 24–30 + script das fotos antigas, domínio, `NEXT_PUBLIC_SITE_URL` no build, Site URL/redirects, SMTP + "Confirm email", Google OAuth, Turnstile/MapTiler/VAPID de produção, agendador do push, secrets, rate limits de produção, primeiro moderador, revisão jurídica e smoke test.

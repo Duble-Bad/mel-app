@@ -1,6 +1,6 @@
 # MEL — Deploy de schema em produção (`mel-prod`)
 
-> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–30** (24 e 29 são P0 de privacidade; 30 traz o push do tutor e o rótulo público do avistamento), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
+> **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–31** (24 e 29 são P0 de privacidade; 30 traz o push do tutor e o rótulo público do avistamento; 31, a recuperação de push preso), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
 > Só rode com autorização explícita do dono do projeto.
 
 Este procedimento aplica **somente as migrations versionadas** (`supabase/migrations`) no `mel-prod`.
@@ -80,7 +80,7 @@ O `deploy-schema.mjs`, em ordem:
 
 Transação **READ ONLY**, só catálogo — não cria usuários nem dados.
 
-- 30 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
+- 31 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
 - 24 tabelas; RLS habilitado nas 24; primary key em todas.
 - 60 políticas em `public` + 9 em `storage.objects` (nomes idênticos às migrations).
 - 41 funções `public` + 55 `private` (nomes idênticos); SECURITY DEFINER sempre com `search_path`.

@@ -120,6 +120,10 @@
     {
       "file": "20261103160000_tutor_push_public_place.sql",
       "sha256": "d304641b697da5cf2be5a3d9e81ebe0ddc942b77970020a89a1977f029b24bfe"
+    },
+    {
+      "file": "20261104120000_push_outbox_recovery.sql",
+      "sha256": "4846e5b73f8349517809bba254b57bd13c9ef5acf7aa49d154691e28290ccce9"
     }
   ]
 }

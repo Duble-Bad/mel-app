@@ -1208,6 +1208,8 @@ export type Database = {
       }
       push_outbox: {
         Row: {
+          attempts: number
+          claimed_at: string | null
           created_at: string
           id: number
           notification_id: string
@@ -1217,6 +1219,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attempts?: number
+          claimed_at?: string | null
           created_at?: string
           id?: never
           notification_id: string
@@ -1226,6 +1230,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attempts?: number
+          claimed_at?: string | null
           created_at?: string
           id?: never
           notification_id?: string
