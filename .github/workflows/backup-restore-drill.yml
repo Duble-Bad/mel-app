@@ -32,6 +32,14 @@ jobs:
           age --version
           docker pull -q postgres:17
 
+      - name: Conexão hospedada mal configurada é recusada antes de conectar (URLs fictícias)
+        run: |
+          . scripts/backup/db-url-guard.sh
+          ! check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?sslmode=require"
+          ! check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+          check_db_url "postgresql://postgres.ficticio:x@aws-1-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
+          echo "ok: transaction pooler e conexão sem TLS recusados; session pooler com TLS aceito"
+
       - name: Banco A (Supabase local + migrations)
         run: npx supabase start -x studio,edge-runtime,logflare,vector,supavisor,imgproxy
 

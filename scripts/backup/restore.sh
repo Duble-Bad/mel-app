@@ -13,6 +13,8 @@ set -euo pipefail
 umask 077
 : "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_FILE:?}" "${BACKUP_AGE_IDENTITY:?}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
+. "$HERE/db-url-guard.sh"
+check_db_url "$DB_URL"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 START=$SECONDS

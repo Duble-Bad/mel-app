@@ -2,7 +2,7 @@
 # Backup completo da MEL (banco + Auth + arquivos do Storage), criptografado com age.
 #
 # Entrada (variáveis de ambiente; nunca impressas):
-#   DB_URL                 conexão Postgres do projeto (com senha, percent-encoded)
+#   DB_URL                 conexão Postgres (Session pooler, porta 5432, ?sslmode=require)
 #   SUPABASE_URL           URL da API do projeto
 #   SUPABASE_SECRET_KEY    chave secreta (lê o Storage)
 #   BACKUP_AGE_RECIPIENT   chave PÚBLICA age (age1…); a privada fica fora daqui
@@ -25,6 +25,8 @@ set -euo pipefail
 umask 077
 : "${DB_URL:?}" "${SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}" "${BACKUP_AGE_RECIPIENT:?}" "${BACKUP_OUT:?}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
+. "$HERE/db-url-guard.sh"
+check_db_url "$DB_URL"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"

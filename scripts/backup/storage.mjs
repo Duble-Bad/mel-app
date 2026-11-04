@@ -5,6 +5,8 @@
 //   node scripts/backup/storage.mjs export <pasta>   baixa todos os arquivos + files.json (tamanho, tipo, sha256)
 //   node scripts/backup/storage.mjs import <pasta>   envia de volta, nos MESMOS caminhos
 //   node scripts/backup/storage.mjs check            referências do banco × arquivos (sai 1 se faltar arquivo)
+//   node scripts/backup/storage.mjs stats            arquivos e bytes por bucket, sem baixar nada
+//                                                    (estimar egress do backup no plano Free)
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -121,13 +123,27 @@ async function check() {
   console.log("[check] ok: toda referência do banco tem arquivo");
 }
 
+async function stats() {
+  let files = 0;
+  let bytes = 0;
+  for (const bucket of await buckets()) {
+    const objects = await listAll(bucket);
+    const size = objects.reduce((s, o) => s + (o.size ?? 0), 0);
+    files += objects.length;
+    bytes += size;
+    console.log(`[stats] ${bucket}: ${objects.length} arquivos, ${(size / 1024 / 1024).toFixed(1)} MB`);
+  }
+  console.log(`[stats] total: ${files} arquivos, ${(bytes / 1024 / 1024).toFixed(1)} MB; backup completo diário ≈ ${((bytes * 30) / 1024 ** 3).toFixed(2)} GB/mês de egress`);
+}
+
 const [cmd, dir] = process.argv.slice(2);
 try {
   if (cmd === "export" && dir) await exportAll(dir);
   else if (cmd === "import" && dir) await importAll(dir);
   else if (cmd === "check") await check();
+  else if (cmd === "stats") await stats();
   else {
-    console.error("uso: storage.mjs export <pasta> | import <pasta> | check");
+    console.error("uso: storage.mjs export <pasta> | import <pasta> | check | stats");
     process.exit(2);
   }
 } catch (err) {

@@ -79,3 +79,66 @@ migrations) → restauração → conferências. Sem segredos, sem artefatos.
 
 **Perda máxima de dados (RPO):** até 24 h. **Tempo de recuperação (RTO):** estimado
 em 1–2 h, dominado pela reconfiguração manual (passos 1, 4 e 5).
+
+## 6. Projeto hospedado (2G, 04/11/2026)
+
+**Rede (verificado por DNS):** o host direto do banco (`db.<ref>.supabase.co`) só tem
+IPv6; o Session pooler (`aws-1-sa-east-1.pooler.supabase.com`, porta 5432) só IPv4.
+O runner do GitHub não tem IPv6 → **sempre o Session pooler**, com `?sslmode=require`.
+Os scripts recusam, antes de conectar, a porta 6543 (Transaction pooler, onde o
+`pg_dump` não funciona) e conexão remota sem TLS (`scripts/backup/db-url-guard.sh`).
+
+**Permissões necessárias (por papel):**
+
+| Uso | Credencial | Observação |
+|---|---|---|
+| `pg_dump` dos dados (public + auth) | senha do banco (`postgres.<ref>` no pooler) | só leitura no backup; *no hospedado, não testado* |
+| Arquivos do Storage | chave secreta (`sb_secret_…`) | listar e baixar; ignora RLS: guardar só no repositório privado |
+| Restaurar dados | senha do banco do projeto NOVO | `session_replication_role = replica` (receita oficial do Supabase; *não testado no hospedado*) |
+| Dono/data dos arquivos | mesma | `update storage.objects` como `postgres`: *não testado no hospedado* |
+
+**Backup do `mel-dev` não executado (bloqueio):** o `mel-dev` tem **1 conta com
+e-mail real** (contagem agregada; nenhum dado lido além disso) e fotos enviadas, e
+não há senha do banco guardada neste computador (o arquivo `pooler-url` só tem
+host e usuário). Executar exigiria uma credencial nova e copiaria dado pessoal.
+Para validar no hospedado, uma de duas: (a) autorização + senha do banco do
+`mel-dev` + aceitar que o arquivo cifrado contenha essa conta (apagado ao fim), ou
+(b) remover a conta real do `mel-dev` antes. O projeto `mel-prod` está pausado.
+
+**Egress do Storage (achado):** o backup baixa todos os arquivos todo dia. O Free tem
+5 GB/mês de egress (+5 GB em cache) e o app também consome. Backup completo diário
+≈ 30 × tamanho do Storage: viável até ~100 MB de fotos; acima disso, arquivos
+**incrementais** (os nomes são únicos e não mudam: baixar só os novos). Medir antes:
+`node scripts/backup/storage.mjs stats` (sem baixar nada). `mel-dev` hoje: 1.421
+arquivos, 1,2 MB (imagens de teste) → ~0,04 GB/mês.
+
+**Reconfigurar após restaurar em projeto novo:** chaves de API e de JWT (novas: todo
+mundo entra de novo; o refresh token antigo provavelmente não vale — no ensaio a
+chave era a mesma), Google OAuth (URL de callback do novo projeto no Google Cloud),
+SMTP (Resend), captcha (Turnstile), Site URL e Redirect URLs, limites do Auth,
+`NEXT_PUBLIC_SUPABASE_URL` e chaves na Vercel.
+
+## 7. Ativação (planejada, nada executado)
+
+| Item | Estado |
+|---|---|
+| Scripts de backup, restauração e conferência | implementado |
+| Ensaio local com dados sintéticos (migrations 1–31, Auth, Storage, RLS, referências) | **testado** (workflow manual) |
+| Conexão pelo pooler, guardas de TLS/porta | implementado; guardas testadas; conexão real não |
+| Backup de projeto hospedado | **não testado** (bloqueio acima) |
+| Restauração em projeto hospedado novo | **não testado** (sem 3º projeto) |
+| Repositório privado + Actions diário | planejado |
+| Bucket externo (B2/R2) com retenção de 30 dias | planejado (termos/cadastro não verificados) |
+| Alerta de falha + ping de vida | planejado |
+| Ensaio de restauração periódico (mensal, no repositório público, sintético) | planejado (workflow pronto, manual) |
+| Storage incremental | planejado (necessário acima de ~100 MB) |
+
+Passos: (1) repositório privado `mel-backup` com cópia de `scripts/backup/` e o
+workflow diário (`schedule` + `workflow_dispatch`, sem artefatos, `permissions:
+contents: read`); (2) secrets: `DB_URL` (pooler, sslmode), `SUPABASE_URL`,
+`SUPABASE_SECRET_KEY`, `BACKUP_AGE_RECIPIENT`, credenciais do bucket só de escrita;
+(3) bucket com regra de ciclo de vida de 30 dias; (4) ping de vida no fim do job;
+(5) primeiro backup manual + restauração num projeto **descartável** (criar, testar,
+apagar — fica no limite de 2 projetos do Free só se um dos atuais estiver pausado,
+como o `mel-prod` hoje) antes de ligar o agendamento.
+
