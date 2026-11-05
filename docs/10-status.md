@@ -72,6 +72,8 @@ Todo o trabalho de produção está **pausado** até o produto estar funcionalme
 
 ## Último CI
 
+**Teste visual (2026-11-05):** ~120 telas revisadas (celular claro/escuro, computador, fim de cada um dos 76 cenários). 1 defeito: cabeçalho duplicado em "Não encontramos esta página" dentro do app — **corrigido** (`app/(app)/not-found.tsx`, autorizado como correção no Feature Freeze), com E2E conferindo um cabeçalho só. Fotos quebradas e blocos marrons vistos no `mel-dev` são dados deixados pelos testes, não defeito.
+
 **3 rodadas completas de E2E (2026-11-05), build de produção, sem novas tentativas automáticas:** 76/76 ✅ em cada rodada (2,8 · 2,7 · 2,5 min). Logs do servidor sem erro inesperado: só os provocados pelos próprios testes (`/dev/erro`, login social recusado) e o push desligado de propósito (sem chave VAPID).
 
 `25561fe` (2026-11-04, docs 17): ✅ CI e reconstrução do schema. `89bdeb9` (guia 16 + verificação rápida): ✅ CI (na 2ª tentativa, falha transitória em `lostcase-lifecycle`), reconstrução ✅, ensaio de backup ✅. `7d7be25` (migration 31): ✅ nos 3 checks.

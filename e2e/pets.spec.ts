@@ -127,5 +127,6 @@ test("unknown or malformed MEL IDs show a friendly not-found page", async ({ pag
   for (const id of ["MEL-ZZZZZZ", "qualquer-coisa"]) {
     await page.goto(`/pet/${id}`);
     await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+    await expect(page.getByRole("banner")).toHaveCount(1);
   }
 });

@@ -162,5 +162,10 @@ test("unknown alert codes show a friendly not-found page", async ({ page }) => {
   for (const code of ["zzzzzz", "nao-existe"]) {
     await page.goto(`/alerta/${code}`);
     await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+    await expect(page.getByRole("banner")).toHaveCount(1); // um cabeçalho só (antes saía duplicado)
   }
+  // Endereço que não existe em lugar nenhum: também com um cabeçalho (o da página global).
+  await page.goto("/rota-que-nao-existe");
+  await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(page.getByRole("banner")).toHaveCount(1);
 });
