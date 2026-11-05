@@ -2,6 +2,7 @@
 
 > Atualizado em 2026-11-05. **MVP em Feature Freeze desde o commit `46f3238`**; série Launch Readiness (1, 2A–2L) concluída no código e na documentação; último CI verde em `25561fe`.
 > **Decisão de 2026-11-05:** o piloto segue nos planos gratuitos do **MapTiler** e da **Vercel (Hobby)**. **Próxima ação única:** decidir o domínio próprio (checklist 0.4).
+> **Redesign (2026-11-05, branch `redesign/etapa-1`, ainda fora da `main`):** Conceito B aprovado e implementado no app; ponto público aproximado passou para **100 m** (migration 32, aplicada só no `mel-dev`). Detalhes em "Redesign e 100 m" abaixo.
 > Leia isto primeiro ao retomar o projeto. Para o lançamento, a lista completa está em [12-checklist-lancamento.md](12-checklist-lancamento.md).
 
 ## 🚦 Prontidão para o piloto (diagnóstico de 2026-11-05)
@@ -59,6 +60,25 @@ Autorizado pelo dono sobre o commit **`46f3238`**. Estado congelado:
 3. **requisitos indispensáveis ao lançamento** ([12-checklist-lancamento.md](12-checklist-lancamento.md) — ex.: captcha do Auth no código, CSP completa).
 
 Ideias de produto (MEL ID + QR permanente, Ponto de Apoio, CTA de instalação do PWA, vitrine de reencontros, contadores públicos, Alerta Turbinado, monetização, plaquinha/NFC…) ficam para depois do lançamento.
+
+## 🎨 Redesign e 100 m (2026-11-05)
+
+Branch `redesign/etapa-1` (commits `34ea1b3`, `482da81`, `db69158`, `2da4a97`). **Ainda não está na `main`.**
+
+| Item | Estado |
+|---|---|
+| Correção: cadastro quebrava no celular por `http://<ip>` (`crypto.randomUUID` só existe em HTTPS/localhost) | ✅ `randomId()` em `@mel/data`; onboarding com "Tentar novamente" e "Sair da conta" |
+| Protótipos (3 conceitos) e especificações de Adoção/Mural/Parceiros | ✅ `design/` (servidor: `node design/prototipos/servidor.mjs`, porta 4173) |
+| Conceito B no app | ✅ tokens (escuro azul-escuro + dourado; "Vi um pet" azul, adoção dourada), **tema escuro padrão**, cabeçalho fixo com navegação, home com a foto da Mel e o gatinho, entrar com foto e regra de senha ao vivo, novo `/mural`, mapa/adoção/parceiros no novo visual |
+| Ponto público aproximado 250 m → **100 m** (decisão do proprietário) | ✅ migration 32 no `mel-dev`; `PUBLIC_CELL_METERS = 100` no core; **pendente no `mel-prod`** |
+| Fila de interessados em adoção sem animal; tipos de parceiro (empresa/ONG/protetor); adoção dentro do mural | ⏳ aguardam as decisões do proprietário em `design/especificacoes-fluxos.md` §4 |
+| Foto da Mel em alta resolução (seção "Nossa origem") | ⏳ o proprietário vai enviar |
+
+**Testes (2026-11-05):** unitários, tipos e lint ✅; testes de banco ligados aos 100 m (Radar, avistamentos, alertas, mapa: 35/35) ✅; E2E contra build de produção 74/76, e as 2 falhas foram de ambiente (segredo do agendador ausente na execução manual — repetido, 5/5 — e um alerta de teste órfão de uma execução interrompida, já apagado). Suíte completa de banco a repetir quando o limite de login do Auth do `mel-dev` zerar.
+
+**Lição de ambiente:** o cache do Turbopack (`apps/web/.next/dev`) corrompeu e o `next dev` passou a recarregar a página em laço (E2E com dezenas de falhas falsas). Solução: parar o servidor e apagar `apps/web/.next/dev`. Não rodar `next start` e `next dev` sobre a mesma pasta `.next` ao mesmo tempo, e não deixar duas execuções de E2E simultâneas.
+
+**Configuração manual pendente (sem custo) para testar pelo celular na rede local:** MapTiler → *Allowed HTTP origins* com `http://172.18.4.238:3000`; Supabase `mel-dev` → *Redirect URLs* com `http://172.18.4.238:3000/**` (login com Google).
 
 ## Resumo
 
@@ -154,7 +174,7 @@ Tudo no painel do `mel-prod` ou na hospedagem do app. **Nunca** `supabase config
 
 ## Pendências conhecidas (antes do lançamento público)
 
-- **Migrations 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade), 25 (`20261030140000_lost_case_close_edit`, ciclo de vida do alerta) 26 (`20261030160000_adoption_partner_moderation`, moderação de adoção e parceiros) 27 (`20261030180000_global_abuse_limits`, anti-abuso), 28 (`20261030190000_orphan_media_cleanup`, limpeza de fotos órfãs) 29 (`20261103120000_sighting_privacy`, privacidade dos avistamentos — P0) 30 (`20261103160000_tutor_push_public_place`, push do tutor e rótulo público do avistamento) e 31 (`20261104120000_push_outbox_recovery`, recuperação de push preso) aplicadas só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 31). Depois da 29, no lançamento: `node scripts/sighting-media-neutral-names.mjs` (lista; `--apply --confirm-target=<ref>` renomeia fotos antigas, se houver).
+- **Migrations 24 (`20261030120000_radar_public_distance`, Radar v2 — P0 de privacidade), 25 (`20261030140000_lost_case_close_edit`, ciclo de vida do alerta) 26 (`20261030160000_adoption_partner_moderation`, moderação de adoção e parceiros) 27 (`20261030180000_global_abuse_limits`, anti-abuso), 28 (`20261030190000_orphan_media_cleanup`, limpeza de fotos órfãs) 29 (`20261103120000_sighting_privacy`, privacidade dos avistamentos — P0) 30 (`20261103160000_tutor_push_public_place`, push do tutor e rótulo público do avistamento) e 31 (`20261104120000_push_outbox_recovery`, recuperação de push preso) e 32 (`20261105120000_public_area_100m`, ponto público de 100 m) aplicadas só no `mel-dev`; aplicar no `mel-prod` na fase de lançamento** (pre-flight já espera 32). Depois da 29, no lançamento: `node scripts/sighting-media-neutral-names.mjs` (lista; `--apply --confirm-target=<ref>` renomeia fotos antigas, se houver).
 
 - Captcha do Supabase Auth (Turnstile) — fecha a criação de sessões anônimas em série, a origem das sessões descartáveis. **Pronto no código (2026-11-03):** `captchaToken` em `ensureSession` (sessão anônima), cadastro, login e recuperação de senha; o token só é pedido quando o Auth precisa (quem já tem sessão não gasta), e o formulário pega outro para a rota. Denúncia também com Turnstile (`/api/denuncias`). Provado contra o Auth real com captcha ligado (fase do CI `schema-rebuild`, `tests/captcha.test.ts`). Falta só ligar no painel do `mel-prod`. As rotas `/api/avistamentos`, `/api/encontrados` e `/api/conversas` já verificam Turnstile no servidor (`lib/turnstile.ts`; DEV usa as chaves de teste da Cloudflare).
 - Agendador do push (`GET`/`POST /api/push/dispatch` com `Authorization: Bearer` + `CRON_SECRET` ou `PUSH_DISPATCH_SECRET`; GET é o do Vercel Cron) também apaga as fotos órfãs do `sighting-media` (mais de 24 h sem avistamento/encontrado, até 100 por chamada). **Código pronto (2C, 2026-11-04)**; o Cron não está ligado — configurar no lançamento (checklist 3.5). Região `gru1` em `apps/web/vercel.json`, a confirmar no 1º deploy (3.7).

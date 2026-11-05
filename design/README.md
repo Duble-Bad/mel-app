@@ -1,6 +1,6 @@
-# MEL — Redesign: Etapa 1 (aguardando aprovação)
+# MEL — Redesign
 
-Nada desta pasta está no app. O redesign definitivo só começa depois que o proprietário escolher o conceito.
+**2026-11-05: o proprietário escolheu o Conceito B**, já implementado no app (branch `redesign/etapa-1`). Os protótipos ficam aqui como referência. Ainda dependem de decisões do proprietário: §4 de `especificacoes-fluxos.md`.
 
 ## Como abrir os protótipos
 
@@ -14,12 +14,12 @@ node design/prototipos/servidor.mjs
 | Conceito | Endereço | Telas |
 |---|---|---|
 | A — Comunidade e acolhimento | `/conceito-a/` | Homepage |
-| **B — Moderna e dinâmica (recomendado)** | `/conceito-b/` | Homepage, `entrar.html`, `mapa.html`, `mural.html`, `adocao.html`, `parceiros.html` |
+| **B — Moderna e dinâmica (escolhido)** | `/conceito-b/` | Homepage, `entrar.html`, `mapa.html`, `mural.html`, `adocao.html`, `parceiros.html` |
 | C — Ação imediata | `/conceito-c/` | Homepage (com prévia do alerta em 3 passos) |
 
 Apenas HTML/CSS/JS, sem bibliotecas, sem banco, com dados fictícios. As animações respeitam `prefers-reduced-motion`. Fotos: Unsplash (ver `prototipos/assets/fotos/CREDITOS.md`). Logo e fonte (Figtree) são os do app.
 
-## Recomendação: Conceito B
+## Conceito escolhido: B
 
 Segue as referências visuais enviadas pelo proprietário: azul-escuro e dourado, hero forte, cartões de ação coloridos. No celular, as quatro ações ficam na primeira tela, que é o ponto forte do Conceito C. Do Conceito A, pode herdar as histórias de reencontro.
 

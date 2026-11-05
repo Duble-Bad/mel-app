@@ -59,7 +59,7 @@ Unir quem tem um animal para doar a quem quer adotar com responsabilidade. Isso 
 **Anúncios** (`adoption_listings`):
 - status `PENDING_REVIEW → AVAILABLE → IN_PROCESS → ADOPTED` (ou `REJECTED`/`REMOVED`);
 - de 1 a 4 fotos;
-- localização pública aproximada: `fuzz_lat_lng(…, 250)`; o ponto exato fica privado;
+- localização pública aproximada: `fuzz_lat_lng` (grade de 100 m desde a migration 32); o ponto exato fica privado;
 - campos de saúde: castrado, vacinado e vermifugado.
 
 **Interesse num anúncio** (`adoption_interests` + `submit_adoption_interest`):
@@ -111,7 +111,7 @@ Unir quem tem um animal para doar a quem quer adotar com responsabilidade. Isso 
 | Espécie desejada (cão / gato / tanto faz) | Sim | Base do "compatível" |
 | Porte (pequeno / médio / grande / tanto faz) | Não | Refina o compatível |
 | Idade (filhote / adulto / idoso / tanto faz) | Não | Idem |
-| Bairro e cidade | Sim | Usados para a distância. Guardamos apenas o ponto aproximado (250 m) ou só o rótulo. Nunca o endereço |
+| Bairro e cidade | Sim | Usados para a distância. Guardamos apenas o ponto aproximado (100 m) ou só o rótulo. Nunca o endereço |
 | Moradia (casa / apartamento / outro) | Sim | Adoção responsável. Já é usada no interesse atual |
 | Tem outros animais? | Sim | Idem |
 | Tem crianças em casa? | Não | Já existe no interesse atual. Responder deve ser opcional |
@@ -168,6 +168,8 @@ Unir quem tem um animal para doar a quem quer adotar com responsabilidade. Isso 
 
 ## 2. Mural
 
+> **Estado (2026-11-05):** `/mural` já existe no app com perdidos, encontrados e vistos (tipos como filtro) e um atalho "Para adoção". Incluir os anúncios de adoção dentro do mural depende da decisão 6.
+
 ### Objetivo
 
 Uma vitrine única, com fotos, de animais **perdidos**, **encontrados ou vistos** e **para adoção** perto da pessoa, com filtros e detalhes. Não expõe animais privados nem dados sensíveis.
@@ -176,7 +178,7 @@ Uma vitrine única, com fotos, de animais **perdidos**, **encontrados ou vistos*
 
 **`search_public_cases(p_kinds …)`:**
 - traz os tipos `lost` (alerta ativo), `found` (sob cuidado) e `sighting` (visto solto);
-- devolve a distância calculada a partir do ponto público de 250 m;
+- devolve a distância calculada a partir do ponto público de 100 m;
 - alimenta o `/mapa`, o `/perdidos` e o `/encontrados`.
 
 **`list_adoptions`:** existe em separado. A adoção **não** faz parte de `search_public_cases`.
@@ -206,7 +208,7 @@ O visitante sem login vê tudo o que é público. O login só é pedido para agi
 
 - **Só entra no mural** o que já é público: alerta ativo, encontrado ou visto publicado, adoção `AVAILABLE` ou `IN_PROCESS`.
 - **Não entram** pets sem alerta, pendências de moderação, casos encerrados ou conteúdo removido por denúncia.
-- **Nada de** endereço, telefone, nome completo do tutor ou ponto exato. A localização vem só da grade de 250 m e do rótulo do bairro.
+- **Nada de** endereço, telefone, nome completo do tutor ou ponto exato. A localização vem só da grade de 100 m e do rótulo do bairro.
 - **Fotos** sempre reduzidas e sem EXIF (já é assim no upload).
 
 ### Estados
@@ -338,7 +340,7 @@ Nenhuma foi escrita. Todas dependem das decisões acima.
 | # | Nome sugerido | Finalidade |
 |---|---|---|
 | 1 | `adoption_interest_withdraw` | Permitir que quem enviou cancele o próprio interesse num anúncio (função `withdraw_adoption_interest`, que apaga a linha e avisa na conversa) e tornar `children` opcional |
-| 2 | `adoption_seekers` | Tabela da fila de interessados: preferências, área aproximada de 250 m, rotina, opt-in público, status de moderação, `expires_at`; RLS; RPCs `upsert_my_seeker`, `pause`/`withdraw_my_seeker` e `list_public_seekers` |
+| 2 | `adoption_seekers` | Tabela da fila de interessados: preferências, área aproximada de 100 m, rotina, opt-in público, status de moderação, `expires_at`; RLS; RPCs `upsert_my_seeker`, `pause`/`withdraw_my_seeker` e `list_public_seekers` |
 | 3 | `adoption_seekers_moderation` | RPCs de moderação (listar e revisar) com registro em `moderation_actions` |
 | 4 | `adoption_seeker_matches` | Ao virar `AVAILABLE`, notificar os interessados compatíveis no raio, com limite por dia |
 | 5 | `adoption_retention` | Limpeza agendada: perfis expirados e interesses de anúncios encerrados |
