@@ -322,6 +322,8 @@ Divulgar sem custo quem ajuda os animais: clínicas, pet shops, ONGs e protetore
 
 ## 4. Decisões para o proprietário
 
+> **Respondidas em 2026-11-05 e implementadas no `mel-dev`** (registro em `docs/decisoes.md`; migrations 33–40 em `docs/09-migrations.md`). Resumo: 1 sim; 2 chat preferencial + WhatsApp opcional só para a moderação; 3 lista pública com opt-in; 4 90 dias com renovação e 30 dias para interesses de anúncios encerrados; 5 sim, avisos compatíveis; 6 opção A (interface); 7 opcional; 8 CPF obrigatório e cifrado; 9 CNPJ obrigatório, consulta oficial gratuita inexistente → "Verificação pendente"; 10 patrocínio desligado no piloto.
+
 1. **Fila de interessados.** Aprovar a criação da fila de interessados sem animal específico (nova tabela e moderação)?
 2. **Contato na fila.** O contato fica **só pelo chat da MEL**, sem pedir WhatsApp, como recomendamos? Ou o WhatsApp deve ser pedido, em privado e visto só pela moderação?
 3. **Lista pública "Querem adotar".** Ter a lista, com opt-in, mostrando só o primeiro nome, o bairro e as preferências? Ou deixar o perfil apenas privado?
