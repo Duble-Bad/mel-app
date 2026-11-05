@@ -56,7 +56,7 @@ Estado: **31 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev
 | 39 | `20261106130000_partner_kind_and_documents.sql` | Decisões 8–10 | `partner_kind`; CNPJ obrigatório para empresa/ONG (privado, fila de verificação desligada); `partner_documents` (CPF só cifrado + HMAC único, só service role), `pii_access_grants`, `partner_document_access_log`; ponto aproximado para ONG e protetor; patrocínio fora da ordenação. **Pendente no `mel-prod`.** |
 | 40 | `20261106140000_export_my_data_seekers_partners.sql` | LGPD | "Baixar meus dados" com a fila de adoção e o registro (sem número) do CPF. **Pendente no `mel-prod`.** |
 
-Inventário resultante (banco reconstruído = `mel-prod`): 24 tabelas, 295 colunas, 43 FKs, 16 enums, 41 funções `public` + 55 `private`, 27 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 60 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
+Inventário resultante das 40 migrations (banco reconstruído, 2026-11-05; o `mel-prod` ainda está nas 23 primeiras): 29 tabelas, 363 colunas, 18 enums, 51 funções `public` + 64 `private`, 31 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 64 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
 
 ## Garantias versionadas
 
