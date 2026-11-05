@@ -204,8 +204,8 @@ export function MapExplorer({ filters }: { filters: SearchFilters }) {
 }
 
 /**
- * Casos na mesma célula aproximada (grade de 250 m) cairiam no mesmo ponto e
- * só o de cima seria clicável: abre-os num círculo (~120 m, dentro da célula), só na tela.
+ * Casos na mesma célula aproximada (grade de 100 m) cairiam no mesmo ponto e
+ * só o de cima seria clicável: abre-os num círculo (~45 m, dentro da célula), só na tela.
  */
 function toPins(items: PublicCaseItem[]) {
   const groups = new Map<string, PublicCaseItem[]>();
@@ -216,7 +216,7 @@ function toPins(items: PublicCaseItem[]) {
   return [...groups.values()].flatMap((group) =>
     group.map((i, n) => {
       const angle = (2 * Math.PI * n) / group.length;
-      const r = group.length > 1 ? 0.0011 : 0;
+      const r = group.length > 1 ? 0.0004 : 0;
       return {
         id: `${i.kind}-${i.code}`,
         kind: i.kind,

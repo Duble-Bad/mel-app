@@ -296,7 +296,7 @@ function WhereStep({
           setPicked(v);
           setError(null);
         }}
-        privacyNote="No alerta mostramos um local aproximado (cerca de 250 m) e só o bairro. Seu endereço não aparece."
+        privacyNote="No alerta mostramos um local aproximado (cerca de 100 m) e só o bairro. Seu endereço não aparece."
       />
       <label className="flex min-h-12 items-start gap-3">
         <input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />

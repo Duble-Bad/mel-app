@@ -225,7 +225,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               }`}
             />
             <p className="text-sm text-text-secondary">
-              {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 250 m)"}. `}
+              {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 100 m)"}. `}
               {visibleSightings.length > 0 &&
                 `Pontos com olho (👁): avistamentos, ligados por linha tracejada em ordem de horário${
                   visibleSightings.some((s) => !s.pointIsExact) ? " (localização aproximada)" : ""

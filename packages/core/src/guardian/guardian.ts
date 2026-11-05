@@ -7,7 +7,7 @@ export const DAILY_LIMITS = [3, 5, 10] as const;
 
 export interface GuardianSettings {
   enabled: boolean;
-  /** Já aproximado (grade de 250 m) — o banco nunca guarda o ponto exato. */
+  /** Já aproximado (grade de 100 m) — o banco nunca guarda o ponto exato. */
   area: LatLng;
   areaLabel: string | null;
   radiusM: GuardianRadius;

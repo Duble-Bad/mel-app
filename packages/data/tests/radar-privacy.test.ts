@@ -2,7 +2,7 @@
 // privado (último local do tutor ou local de quem encontrou).
 //
 // Prova: dois pontos privados DIFERENTES dentro da mesma célula pública de
-// 250 m produzem respostas IDÊNTICAS do Radar, para qualquer sonda. Então nenhuma
+// 100 m produzem respostas IDÊNTICAS do Radar, para qualquer sonda. Então nenhuma
 // combinação de respostas (1, 3 ou N registros, de qualquer lado) distingue um
 // do outro: o máximo que se aprende é a célula pública — que o mapa já mostra.
 // E nenhuma resposta traz metros, coordenadas ou direção.
@@ -22,9 +22,9 @@ const offset = (p: LatLng, northM: number, eastM: number): LatLng => ({
   lng: p.lng + eastM / (111_320 * Math.cos((p.lat * Math.PI) / 180)),
 });
 const CELL = fuzzPoint(BASE);
-// Dois pontos privados distintos (~110 m entre eles) na MESMA célula pública.
-const SECRET_A = offset(CELL, 55, -30);
-const SECRET_B = offset(CELL, -50, 40);
+// Dois pontos privados distintos (~80 m entre eles) na MESMA célula pública (100 m).
+const SECRET_A = offset(CELL, 30, -25);
+const SECRET_B = offset(CELL, -30, 30);
 
 const LOST_AT = new Date(Date.now() - 3 * 3_600_000).toISOString();
 const FOUND_AT = new Date(Date.now() - 600_000).toISOString();
@@ -145,10 +145,10 @@ describe("tutor side: the tutor cannot locate the finder's private point", () =>
     const finder2 = await createTestUser("radar-finder-2");
     cleanups.push(finder1.cleanup, finder2.cleanup);
     const near = fuzzPoint(offset(BASE, 700, 0)); // célula de quem encontrou
-    const code1 = await publishFound(finder1.client, finder1.id, offset(near, 50, 40));
-    const code2 = await publishFound(finder2.client, finder2.id, offset(near, -45, -50));
-    expect(fuzzPoint(offset(near, 50, 40))).toEqual(near);
-    expect(fuzzPoint(offset(near, -45, -50))).toEqual(near);
+    const code1 = await publishFound(finder1.client, finder1.id, offset(near, 30, 25));
+    const code2 = await publishFound(finder2.client, finder2.id, offset(near, -25, -30));
+    expect(fuzzPoint(offset(near, 30, 25))).toEqual(near);
+    expect(fuzzPoint(offset(near, -25, -30))).toEqual(near);
 
     const raw = await rawMatches(tutorA.client);
     assertNoLocationLeak(raw);

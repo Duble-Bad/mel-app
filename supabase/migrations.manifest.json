@@ -124,6 +124,10 @@
     {
       "file": "20261104120000_push_outbox_recovery.sql",
       "sha256": "4846e5b73f8349517809bba254b57bd13c9ef5acf7aa49d154691e28290ccce9"
+    },
+    {
+      "file": "20261105120000_public_area_100m.sql",
+      "sha256": "de7e03a2fa42b6c288c4ced602043725a259ede5048a22dddf6752733975eaf9"
     }
   ]
 }

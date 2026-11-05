@@ -73,7 +73,7 @@ describe("lost case lifecycle", () => {
     expect(pub.isOwner).toBe(false);
     expect(pub.pointIsExact).toBe(false);
     // Ponto público aproximado — e idêntico ao calculado em TypeScript.
-    expect(pub.point).toEqual(fuzzPoint(SE, 250));
+    expect(pub.point).toEqual(fuzzPoint(SE));
     expect(distanceMeters(SE, pub.point!)).toBeLessThan(180);
     // Nada privado na resposta pública.
     const raw = JSON.stringify(pub);

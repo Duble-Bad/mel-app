@@ -36,6 +36,9 @@ export function distanceMeters(a: LatLng, b: LatLng): number {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+/** Tamanho da célula do ponto público (m). Igual ao do banco (private.fuzz_lat_lng). */
+export const PUBLIC_CELL_METERS = 100;
+
 /**
  * Aproxima um ponto ao centro de uma célula de grade de `cellMeters`.
  * Usado para nunca publicar a localização exata (muitas vezes a casa do tutor).
@@ -43,7 +46,7 @@ export function distanceMeters(a: LatLng, b: LatLng): number {
  * "triangular" o local real publicando várias vezes.
  * Deve espelhar a função SQL `private.fuzz_point`.
  */
-export function fuzzPoint(p: LatLng, cellMeters = 250): LatLng {
+export function fuzzPoint(p: LatLng, cellMeters = PUBLIC_CELL_METERS): LatLng {
   const latStep = cellMeters / METERS_PER_DEGREE_LAT;
   const lat = (Math.floor(p.lat / latStep) + 0.5) * latStep;
   const lngStep = cellMeters / (METERS_PER_DEGREE_LAT * Math.cos(toRad(lat)));
