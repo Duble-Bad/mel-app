@@ -20,11 +20,12 @@ const LABELS: Record<Species, string> = { dog: "Cachorros", cat: "Gatos", other:
 
 export default function AdoptionListPage({ searchParams }: PageProps<"/adocao">) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-3xl font-bold">Adote um amigo</h1>
-          <p className="text-text-secondary">Anúncios revisados pela equipe da MEL. Adoção é responsabilidade, e nunca tem preço.</p>
+    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-14">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex max-w-2xl flex-col gap-2">
+          <p className="text-sm font-bold tracking-[.08em] text-primary uppercase">Adoção responsável</p>
+          <h1 className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">Adote um amigo</h1>
+          <p className="text-text-secondary sm:text-body-lg">Anúncios revisados pela equipe da MEL. Adoção é responsabilidade, e nunca tem preço.</p>
         </div>
         <ButtonLink href="/publicar/adocao" variant="secondary" size="md" className="w-auto">
           <Plus aria-hidden="true" className="size-4" strokeWidth={2} /> Colocar para adoção
@@ -64,7 +65,7 @@ async function Results({ species }: { species: Species | null }) {
             href={s ? `/adocao?especie=${s}` : "/adocao"}
             aria-current={species === s ? "page" : undefined}
             className={`inline-flex min-h-10 items-center rounded-full border px-3.5 text-sm font-semibold ${
-              species === s ? "border-focus bg-primary-soft text-primary-soft-foreground" : "border-border bg-surface text-text-secondary hover:text-text-primary"
+              species === s ? "border-primary bg-primary text-primary-foreground shadow-primary" : "border-border bg-surface text-text-secondary hover:text-text-primary"
             }`}
           >
             {s ? LABELS[s] : "Todos"}

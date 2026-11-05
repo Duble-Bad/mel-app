@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useSyncExternalStore, type ReactNode } from "react";
-import { THEME_STORAGE_KEY, type ResolvedTheme, type ThemePreference } from "@/lib/theme/theme";
+import { DEFAULT_THEME, THEME_STORAGE_KEY, type ResolvedTheme, type ThemePreference } from "@/lib/theme/theme";
 
 // O estado do tema vive no <html> (data-theme / data-theme-pref), escrito pelo
 // script do <head> antes da pintura; este módulo só lê e atualiza esse estado.
@@ -11,7 +11,7 @@ const subscribe = (fn: () => void) => {
   return () => listeners.delete(fn);
 };
 const root = () => document.documentElement;
-const readPreference = (): ThemePreference => (root().dataset.themePref as ThemePreference | undefined) ?? "system";
+const readPreference = (): ThemePreference => (root().dataset.themePref as ThemePreference | undefined) ?? DEFAULT_THEME;
 const readResolved = (): ResolvedTheme => (root().dataset.theme === "dark" ? "dark" : "light");
 const systemPrefersDark = () => window.matchMedia("(prefers-color-scheme: dark)").matches;
 
@@ -39,9 +39,9 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  * não mudam.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // No servidor não há preferência: "system"/"light" até hidratar (o script do <head> já pintou certo).
-  const theme = useSyncExternalStore(subscribe, readPreference, () => "system" as const);
-  const resolvedTheme = useSyncExternalStore(subscribe, readResolved, () => "light" as const);
+  // No servidor não há preferência: o padrão até hidratar (o script do <head> já pintou certo).
+  const theme = useSyncExternalStore(subscribe, readPreference, () => DEFAULT_THEME);
+  const resolvedTheme = useSyncExternalStore(subscribe, readResolved, () => DEFAULT_THEME);
 
   // "Sistema": acompanha a troca de tema do aparelho em tempo real.
   useEffect(() => {
@@ -55,8 +55,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = useCallback((next: ThemePreference) => {
     try {
-      if (next === "system") localStorage.removeItem(THEME_STORAGE_KEY);
-      else localStorage.setItem(THEME_STORAGE_KEY, next);
+      // "system" também é gravado: sem nada salvo vale o padrão (escuro).
+      localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Navegação privada/armazenamento bloqueado: vale só nesta visita.
     }

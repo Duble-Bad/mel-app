@@ -9,7 +9,7 @@ export function FilterChip({ pressed, className, children, ...props }: Component
       {...props}
       className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold whitespace-nowrap transition-[background-color,border-color,color,transform] duration-200 ease-mel active:scale-[.97] ${
         pressed
-          ? "border-focus bg-primary-soft text-primary-soft-foreground"
+          ? "border-primary bg-primary text-primary-foreground shadow-primary"
           : "border-border bg-surface text-text-secondary hover:border-border-strong hover:text-text-primary"
       } ${className ?? ""}`}
     >

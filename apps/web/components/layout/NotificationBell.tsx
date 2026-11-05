@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Bell } from "lucide-react";
 import { subscribeToNotifications } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 
@@ -17,11 +18,9 @@ export function NotificationBell({ userId, initialUnread }: { userId: string; in
     <Link
       href="/notificacoes"
       aria-label={label}
-      className="relative inline-flex size-12 items-center justify-center rounded-md hover:bg-surface-muted"
+      className="relative inline-flex size-11 items-center justify-center rounded-md text-text-primary hover:bg-surface-muted"
     >
-      <span aria-hidden="true" className="text-xl">
-        🔔
-      </span>
+      <Bell aria-hidden="true" className="size-5" strokeWidth={2} />
       {unread > 0 && (
         <span
           aria-hidden="true"

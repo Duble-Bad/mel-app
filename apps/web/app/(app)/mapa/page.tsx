@@ -13,13 +13,16 @@ export const metadata: Metadata = {
 
 export default function MapPage({ searchParams }: PageProps<"/mapa">) {
   return (
-    <main className="mx-auto w-full max-w-[1280px] flex-1 px-[var(--mel-page-gutter)] pt-5 pb-10">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Mapa da rede MEL</h1>
-          <p className="text-sm text-text-secondary">Locais sempre aproximados, para proteger quem publica.</p>
+    <main className="mx-auto w-full max-w-[1280px] flex-1 px-[var(--mel-page-gutter)] pt-7 pb-10">
+      <header className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">Mapa da rede MEL</h1>
+          <p className="text-text-secondary">Ocorrências e avistamentos perto de você. Locais sempre aproximados, para proteger quem publica.</p>
         </div>
         <nav aria-label="Listas" className="flex gap-4 text-sm font-semibold">
+          <Link href="/mural" className="text-link underline-offset-4 hover:underline">
+            Ver no mural
+          </Link>
           <Link href="/perdidos" className="text-link underline-offset-4 hover:underline">
             Lista de perdidos
           </Link>

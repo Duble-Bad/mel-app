@@ -225,6 +225,8 @@
 }
 
 html {
+  /* Cabeçalho fixo (64 px): rolagem até um campo, âncora ou erro não o esconde por baixo. */
+  scroll-padding-top: 5rem;
   background: var(--mel-background);
   color: var(--mel-text-primary);
   -webkit-text-size-adjust: 100%;
@@ -285,5 +287,53 @@ input:-webkit-autofill:focus {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Conceito B (2026-11-05): traço desenhado, flutuação e cartões de ação ---------- */
+.mel-draw path {
+  stroke-dasharray: var(--len, 1000);
+  stroke-dashoffset: var(--len, 1000);
+  animation: mel-draw 1.4s var(--mel-easing) forwards;
+  animation-delay: var(--delay, 0.4s);
+}
+@keyframes mel-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.mel-float {
+  animation: mel-float 6s ease-in-out infinite;
+}
+@keyframes mel-float {
+  50% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+}
+.mel-action {
+  --c: var(--color-status-lost-accent);
+  border-color: color-mix(in srgb, var(--c) 65%, transparent);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 30%, var(--mel-surface)) 0%, color-mix(in srgb, var(--c) 10%, var(--mel-surface)) 100%);
+}
+.mel-action:hover,
+.mel-action:focus-visible {
+  border-color: var(--c);
+  box-shadow: 0 22px 40px -18px color-mix(in srgb, var(--c) 75%, transparent);
+}
+.mel-live {
+  animation: mel-live 2s infinite;
+}
+@keyframes mel-live {
+  70% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-status-found-accent) 60%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mel-draw path {
+    stroke-dashoffset: 0;
+    animation: none;
   }
 }

@@ -132,13 +132,13 @@ test("open redirects through ?next= are blocked", async ({ page }) => {
 
 test("sign-in screen: no errors before interaction, eye icon for the password, name on sign up", async ({ page }) => {
   await page.goto("/entrar");
-  await expect(page.getByRole("heading", { name: "Bem-vindo à MEL" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Que bom ver você" })).toBeVisible();
   await expect(page.getByRole("banner")).toHaveCount(0); // tela cheia, sem o cabeçalho do app
 
   // Tocar nos campos e sair sem digitar não deixa nada vermelho.
   await page.getByLabel("E-mail").click();
   await page.getByLabel("Senha", { exact: true }).click();
-  await page.getByRole("heading", { name: "Bem-vindo à MEL" }).click();
+  await page.getByRole("heading", { name: "Que bom ver você" }).click();
   await expect(page.locator("[aria-invalid=true]")).toHaveCount(0);
 
   // Erro aparece ao sair de um campo preenchido errado, e some ao corrigir.
@@ -165,18 +165,18 @@ test("sign-in screen: no errors before interaction, eye icon for the password, n
   await expect(page.getByLabel("Seu nome")).toBeFocused();
 });
 
-test("theme: follows the device by default, can be switched, and is applied before paint on reload", async ({ browser }) => {
-  const ctx = await browser.newContext({ ...test.info().project.use, baseURL: "http://localhost:3100", colorScheme: "dark" });
+test("theme: dark by default, can be switched, and is applied before paint on reload", async ({ browser }) => {
+  // Aparelho no claro: o padrão da MEL continua escuro até a pessoa escolher.
+  const ctx = await browser.newContext({ ...test.info().project.use, baseURL: "http://localhost:3100", colorScheme: "light" });
   const page = await ctx.newPage();
   const html = page.locator("html");
 
-  // Primeiro acesso: "Sistema" (aparelho escuro → tema escuro).
   await page.goto("/entrar");
   await expect(html).toHaveAttribute("data-theme", "dark");
-  await expect(html).toHaveAttribute("data-theme-pref", "system");
+  await expect(html).toHaveAttribute("data-theme-pref", "dark");
 
   // Escolher "Claro" (celular: bottom sheet) persiste e vale já na próxima carga, sem piscar.
-  await page.getByRole("button", { name: "Tema: Sistema" }).click();
+  await page.getByRole("button", { name: "Tema: Escuro" }).click();
   await page.getByRole("dialog", { name: "Aparência" }).getByRole("radio", { name: /Claro/ }).click();
   await expect(html).toHaveAttribute("data-theme", "light");
   await page.reload();
@@ -186,10 +186,13 @@ test("theme: follows the device by default, can be switched, and is applied befo
   expect(head).toContain('localStorage.getItem("mel-theme")');
   await expect(page.getByRole("button", { name: "Tema: Claro" })).toBeVisible();
 
-  // Voltar para "Sistema" segue o aparelho de novo.
+  // "Sistema" segue o aparelho (aqui, claro) e também fica salvo.
   await page.getByRole("button", { name: "Tema: Claro" }).click();
   await page.getByRole("dialog", { name: "Aparência" }).getByRole("radio", { name: /Sistema/ }).click();
-  await expect(html).toHaveAttribute("data-theme", "dark");
+  await expect(html).toHaveAttribute("data-theme-pref", "system");
+  await page.reload();
+  await expect(html).toHaveAttribute("data-theme", "light");
+  await expect(html).toHaveAttribute("data-theme-pref", "system");
   await ctx.close();
 });
 

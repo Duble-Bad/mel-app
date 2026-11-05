@@ -1,74 +1,64 @@
 import Link from "next/link";
+import { ChevronRight, Eye, Heart, PawPrint, TriangleAlert, type LucideIcon } from "lucide-react";
 
 type Tone = "lost" | "found" | "sighting" | "adoption";
 
 interface HelpAction {
   label: string;
   hint: string;
-  icon: string;
+  Icon: LucideIcon;
   tone: Tone;
-  /** Sem href = fluxo ainda não liberado (aparece desabilitado, nunca link falso). */
-  href?: string;
+  href: string;
 }
 
-// Os fluxos são liberados milestone a milestone (docs/06-milestones.md).
 const ACTIONS: HelpAction[] = [
-  { label: "Perdi meu pet", hint: "Ative um alerta em 2 minutos", icon: "🔴", tone: "lost", href: "/publicar/perdido" },
-  { label: "Encontrei um pet", hint: "Ajude a achar o tutor", icon: "🟢", tone: "found", href: "/publicar/encontrado" },
-  { label: "Vi um pet", hint: "Viu um animal solto? Avise", icon: "🟡", tone: "sighting", href: "/publicar/encontrado?vi=1" },
-  { label: "Quero adotar", hint: "Conheça quem procura um lar", icon: "❤️", tone: "adoption", href: "/adocao" },
+  { label: "Perdi meu pet", hint: "Divulgue agora e mobilize sua região.", Icon: TriangleAlert, tone: "lost", href: "/publicar/perdido" },
+  { label: "Encontrei um pet", hint: "Ajude a reunir o animal à sua família.", Icon: PawPrint, tone: "found", href: "/publicar/encontrado" },
+  { label: "Vi um pet", hint: "Registre um avistamento de forma segura.", Icon: Eye, tone: "sighting", href: "/publicar/encontrado?vi=1" },
+  { label: "Quero adotar", hint: "Conheça os animais e cadastre seu interesse.", Icon: Heart, tone: "adoption", href: "/adocao" },
 ];
 
-const toneClasses: Record<Tone, string> = {
-  lost: "border-status-lost bg-status-lost-soft text-status-lost",
-  found: "border-status-found bg-status-found-soft text-status-found",
-  sighting: "border-status-sighting bg-status-sighting-soft text-status-sighting",
-  adoption: "border-status-adoption bg-status-adoption-soft text-status-adoption",
+// Cor viva de cada caminho (a mesma dos pinos do mapa e dos selos do mural).
+const accent: Record<Tone, string> = {
+  lost: "var(--color-status-lost-accent)",
+  found: "var(--color-status-found-accent)",
+  sighting: "var(--color-status-sighting-accent)",
+  adoption: "var(--color-status-adoption-accent)",
 };
 
-const base = "flex min-h-32 w-full flex-col items-start justify-between rounded-lg border-2 p-4 text-left";
-
-function Content({ action }: { action: HelpAction }) {
-  return (
-    <>
-      <span aria-hidden="true" className="text-2xl">
-        {action.icon}
-      </span>
-      <span>
-        <span className="block text-lg leading-tight font-bold uppercase">{action.label}</span>
-        <span className="mt-1 block text-sm text-text-secondary">{action.hint}</span>
-      </span>
-    </>
-  );
-}
-
+/** As quatro ações da MEL. Celular: 2×2 compacto (cabe na 1ª tela); desktop: 4 lado a lado. */
 export function HelpActions() {
-  const pending = ACTIONS.some((a) => !a.href);
   return (
-    <ul className="grid grid-cols-2 gap-3">
-      {ACTIONS.map((action) => (
-        <li key={action.label}>
-          {action.href ? (
-            <Link href={action.href} className={`${base} shadow-card ${toneClasses[action.tone]}`}>
-              <Content action={action} />
-            </Link>
-          ) : (
-            <button
-              type="button"
-              disabled
-              aria-describedby="acoes-em-breve"
-              className={`${base} opacity-70 ${toneClasses[action.tone]}`}
+    <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+      {ACTIONS.map(({ label, hint, Icon, tone, href }, i) => (
+        <li key={label} className="animate-enter" style={{ animationDelay: `${120 + i * 70}ms` }}>
+          <Link
+            href={href}
+            style={{ "--c": accent[tone] } as React.CSSProperties}
+            className="mel-action group relative flex h-full min-h-36 flex-col overflow-hidden rounded-card border-[1.5px] p-3.5 text-text-primary transition-[transform,box-shadow,border-color] duration-300 ease-mel hover:-translate-y-1.5 focus-visible:-translate-y-1.5 active:scale-[.98] sm:p-5 lg:min-h-48"
+          >
+            <PawPrint aria-hidden="true" className="absolute -top-2 -right-2 size-20 rotate-12 text-text-primary opacity-[.06]" strokeWidth={1.5} />
+            <span
+              aria-hidden="true"
+              className="flex size-10 items-center justify-center rounded-full text-white shadow-md sm:size-12"
+              style={{ background: "var(--c)" }}
             >
-              <Content action={action} />
-            </button>
-          )}
+              <Icon className="size-5 sm:size-6" strokeWidth={2.25} />
+            </span>
+            <span className="mt-3 text-[17px] leading-tight font-extrabold tracking-[-0.01em] sm:mt-4 sm:text-xl lg:text-[22px]">{label}</span>
+            <span className="mt-1 flex items-end justify-between gap-2">
+              <span className="text-[13px] leading-snug text-text-secondary sm:text-sm">{hint}</span>
+              <span
+                aria-hidden="true"
+                className="hidden size-9 shrink-0 items-center justify-center rounded-full text-white transition-transform duration-300 ease-mel group-hover:translate-x-1 sm:flex"
+                style={{ background: "var(--c)" }}
+              >
+                <ChevronRight className="size-4" strokeWidth={2.5} />
+              </span>
+            </span>
+          </Link>
         </li>
       ))}
-      {pending && (
-        <li id="acoes-em-breve" className="col-span-2 text-sm text-text-secondary">
-          Os outros caminhos chegam em breve.
-        </li>
-      )}
     </ul>
   );
 }

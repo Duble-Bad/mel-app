@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
+import { Circle, CircleCheck } from "lucide-react";
 import { authReturnMessage, credentialsSchema, fieldErrors, needsOnboarding, safeNextPath, signUpSchema, userErrorMessage } from "@mel/core";
 import { AuthError, getMyProfile, linkGoogleToAnonymous, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -36,7 +37,8 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
   // Volta de um login social/link que falhou (?erro=…).
   const [returned] = useState(() => authReturnMessage(params.get("erro")));
 
-  const [mode, setMode] = useState<Mode>("signin");
+  // "Criar conta" do cabeçalho e da home chega com ?criar=1.
+  const [mode, setMode] = useState<Mode>(() => (params.get("criar") ? "signup" : "signin"));
   const [values, setValues] = useState<Record<FieldName, string>>({ displayName: "", email: "", password: "" });
   const [errors, setErrors] = useState<Partial<Record<FieldName, string>>>({});
   // Depois da 1ª tentativa de envio, os erros acompanham a digitação.
@@ -226,7 +228,7 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
           name="password"
           autoComplete={isSignup ? "new-password" : "current-password"}
           placeholder={isSignup ? "Crie uma senha" : "Sua senha"}
-          hint={isSignup ? "Pelo menos 8 caracteres." : undefined}
+          hint={isSignup ? <PasswordRule ok={values.password.length >= 8} /> : undefined}
           value={values.password}
           onChange={(e) => change("password", e.target.value)}
           onBlur={() => blur("password")}
@@ -277,6 +279,17 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
         </button>
       </p>
     </div>
+  );
+}
+
+/** Regra real da senha (app e Supabase): só o mínimo de 8 caracteres. Marca em verde ao cumprir. */
+function PasswordRule({ ok }: { ok: boolean }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 transition-colors ${ok ? "text-success" : ""}`}>
+      {ok ? <CircleCheck aria-hidden="true" className="size-4" strokeWidth={2.25} /> : <Circle aria-hidden="true" className="size-4" strokeWidth={2} />}
+      Pelo menos 8 caracteres
+      <span className="sr-only">{ok ? "(cumprido)" : ""}</span>
+    </span>
   );
 }
 
