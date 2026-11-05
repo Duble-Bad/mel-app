@@ -1,0 +1,528 @@
+/*
+ * Mapa da rede e Mural (Conceito B). Importado só por /mapa e /mural (e listas
+ * públicas que usam os mesmos cartões). Cores de tipo iguais às da legenda do mapa.
+ */
+
+.mel-kind--lost {
+  --k: #ef5157;
+  --k-badge: #e5484d;
+}
+.mel-kind--found {
+  --k: #22b67e;
+  --k-badge: #15895e;
+}
+.mel-kind--sighting {
+  --k: #3d8bff;
+  --k-badge: #2a6fe0;
+}
+.mel-kind--adoption {
+  --k: #f6b928;
+  --k-badge: #f6b928;
+}
+
+/* Selo do tipo (PERDIDO, ENCONTRADO, VISTO, ADOÇÃO) */
+.mel-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--k-badge);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.mel-kind--adoption .mel-badge,
+.mel-badge.mel-kind--adoption {
+  color: #1c1404;
+}
+
+/* Linha de metadado com ícone dourado (local, tempo) */
+.mel-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  min-width: 0;
+}
+.mel-meta svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--color-primary);
+}
+
+/* ---------- Cartão do mural ---------- */
+.mel-pet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition:
+    transform 0.35s var(--ease-mel),
+    box-shadow 0.35s var(--ease-mel),
+    border-color 0.3s;
+}
+.mel-pet:hover,
+.mel-pet:focus-visible {
+  transform: translateY(-5px);
+  border-color: var(--color-border-strong);
+  box-shadow: 0 18px 50px -20px rgb(0 0 0 / 0.7);
+}
+.mel-pet__media {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+}
+.mel-pet__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s var(--ease-mel);
+}
+.mel-pet:hover .mel-pet__media img {
+  transform: scale(1.05);
+}
+.mel-pet__media .mel-badge {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+}
+.mel-pet__body {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  align-content: start;
+  padding: 14px 16px 16px;
+}
+.mel-pet__body h3 {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mel-pet__more {
+  margin-top: 4px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+.mel-pet:hover .mel-pet__more {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ---------- Cartão compacto (lista do mapa) ---------- */
+.mel-case {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.3s var(--ease-mel),
+    border-color 0.3s,
+    background-color 0.3s;
+}
+.mel-case:hover,
+.mel-case:focus-visible,
+.mel-case[data-active] {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-muted);
+  transform: translateX(3px);
+}
+.mel-case__thumb {
+  width: 96px;
+  height: 84px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--color-surface-muted);
+}
+.mel-case strong {
+  display: block;
+  margin: 4px 0 2px;
+  font-size: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mel-case .mel-meta {
+  font-size: 13px;
+}
+.mel-case > svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-muted);
+}
+
+/* Entrada escalonada das listas (re-dispara a cada filtro: a lista ganha nova key) */
+.mel-stagger > * {
+  animation: mel-rise 0.5s var(--ease-mel) backwards;
+}
+.mel-stagger > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.mel-stagger > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.mel-stagger > *:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.mel-stagger > *:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.mel-stagger > *:nth-child(6) {
+  animation-delay: 0.25s;
+}
+.mel-stagger > *:nth-child(n + 7) {
+  animation-delay: 0.3s;
+}
+@keyframes mel-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- Alternador Lista/Mapa (celular) ---------- */
+.mel-view-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.mel-view-toggle button {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  transition:
+    background-color 0.25s,
+    color 0.25s;
+}
+.mel-view-toggle button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+@media (min-width: 1024px) {
+  .mel-view-toggle {
+    display: none;
+  }
+}
+
+/* ---------- Mapa ---------- */
+.mel-mapa {
+  display: grid;
+  gap: 18px;
+}
+.mel-mapa__map {
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
+  height: 62dvh;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  background: #0d1830;
+}
+@media (min-width: 1024px) {
+  .mel-mapa {
+    grid-template-columns: 420px 1fr;
+    align-items: start;
+  }
+  .mel-mapa__map {
+    position: sticky;
+    top: 16px;
+    height: calc(100dvh - 200px);
+    min-height: 520px;
+    border-radius: 22px;
+  }
+}
+@media (max-width: 1023px) {
+  .mel-mapa[data-view="lista"] .mel-mapa__map {
+    display: none;
+  }
+  .mel-mapa[data-view="mapa"] .mel-mapa__list {
+    display: none;
+  }
+}
+
+/* Sobreposições do mapa (aviso, legenda, controles) */
+.mel-map-chip {
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(10 17 29 / 0.88);
+  color: #dbe1ea;
+}
+.mel-map-note {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 28px);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.mel-map-note svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: #f6b928;
+}
+.mel-map-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: calc(100% - 90px);
+  padding: 8px 12px;
+  font-size: 12.5px;
+}
+.mel-map-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--k);
+  vertical-align: -1px;
+}
+.mel-map-controls {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: grid;
+  gap: 8px;
+}
+.mel-map-controls button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(10 17 29 / 0.85);
+  color: #f5f2ea;
+  transition: background-color 0.2s;
+}
+.mel-map-controls button:hover {
+  background: #13203a;
+}
+.mel-map-controls button:disabled {
+  opacity: 0.6;
+}
+.mel-map-controls svg {
+  width: 20px;
+  height: 20px;
+}
+/* A atribuição do MapTiler/OSM sobe para não ficar sob a legenda. */
+.mel-mapa__map .maplibregl-ctrl-bottom-right {
+  bottom: 0;
+  right: 64px;
+}
+
+/* Ponto central de cada área (marcador do MapLibre: o transform é dele, por isso o realce fica nos filhos). */
+.mel-area-dot {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mel-area-dot__core {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 3px solid #0a111d;
+  transition: transform 0.25s var(--ease-mel);
+}
+.mel-area-dot__pulse {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  border: 2px solid var(--c);
+  animation: mel-area-pulse 2.6s var(--ease-mel) infinite;
+  pointer-events: none;
+}
+.mel-area-dot:hover .mel-area-dot__core,
+.mel-area-dot:focus-visible .mel-area-dot__core,
+.mel-area-dot[data-active] .mel-area-dot__core {
+  transform: scale(1.35);
+}
+.mel-area-dot:focus-visible {
+  outline: 3px solid #f6b928;
+  outline-offset: -6px;
+  border-radius: 50%;
+}
+@keyframes mel-area-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ---------- Gaveta de detalhes ---------- */
+.mel-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.mel-drawer__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(3 6 12 / 0.66);
+  animation: mel-fade 0.3s both;
+}
+.mel-drawer__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  animation: mel-drawer-in 0.4s var(--ease-mel) both;
+}
+.mel-drawer__panel:focus {
+  outline: none;
+}
+@media (max-width: 600px) {
+  .mel-drawer__panel {
+    top: auto;
+    height: 92dvh;
+    width: 100%;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+    animation-name: mel-sheet-in;
+  }
+}
+.mel-drawer__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgb(10 17 29 / 0.7);
+  color: #fff;
+}
+.mel-drawer__media {
+  aspect-ratio: 4 / 3;
+  flex: none;
+  background: var(--color-surface-muted);
+}
+.mel-drawer__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mel-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mel-fact {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+}
+.mel-fact span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 12.5px;
+}
+.mel-fact strong {
+  font-size: 15px;
+}
+@keyframes mel-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes mel-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes mel-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mel-stagger > *,
+  .mel-drawer__scrim,
+  .mel-drawer__panel {
+    animation: none;
+  }
+  .mel-area-dot__pulse {
+    display: none;
+  }
+  .mel-pet,
+  .mel-pet__media img,
+  .mel-case,
+  .mel-area-dot__core {
+    transition: none;
+  }
+  .mel-pet:hover,
+  .mel-pet:focus-visible,
+  .mel-case:hover,
+  .mel-case[data-active] {
+    transform: none;
+  }
+  .mel-pet:hover .mel-pet__media img {
+    transform: none;
+  }
+}

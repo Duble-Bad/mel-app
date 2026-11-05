@@ -1,77 +1,55 @@
+import "@/app/map.css";
 import Link from "next/link";
 import { Clock, MapPin, PawPrint } from "lucide-react";
-import { colorLabel, formatDistance, itemHref, itemTitle, SIZE_LABELS, SPECIES_LABELS, timeAgo, type PublicCaseItem } from "@mel/core";
-import { StatusBadge } from "@/components/ui/StatusBadge";
-
-const BADGE = {
-  lost: { status: "lost", label: "Perdido" },
-  found: { status: "found", label: "Encontrado" },
-  sighting: { status: "sighting", label: "Visto solto" },
-} as const;
+import { formatDistance, type PublicAdoption, type PublicCaseItem } from "@mel/core";
+import { adoptionEntry, caseEntry, KIND_BADGE, type FeedEntry } from "./feed";
 
 /**
- * Cartão de caso (DS §19): foto dominante 4:3 com selo flutuante, título,
- * traços, região + distância, tempo e CTA. O cartão inteiro é o link.
+ * Cartão do mural (Conceito B): foto dominante 4:3 com o selo do tipo sobre
+ * ela, nome, traços, área aproximada, tempo e "Ver detalhes". O cartão inteiro é o link.
  */
-export function CaseCard({ item, compact = false }: { item: PublicCaseItem; compact?: boolean }) {
-  const badge = BADGE[item.kind];
-  const traits = [
-    item.kind === "lost" ? SPECIES_LABELS[item.species] : null,
-    item.breed,
-    item.size && SIZE_LABELS[item.size].label,
-    item.colorPrimary && colorLabel(item.colorPrimary),
-  ].filter(Boolean);
-  const verb = item.kind === "lost" ? "Sumiu" : item.kind === "sighting" ? "Visto" : "Encontrado";
+export function CaseCard({ item }: { item: PublicCaseItem }) {
+  return <FeedCard entry={caseEntry(item)} testId="case-card" />;
+}
 
+/** Anúncio de adoção no mural (mesmo cartão, selo ADOÇÃO). */
+export function AdoptionFeedCard({ adoption }: { adoption: PublicAdoption }) {
+  return <FeedCard entry={adoptionEntry(adoption)} testId="adoption-card" />;
+}
+
+function FeedCard({ entry: e, testId }: { entry: FeedEntry; testId: string }) {
+  // Casos: espécie, raça, porte e cor numa linha. Adoção já traz idade e porte na linha de tempo.
+  const traits = e.kind === "adoption" ? [] : e.facts.map((f) => f.value);
   return (
-    <Link
-      href={itemHref(item)}
-      data-testid="case-card"
-      className={`group flex overflow-hidden rounded-card border border-border/70 bg-surface shadow-sm transition-[transform,box-shadow] duration-200 ease-mel hover:shadow-md active:scale-[.99] ${
-        compact ? "flex-row" : "flex-col"
-      }`}
-    >
-      <div className={`relative shrink-0 bg-surface-muted ${compact ? "w-28" : "aspect-[4/3] w-full"}`}>
-        {item.photoUrl ? (
+    <Link href={e.href} data-testid={testId} className={`mel-pet mel-kind--${e.kind} focus-visible:outline-offset-2`}>
+      <div className="mel-pet__media">
+        {e.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- miniatura já otimizada no upload
-          <img src={item.photoUrl} alt="" loading="lazy" className="size-full object-cover" />
+          <img src={e.photoUrl} alt="" loading="lazy" decoding="async" width={600} height={450} />
         ) : (
           <span className="flex size-full items-center justify-center text-text-muted">
             <PawPrint aria-hidden="true" className="size-10" strokeWidth={1.5} />
           </span>
         )}
-        {!compact && (
-          <span className="absolute top-3 left-3">
-            <StatusBadge status={badge.status} solid>
-              {badge.label}
-            </StatusBadge>
-          </span>
-        )}
+        <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-4">
-        {compact && (
-          <span>
-            <StatusBadge status={badge.status}>{badge.label}</StatusBadge>
-          </span>
-        )}
-        <h3 className="truncate text-lg font-bold">{itemTitle(item)}</h3>
-        {traits.length > 0 && <p className="truncate text-sm text-text-secondary">{traits.join(" · ")}</p>}
-        <p className="flex items-start gap-1.5 text-sm">
-          <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand" strokeWidth={2} />
-          <span className="min-w-0">
-            {item.areaLabel ? <span className="font-medium">{item.areaLabel}</span> : "Região aproximada"}
-            <span className="block text-text-secondary">a {formatDistance(item.distanceM)} daqui</span>
+      <div className="mel-pet__body">
+        <h3>{e.title}</h3>
+        {traits.length > 0 && <p className="truncate text-sm text-text-muted">{traits.join(" · ")}</p>}
+        <p className="mel-meta">
+          <MapPin aria-hidden="true" strokeWidth={2} />
+          <span className="truncate">
+            {e.areaLabel ?? "Região aproximada"}
+            {e.distanceM != null && ` · a ${formatDistance(e.distanceM)}`}
           </span>
         </p>
-        <p className="flex items-center gap-1.5 text-sm text-text-secondary">
-          <Clock aria-hidden="true" className="size-4 shrink-0" strokeWidth={2} />
-          {verb} {timeAgo(item.at)}
-        </p>
-        {!compact && (
-          <span className="mt-1 text-sm font-semibold text-link group-hover:underline">
-            {item.kind === "lost" ? "Ver alerta" : "Ver detalhes"}
-          </span>
+        {e.when && (
+          <p className="mel-meta">
+            <Clock aria-hidden="true" strokeWidth={2} />
+            <span className="truncate">{e.when}</span>
+          </p>
         )}
+        <span className="mel-pet__more">{e.kind === "lost" ? "Ver alerta" : "Ver detalhes"}</span>
       </div>
     </Link>
   );
