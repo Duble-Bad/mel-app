@@ -1,4 +1,4 @@
-import type { BusinessCategory, BusinessInput, OfferInput, PublicBusiness } from "@mel/core";
+import type { BusinessCategory, BusinessInput, CnpjCheckStatus, OfferInput, PartnerKind, PartnerRecord, PublicBusiness } from "@mel/core";
 import { DataError, type MelClient } from "./client";
 import { randomId } from "./randomId";
 
@@ -35,6 +35,8 @@ export async function createBusiness(client: MelClient, ownerId: string, b: Busi
       hours: b.hours,
       helps_lost: b.helpsLost,
       logo_path: b.logoPath,
+      cnpj: b.cnpj,
+      legal_name: b.legalName,
     } as never)
     .select("short_code")
     .single();
@@ -42,13 +44,55 @@ export async function createBusiness(client: MelClient, ownerId: string, b: Busi
   return (data as { short_code: string }).short_code;
 }
 
+/**
+ * Inscrição por tipo (empresa, ONG, protetor), com a sessão de quem cadastra
+ * (RLS e o trigger valem). Devolve código e id. O CPF do protetor NÃO passa
+ * por aqui: é cifrado no servidor e gravado em partner_documents.
+ */
+export async function createPartner(client: MelClient, ownerId: string, p: PartnerRecord): Promise<{ code: string; id: string }> {
+  const { data, error } = await client
+    .from("businesses")
+    .insert({
+      owner_id: ownerId,
+      partner_kind: p.partnerKind,
+      name: p.name,
+      category: p.category,
+      description: p.description,
+      address_label: p.addressLabel,
+      lat: p.position.lat,
+      lng: p.position.lng,
+      phone: p.phone,
+      whatsapp: p.whatsapp,
+      website: p.website,
+      instagram: p.instagram,
+      hours: p.hours,
+      helps_lost: p.helpsLost,
+      logo_path: p.logoPath,
+      cnpj: p.cnpj,
+      legal_name: p.legalName,
+      responsible_name: p.responsibleName,
+      activity_area: p.activityArea,
+      city: p.city,
+      neighborhood: p.neighborhood,
+    } as never)
+    .select("id, short_code")
+    .single();
+  if (error) fail(error);
+  const row = data as { id: string; short_code: string };
+  return { code: row.short_code, id: row.id };
+}
+
 interface BusinessJson {
   code: string;
   status: PublicBusiness["status"];
+  kind: PartnerKind | null;
   name: string;
   category: BusinessCategory;
   description: string;
   address_label: string;
+  city: string | null;
+  neighborhood: string | null;
+  activity_area: string | null;
   lat: number;
   lng: number;
   phone: string | null;
@@ -59,19 +103,25 @@ interface BusinessJson {
   helps_lost: boolean;
   logo_path: string | null;
   plan_code: string;
+  cnpj_verified: boolean | null;
   distance_m: number | null;
   is_owner: boolean;
   review_note: string | null;
+  private: { cnpj: string | null; legal_name: string | null; responsible_name: string | null; cnpj_status: CnpjCheckStatus | null; has_document: boolean } | null;
   offers: { id: string; title: string; description: string | null; starts_at: string | null; ends_at: string | null; is_sponsored: boolean }[];
 }
 
 const toBusiness = (client: MelClient, b: BusinessJson): PublicBusiness => ({
   code: b.code,
   status: b.status,
+  kind: b.kind ?? "company",
   name: b.name,
   category: b.category,
   description: b.description,
   addressLabel: b.address_label,
+  city: b.city ?? null,
+  neighborhood: b.neighborhood ?? null,
+  activityArea: b.activity_area ?? null,
   position: { lat: b.lat, lng: b.lng },
   phone: b.phone,
   whatsapp: b.whatsapp,
@@ -81,9 +131,19 @@ const toBusiness = (client: MelClient, b: BusinessJson): PublicBusiness => ({
   helpsLost: b.helps_lost,
   logoUrl: b.logo_path ? logoUrl(client, b.logo_path) : null,
   planCode: b.plan_code,
+  cnpjVerified: b.cnpj_verified === true,
   distanceM: b.distance_m,
   isOwner: b.is_owner,
   reviewNote: b.review_note,
+  private: b.private
+    ? {
+        cnpj: b.private.cnpj,
+        legalName: b.private.legal_name,
+        responsibleName: b.private.responsible_name,
+        cnpjStatus: b.private.cnpj_status,
+        hasDocument: b.private.has_document,
+      }
+    : null,
   offers: (b.offers ?? []).map((o) => ({
     id: o.id,
     title: o.title,

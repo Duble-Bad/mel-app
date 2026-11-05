@@ -160,6 +160,12 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
 
       <form id="auth-form" ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         {formError && <Alert tone="error">{formError}</Alert>}
+        {/* Vindo da inscrição de parceiro: a conta é só para a moderação falar com a organização. */}
+        {params.get("contexto") === "parceiro" && !confirmEmailFor && (
+          <Alert tone="info">
+            {isSignup ? "Depois de criar a conta, voltamos para a sua inscrição de parceiro, já preenchida." : "Já tem conta? Entre e voltamos para a sua inscrição de parceiro, já preenchida."}
+          </Alert>
+        )}
         {offerGoogleSignIn && (
           <Button variant="secondary" onClick={() => handleGoogle("switch")} disabled={pending !== null}>
             <GoogleIcon />

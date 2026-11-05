@@ -25,7 +25,7 @@ const VALUES = [
  * Celular: tela cheia, sem cabeçalho do app. Tablet: cartão de 440px
  * centralizado. Desktop: foto + formulário lado a lado (Conceito B).
  */
-export default function SignInPage() {
+export default function SignInPage({ searchParams }: PageProps<"/entrar">) {
   return (
     <main className="relative isolate flex flex-1 flex-col overflow-hidden bg-background sm:items-center sm:justify-center sm:px-6 sm:py-12">
       <Glow />
@@ -50,11 +50,9 @@ export default function SignInPage() {
           </div>
 
           <div className="mt-4 mb-6 flex flex-col gap-1.5 text-center sm:mt-5 sm:mb-7 lg:mt-0 lg:text-left">
-            <h1 className="text-3xl font-extrabold tracking-[-0.025em] text-foreground">Que bom ver você</h1>
-            <p className="text-body-lg text-text-secondary">
-              <span className="lg:hidden">Uma rede inteira procurando com você.</span>
-              <span className="hidden lg:inline">Entre ou crie sua conta em segundos.</span>
-            </p>
+            <Suspense fallback={<GenericHeading />}>
+              {searchParams.then((q) => (q.contexto === "parceiro" ? <PartnerHeading /> : <GenericHeading />))}
+            </Suspense>
           </div>
 
           <Suspense fallback={<FormSkeleton />}>
@@ -63,6 +61,28 @@ export default function SignInPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function GenericHeading() {
+  return (
+    <>
+      <h1 className="text-3xl font-extrabold tracking-[-0.025em] text-foreground">Que bom ver você</h1>
+      <p className="text-body-lg text-text-secondary">
+        <span className="lg:hidden">Uma rede inteira procurando com você.</span>
+        <span className="hidden lg:inline">Entre ou crie sua conta em segundos.</span>
+      </p>
+    </>
+  );
+}
+
+/** Vindo da inscrição de parceiro (/parceiros): o rascunho espera na outra página. */
+function PartnerHeading() {
+  return (
+    <>
+      <h1 className="text-3xl font-extrabold tracking-[-0.025em] text-foreground">Crie sua conta para enviar a inscrição da sua organização</h1>
+      <p className="text-body-lg text-text-secondary">Seu rascunho fica guardado nesta aba e volta preenchido depois do login.</p>
+    </>
   );
 }
 

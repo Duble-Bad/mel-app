@@ -1,0 +1,120 @@
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
+
+/**
+ * Cifragem de dados pessoais sensíveis (hoje: CPF do protetor) no SERVIDOR.
+ *
+ * - AES-256-GCM (cifra autenticada): IV aleatório de 12 bytes por valor, tag de
+ *   16 bytes; qualquer alteração no texto cifrado, IV, tag ou AAD faz a
+ *   abertura falhar.
+ * - AAD amarra o valor ao registro (ex.: o id do parceiro): trocar o cifrado de
+ *   uma linha para outra também falha.
+ * - Chaves versionadas: grava com a atual; abre com a versão gravada na linha
+ *   (rotação = nova versão atual + antigas em MEL_PII_ENC_KEYS_PREVIOUS até
+ *   recifrar tudo).
+ * - Duplicidade: HMAC-SHA256 com chave SEPARADA (nunca hash simples, que seria
+ *   quebrado por força bruta nos 10^9 CPFs possíveis).
+ *
+ * Este módulo é puro (recebe as chaves); quem lê as variáveis de ambiente é
+ * keys.ts, marcado como server-only. Nunca importar no navegador.
+ */
+
+export interface PiiKeyring {
+  currentVersion: number;
+  encKeys: ReadonlyMap<number, Buffer>;
+  hmacKey: Buffer;
+  hmacVersion: number;
+}
+
+export interface SealedPii {
+  ciphertext: string; // base64
+  iv: string; // base64 (12 bytes)
+  authTag: string; // base64 (16 bytes)
+  keyVersion: number;
+}
+
+export class PiiCryptoError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PiiCryptoError";
+  }
+}
+
+const ALGO = "aes-256-gcm";
+
+export function sealPii(ring: PiiKeyring, plaintext: string, aad: string): SealedPii {
+  const key = ring.encKeys.get(ring.currentVersion);
+  if (!key) throw new PiiCryptoError("Chave atual de cifragem ausente.");
+  const iv = randomBytes(12);
+  const cipher = createCipheriv(ALGO, key, iv, { authTagLength: 16 });
+  cipher.setAAD(Buffer.from(aad, "utf8"));
+  const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  return {
+    ciphertext: ciphertext.toString("base64"),
+    iv: iv.toString("base64"),
+    authTag: cipher.getAuthTag().toString("base64"),
+    keyVersion: ring.currentVersion,
+  };
+}
+
+/** Abre um valor cifrado. Erro genérico (sem detalhes) se a chave faltar ou algo foi adulterado. */
+export function openPii(ring: PiiKeyring, sealed: SealedPii, aad: string): string {
+  const key = ring.encKeys.get(sealed.keyVersion);
+  if (!key) throw new PiiCryptoError(`Chave de cifragem v${sealed.keyVersion} indisponível.`);
+  const iv = Buffer.from(sealed.iv, "base64");
+  const tag = Buffer.from(sealed.authTag, "base64");
+  if (iv.length !== 12 || tag.length !== 16) throw new PiiCryptoError("Valor cifrado inválido.");
+  try {
+    const decipher = createDecipheriv(ALGO, key, iv, { authTagLength: 16 });
+    decipher.setAAD(Buffer.from(aad, "utf8"));
+    decipher.setAuthTag(tag);
+    return Buffer.concat([decipher.update(Buffer.from(sealed.ciphertext, "base64")), decipher.final()]).toString("utf8");
+  } catch {
+    throw new PiiCryptoError("Não foi possível abrir o valor cifrado (chave errada ou dado adulterado).");
+  }
+}
+
+/** HMAC-SHA256 (hex) do valor normalizado, com domínio (ex.: "cpf") para não cruzar tipos. */
+export function piiLookupHmac(ring: PiiKeyring, domain: string, normalized: string): string {
+  return createHmac("sha256", ring.hmacKey).update(`${domain}:${normalized}`, "utf8").digest("hex");
+}
+
+/** AAD do CPF de um parceiro. */
+export const partnerCpfAad = (businessId: string) => `mel:partner-document:CPF:${businessId}`;
+
+function decodeKey(name: string, value: string): Buffer {
+  const key = Buffer.from(value.trim(), "base64");
+  if (key.length !== 32) throw new PiiCryptoError(`${name} precisa ter 32 bytes em base64.`);
+  return key;
+}
+
+function parseVersion(name: string, value: string | undefined, fallback: number): number {
+  if (value === undefined || value === "") return fallback;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 999) throw new PiiCryptoError(`${name} deve ser um inteiro entre 1 e 999.`);
+  return n;
+}
+
+export interface PiiEnv {
+  MEL_PII_ENC_KEY?: string;
+  MEL_PII_ENC_KEY_VERSION?: string;
+  /** Chaves antigas, só para abrir: "1:base64,2:base64". */
+  MEL_PII_ENC_KEYS_PREVIOUS?: string;
+  MEL_PII_HMAC_KEY?: string;
+  MEL_PII_HMAC_KEY_VERSION?: string;
+}
+
+/** Monta o chaveiro. null se não configurado; erro se configurado errado. */
+export function parsePiiKeyring(env: PiiEnv): PiiKeyring | null {
+  if (!env.MEL_PII_ENC_KEY || !env.MEL_PII_HMAC_KEY) return null;
+  const currentVersion = parseVersion("MEL_PII_ENC_KEY_VERSION", env.MEL_PII_ENC_KEY_VERSION, 1);
+  const encKeys = new Map<number, Buffer>();
+  for (const entry of (env.MEL_PII_ENC_KEYS_PREVIOUS ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
+    const [v, k] = entry.split(":");
+    if (!v || !k) throw new PiiCryptoError("MEL_PII_ENC_KEYS_PREVIOUS usa o formato versão:chave, separados por vírgula.");
+    encKeys.set(parseVersion("MEL_PII_ENC_KEYS_PREVIOUS", v, 1), decodeKey(`MEL_PII_ENC_KEYS_PREVIOUS v${v}`, k));
+  }
+  encKeys.set(currentVersion, decodeKey("MEL_PII_ENC_KEY", env.MEL_PII_ENC_KEY));
+  const hmacKey = decodeKey("MEL_PII_HMAC_KEY", env.MEL_PII_HMAC_KEY);
+  if ([...encKeys.values()].some((k) => k.equals(hmacKey))) throw new PiiCryptoError("A chave do HMAC precisa ser diferente das chaves de cifragem.");
+  return { currentVersion, encKeys, hmacKey, hmacVersion: parseVersion("MEL_PII_HMAC_KEY_VERSION", env.MEL_PII_HMAC_KEY_VERSION, 1) };
+}
