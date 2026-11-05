@@ -1,7 +1,7 @@
 # MEL — Onde estamos (status e próximos passos)
 
 > Atualizado em 2026-11-05. **MVP em Feature Freeze desde o commit `46f3238`**; série Launch Readiness (1, 2A–2L) concluída no código e na documentação; último CI verde em `25561fe`.
-> **Próxima ação única:** confirmar por escrito as licenças gratuitas do MapTiler e da Vercel Hobby (ver "Prontidão para o piloto").
+> **Decisão de 2026-11-05:** o piloto segue nos planos gratuitos do **MapTiler** e da **Vercel (Hobby)**. **Próxima ação única:** decidir o domínio próprio (checklist 0.4).
 > Leia isto primeiro ao retomar o projeto. Para o lançamento, a lista completa está em [12-checklist-lancamento.md](12-checklist-lancamento.md).
 
 ## 🚦 Prontidão para o piloto (diagnóstico de 2026-11-05)
@@ -21,8 +21,7 @@ código; procedimento de deploy com pre-flight e pós-deploy.
 |---|---|
 | Técnico | `mel-prod` **pausado** (INACTIVE, visto em 2026-11-04): restaurar no painel (grátis) |
 | Técnico / privacidade | migrations **24–31** pendentes no `mel-prod` (24 e 29 são P0: sem elas o público vê o ponto exato do avistamento) |
-| Licença | MapTiler Free é "non-commercial use" sem definição: confirmar por escrito ([13](13-mapas-fornecedores.md)) |
-| Licença | Vercel Hobby é "non-commercial personal use only": confirmar que o piloto (sem receita, anúncio, patrocínio ou oferta patrocinada) se enquadra |
+| ~~Licença~~ | **Decidido (2026-11-05):** seguir no MapTiler Free e na Vercel Hobby. Condição: piloto **sem** receita, anúncio, patrocínio ou oferta patrocinada (os termos dos dois são "não comercial"); se isso mudar, rever os planos antes |
 | Licença | Resend Free e Turnstile: condições de uso não verificadas |
 | Configuração | domínio próprio — **único custo inevitável** (~R$ 40/ano; decisão do proprietário): sem ele não há SMTP nem recuperação de senha |
 | Configuração | Vercel (Root Directory `apps/web`, variáveis e secrets de produção, `NEXT_PUBLIC_SITE_URL`); Supabase de produção (URLs, SMTP Resend, captcha, anônimos 30/h); chaves de produção restritas ao domínio (Turnstile, VAPID novo, MapTiler); primeiro moderador; smoke test |
@@ -35,7 +34,7 @@ backup externo; troca de mapa (plano no [13](13-mapas-fornecedores.md)); revisã
 formal (após aprovação dos textos atuais pelo dono); teste instável `lostcase-lifecycle`
 (1 falha transitória em `89bdeb9`, verde na 2ª tentativa).
 
-**Sequência mínima (sem contratar):** 1) confirmar licenças; 2) decidir/registrar domínio;
+**Sequência mínima (sem contratar):** 1) ~~licenças~~ (decidido: MapTiler Free e Vercel Hobby) e conferir Resend Free e Turnstile; 2) decidir/registrar domínio;
 3) restaurar o `mel-prod`; 4) migrations 24–31 + pós-deploy ([08](08-deploy-producao.md));
 5) Auth/SMTP/captcha no `mel-prod`; 6) chaves de produção; 7) deploy na Vercel e conferir
 `gru1`; 8) primeiro moderador; 9) smoke test; 10) abrir o piloto sem ofertas patrocinadas.
@@ -65,13 +64,15 @@ Ideias de produto (MEL ID + QR permanente, Ponto de Apoio, CTA de instalação d
 
 - **Produto (M1–M16): concluído** em desenvolvimento ([06-milestones.md](06-milestones.md)); **Feature Freeze** em `46f3238` (acima).
 - **Produção:** schema aplicado e verificado no `mel-prod` (pós-deploy 100% ✅). Auth básico ajustado pelo dono no painel (abaixo). O app não está publicado.
-- **Etapa atual:** Launch Readiness concluído no código (até 2L). **Próxima etapa: lançamento do piloto (M17)**, na sequência mínima de "Prontidão para o piloto", só com autorização do dono, item a item. Próxima ação única: confirmar as licenças gratuitas (MapTiler Free e Vercel Hobby).
+- **Etapa atual:** Launch Readiness concluído no código (até 2L). **Próxima etapa: lançamento do piloto (M17)**, na sequência mínima de "Prontidão para o piloto", só com autorização do dono, item a item. Licenças decididas (MapTiler Free e Vercel Hobby, 2026-11-05). Próxima ação única: decidir o domínio próprio.
 
 ## ⏸️ Produção pausada (decisão de 2026-10-30)
 
 Todo o trabalho de produção está **pausado** até o produto estar funcionalmente pronto em DEV: nada de domínio, SMTP/Resend, "Confirm email", Google OAuth, Manual Linking, alterações no `mel-prod` ou deploy. Os itens abaixo ficam como **pendências de lançamento**; o foco agora é o produto (auditoria funcional em DEV).
 
 ## Último CI
+
+**3 rodadas completas de E2E (2026-11-05), build de produção, sem novas tentativas automáticas:** 76/76 ✅ em cada rodada (2,8 · 2,7 · 2,5 min). Logs do servidor sem erro inesperado: só os provocados pelos próprios testes (`/dev/erro`, login social recusado) e o push desligado de propósito (sem chave VAPID).
 
 `25561fe` (2026-11-04, docs 17): ✅ CI e reconstrução do schema. `89bdeb9` (guia 16 + verificação rápida): ✅ CI (na 2ª tentativa, falha transitória em `lostcase-lifecycle`), reconstrução ✅, ensaio de backup ✅. `7d7be25` (migration 31): ✅ nos 3 checks.
 

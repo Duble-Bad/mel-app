@@ -10,8 +10,8 @@ Diagnóstico de 2026-11-05 ([10-status.md](10-status.md#-prontidão-para-o-pilot
 
 | # | Item | Por quê |
 |---|---|---|
-| 0.1 | **MapTiler Free**: confirmação por escrito de que o piloto sem receita é "non-commercial use" | Os termos limitam o Free a uso não comercial sem definir o termo. Se "não": plano pago ou troca de mapa (exige código; plano no `13`) |
-| 0.2 | **Vercel Hobby**: reler os termos ("non-commercial personal use only") e confirmar o enquadramento | Só serve sem receita, anúncios, patrocínio ou ofertas patrocinadas; senão, plano pago |
+| 0.1 | ✅ **Decidido (2026-11-05): MapTiler Free.** Condição: piloto sem receita/patrocínio ("non-commercial use") | Os termos limitam o Free a uso não comercial sem definir o termo. Se "não": plano pago ou troca de mapa (exige código; plano no `13`) |
+| 0.2 | ✅ **Decidido (2026-11-05): Vercel Hobby.** Condição: sem receita, anúncios, patrocínio ou ofertas patrocinadas ("non-commercial personal use only") | Só serve sem receita, anúncios, patrocínio ou ofertas patrocinadas; senão, plano pago |
 | 0.3 | **Resend Free** e **Turnstile**: conferir as condições de uso | Não verificadas; nenhum serviço gratuito é presumido adequado |
 | 0.4 | **Domínio próprio**: decisão do dono (único custo inevitável, ~R$ 40/ano) | Sem domínio não há SMTP (recuperação de senha), Site URL nem chaves restritas por domínio |
 | 0.5 | **Restaurar o `mel-prod`** (pausado pelo plano Free) | Visto INACTIVE em 2026-11-04; restaurar é grátis, no painel |

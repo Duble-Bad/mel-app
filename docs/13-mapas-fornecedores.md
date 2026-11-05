@@ -2,9 +2,9 @@
 
 Launch Readiness 2B (03/11/2026). **Fornecedor ativo: MapTiler** (mapa e busca).
 
-> **Pendência de licença (bloqueia o piloto, diagnóstico de 2026-11-05):** o MapTiler Free é
-> "limited to non-commercial use" sem definir o termo. Confirmar por escrito antes do
-> lançamento; se a resposta for negativa, plano pago ou a migração da seção 3 (exige código).
+> **Decisão do proprietário (2026-11-05): o piloto usa o MapTiler Free.** Os termos limitam
+> o Free a "non-commercial use" sem definir o termo; condição assumida: piloto sem receita,
+> anúncio ou patrocínio. Se isso mudar, rever o plano (pago) ou migrar (seção 3, exige código).
 Este documento prepara uma troca futura para OpenFreeMap (mapa) + Geoapify (busca),
 sem executá-la. Termos e cotas consultados nas páginas oficiais em 03/11/2026;
 reconfirmar antes de migrar.
