@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEL — Conceito B · Início</title>
+<meta name="description" content="Protótipo do Conceito B da MEL: rede comunitária de apoio a pets perdidos, encontrados e para adoção.">
+<link rel="icon" href="../assets/marca/mel-beacon-tile-dark.svg">
+<link rel="preload" href="../assets/fontes/Figtree-800.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="../assets/fotos/gato-e-cao-juntos.jpg" as="image">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="index">
+<main id="conteudo">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__bg" aria-hidden="true"></div>
+    <div class="container hero__in">
+      <div class="hero__copy">
+        <span class="pill enter" style="--d:.05s; width:fit-content"><i data-icon="paw"></i>Rede de Encontro e Adoção de Pets</span>
+        <h1 id="hero-title" class="enter" style="--d:.15s">Uma rede inteira procurando
+          <span class="accent">com você.<svg class="underline draw" viewBox="0 0 300 30" preserveAspectRatio="none" aria-hidden="true" style="--d:.9s"><path d="M4 20 C 70 8, 160 6, 296 16" fill="none" stroke="#f6b928" stroke-width="7" stroke-linecap="round" style="--len:320"/></svg></span>
+        </h1>
+        <p class="hero__lead enter" style="--d:.3s">Encontre, divulgue e receba ajuda da comunidade para reencontrar seu pet, informar avistamentos e apoiar adoções responsáveis.</p>
+        <div class="hero__ctas enter" style="--d:.42s">
+          <a class="btn btn--gold" href="entrar.html#criar"><i data-icon="userPlus"></i>Criar conta gratuitamente</a>
+          <a class="btn btn--ghost" href="#como-funciona"><i data-icon="play"></i>Como funciona</a>
+        </div>
+      </div>
+      <div class="hero__media enter" style="--d:.2s">
+        <svg class="hero__ribbon draw" viewBox="0 0 400 500" aria-hidden="true" style="--d:.6s"><path d="M380 10 C 300 160, 420 260, 240 340 S 120 470, 20 490" fill="none" stroke="#f6b928" stroke-width="46" stroke-linecap="round" opacity=".92" style="--len:720"/></svg>
+        <img class="hero__photo" src="../assets/fotos/gato-e-cao-juntos.jpg" alt="Um gato tigrado e um cão deitados juntos e aconchegados na grama" width="1200" height="800" fetchpriority="high">
+        <svg class="hero__heart float draw" viewBox="0 0 100 100" aria-hidden="true" style="--d:1.1s"><path d="M50 84 C 18 60, 8 40, 22 26 C 34 14, 48 24, 50 36 C 54 22, 70 12, 80 26 C 94 44, 74 64, 50 84" fill="none" stroke="#f6b928" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" style="--len:300"/></svg>
+        <div class="hero__tag enter" style="--d:1.2s"><img src="../assets/fotos/beagle-sorrindo.jpg" alt=""><div><strong><span class="dot-live" aria-hidden="true"></span>Luna foi vista há 2 h</strong><span>Mooca – SP · 14 pessoas ajudando</span></div></div>
+      </div>
+    </div>
+
+    <div class="container">
+      <nav class="actions" aria-label="O que você precisa?">
+        <a class="action action--lost enter" style="--d:.5s" href="#">
+          <span class="action__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 6v8"/><path d="M12 18.5h.01"/></svg></span>
+          <h3>Perdi meu pet</h3><p>Divulgue agora e mobilize sua região.</p>
+          <span class="action__go"><i data-icon="chevron"></i></span><span class="action__paw"><i data-icon="paw"></i></span>
+        </a>
+        <a class="action action--found enter" style="--d:.58s" href="#">
+          <span class="action__icon"><i data-icon="paw"></i></span>
+          <h3>Encontrei um pet</h3><p>Ajude a reunir o animal à sua família.</p>
+          <span class="action__go"><i data-icon="chevron"></i></span><span class="action__paw"><i data-icon="paw"></i></span>
+        </a>
+        <a class="action action--seen enter" style="--d:.66s" href="#">
+          <span class="action__icon"><i data-icon="binoc"></i></span>
+          <h3>Vi um pet</h3><p>Registre um avistamento de forma segura.</p>
+          <span class="action__go"><i data-icon="chevron"></i></span><span class="action__paw"><i data-icon="paw"></i></span>
+        </a>
+        <a class="action action--adopt enter" style="--d:.74s" href="adocao.html">
+          <span class="action__icon"><i data-icon="heart"></i></span>
+          <h3>Quero adotar</h3><p>Conheça os animais disponíveis e cadastre seu interesse.</p>
+          <span class="action__go"><i data-icon="chevron"></i></span><span class="action__paw"><i data-icon="heart"></i></span>
+        </a>
+      </nav>
+
+      <div class="stats reveal" role="list" aria-label="Números da rede (ilustrativos)">
+        <div class="stat" role="listitem"><i data-icon="users"></i><div><strong data-count="12480" data-prefix="+">+12.480</strong><span>Pessoas na rede</span></div></div>
+        <div class="stat" role="listitem"><i data-icon="paw"></i><div><strong data-count="3920">3.920</strong><span>Pets cadastrados</span></div></div>
+        <div class="stat" role="listitem"><i data-icon="heart"></i><div><strong data-count="1876">1.876</strong><span>Reencontros</span></div></div>
+        <div class="stat" role="listitem"><i data-icon="home"></i><div><strong data-count="642">642</strong><span>Adoções responsáveis</span></div></div>
+      </div>
+      <p class="stats-note">Dados ilustrativos do protótipo. No piloto, os números reais só aparecem quando forem significativos.</p>
+    </div>
+  </section>
+
+  <section class="section" id="como-funciona" aria-labelledby="cf-title">
+    <div class="container">
+      <div class="section__head reveal"><span class="eyebrow">Como funciona</span><h2 id="cf-title">Do alerta ao reencontro, em três passos</h2>
+        <p class="section__lead">Sem custo, sem anúncios. A MEL avisa quem está perto e protege os dados de quem pede ajuda.</p></div>
+      <ol class="steps" style="list-style:none;padding:0;margin:0">
+        <li class="step reveal" style="--d:0s"><span class="step__icon"><i data-icon="megaphone"></i></span><h3>Publique em 2 minutos</h3><p>Foto, nome e a região onde o pet sumiu. A MEL gera um cartaz com QR code para imprimir e compartilhar.</p></li>
+        <li class="step reveal" style="--d:.1s"><span class="step__icon"><i data-icon="bell"></i></span><h3>A vizinhança é avisada</h3><p>Guardiões da região recebem o alerta. Quem vê o pet registra o avistamento com foto, mesmo sem conta.</p></li>
+        <li class="step reveal" style="--d:.2s"><span class="step__icon"><i data-icon="chat"></i></span><h3>Conversa segura até o reencontro</h3><p>O contato acontece pelo chat da MEL. Seu telefone e endereço nunca ficam expostos.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="rede-title">
+    <div class="container">
+      <div class="section__head section__head--row reveal">
+        <div><span class="eyebrow">Agora na sua região</span><h2 id="rede-title">Mapa e mural, lado a lado</h2></div>
+        <a class="btn btn--ghost" href="mapa.html">Abrir o mapa da rede <i data-icon="arrow"></i></a>
+      </div>
+      <div class="preview">
+        <div class="panel reveal">
+          <div class="panel__head"><h3>Mapa da rede</h3><a href="mapa.html">Ver tudo</a></div>
+          <div class="map" id="home-map" style="min-height:360px">
+            <p class="map__note"><i data-icon="shield"></i>Áreas aproximadas (~250 m) para proteger tutores</p>
+          </div>
+        </div>
+        <div class="panel reveal" style="--d:.1s">
+          <div class="panel__head"><h3>Últimos no mural</h3><a href="mural.html">Abrir mural</a></div>
+          <div class="mini-list" id="home-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="ad-title">
+    <div class="container split">
+      <div class="reveal">
+        <span class="eyebrow">Adoção responsável</span>
+        <h2 id="ad-title">Ainda não achou seu novo amigo? Entre na fila.</h2>
+        <p class="section__lead">Cadastre o que você procura (espécie, porte, idade) mesmo sem animais disponíveis. Quando chegar alguém compatível, a ONG ou o protetor fala com você pela MEL.</p>
+        <ul class="checks">
+          <li><i data-icon="checkCircle"></i><span>Seu contato fica privado. Só quem cuida do animal vê, e só com o seu consentimento.</span></li>
+          <li><i data-icon="checkCircle"></i><span>Você cancela o interesse quando quiser, com um toque.</span></li>
+          <li><i data-icon="checkCircle"></i><span>Cada anúncio passa pela moderação antes de aparecer.</span></li>
+        </ul>
+        <div class="hero__ctas" style="margin-top:28px"><a class="btn btn--gold" href="adocao.html#quero"><i data-icon="heart"></i>Quero adotar</a><a class="btn btn--ghost" href="adocao.html">Ver disponíveis</a></div>
+      </div>
+      <div class="grid-pets reveal" id="home-adopt" style="--d:.1s"></div>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="pa-title">
+    <div class="container split">
+      <div class="reveal">
+        <span class="eyebrow">Parceiros da MEL</span>
+        <h2 id="pa-title">Clínicas, ONGs e protetores que ajudam animais a voltar para casa</h2>
+        <p class="section__lead">Parceiros aparecem no mapa como pontos de apoio: recebem animais encontrados, divulgam alertas e orientam tutores. A MEL não vende nada. A parceria é pela causa.</p>
+        <div class="hero__ctas" style="margin-top:28px"><a class="btn btn--gold" href="parceiros.html">Conhecer o programa</a></div>
+      </div>
+      <div class="steps reveal" style="--d:.1s;grid-template-columns:1fr">
+        <div class="step step--plain"><span class="step__icon"><i data-icon="store"></i></span><h3>Empresas e serviços pet</h3><p>Clínicas, pet shops, banho e tosa, hotéis.</p></div>
+        <div class="step step--plain"><span class="step__icon"><i data-icon="handHeart"></i></span><h3>ONGs</h3><p>Publicam animais para adoção e recebem a fila de interessados.</p></div>
+        <div class="step step--plain"><span class="step__icon"><i data-icon="person"></i></span><h3>Protetores independentes</h3><p>Sem CNPJ e sem burocracia. A moderação valida o perfil.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+window.MEL = {
+  init() {
+    const { PETS, petCard, mapSVG, icon } = window.MELB;
+    const map = document.getElementById("home-map");
+    map.insertAdjacentHTML("afterbegin", mapSVG(PETS.filter((p) => p.kind !== "adopt").slice(0, 7)));
+    map.querySelectorAll(".area").forEach((a) => a.addEventListener("click", () => (location.href = "mapa.html")));
+    document.getElementById("home-list").innerHTML = PETS.filter((p) => p.kind !== "adopt").slice(0, 4).map((p) =>
+      `<a class="mini" href="mural.html"><img src="../assets/fotos/${p.img}" alt="${p.alt}" loading="lazy"><div><span class="badge badge--${p.kind}">${window.MELB.KIND[p.kind].label}</span><strong>${p.name}</strong><span class="meta">${icon("pin")} ${p.place} · ${p.when}</span></div>${icon("chevron")}</a>`).join("");
+    document.getElementById("home-adopt").innerHTML = PETS.filter((p) => p.kind === "adopt").slice(0, 2).map((p) => petCard(p, { action: "Ver detalhes" })).join("");
+  },
+};
+</script>
+</body>
+</html>

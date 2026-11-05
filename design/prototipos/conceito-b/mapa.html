@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEL — Conceito B · Mapa da Rede</title>
+<link rel="icon" href="../assets/marca/mel-beacon-tile-dark.svg">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="mapa">
+<main id="conteudo" class="container">
+  <header class="page-head enter">
+    <h1>Mapa da rede MEL</h1>
+    <p>Ocorrências e avistamentos próximos da sua região. Toque numa área para ver o caso.</p>
+  </header>
+
+  <div class="toolbar enter" style="--d:.1s">
+    <div class="chips" id="f-kind" role="group" aria-label="Tipo de caso">
+      <button class="chip" type="button" data-value="all" aria-pressed="true">Todos</button>
+      <button class="chip" type="button" data-value="lost" aria-pressed="false">Perdidos</button>
+      <button class="chip" type="button" data-value="found" aria-pressed="false">Encontrados</button>
+      <button class="chip" type="button" data-value="seen" aria-pressed="false">Vistos</button>
+      <button class="chip" type="button" data-value="adopt" aria-pressed="false">Adoção</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+      <div class="chips chips--sm" id="f-time" role="group" aria-label="Período">
+        <button class="chip" type="button" data-value="24" aria-pressed="false">24h</button>
+        <button class="chip" type="button" data-value="168" aria-pressed="false">7 dias</button>
+        <button class="chip" type="button" data-value="720" aria-pressed="true">30 dias</button>
+        <button class="chip" type="button" data-value="99999" aria-pressed="false">Qualquer data</button>
+      </div>
+      <div class="view-toggle" role="group" aria-label="Visualização">
+        <button type="button" data-view="lista" aria-pressed="true">Lista</button>
+        <button type="button" data-view="mapa" aria-pressed="false">Mapa</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mapa enter" id="mapa" data-view="lista" style="--d:.18s">
+    <div>
+      <p class="meta" id="count" aria-live="polite" style="margin-bottom:10px"></p>
+      <div class="case-list" id="list"></div>
+    </div>
+    <div class="map" id="map">
+      <p class="map__note"><i data-icon="shield"></i>Localização aproximada (~250 m) para proteger tutores</p>
+      <div class="map__controls">
+        <button type="button" id="zin" aria-label="Aproximar"><i data-icon="plus"></i></button>
+        <button type="button" id="zout" aria-label="Afastar"><i data-icon="minus"></i></button>
+        <button type="button" id="loc" aria-label="Centralizar na minha região"><i data-icon="locate"></i></button>
+      </div>
+      <div class="map__legend" aria-hidden="true"><span><i style="background:var(--lost)"></i>Perdido</span><span><i style="background:var(--found)"></i>Encontrado</span><span><i style="background:var(--seen)"></i>Visto</span><span><i style="background:var(--adopt)"></i>Adoção</span></div>
+    </div>
+  </div>
+</main>
+<script>
+window.MEL = {
+  init() {
+    const { PETS, KIND, icon, chipGroup, swap, mapSVG } = window.MELB;
+    const state = { kind: "all", hours: 720, zoom: 1 };
+    const list = document.getElementById("list");
+    const map = document.getElementById("map");
+    const count = document.getElementById("count");
+    let current = [];
+    const render = () => {
+      current = PETS.filter((p) => (state.kind === "all" || p.kind === state.kind) && (p.kind === "adopt" || p.hours <= state.hours));
+      count.textContent = `${current.length} ${current.length === 1 ? "caso" : "casos"} nesta região`;
+      list.classList.remove("list-anim"); void list.offsetWidth; list.classList.add("list-anim");
+      list.innerHTML = current.length
+        ? current.map((p) => `<button class="case" type="button" data-id="${p.id}"><img src="../assets/fotos/${p.img}" alt="${p.alt}" loading="lazy"><div><span class="badge badge--${p.kind}">${KIND[p.kind].label}</span><strong>${p.name}</strong><span class="meta">${icon("pin")} ${p.place}</span><span class="meta">${icon("clock")} ${p.when}</span></div>${icon("chevron")}</button>`).join("")
+        : `<div class="empty">${icon("search")}<h3>Nada por aqui neste período</h3><p>Amplie o período ou mude o filtro. Que tal ativar o Guardião para ser avisado?</p></div>`;
+      map.querySelector("svg")?.remove();
+      map.insertAdjacentHTML("afterbegin", mapSVG(current));
+      applyZoom();
+    };
+    const applyZoom = () => { const g = map.querySelector(".map__inner"); if (g) g.style.transform = `scale(${state.zoom})`; };
+    const highlight = (id) => {
+      list.querySelectorAll(".case").forEach((c) => c.classList.toggle("active", c.dataset.id === String(id)));
+      map.querySelectorAll(".area").forEach((a) => a.classList.toggle("active", a.dataset.id === String(id)));
+    };
+    chipGroup(document.getElementById("f-kind"), (v) => { state.kind = v; swap(render); });
+    chipGroup(document.getElementById("f-time"), (v) => { state.hours = Number(v); swap(render); });
+    list.addEventListener("mouseover", (e) => { const c = e.target.closest(".case"); if (c) highlight(c.dataset.id); });
+    list.addEventListener("click", (e) => { const c = e.target.closest(".case"); if (c) { c.dataset.open = c.dataset.id; } });
+    map.addEventListener("click", (e) => { const a = e.target.closest(".area"); if (a) { highlight(a.dataset.id); a.dataset.open = a.dataset.id; } });
+    map.addEventListener("keydown", (e) => { const a = e.target.closest(".area"); if (a && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); a.dataset.open = a.dataset.id; a.dispatchEvent(new MouseEvent("click", { bubbles: true })); } });
+    document.getElementById("zin").onclick = () => { state.zoom = Math.min(2, state.zoom + 0.25); applyZoom(); };
+    document.getElementById("zout").onclick = () => { state.zoom = Math.max(0.75, state.zoom - 0.25); applyZoom(); };
+    document.getElementById("loc").onclick = () => { state.zoom = 1; applyZoom(); };
+    document.querySelectorAll(".view-toggle button").forEach((b) => b.addEventListener("click", () => {
+      document.querySelectorAll(".view-toggle button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      swap(() => (document.getElementById("mapa").dataset.view = b.dataset.view));
+    }));
+    render();
+  },
+};
+</script>
+</body>
+</html>
