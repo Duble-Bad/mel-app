@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { needsOnboarding, safeNextPath } from "@mel/core";
 import { getCurrentProfile } from "@/lib/session";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { ButtonLink } from "@/components/ui/Button";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 
 export const metadata: Metadata = {
@@ -19,6 +21,10 @@ export default function OnboardingPage({ searchParams }: PageProps<"/onboarding"
       <Suspense fallback={<LoadingState />}>
         <OnboardingContent searchParams={searchParams} />
       </Suspense>
+      {/* Saída sempre visível: quem entrou na conta errada não fica preso aqui. */}
+      <div className="mt-8 border-t border-border pt-4">
+        <SignOutButton />
+      </div>
     </main>
   );
 }
@@ -27,7 +33,18 @@ async function OnboardingContent({ searchParams }: Pick<PageProps<"/onboarding">
   const next = safeNextPath(String((await searchParams).next ?? ""));
   const profile = await getCurrentProfile();
   if (!profile) {
-    return <ErrorState>Não encontramos seu perfil. Saia e entre novamente.</ErrorState>;
+    return (
+      <ErrorState
+        title="Não conseguimos carregar seu perfil."
+        action={
+          <ButtonLink href={`/onboarding?next=${encodeURIComponent(next)}`} variant="secondary" size="md">
+            Tentar novamente
+          </ButtonLink>
+        }
+      >
+        Pode ser uma instabilidade passageira. Tente de novo; se continuar, saia e entre novamente.
+      </ErrorState>
+    );
   }
   if (!needsOnboarding(profile)) redirect(next);
   return <ProfileForm profile={profile} next={next} submitLabel="Continuar" requireTerms />;

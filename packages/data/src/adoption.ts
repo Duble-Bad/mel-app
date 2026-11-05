@@ -1,5 +1,6 @@
 import type { AdoptionInput, AdoptionStatus, InterestInput, PetSize, PublicAdoption, Species } from "@mel/core";
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 function fail(error: { message: string; code?: string }): never {
   throw new DataError(error.message, error.code);
@@ -10,7 +11,7 @@ const photoUrl = (client: MelClient, path: string) => client.storage.from("pet-p
 /** Foto do anúncio (já reduzida, sem EXIF) na pasta de quem doa. */
 export async function uploadAdoptionPhoto(client: MelClient, userId: string, image: Blob): Promise<string> {
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
-  const path = `${userId}/adocao/${crypto.randomUUID()}.${ext}`;
+  const path = `${userId}/adocao/${randomId()}.${ext}`;
   const { error } = await client.storage.from("pet-photos").upload(path, image, { contentType: image.type, cacheControl: "31536000", upsert: false });
   if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return path;

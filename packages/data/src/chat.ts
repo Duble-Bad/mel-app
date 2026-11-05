@@ -1,5 +1,6 @@
 import type { ChatMessage, Conversation, LostStatus, ReportInput } from "@mel/core";
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 interface ConversationJson {
   id: string;
@@ -148,7 +149,7 @@ export async function reportConversation(client: MelClient, conversationId: stri
  * conversas da pessoa (o RLS do Realtime só entrega as que ela pode ler).
  */
 export function subscribeToMessages(client: MelClient, conversationId: string | null, onNew: (m: ChatMessage) => void) {
-  const channel = client.channel(`messages:${conversationId ?? "all"}:${crypto.randomUUID()}`).on(
+  const channel = client.channel(`messages:${conversationId ?? "all"}:${randomId()}`).on(
     "postgres_changes",
     {
       event: "INSERT",

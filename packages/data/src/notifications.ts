@@ -1,4 +1,5 @@
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 export interface AppNotification {
   id: string;
@@ -168,7 +169,7 @@ export function subscribeToNotifications(
     // Nome único por assinatura: duas telas ouvindo o mesmo usuário (sininho e
     // página do alerta) com o mesmo nome reaproveitariam o canal já assinado e
     // a biblioteca lança erro ao adicionar outra escuta.
-    .channel(`notifications:${userId}:${crypto.randomUUID()}`)
+    .channel(`notifications:${userId}:${randomId()}`)
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },

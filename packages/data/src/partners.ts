@@ -1,5 +1,6 @@
 import type { BusinessCategory, BusinessInput, OfferInput, PublicBusiness } from "@mel/core";
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 function fail(error: { message: string; code?: string }): never {
   throw new DataError(error.message, error.code);
@@ -9,7 +10,7 @@ const logoUrl = (client: MelClient, path: string) => client.storage.from("pet-ph
 
 export async function uploadBusinessLogo(client: MelClient, userId: string, image: Blob): Promise<string> {
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
-  const path = `${userId}/parceiros/${crypto.randomUUID()}.${ext}`;
+  const path = `${userId}/parceiros/${randomId()}.${ext}`;
   const { error } = await client.storage.from("pet-photos").upload(path, image, { contentType: image.type, cacheControl: "31536000", upsert: false });
   if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return path;

@@ -1,5 +1,6 @@
 import type { BrState, Pet, PetColor, PetInput, PetPhoto, PetPrivateDetails, PetPrivateInput } from "@mel/core";
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 import type { Database } from "./database.types";
 
 type PetRow = Database["public"]["Tables"]["pets"]["Row"];
@@ -191,7 +192,7 @@ export async function addPetPhoto(
   photo: PreparedPhoto,
   position: number,
 ): Promise<void> {
-  const base = `${pet.ownerId}/${pet.id}/${crypto.randomUUID()}`;
+  const base = `${pet.ownerId}/${pet.id}/${randomId()}`;
   const fullPath = `${base}.${ext(photo.full)}`;
   const thumbPath = `${base}-thumb.${ext(photo.thumb)}`;
   const storage = client.storage.from(BUCKET);

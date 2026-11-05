@@ -1,5 +1,6 @@
 import type { Direction, SightingInput, SightingState, TimelineSighting } from "@mel/core";
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 const BUCKET = "sighting-media";
 
@@ -24,7 +25,7 @@ export async function purgeOrphanSightingMedia(service: MelClient, limit = 100):
  */
 export async function uploadSightingPhoto(client: MelClient, image: Blob): Promise<string> {
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
-  const path = `${crypto.randomUUID()}.${ext}`;
+  const path = `${randomId()}.${ext}`;
   const { error } = await client.storage.from(BUCKET).upload(path, image, {
     contentType: image.type,
     cacheControl: "31536000",
