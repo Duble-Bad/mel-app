@@ -1,0 +1,162 @@
+/* Início (Conceito B): efeitos só da home. Fica fora do globals.css para não
+   pesar nas outras telas. Tudo usa os tokens do tema (claro e escuro). */
+
+/* ---------- Foto do topo: fita que passa por trás e pela frente da foto ---------- */
+.mh-ribbon {
+  position: absolute;
+  right: -12%;
+  top: 12%;
+  width: 62%;
+  /* Mesma proporção do viewBox: os recortes abaixo valem em unidades do desenho. */
+  aspect-ratio: 4 / 5;
+  height: auto;
+  pointer-events: none;
+  color: var(--mel-primary);
+  overflow: visible;
+}
+.mh-ribbon--back {
+  z-index: 0;
+}
+/* Mesma fita, recortada só no trecho de volta e só dentro da foto: a fita sai
+   de trás da foto, contorna a borda direita e volta cruzando a foto pela
+   frente. O recorte direito (19,4%) coincide com a borda da foto, então a
+   emenda some na própria borda. */
+.mh-ribbon--front {
+  z-index: 2;
+  clip-path: inset(30% 19.4% -30% -30%);
+}
+.mh-photo-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+/* Brilho que segue o ponteiro nos cartões de ação (como no protótipo). */
+.mel-action::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130px 130px at var(--mx, 80%) var(--my, 20%), color-mix(in srgb, var(--c) 40%, transparent), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+.mel-action:hover::before {
+  opacity: 1;
+}
+
+/* ---------- Números da rede ---------- */
+.mh-stat + .mh-stat {
+  border-left: 0;
+}
+@media (min-width: 900px) {
+  .mh-stat + .mh-stat {
+    border-left: 1px solid var(--mel-border);
+  }
+}
+
+/* ---------- Passos ("Como funciona") e cartões de parceiros ---------- */
+.mh-step {
+  transition:
+    transform 0.35s var(--mel-easing),
+    border-color 0.3s;
+}
+.mh-step:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--mel-primary) 45%, transparent);
+}
+
+/* ---------- Mapa de prévia ---------- */
+.mh-map {
+  background: color-mix(in srgb, var(--mel-status-sighting-accent) 6%, var(--mel-surface-muted));
+}
+.mh-map__road {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mel-text-secondary) 22%, transparent);
+  stroke-linecap: round;
+}
+.mh-map__road--main {
+  stroke: color-mix(in srgb, var(--mel-text-secondary) 36%, transparent);
+}
+.mh-map__park {
+  fill: color-mix(in srgb, var(--mel-status-found-accent) 12%, transparent);
+}
+.mh-map__water {
+  fill: color-mix(in srgb, var(--mel-status-sighting-accent) 14%, transparent);
+}
+.mh-area .zone {
+  fill: color-mix(in srgb, var(--c) 22%, transparent);
+  stroke: var(--c);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+}
+.mh-area .pulse {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mh-pulse 2.6s var(--mel-easing) infinite;
+}
+.mh-area .core {
+  fill: var(--c);
+  stroke: var(--mel-background);
+  stroke-width: 3;
+}
+@keyframes mh-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* ---------- Cartões de pet (mural e adoção) ---------- */
+.mh-pet {
+  transition:
+    transform 0.35s var(--mel-easing),
+    box-shadow 0.35s var(--mel-easing),
+    border-color 0.3s;
+}
+.mh-pet:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--mel-shadow-lg);
+  border-color: var(--mel-border-strong);
+}
+.mh-pet img {
+  transition: transform 0.6s var(--mel-easing);
+}
+.mh-pet:hover img {
+  transform: scale(1.05);
+}
+
+/* ---------- Revelar ao rolar ----------
+   Só esconde quando o JS liga `.mh-motion` no <html> (sem JS, tudo aparece). */
+.mh-motion [data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s var(--mel-easing),
+    transform 0.8s var(--mel-easing);
+  transition-delay: var(--d, 0s);
+}
+.mh-motion [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mh-area .pulse {
+    display: none;
+  }
+  .mh-step:hover,
+  .mh-pet:hover,
+  .mh-pet:hover img {
+    transform: none;
+  }
+  .mel-action::before {
+    display: none;
+  }
+}

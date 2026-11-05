@@ -1,6 +1,6 @@
 # MEL — Redesign
 
-**2026-11-05: o proprietário escolheu o Conceito B**, já implementado no app (branch `redesign/etapa-1`). Os protótipos ficam aqui como referência. Ainda dependem de decisões do proprietário: §4 de `especificacoes-fluxos.md`.
+**2026-11-05: o proprietário escolheu o Conceito B**, já implementado no app (branch `redesign/etapa-1`). Os protótipos dos **três conceitos (A, B e C) ficam guardados aqui de propósito** (decisão do proprietário, 2026-11-05): servem de referência e podem ser reaproveitados depois. Não apagar. Ainda dependem de decisões do proprietário: §4 de `especificacoes-fluxos.md`.
 
 ## Como abrir os protótipos
 

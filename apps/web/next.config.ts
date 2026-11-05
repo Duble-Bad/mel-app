@@ -24,6 +24,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Pasta de build separada (ex.: NEXT_DIST_DIR=.next-home) permite vários
+  // `next dev` em paralelo sem dividir o cache do Turbopack (que corrompe).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   cacheComponents: true,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
