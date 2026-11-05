@@ -2,6 +2,8 @@ import { z } from "zod";
 import { PET_COLORS, PET_SEXES, PET_SIZES, SPECIES, type PetColor, type PetSex, type PetSize, type Species } from "../pet/pet";
 import type { LatLng } from "../geo/geo";
 
+export * from "./seekers";
+
 export const ADOPTION_STATUSES = ["PENDING_REVIEW", "AVAILABLE", "IN_PROCESS", "ADOPTED", "REJECTED", "REMOVED"] as const;
 export type AdoptionStatus = (typeof ADOPTION_STATUSES)[number];
 
@@ -64,7 +66,8 @@ export type AdoptionInput = z.output<typeof adoptionInputSchema>;
 export const interestSchema = z.object({
   housing: z.enum(HOUSING, { error: "Conte onde você mora." }),
   otherPets: z.boolean({ error: "Diga se já tem outros pets." }),
-  children: z.boolean({ error: "Diga se há crianças em casa." }),
+  /** Opcional (decisão do proprietário): null = prefere não informar. */
+  children: z.boolean().nullable().default(null),
   message: z.string().trim().min(10, "Conte um pouco sobre você (pelo menos 10 caracteres).").max(1000, "Use até 1000 caracteres."),
 });
 export type InterestInput = z.output<typeof interestSchema>;
@@ -92,6 +95,8 @@ export interface PublicAdoption {
   reviewNote: string | null;
   /** Só para quem doa. */
   interests: number | null;
+  /** Quem está vendo já enviou interesse (pode cancelar). */
+  myInterest?: boolean;
 }
 
 /** "Filhote (4 meses)", "2 anos", "Idade não informada". */

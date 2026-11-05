@@ -69,6 +69,7 @@ interface AdoptionJson {
   is_owner: boolean;
   review_note: string | null;
   interests: number | null;
+  my_interest?: boolean;
 }
 
 const toAdoption = (client: MelClient, a: AdoptionJson): PublicAdoption => ({
@@ -93,6 +94,7 @@ const toAdoption = (client: MelClient, a: AdoptionJson): PublicAdoption => ({
   isOwner: a.is_owner,
   reviewNote: a.review_note,
   interests: a.interests,
+  myInterest: a.my_interest === true,
 });
 
 export async function getAdoption(client: MelClient, code: string): Promise<PublicAdoption | null> {
@@ -130,11 +132,19 @@ export async function submitAdoptionInterest(client: MelClient, code: string, i:
     p_code: code,
     p_housing: i.housing,
     p_other_pets: i.otherPets,
-    p_children: i.children,
+    // Opcional: null = não informado (o tipo gerado não expressa argumento nulo).
+    p_children: i.children as boolean,
     p_message: i.message,
   });
   if (error) fail(error);
   return data as string;
+}
+
+/** Cancela o próprio interesse num anúncio (a linha é apagada). false = não havia interesse. */
+export async function withdrawAdoptionInterest(client: MelClient, code: string): Promise<boolean> {
+  const { data, error } = await client.rpc("withdraw_adoption_interest", { p_code: code });
+  if (error) fail(error);
+  return data === true;
 }
 
 export async function listAdoptionsForReview(client: MelClient): Promise<PublicAdoption[]> {

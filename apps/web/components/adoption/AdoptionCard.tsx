@@ -1,18 +1,26 @@
 import Link from "next/link";
-import { MapPin, PawPrint } from "lucide-react";
-import { ageLabel, SEX_LABELS, SIZE_LABELS, type PublicAdoption } from "@mel/core";
-import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Cake, MapPin, PawPrint } from "lucide-react";
+import { ageLabel, SIZE_LABELS, type PublicAdoption } from "@mel/core";
+import "./adoption.css";
 
-/** Cartão de adoção (DS §18): foto 1:1 dominante, selo, nome, traços e região. */
+const SEX_SYMBOL = {
+  male: { sign: "♂", label: "macho", className: "text-status-sighting-accent" },
+  female: { sign: "♀", label: "fêmea", className: "text-coral-400" },
+} as const;
+
+/**
+ * Cartão de adoção (Conceito B): foto, selo ADOÇÃO, nome + símbolo do sexo,
+ * região aproximada, idade · porte e "Ver detalhes". O cartão inteiro é o link.
+ */
 export function AdoptionCard({ a }: { a: PublicAdoption }) {
-  const traits = [ageLabel(a.ageMonths), a.size && SIZE_LABELS[a.size].label, a.sex !== "unknown" && SEX_LABELS[a.sex]].filter(Boolean);
+  const sex = a.sex === "male" || a.sex === "female" ? SEX_SYMBOL[a.sex] : null;
+  const traits = [ageLabel(a.ageMonths), a.size && `porte ${SIZE_LABELS[a.size].label.toLowerCase()}`].filter(Boolean).join(" · ");
   return (
-    <Link
-      href={`/adocao/${a.code}`}
+    <article
       data-testid="adoption-card"
-      className="group flex flex-col overflow-hidden rounded-card border border-border/70 bg-surface shadow-sm transition-[transform,box-shadow] duration-200 ease-mel hover:shadow-md active:scale-[.99]"
+      className="mel-adopt-card relative flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface shadow-sm hover:shadow-md"
     >
-      <div className="relative aspect-square bg-surface-muted">
+      <div className="relative aspect-[4/3.3] overflow-hidden bg-surface-muted">
         {a.photoUrls[0] ? (
           // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
           <img src={a.photoUrls[0]} alt="" loading="lazy" className="size-full object-cover" />
@@ -21,23 +29,39 @@ export function AdoptionCard({ a }: { a: PublicAdoption }) {
             <PawPrint aria-hidden="true" className="size-10" strokeWidth={1.5} />
           </span>
         )}
-        <span className="absolute top-3 left-3">
-          <StatusBadge status="adoption" solid>
-            {a.status === "IN_PROCESS" ? "Em processo" : "Adoção"}
-          </StatusBadge>
+        <span className="absolute bottom-3 left-3 inline-flex h-6 items-center rounded-full bg-primary px-2.5 text-[11.5px] font-extrabold tracking-[.06em] text-primary-foreground uppercase">
+          {a.status === "IN_PROCESS" ? "Em processo" : "Adoção"}
         </span>
       </div>
-      <div className="flex flex-col gap-1 p-4">
-        <h3 className="text-lg font-bold">{a.name}</h3>
-        <p className="text-sm text-text-secondary">{traits.join(" · ")}</p>
+      <div className="flex flex-1 flex-col gap-1.5 px-4 pt-3.5 pb-4">
+        <h3 className="flex items-center gap-1.5 text-xl font-extrabold">
+          {/* O link cobre o cartão todo; o nome é o texto acessível. */}
+          <Link href={`/adocao/${a.code}`} className="after:absolute after:inset-0 after:z-[1] after:rounded-card focus-visible:outline-none focus-visible:after:outline-3 focus-visible:after:outline-offset-[-3px] focus-visible:after:outline-focus">
+            {a.name}
+          </Link>
+          {sex && (
+            <span className={sex.className} aria-label={sex.label} title={sex.label}>
+              {sex.sign}
+            </span>
+          )}
+        </h3>
         {a.areaLabel && (
-          <p className="flex items-center gap-1.5 text-sm">
-            <MapPin aria-hidden="true" className="size-4 shrink-0 text-brand" strokeWidth={2} />
-            {a.areaLabel}
+          <p className="flex items-center gap-1.5 text-sm text-text-secondary">
+            <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2} />
+            <span className="truncate">{a.areaLabel}</span>
           </p>
         )}
-        <span className="mt-1 text-sm font-semibold text-link group-hover:underline">Conhecer {a.name}</span>
+        <p className="flex items-center gap-1.5 text-sm text-text-secondary">
+          <Cake aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2} />
+          {traits}
+        </p>
+        <span
+          aria-hidden="true"
+          className="mt-2 inline-flex min-h-11 items-center justify-center rounded-full bg-primary text-[15px] font-bold text-primary-foreground shadow-primary"
+        >
+          Ver detalhes
+        </span>
       </div>
-    </Link>
+    </article>
   );
 }

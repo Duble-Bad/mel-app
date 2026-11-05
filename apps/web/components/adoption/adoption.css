@@ -1,0 +1,80 @@
+/* Adoção (Conceito B): abas, cartões e CTA dourado. Cores só por tokens. */
+
+.mel-adopt-cta {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mel-primary) 82%, #ffffff), var(--mel-primary));
+  color: var(--mel-primary-foreground);
+  box-shadow: 0 16px 36px -14px color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  transition: transform 0.25s var(--mel-easing), box-shadow 0.25s var(--mel-easing);
+}
+.mel-adopt-cta:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 40px -14px color-mix(in srgb, var(--mel-primary) 85%, transparent);
+}
+
+.mel-adopt-tab[aria-selected="true"] {
+  background: var(--mel-primary);
+  border-color: var(--mel-primary);
+  color: var(--mel-primary-foreground);
+}
+
+.mel-adopt-panel {
+  animation: mel-adopt-rise 0.45s var(--mel-easing);
+}
+
+.mel-adopt-card {
+  transition: transform 0.35s var(--mel-easing), box-shadow 0.35s var(--mel-easing), border-color 0.3s;
+}
+.mel-adopt-card:hover,
+.mel-adopt-card:focus-within {
+  transform: translateY(-5px);
+  border-color: var(--mel-border-strong);
+}
+.mel-adopt-card img {
+  transition: transform 0.6s var(--mel-easing);
+}
+.mel-adopt-card:hover img {
+  transform: scale(1.05);
+}
+
+.mel-adopt-step {
+  counter-increment: mel-step;
+  transition: transform 0.35s var(--mel-easing), border-color 0.3s;
+}
+.mel-adopt-step::before {
+  content: counter(mel-step, decimal-leading-zero);
+  display: block;
+  margin-bottom: 18px;
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--mel-primary);
+}
+.mel-adopt-step:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--mel-primary) 45%, transparent);
+}
+
+@keyframes mel-adopt-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mel-adopt-cta,
+  .mel-adopt-card,
+  .mel-adopt-card img,
+  .mel-adopt-step,
+  .mel-adopt-panel {
+    animation: none;
+    transition: none;
+  }
+  .mel-adopt-cta:hover,
+  .mel-adopt-card:hover,
+  .mel-adopt-card:focus-within,
+  .mel-adopt-card:hover img,
+  .mel-adopt-step:hover {
+    transform: none;
+  }
+}

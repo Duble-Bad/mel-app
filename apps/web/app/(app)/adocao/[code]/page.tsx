@@ -7,7 +7,7 @@ import { ADOPTION_STATUS_LABELS, ageLabel, colorLabel, SEX_LABELS, SIZE_LABELS, 
 import { getAdoption } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
-import { AdoptionStatusControls } from "@/components/adoption/AdoptionClient";
+import { AdoptionStatusControls, WithdrawInterest } from "@/components/adoption/AdoptionClient";
 import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
@@ -92,8 +92,17 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
 
         {!a.isOwner && open && (
           <ButtonLink href={`/adocao/${a.code}/interesse`}>
-            <HeartHandshake aria-hidden="true" className="size-5" strokeWidth={2} /> Quero adotar {a.name}
+            <HeartHandshake aria-hidden="true" className="size-5" strokeWidth={2} /> {a.myInterest ? `Atualizar meu interesse em ${a.name}` : `Quero adotar ${a.name}`}
           </ButtonLink>
+        )}
+        {!a.isOwner && a.myInterest && <WithdrawInterest code={a.code} petName={a.name} />}
+        {!a.isOwner && !open && (
+          <div className="flex flex-col gap-2">
+            <p className="text-text-secondary">Este pet já encontrou família ou não recebe mais interessados.</p>
+            <ButtonLink href="/adocao/quero-adotar" variant="secondary">
+              Entrar na fila de interessados
+            </ButtonLink>
+          </div>
         )}
         {a.status === "ADOPTED" && <Alert tone="success">{a.name} já encontrou um lar. Obrigado a todos que ajudaram!</Alert>}
 

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { fieldErrors, type Housing, HOUSING, HOUSING_LABELS, interestSchema, userErrorMessage } from "@mel/core";
-import { setAdoptionStatus, submitAdoptionInterest } from "@mel/data";
+import { setAdoptionStatus, submitAdoptionInterest, withdrawAdoptionInterest } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +17,8 @@ export function InterestForm({ code, petName }: { code: string; petName: string 
   const router = useRouter();
   const [housing, setHousing] = useState<Housing | null>(null);
   const [otherPets, setOtherPets] = useState<"yes" | "no" | null>(null);
-  const [children, setChildren] = useState<"yes" | "no" | null>(null);
+  // Opcional (decisão do proprietário): sem resposta = não informado.
+  const [children, setChildren] = useState<"yes" | "no" | "skip" | null>(null);
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export function InterestForm({ code, petName }: { code: string; petName: string 
     const parsed = interestSchema.safeParse({
       housing: housing ?? undefined,
       otherPets: otherPets === null ? undefined : otherPets === "yes",
-      children: children === null ? undefined : children === "yes",
+      children: children === null || children === "skip" ? null : children === "yes",
       message,
     });
     if (!parsed.success) {
@@ -54,7 +55,15 @@ export function InterestForm({ code, petName }: { code: string; petName: string 
     <div className="flex flex-col gap-6">
       <ChoiceGroup name="housing" legend="Onde você mora?" value={housing} onChange={setHousing} error={errors.housing} options={HOUSING.map((h) => ({ value: h, label: HOUSING_LABELS[h] }))} />
       <ChoiceGroup name="other-pets" legend="Já tem outros pets?" columns={2} value={otherPets} onChange={setOtherPets} error={errors.otherPets} options={yesNo} />
-      <ChoiceGroup name="children" legend="Há crianças em casa?" columns={2} value={children} onChange={setChildren} error={errors.children} options={yesNo} />
+      <ChoiceGroup
+        name="children"
+        legend="Há crianças em casa? (opcional)"
+        columns={3}
+        value={children}
+        onChange={setChildren}
+        error={errors.children}
+        options={[...yesNo, { value: "skip" as const, label: "Prefiro não dizer" }]}
+      />
       <TextareaField
         label={`Conte por que você quer adotar ${petName}`}
         rows={5}
@@ -107,6 +116,48 @@ export function AdoptionStatusControls({ code, status }: { code: string; status:
             {s.label}
           </FilterChip>
         ))}
+      </div>
+      {error && <Alert tone="error">{error}</Alert>}
+    </div>
+  );
+}
+
+/** Quem enviou interesse: cancelar (a resposta é apagada e quem doa recebe um aviso na conversa). */
+export function WithdrawInterest({ code, petName }: { code: string; petName: string }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function withdraw() {
+    setBusy(true);
+    setError(null);
+    try {
+      await withdrawAdoptionInterest(getBrowserClient(), code);
+      toast({ tone: "success", title: "Interesse cancelado. Suas respostas foram apagadas." });
+      router.refresh();
+    } catch (err) {
+      setError(userErrorMessage(err, "Não conseguimos cancelar agora."));
+      setBusy(false);
+    }
+  }
+  if (!confirm) {
+    return (
+      <Button variant="ghost" size="md" onClick={() => setConfirm(true)}>
+        Cancelar meu interesse em {petName}
+      </Button>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-semibold">Cancelar e apagar suas respostas? Quem doa recebe um aviso na conversa.</p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button variant="danger" size="md" onClick={withdraw} loading={busy} loadingText="Cancelando…">
+          Sim, cancelar
+        </Button>
+        <Button variant="secondary" size="md" onClick={() => setConfirm(false)} disabled={busy}>
+          Manter
+        </Button>
       </div>
       {error && <Alert tone="error">{error}</Alert>}
     </div>
