@@ -1,5 +1,10 @@
 # 17 — Armazenamento do backup em São Paulo (2L)
 
+> **Decisão do proprietário (2026-11-05): nenhum provedor de armazenamento será contratado
+> agora. O backup externo está PENDENTE e NÃO é operacional** — não há recuperação validada
+> fora do ensaio sintético. Scripts, ensaio e guias permanecem prontos para quando houver
+> decisão. Risco aceito e registrado em [10-status.md](10-status.md).
+
 Decisões do proprietário (04/11/2026): backups **fisicamente em São Paulo**; Amazon S3
 descartado; custo zero ou muito baixo e previsível; nada contratado sem aprovação.
 Isso **substitui o Backblaze B2** (docs 15 e 16): o B2 não tem região no Brasil.

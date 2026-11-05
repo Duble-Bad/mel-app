@@ -1,6 +1,7 @@
 # MEL — Deploy de schema em produção (`mel-prod`)
 
 > **Status:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–31** (24 e 29 são P0 de privacidade; 30 traz o push do tutor e o rótulo público do avistamento; 31, a recuperação de push preso), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
+> **Antes de rodar:** o `mel-prod` estava pausado pelo plano Free (INACTIVE em 2026-11-04) — restaurar no painel do Supabase e só então fazer o pre-flight.
 > Só rode com autorização explícita do dono do projeto.
 
 Este procedimento aplica **somente as migrations versionadas** (`supabase/migrations`) no `mel-prod`.

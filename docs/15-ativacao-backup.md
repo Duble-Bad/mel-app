@@ -1,5 +1,10 @@
 # 15 — Ativação do backup (pré-ativação, 2I)
 
+> **Decisão do proprietário (2026-11-05): nenhum provedor de armazenamento será contratado
+> agora. O backup externo está PENDENTE e NÃO é operacional** — não há recuperação validada
+> fora do ensaio sintético. Scripts, ensaio e guias permanecem prontos para quando houver
+> decisão. Risco aceito e registrado em [10-status.md](10-status.md).
+
 Preparação para ligar o backup de [14-backup-restauracao.md](14-backup-restauracao.md).
 **Nada aqui foi executado com dados ou credenciais reais.** Termos de fornecedores
 consultados em 04/11/2026 nas páginas oficiais; reconfirmar no dia.
@@ -36,6 +41,9 @@ consultados em 04/11/2026 nas páginas oficiais; reconfirmar no dia.
   trabalho é `mktemp` com `umask 077` e apagada ao fim (`trap`), e o runner é descartado.
 
 ## 3. Armazenamento: Backblaze B2 × Cloudflare R2
+
+> **Superado em 2L:** o proprietário exige armazenamento em São Paulo; o B2 não tem região
+> no Brasil. Ver [17-armazenamento-sao-paulo.md](17-armazenamento-sao-paulo.md). Mantido como histórico.
 
 | | Backblaze B2 | Cloudflare R2 |
 |---|---|---|

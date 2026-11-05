@@ -17,8 +17,13 @@ Plataforma geolocalizada de proteção animal: alertas de pets perdidos, animais
 | [Milestones](docs/06-milestones.md) | plano de implementação e status |
 | [Decisões](docs/decisoes.md) | registro de decisões arquitetônicas |
 | [Deploy de produção](docs/08-deploy-producao.md) | procedimento seguro de schema no `mel-prod` |
-| [Migrations](docs/09-migrations.md) | as 23 migrations, regras e como criar novas |
-| [**Status / onde estamos**](docs/10-status.md) | etapa atual e próximos passos — leia ao retomar |
+| [Migrations](docs/09-migrations.md) | as 31 migrations, regras e como criar novas |
+| [**Status / onde estamos**](docs/10-status.md) | etapa atual, prontidão do piloto e próxima ação — leia ao retomar |
+| [E-mail de produção](docs/11-email-producao.md) | SMTP (Resend) e templates |
+| [Checklist de lançamento](docs/12-checklist-lancamento.md) | tudo o que falta para publicar, em ordem |
+| [Mapas e fornecedores](docs/13-mapas-fornecedores.md) | MapTiler atual, troca futura e pendência de licença |
+| [Backup e restauração](docs/14-backup-restauracao.md) | scripts, ensaio e recuperação (**backup ainda não operacional**) |
+| [Ativação do backup](docs/15-ativacao-backup.md) · [Guia](docs/16-guia-backup.md) · [Armazenamento em SP](docs/17-armazenamento-sao-paulo.md) | preparação, pendente por decisão do dono |
 
 ## Stack
 
@@ -118,7 +123,7 @@ O seed cria as contas `demo.tutora@exemplo.com` (Mel — Yorkshire, pública; Th
 
 ## Deploy
 
-Planejado: Vercel (web) + Supabase Cloud (produção em projeto separado, `mel-prod`, região `sa-east-1`). Schema de produção já aplicado (23 migrations); configuração e publicação pendentes — ver [docs/10-status.md](docs/10-status.md). CI no GitHub Actions (`.github/workflows/ci.yml` e `schema-rebuild.yml`) roda typecheck, lint, unit, RLS, E2E e a reconstrução do schema do zero; requer a variável `MEL_SAFE_TARGET_REFS` e os secrets listados no workflow.
+Planejado: Vercel (web) + Supabase Cloud (produção em projeto separado, `mel-prod`, região `sa-east-1`). Schema de produção aplicado até a migration 23; **24–31 pendentes** e `mel-prod` pausado pelo plano Free; configuração e publicação pendentes; backup externo não operacional — ver [docs/10-status.md](docs/10-status.md). CI no GitHub Actions (`.github/workflows/ci.yml` e `schema-rebuild.yml`) roda typecheck, lint, unit, RLS, E2E e a reconstrução do schema do zero; requer a variável `MEL_SAFE_TARGET_REFS` e os secrets listados no workflow.
 
 ## Privacidade
 

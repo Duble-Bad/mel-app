@@ -1,5 +1,10 @@
 # 14 — Backup e restauração (Supabase Free)
 
+> **Decisão do proprietário (2026-11-05): nenhum provedor de armazenamento será contratado
+> agora. O backup externo está PENDENTE e NÃO é operacional** — não há recuperação validada
+> fora do ensaio sintético. Scripts, ensaio e guias permanecem prontos para quando houver
+> decisão. Risco aceito e registrado em [10-status.md](10-status.md).
+
 Launch Readiness 2E (04/11/2026). **O Supabase Free não tem backup automático**
 (o diário de 7 dias começa no Pro). Este é o backup próprio da MEL: scripts em
 `scripts/backup/`, ensaio em `.github/workflows/backup-restore-drill.yml`.

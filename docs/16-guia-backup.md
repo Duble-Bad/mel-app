@@ -4,6 +4,9 @@
 > decidiu que os backups ficam fisicamente em São Paulo, e o B2 não tem região no Brasil.
 > Recomendação atual: Oracle OCI `sa-saopaulo-1` (ver [17-armazenamento-sao-paulo.md](17-armazenamento-sao-paulo.md));
 > este guia será refeito para o provedor aprovado. Os passos 1, 4, 6 e 7 continuam valendo.
+>
+> **2026-11-05: nenhum provedor será contratado agora** — não execute nenhum passo deste
+> guia até nova decisão. O backup externo está pendente e não é operacional.
 
 Passo a passo para configurar o backup privado da MEL **sem programar** e **sem passar
 nenhuma credencial para ninguém** (nem para Claude, ChatGPT, e-mail ou arquivo do projeto).

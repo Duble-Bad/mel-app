@@ -1,7 +1,45 @@
 # MEL — Onde estamos (status e próximos passos)
 
-> Atualizado em 2026-11-03. **MVP em Feature Freeze desde o commit `46f3238`** (CI verde nos 3 checks obrigatórios).
+> Atualizado em 2026-11-05. **MVP em Feature Freeze desde o commit `46f3238`**; série Launch Readiness (1, 2A–2L) concluída no código e na documentação; último CI verde em `25561fe`.
+> **Próxima ação única:** confirmar por escrito as licenças gratuitas do MapTiler e da Vercel Hobby (ver "Prontidão para o piloto").
 > Leia isto primeiro ao retomar o projeto. Para o lançamento, a lista completa está em [12-checklist-lancamento.md](12-checklist-lancamento.md).
+
+## 🚦 Prontidão para o piloto (diagnóstico de 2026-11-05)
+
+Prioridade do proprietário: colocar a MEL no ar para ajudar tutores, com custo operacional
+**R$ 0** sempre que possível. Nenhum serviço pago e nenhuma funcionalidade nova.
+
+**Pronto:** MVP congelado (alerta + cartaz/QR, avistamentos com privacidade, encontrados e
+Radar, conversa, push de tutor e Guardião, adoção e parceiros moderados, mapas); 31
+migrations validadas do zero; RLS, privacidade, push e agendador testados; captcha,
+headers, anti-abuso, recuperação de push (31), agendador autenticado e região `gru1` no
+código; procedimento de deploy com pre-flight e pós-deploy.
+
+**Impede o lançamento:**
+
+| Tipo | Item |
+|---|---|
+| Técnico | `mel-prod` **pausado** (INACTIVE, visto em 2026-11-04): restaurar no painel (grátis) |
+| Técnico / privacidade | migrations **24–31** pendentes no `mel-prod` (24 e 29 são P0: sem elas o público vê o ponto exato do avistamento) |
+| Licença | MapTiler Free é "non-commercial use" sem definição: confirmar por escrito ([13](13-mapas-fornecedores.md)) |
+| Licença | Vercel Hobby é "non-commercial personal use only": confirmar que o piloto (sem receita, anúncio, patrocínio ou oferta patrocinada) se enquadra |
+| Licença | Resend Free e Turnstile: condições de uso não verificadas |
+| Configuração | domínio próprio — **único custo inevitável** (~R$ 40/ano; decisão do proprietário): sem ele não há SMTP nem recuperação de senha |
+| Configuração | Vercel (Root Directory `apps/web`, variáveis e secrets de produção, `NEXT_PUBLIC_SITE_URL`); Supabase de produção (URLs, SMTP Resend, captcha, anônimos 30/h); chaves de produção restritas ao domínio (Turnstile, VAPID novo, MapTiler); primeiro moderador; smoke test |
+
+**Risco aceito (decisão de 2026-11-05):** backup externo **pendente e não operacional**; o
+Supabase Free não faz backup. Perda do banco hoje seria irrecuperável. Ver [14](14-backup-restauracao.md)–[17](17-armazenamento-sao-paulo.md).
+
+**Depois do piloto:** Google OAuth; CSP completa; cron diário (o push já sai após cada ação);
+backup externo; troca de mapa (plano no [13](13-mapas-fornecedores.md)); revisão jurídica
+formal (após aprovação dos textos atuais pelo dono); teste instável `lostcase-lifecycle`
+(1 falha transitória em `89bdeb9`, verde na 2ª tentativa).
+
+**Sequência mínima (sem contratar):** 1) confirmar licenças; 2) decidir/registrar domínio;
+3) restaurar o `mel-prod`; 4) migrations 24–31 + pós-deploy ([08](08-deploy-producao.md));
+5) Auth/SMTP/captcha no `mel-prod`; 6) chaves de produção; 7) deploy na Vercel e conferir
+`gru1`; 8) primeiro moderador; 9) smoke test; 10) abrir o piloto sem ofertas patrocinadas.
+Detalhe de cada item: [12-checklist-lancamento.md](12-checklist-lancamento.md).
 
 ## 🧊 MVP Feature Freeze (2026-11-03)
 
@@ -27,7 +65,7 @@ Ideias de produto (MEL ID + QR permanente, Ponto de Apoio, CTA de instalação d
 
 - **Produto (M1–M16): concluído** em desenvolvimento ([06-milestones.md](06-milestones.md)); **Feature Freeze** em `46f3238` (acima).
 - **Produção:** schema aplicado e verificado no `mel-prod` (pós-deploy 100% ✅). Auth básico ajustado pelo dono no painel (abaixo). O app não está publicado.
-- **Etapa atual:** Feature Freeze concluído; **próxima etapa: preparação de produção (M17), ainda não iniciada** — só com autorização do dono. M17 — configuração de produção. Código de Auth pronto (conversão anônimo → conta por e-mail e por Google). **Google no `mel-prod` só depois de SMTP próprio + "Confirm email" ON** (risco de conta pré-criada, abaixo). **Próximo: comprar o domínio** — sem ele não há SMTP de produção ([11-email-producao.md](11-email-producao.md)). Preparar o client no Google Cloud já pode.
+- **Etapa atual:** Launch Readiness concluído no código (até 2L). **Próxima etapa: lançamento do piloto (M17)**, na sequência mínima de "Prontidão para o piloto", só com autorização do dono, item a item. Próxima ação única: confirmar as licenças gratuitas (MapTiler Free e Vercel Hobby).
 
 ## ⏸️ Produção pausada (decisão de 2026-10-30)
 
@@ -35,6 +73,9 @@ Todo o trabalho de produção está **pausado** até o produto estar funcionalme
 
 ## Último CI
 
+`25561fe` (2026-11-04, docs 17): ✅ CI e reconstrução do schema. `89bdeb9` (guia 16 + verificação rápida): ✅ CI (na 2ª tentativa, falha transitória em `lostcase-lifecycle`), reconstrução ✅, ensaio de backup ✅. `7d7be25` (migration 31): ✅ nos 3 checks.
+
+Marco do Feature Freeze:
 `46f3238` — marco do Feature Freeze: ✅ verde nos 3 checks (banco contra o `mel-dev` 23 arquivos ✅ / 2 pulados, 185 testes; E2E 70/70; reconstrução do zero 24 arquivos ✅ / 1 pulado, impressão digital idêntica).
 
 Anterior: `3f62ebf` — P0 privacidade dos avistamentos (migration 29 + impressão digital): ✅ verde nos 3 checks. Reconstrução do zero com auditoria, impressão digital idêntica, paridade, drift e testes de banco; CI contra o `mel-dev`: banco 22 arquivos ✅ (2 pulados, como sempre: `email-confirmation` e `google-linking`), E2E 69/69 ✅, inclusive o avistamento com os textos novos e a legenda "localização aproximada". O commit anterior (`246fcf2`) ficou vermelho só pela impressão digital ainda não versionada e pelo limite antigo de sessões anônimas do `mel-dev` (30/h).
@@ -58,6 +99,9 @@ Anterior: `3f62ebf` — P0 privacidade dos avistamentos (migration 29 + impress�
 | **SMTP (Resend) + templates + "Confirm email" ON** (antes de qualquer conta real e antes do Google) | ⏸️ depois do domínio — [11-email-producao.md](11-email-producao.md) |
 | Google provider + manual linking no painel do `mel-prod` | ⏸️ depois do item acima |
 | Publicação do app (Vercel + domínio) | ⏸️ não iniciado |
+| `mel-prod` pausado pelo plano Free (INACTIVE, visto em 2026-11-04) | ⏸️ restaurar no painel antes das migrations |
+| Migrations 24–31 no `mel-prod` | ⏸️ pendentes (P0 de privacidade: 24 e 29) |
+| Backup externo | ⏸️ pendente por decisão de 2026-11-05 (nenhum provedor contratado; não operacional) |
 
 ## Por que o Google espera o "Confirm email" ON
 

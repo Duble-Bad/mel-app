@@ -4,6 +4,18 @@
 > Nada desta lista foi executado. Cada item de produção precisa de autorização do dono; segredos só ele manuseia.
 > Detalhes de cada item: [10-status.md](10-status.md) (M17), [08-deploy-producao.md](08-deploy-producao.md) (schema), [11-email-producao.md](11-email-producao.md) (SMTP).
 
+## 0. Antes de tudo (decisões e licenças — R$ 0)
+
+Diagnóstico de 2026-11-05 ([10-status.md](10-status.md#-prontidão-para-o-piloto-diagnóstico-de-2026-11-05)). Sem estes itens, nada de configuração de produção.
+
+| # | Item | Por quê |
+|---|---|---|
+| 0.1 | **MapTiler Free**: confirmação por escrito de que o piloto sem receita é "non-commercial use" | Os termos limitam o Free a uso não comercial sem definir o termo. Se "não": plano pago ou troca de mapa (exige código; plano no `13`) |
+| 0.2 | **Vercel Hobby**: reler os termos ("non-commercial personal use only") e confirmar o enquadramento | Só serve sem receita, anúncios, patrocínio ou ofertas patrocinadas; senão, plano pago |
+| 0.3 | **Resend Free** e **Turnstile**: conferir as condições de uso | Não verificadas; nenhum serviço gratuito é presumido adequado |
+| 0.4 | **Domínio próprio**: decisão do dono (único custo inevitável, ~R$ 40/ano) | Sem domínio não há SMTP (recuperação de senha), Site URL nem chaves restritas por domínio |
+| 0.5 | **Restaurar o `mel-prod`** (pausado pelo plano Free) | Visto INACTIVE em 2026-11-04; restaurar é grátis, no painel |
+
 ## 1. Código que precisa existir antes de ligar a configuração
 
 | # | Item | Por quê |
@@ -29,10 +41,10 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | 3.2 | `NEXT_PUBLIC_SITE_URL=https://<domínio>` **no build** (no `.env.example` ela está comentada, porque no dev não é necessária) | Sem ela, o QR do cartaz e a prévia do link (og:image) podem apontar para `*.vercel.app` |
 | 3.3 | Secrets do servidor: `SUPABASE_SECRET_KEY`, `PUSH_DISPATCH_SECRET`, `TURNSTILE_SECRET_KEY`, `VAPID_PRIVATE_KEY` | Nunca no repositório |
 | 3.4 | Variáveis públicas: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_MAPTILER_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`, `NEXT_PUBLIC_AUTH_GOOGLE` | Públicas entram no build: mudar exige novo deploy |
-| 3.6 | **Content-Security-Policy completa** (hoje só `frame-ancestors`; os outros headers de segurança já estão no `next.config.ts`) | Levantar as origens reais: Supabase (REST, Auth, Realtime wss, Storage), MapTiler (API, tiles, fontes, worker blob), Turnstile (script e iframe), Google (OAuth) e os scripts inline do Next (nonce). Testar em modo `Report-Only` antes de impor |
-| 3.5 | **Agendador** (código pronto, 2C): `CRON_SECRET` (≥ 32 caracteres) na Vercel + `"crons": [{ "path": "/api/push/dispatch", "schedule": "0 9 * * *" }]` em `apps/web/vercel.json` (Hobby: 1×/dia; 09:00 UTC = 06:00 em Brasília). Outro agendador: `GET`/`POST` com `Authorization: Bearer $PUSH_DISPATCH_SECRET` | Reenvia push que ficou para trás e **apaga as fotos órfãs** do `sighting-media`. Sem ele, nada é apagado. Conferir no log da Vercel a 1ª execução (200) |
+| 3.6 | *(pode ficar para depois do piloto)* **Content-Security-Policy completa** (hoje só `frame-ancestors`; os outros headers de segurança já estão no `next.config.ts`) | Levantar as origens reais: Supabase (REST, Auth, Realtime wss, Storage), MapTiler (API, tiles, fontes, worker blob), Turnstile (script e iframe), Google (OAuth) e os scripts inline do Next (nonce). Testar em modo `Report-Only` antes de impor |
+| 3.5 | *(pode ficar para depois do piloto: o push já sai após cada ação)* **Agendador** (código pronto, 2C): `CRON_SECRET` (≥ 32 caracteres) na Vercel + `"crons": [{ "path": "/api/push/dispatch", "schedule": "0 9 * * *" }]` em `apps/web/vercel.json` (Hobby: 1×/dia; 09:00 UTC = 06:00 em Brasília). Outro agendador: `GET`/`POST` com `Authorization: Bearer $PUSH_DISPATCH_SECRET` | Reenvia push que ficou para trás e **apaga as fotos órfãs** do `sighting-media`. Sem ele, nada é apagado. Conferir no log da Vercel a 1ª execução (200) |
 | 3.7 | **Região das funções**: `apps/web/vercel.json` já pede `gru1` (São Paulo, junto do Supabase `sa-east-1`). Exige *Root Directory* = `apps/web` no projeto Vercel | Confirmar no 1º deploy: painel → Deployment → Functions → Region `gru1` (sem isso, o padrão é `iad1`, EUA) |
-| 3.8 | **Backup diário** (código e ensaio prontos, 2E; ver [14-backup-restauracao.md](14-backup-restauracao.md)): repositório privado separado com o workflow agendado, chave pública age, bucket externo com retenção de 30 dias, alerta de falha, string do Session pooler | O Supabase Free não tem backup. Antes de abrir ao público: 1 backup real + 1 restauração de teste num projeto descartável. Guardar a chave privada age e a VAPID privada fora do computador |
+| 3.8 | ⏸️ **Pendente por decisão do dono (2026-11-05): nenhum provedor contratado; backup NÃO operacional, risco aceito.** Quando houver decisão: **Backup diário** (código e ensaio prontos, 2E; ver [14-backup-restauracao.md](14-backup-restauracao.md)): repositório privado separado com o workflow agendado, chave pública age, bucket externo com retenção de 30 dias, alerta de falha, string do Session pooler | O Supabase Free não tem backup. Antes de abrir ao público: 1 backup real + 1 restauração de teste num projeto descartável. Guardar a chave privada age e a VAPID privada fora do computador |
 
 ## 4. Supabase `mel-prod` (painel — nunca `supabase config push`)
 
@@ -41,7 +53,7 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | 4.1 | API: schemas expostos sem `private` | |
 | 4.2 | Site URL + Redirect URLs (`/auth/callback**`) do domínio | Os templates de e-mail usam `{{ .SiteURL }}` |
 | 4.3 | **SMTP próprio** (Resend, e-mail da MEL) + templates pt-BR + depois **"Confirm email" ON** | Sem SMTP, a recuperação de senha não chega a ninguém. Passo a passo no `11` |
-| 4.4 | Google OAuth (só depois do 4.3) + manual linking + `NEXT_PUBLIC_AUTH_GOOGLE=on` | Tela de consentimento publicada com links de `/privacidade` e `/termos` |
+| 4.4 | *(pode ficar para depois do piloto)* Google OAuth (só depois do 4.3) + manual linking + `NEXT_PUBLIC_AUTH_GOOGLE=on` | Tela de consentimento publicada com links de `/privacidade` e `/termos` |
 | 4.5 | Rate limits de Auth: anônimos **30/h por IP** (o `mel-dev` está em 300/h só para testes), logins nos padrões | |
 | 4.6 | Captcha do Auth: Authentication → Bot and Abuse Protection → Turnstile, com o **segredo de produção** do Turnstile (o mesmo par de 5.1) | O código (1.1) já está pronto. Ligar **depois** do deploy do app com as chaves de produção (5.1): a site key do app e o segredo no Supabase têm de ser do mesmo widget. Conferir no smoke test: avistamento, chat, encontrado, denúncia, cadastro, login e recuperação |
 
