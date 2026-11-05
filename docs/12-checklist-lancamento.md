@@ -71,7 +71,7 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 |---|---|---|
 | 6.1 | Primeiro moderador: `npm run admin:role -- <email> moderator --confirm-target=<ref>` | |
 | 6.2 | Revisão jurídica de termos e privacidade | Incluir o que fica depois da exclusão de conta (avistamentos anônimos, com local e texto) |
-| 6.3 | Smoke test manual como usuário real | Alerta → cartaz → compartilhar no WhatsApp (**conferir a prévia**: imagem aparece, tamanho e tempo a frio); avistamento anônimo; chat; push num celular real (no iPhone, com a MEL na Tela de Início); e-mail de recuperação de senha |
+| 6.3 | Smoke test manual como usuário real (no DEV, 2026-11-05: 3 rodadas visuais de E2E 76/76 e ~120 telas revisadas; falta repetir em produção, num celular de verdade, com push, e-mail e Google reais) | Alerta → cartaz → compartilhar no WhatsApp (**conferir a prévia**: imagem aparece, tamanho e tempo a frio); avistamento anônimo; chat; push num celular real (no iPhone, com a MEL na Tela de Início); e-mail de recuperação de senha |
 | 6.4 | Concluir o M17 em [10-status.md](10-status.md) | |
 
 ## Fora do caminho crítico (pós-lançamento)

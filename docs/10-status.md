@@ -72,6 +72,8 @@ Todo o trabalho de produção está **pausado** até o produto estar funcionalme
 
 ## Último CI
 
+**3 rodadas visuais de E2E depois da correção (2026-11-05, `763a6b3`):** 76/76 ✅ em cada uma — rodada 1 no navegador visível para o dono, devagar (8,5 min); rodadas 2 e 3 em segundo plano (6,5 e 6,3 min). Sem novas tentativas automáticas; nenhuma falha; servidor só com os erros provocados pelo próprio teste (`/dev/erro`). Não cobre celular físico, push real, e-mail real nem Google real (ficam para o smoke test manual da produção).
+
 **Teste visual (2026-11-05):** ~120 telas revisadas (celular claro/escuro, computador, fim de cada um dos 76 cenários). 1 defeito: cabeçalho duplicado em "Não encontramos esta página" dentro do app — **corrigido** (`app/(app)/not-found.tsx`, autorizado como correção no Feature Freeze), com E2E conferindo um cabeçalho só. Fotos quebradas e blocos marrons vistos no `mel-dev` são dados deixados pelos testes, não defeito.
 
 **3 rodadas completas de E2E (2026-11-05), build de produção, sem novas tentativas automáticas:** 76/76 ✅ em cada rodada (2,8 · 2,7 · 2,5 min). Logs do servidor sem erro inesperado: só os provocados pelos próprios testes (`/dev/erro`, login social recusado) e o push desligado de propósito (sem chave VAPID).
