@@ -77,7 +77,9 @@ Branch `redesign/etapa-1` (commits `34ea1b3`, `482da81`, `db69158`, `2da4a97`). 
 | Consulta automática de CNPJ | ⏸️ sem fonte oficial gratuita para projeto privado (Conecta gov.br é só para órgãos públicos; Serpro é pago); validação local + "Verificação pendente"; adaptador pronto e desligado (`MEL_CNPJ_LOOKUP=off`) |
 | Foto da Mel em alta resolução (seção "Nossa origem") | ⏳ o proprietário vai enviar |
 
-**Testes (2026-11-05):** unitários, tipos e lint ✅; testes de banco ligados aos 100 m (Radar, avistamentos, alertas, mapa: 35/35) ✅; E2E contra build de produção 74/76, e as 2 falhas foram de ambiente (segredo do agendador ausente na execução manual — repetido, 5/5 — e um alerta de teste órfão de uma execução interrompida, já apagado). Suíte completa de banco a repetir quando o limite de login do Auth do `mel-dev` zerar.
+**Validação final da 2ª rodada (2026-11-05, branch `redesign/etapa-1`):** E2E contra build de produção 77/77 (75 + 2 de parceiros após ajuste de seletor); "Reconstrução do schema" ✅ (banco do zero idêntico ao `mel-dev`, 223 testes de banco, auditoria e impressão digital das 40 migrations) e CI ✅, ambos disparados manualmente na branch. Comparação lado a lado protótipo × site real das 6 telas do Conceito B.
+
+**Testes (2026-11-05, 1ª rodada):** unitários, tipos e lint ✅; testes de banco ligados aos 100 m (Radar, avistamentos, alertas, mapa: 35/35) ✅; E2E contra build de produção 74/76, e as 2 falhas foram de ambiente (segredo do agendador ausente na execução manual — repetido, 5/5 — e um alerta de teste órfão de uma execução interrompida, já apagado). Suíte completa de banco a repetir quando o limite de login do Auth do `mel-dev` zerar.
 
 **Lição de ambiente:** o cache do Turbopack (`apps/web/.next/dev`) corrompeu e o `next dev` passou a recarregar a página em laço (E2E com dezenas de falhas falsas). Solução: parar o servidor e apagar `apps/web/.next/dev`. Não rodar `next start` e `next dev` sobre a mesma pasta `.next` ao mesmo tempo, e não deixar duas execuções de E2E simultâneas.
 
