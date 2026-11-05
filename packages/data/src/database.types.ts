@@ -16,7 +16,7 @@ export type Database = {
     Tables: {
       adoption_interests: {
         Row: {
-          children: boolean
+          children: boolean | null
           created_at: string
           housing: string
           id: string
@@ -26,7 +26,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          children: boolean
+          children?: boolean | null
           created_at?: string
           housing: string
           id?: string
@@ -36,7 +36,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          children?: boolean
+          children?: boolean | null
           created_at?: string
           housing?: string
           id?: string
@@ -66,6 +66,7 @@ export type Database = {
         Row: {
           age_months: number | null
           breed: string | null
+          closed_at: string | null
           color_primary: string | null
           created_at: string
           description: string
@@ -95,6 +96,7 @@ export type Database = {
         Insert: {
           age_months?: number | null
           breed?: string | null
+          closed_at?: string | null
           color_primary?: string | null
           created_at?: string
           description: string
@@ -124,6 +126,7 @@ export type Database = {
         Update: {
           age_months?: number | null
           breed?: string | null
+          closed_at?: string | null
           color_primary?: string | null
           created_at?: string
           description?: string
@@ -160,6 +163,104 @@ export type Database = {
           },
         ]
       }
+      adoption_seekers: {
+        Row: {
+          ages: string[]
+          area_label: string
+          area_lat: number
+          area_lng: number
+          area_point: unknown
+          children: boolean | null
+          consented_at: string
+          created_at: string
+          edits_count: number
+          edits_day: string | null
+          expires_at: string
+          expiry_reminded_at: string | null
+          housing: string
+          id: string
+          notify: boolean
+          other_pets: string
+          radius_m: number
+          review_note: string | null
+          reviewed_at: string | null
+          routine: string
+          show_public: boolean
+          sizes: Database["public"]["Enums"]["pet_size"][]
+          species: string
+          status: string
+          updated_at: string
+          user_id: string
+          whatsapp_private: string | null
+        }
+        Insert: {
+          ages?: string[]
+          area_label: string
+          area_lat: number
+          area_lng: number
+          area_point?: unknown
+          children?: boolean | null
+          consented_at: string
+          created_at?: string
+          edits_count?: number
+          edits_day?: string | null
+          expires_at: string
+          expiry_reminded_at?: string | null
+          housing: string
+          id?: string
+          notify?: boolean
+          other_pets: string
+          radius_m?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          routine: string
+          show_public?: boolean
+          sizes?: Database["public"]["Enums"]["pet_size"][]
+          species: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          whatsapp_private?: string | null
+        }
+        Update: {
+          ages?: string[]
+          area_label?: string
+          area_lat?: number
+          area_lng?: number
+          area_point?: unknown
+          children?: boolean | null
+          consented_at?: string
+          created_at?: string
+          edits_count?: number
+          edits_day?: string | null
+          expires_at?: string
+          expiry_reminded_at?: string | null
+          housing?: string
+          id?: string
+          notify?: boolean
+          other_pets?: string
+          radius_m?: number
+          review_note?: string | null
+          reviewed_at?: string | null
+          routine?: string
+          show_public?: boolean
+          sizes?: Database["public"]["Enums"]["pet_size"][]
+          species?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          whatsapp_private?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adoption_seekers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -189,6 +290,56 @@ export type Database = {
             columns: ["blocker_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_cnpj_checks: {
+        Row: {
+          attempts: number
+          business_id: string
+          checked_at: string | null
+          cnpj: string
+          last_error: string | null
+          next_attempt_at: string | null
+          official_name: string | null
+          registration_status: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["cnpj_check_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          business_id: string
+          checked_at?: string | null
+          cnpj: string
+          last_error?: string | null
+          next_attempt_at?: string | null
+          official_name?: string | null
+          registration_status?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["cnpj_check_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          business_id?: string
+          checked_at?: string | null
+          cnpj?: string
+          last_error?: string | null
+          next_attempt_at?: string | null
+          official_name?: string | null
+          registration_status?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["cnpj_check_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_cnpj_checks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -236,9 +387,12 @@ export type Database = {
       }
       businesses: {
         Row: {
+          activity_area: string | null
           address_label: string
           approved_at: string | null
           category: Database["public"]["Enums"]["business_category"]
+          city: string | null
+          cnpj: string | null
           created_at: string
           description: string
           helps_lost: boolean
@@ -246,13 +400,17 @@ export type Database = {
           id: string
           instagram: string | null
           lat: number
+          legal_name: string | null
           lng: number
           logo_path: string | null
           name: string
+          neighborhood: string | null
           owner_id: string
+          partner_kind: Database["public"]["Enums"]["partner_kind"]
           phone: string | null
           plan_code: string
           point: unknown
+          responsible_name: string | null
           review_note: string | null
           short_code: string
           status: Database["public"]["Enums"]["business_status"]
@@ -261,9 +419,12 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          activity_area?: string | null
           address_label: string
           approved_at?: string | null
           category: Database["public"]["Enums"]["business_category"]
+          city?: string | null
+          cnpj?: string | null
           created_at?: string
           description: string
           helps_lost?: boolean
@@ -271,13 +432,17 @@ export type Database = {
           id?: string
           instagram?: string | null
           lat: number
+          legal_name?: string | null
           lng: number
           logo_path?: string | null
           name: string
+          neighborhood?: string | null
           owner_id: string
+          partner_kind?: Database["public"]["Enums"]["partner_kind"]
           phone?: string | null
           plan_code?: string
           point?: unknown
+          responsible_name?: string | null
           review_note?: string | null
           short_code: string
           status?: Database["public"]["Enums"]["business_status"]
@@ -286,9 +451,12 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          activity_area?: string | null
           address_label?: string
           approved_at?: string | null
           category?: Database["public"]["Enums"]["business_category"]
+          city?: string | null
+          cnpj?: string | null
           created_at?: string
           description?: string
           helps_lost?: boolean
@@ -296,13 +464,17 @@ export type Database = {
           id?: string
           instagram?: string | null
           lat?: number
+          legal_name?: string | null
           lng?: number
           logo_path?: string | null
           name?: string
+          neighborhood?: string | null
           owner_id?: string
+          partner_kind?: Database["public"]["Enums"]["partner_kind"]
           phone?: string | null
           plan_code?: string
           point?: unknown
+          responsible_name?: string | null
           review_note?: string | null
           short_code?: string
           status?: Database["public"]["Enums"]["business_status"]
@@ -949,6 +1121,105 @@ export type Database = {
           },
         ]
       }
+      partner_document_access_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          business_code: string | null
+          business_id: string | null
+          created_at: string
+          full_value: boolean
+          id: number
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          business_code?: string | null
+          business_id?: string | null
+          created_at?: string
+          full_value?: boolean
+          id?: never
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          business_code?: string | null
+          business_id?: string | null
+          created_at?: string
+          full_value?: boolean
+          id?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_document_access_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_document_access_log_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_documents: {
+        Row: {
+          auth_tag: string
+          business_id: string
+          ciphertext: string
+          created_at: string
+          doc_type: string
+          hmac_key_version: number
+          iv: string
+          key_version: number
+          lookup_hmac: string
+          owner_id: string
+        }
+        Insert: {
+          auth_tag: string
+          business_id: string
+          ciphertext: string
+          created_at?: string
+          doc_type?: string
+          hmac_key_version?: number
+          iv: string
+          key_version: number
+          lookup_hmac: string
+          owner_id: string
+        }
+        Update: {
+          auth_tag?: string
+          business_id?: string
+          ciphertext?: string
+          created_at?: string
+          doc_type?: string
+          hmac_key_version?: number
+          iv?: string
+          key_version?: number
+          lookup_hmac?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_documents_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pet_photos: {
         Row: {
           created_at: string
@@ -1126,6 +1397,32 @@ export type Database = {
             foreignKeyName: "pets_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pii_access_grants: {
+        Row: {
+          granted_at: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pii_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1443,6 +1740,7 @@ export type Database = {
     }
     Functions: {
       admin_audit_log: { Args: { p_limit?: number }; Returns: Json }
+      admin_list_adoption_seekers_for_review: { Args: never; Returns: Json }
       admin_list_adoptions_for_review: { Args: never; Returns: Json }
       admin_list_businesses_for_review: { Args: never; Returns: Json }
       admin_list_reports: {
@@ -1456,6 +1754,10 @@ export type Database = {
       admin_overview: { Args: never; Returns: Json }
       admin_review_adoption: {
         Args: { p_approve: boolean; p_code: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_review_adoption_seeker: {
+        Args: { p_approve: boolean; p_id: string; p_note?: string }
         Returns: undefined
       }
       admin_review_business: {
@@ -1510,6 +1812,7 @@ export type Database = {
       get_business: { Args: { p_code: string }; Returns: Json }
       get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
+      get_my_adoption_seeker: { Args: never; Returns: Json }
       get_my_conversations: { Args: never; Returns: Json }
       get_my_matches: { Args: { p_found_code?: string }; Returns: Json }
       get_public_adoption: { Args: { p_code: string }; Returns: Json }
@@ -1539,6 +1842,10 @@ export type Database = {
         Args: { p_limit?: number; p_min_age?: string }
         Returns: string[]
       }
+      list_public_adoption_seekers: {
+        Args: { p_limit?: number; p_offset?: number; p_species?: string }
+        Returns: Json
+      }
       mark_conversation_read: { Args: { p_id: string }; Returns: undefined }
       my_conversation_for_case: { Args: { p_code: string }; Returns: string }
       nearby_lost_cases: {
@@ -1567,6 +1874,7 @@ export type Database = {
         Args: { p_sighting_id: string }
         Returns: string
       }
+      renew_my_adoption_seeker: { Args: never; Returns: string }
       report_content: {
         Args: {
           p_details?: string
@@ -1584,6 +1892,27 @@ export type Database = {
           p_reason: Database["public"]["Enums"]["report_reason"]
         }
         Returns: string
+      }
+      run_adoption_retention: { Args: { p_limit?: number }; Returns: Json }
+      save_my_adoption_seeker: {
+        Args: {
+          p_ages: string[]
+          p_area_label: string
+          p_area_lat: number
+          p_area_lng: number
+          p_children: boolean
+          p_consent: boolean
+          p_housing: string
+          p_notify: boolean
+          p_other_pets: string
+          p_radius_m: number
+          p_routine: string
+          p_show_public: boolean
+          p_sizes: Database["public"]["Enums"]["pet_size"][]
+          p_species: string
+          p_whatsapp: string
+        }
+        Returns: Json
       }
       save_push_subscription: {
         Args: {
@@ -1609,6 +1938,10 @@ export type Database = {
       }
       set_conversation_block: {
         Args: { p_blocked: boolean; p_id: string }
+        Returns: undefined
+      }
+      set_my_adoption_seeker_notify: {
+        Args: { p_enabled: boolean }
         Returns: undefined
       }
       start_conversation: {
@@ -1639,6 +1972,8 @@ export type Database = {
         }
         Returns: string
       }
+      withdraw_adoption_interest: { Args: { p_code: string }; Returns: boolean }
+      withdraw_my_adoption_seeker: { Args: never; Returns: boolean }
     }
     Enums: {
       adoption_status:
@@ -1657,9 +1992,16 @@ export type Database = {
         | "ngo"
         | "other"
       business_status: "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "SUSPENDED"
+      cnpj_check_status:
+        | "PENDING"
+        | "VERIFIED"
+        | "NOT_FOUND"
+        | "INACTIVE"
+        | "ERROR"
       found_case_status: "ACTIVE" | "REUNITED" | "CLOSED" | "REMOVED"
       found_custody: "with_me" | "safe_place" | "clinic" | "street" | "other"
       lost_case_status: "DRAFT" | "ACTIVE" | "FOUND" | "CLOSED" | "REMOVED"
+      partner_kind: "company" | "ngo" | "independent"
       pet_sex: "male" | "female" | "unknown"
       pet_size: "mini" | "small" | "medium" | "large" | "giant"
       report_reason:
@@ -1678,6 +2020,7 @@ export type Database = {
         | "adoption"
         | "message"
         | "business"
+        | "adoption_seeker"
       sighting_direction: "N" | "S" | "E" | "W" | "unknown"
       sighting_state:
         | "walking"
@@ -1835,9 +2178,17 @@ export const Constants = {
         "other",
       ],
       business_status: ["PENDING_REVIEW", "APPROVED", "REJECTED", "SUSPENDED"],
+      cnpj_check_status: [
+        "PENDING",
+        "VERIFIED",
+        "NOT_FOUND",
+        "INACTIVE",
+        "ERROR",
+      ],
       found_case_status: ["ACTIVE", "REUNITED", "CLOSED", "REMOVED"],
       found_custody: ["with_me", "safe_place", "clinic", "street", "other"],
       lost_case_status: ["DRAFT", "ACTIVE", "FOUND", "CLOSED", "REMOVED"],
+      partner_kind: ["company", "ngo", "independent"],
       pet_sex: ["male", "female", "unknown"],
       pet_size: ["mini", "small", "medium", "large", "giant"],
       report_reason: [
@@ -1857,6 +2208,7 @@ export const Constants = {
         "adoption",
         "message",
         "business",
+        "adoption_seeker",
       ],
       sighting_direction: ["N", "S", "E", "W", "unknown"],
       sighting_state: [

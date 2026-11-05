@@ -25,6 +25,9 @@ const business = (o: Record<string, unknown> = {}) =>
     position: BH,
     phone: "(31) 3333-4444",
     helpsLost: true,
+    // Empresa: CNPJ e razão social obrigatórios (decisão 9, 2026-11-05).
+    cnpj: "11.222.333/0001-81",
+    legalName: "Clínica Amigo Fiel Ltda",
     ...o,
   });
 

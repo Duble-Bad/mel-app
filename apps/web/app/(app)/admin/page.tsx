@@ -9,6 +9,8 @@ import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AdoptionReview } from "@/components/admin/AdoptionReview";
 import { ModerationActions } from "@/components/admin/ModerationActions";
+import { SeekerQueue } from "@/components/admin/SeekerQueue";
+import { PartnerReviewInfo } from "@/components/admin/PartnerReviewInfo";
 import { BusinessReview } from "@/components/partners/PartnerClient";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 
@@ -159,6 +161,8 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
         )}
       </section>
 
+      <SeekerQueue />
+
       <section aria-labelledby="parceiros" className="flex flex-col gap-3">
         <h2 id="parceiros" className="text-xl font-bold">
           Parceiros aguardando aprovação
@@ -177,6 +181,7 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
                 </p>
                 <p className="text-sm text-text-secondary">{b.addressLabel}</p>
                 <p className="line-clamp-3 text-sm">{b.description}</p>
+                <PartnerReviewInfo b={b} />
                 <BusinessReview code={b.code} name={b.name} />
               </li>
             ))}

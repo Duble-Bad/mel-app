@@ -13,5 +13,7 @@ export * from "./publicMap";
 export * from "./guardian";
 export * from "./moderation";
 export * from "./adoption";
+export * from "./adoptionSeekers";
 export * from "./partners";
+export * from "./partnerDocuments";
 export * from "./privacy";

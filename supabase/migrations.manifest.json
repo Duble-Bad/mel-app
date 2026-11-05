@@ -128,6 +128,38 @@
     {
       "file": "20261105120000_public_area_100m.sql",
       "sha256": "de7e03a2fa42b6c288c4ced602043725a259ede5048a22dddf6752733975eaf9"
+    },
+    {
+      "file": "20261106120000_adoption_seeker_report_target.sql",
+      "sha256": "61695680850b4c43fb648cfeabc78ac8393baab07de321ae946959b61685ef73"
+    },
+    {
+      "file": "20261106121000_adoption_interest_withdraw.sql",
+      "sha256": "704eda8b056a9afd04f3b0069221ce54121f12c9d89d618411138ca06cb34111"
+    },
+    {
+      "file": "20261106122000_adoption_seekers.sql",
+      "sha256": "c165cbe702787553a9f5c945c16cf0cffd035486e7090640665283d52cb21ae7"
+    },
+    {
+      "file": "20261106123000_adoption_seeker_matches.sql",
+      "sha256": "42062a7edb5cb931a4d718c289fd2a93e37731f46e4c30d9194712981a67945e"
+    },
+    {
+      "file": "20261106124000_adoption_retention.sql",
+      "sha256": "05534d23d77695b14aadc28435a4bbdd118812b0a3050a8f7724f20417ede66e"
+    },
+    {
+      "file": "20261106125000_adoption_my_interest.sql",
+      "sha256": "3e9bdc835a2429d8859755592a151998a7cacbb2368d5102e2291b160b71a6be"
+    },
+    {
+      "file": "20261106130000_partner_kind_and_documents.sql",
+      "sha256": "874147b1f6b715264576df1e79143d1e4a64c26e435470d6a27df9cbbb3af9a1"
+    },
+    {
+      "file": "20261106140000_export_my_data_seekers_partners.sql",
+      "sha256": "55064e0a68fd03de07a3ceb4fbe4a7af6c0fcc8f1750adf77deb11c26262838a"
     }
   ]
 }

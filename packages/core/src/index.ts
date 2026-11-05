@@ -20,6 +20,8 @@ export * from "./guardian/guardian";
 export * from "./moderation/moderation";
 export * from "./adoption/adoption";
 export * from "./partners/partners";
+export * from "./partners/documents";
+export * from "./partners/cnpjLookup";
 export * from "./privacy/privacy";
 export * from "./security/scheduler";
 export * from "./security/turnstile";
