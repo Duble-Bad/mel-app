@@ -57,6 +57,13 @@ export function ProfileForm({ profile, next, submitLabel, requireTerms = false }
       }
       if (requireTerms) await acceptTerms(supabase, profile.id);
       await saveMyProfile(supabase, profile.id, { ...parsed.data, avatarUrl });
+      if (requireTerms) {
+        // Onboarding: navegação completa (como no login). O roteador do cliente pode ter
+        // guardado, de antes de concluir o cadastro, o redirecionamento da página de
+        // destino de volta para /onboarding — sob carga a tela voltava para cá.
+        window.location.assign(next);
+        return;
+      }
       router.replace(next);
       router.refresh();
     } catch (error) {
