@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getPiiKeyringSafe } from "@/lib/pii/keys";
 import { readPartnerCpf, UNREADABLE_CPF_MESSAGE } from "@/lib/pii/partnerCpf";
 import { serviceCpfDeps } from "@/lib/pii/server";
+import { isSameOrigin } from "@/lib/origin";
 
 const json = (status: number, body: Record<string, unknown>) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store, private", "X-Robots-Tag": "noindex" } });
@@ -23,8 +24,7 @@ const NOT_FOUND = "Não encontramos este cadastro.";
  * o titular recebe o caminho para cadastrar de novo.
  */
 export async function POST(request: NextRequest, { params }: RouteContext<"/api/parceiros/[code]/cpf">) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) return json(403, { error: "Origem não permitida." });
+  if (!isSameOrigin(request)) return json(403, { error: "Origem não permitida." });
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato inválido." });
 
   const { code } = await params;

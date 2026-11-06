@@ -4,6 +4,7 @@ import { deleteAccount } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isSameOrigin } from "@/lib/origin";
 
 /**
  * Exclusão definitiva da conta de quem está logado (LGPD). Exige JSON com a
@@ -12,8 +13,7 @@ import { createServiceClient } from "@/lib/supabase/service";
  * tudo o que é dele; depois limpa os cookies da sessão.
  */
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) return Response.json({ error: "Origem não permitida." }, { status: 403 });
+  if (!isSameOrigin(request)) return Response.json({ error: "Origem não permitida." }, { status: 403 });
   if (!request.headers.get("content-type")?.includes("application/json")) return Response.json({ error: "Formato inválido." }, { status: 415 });
 
   const user = await getSessionUser();

@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
+import { isSameOrigin } from "@/lib/origin";
 
 const json = (status: number, body: Record<string, unknown>) => Response.json(body, { status, headers: { "Cache-Control": "no-store, private" } });
 
@@ -13,8 +14,7 @@ const json = (status: number, body: Record<string, unknown>) => Response.json(bo
  * A senha nunca é registrada em log.
  */
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) return json(403, { error: "Origem não permitida." });
+  if (!isSameOrigin(request)) return json(403, { error: "Origem não permitida." });
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato inválido." });
 
   const user = await getSessionUser();

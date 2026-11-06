@@ -26,6 +26,9 @@
     "env:pull": "node scripts/pull-supabase-env.mjs",
     "brand:icons": "node scripts/build-brand-icons.mjs",
     "admin:role": "node scripts/grant-role.mjs",
+    "dev:https:certificados": "bash scripts/dev-https/gerar-certificados.sh",
+    "dev:https": "node scripts/dev-https/proxy.mjs",
+    "dev:push": "node --env-file=.env.local scripts/dev-https/disparar-push.mjs --repetir",
     "pii:rotate": "node scripts/pii-rotate.mjs"
   },
   "devDependencies": {

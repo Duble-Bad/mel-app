@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { emailLinkAction, safeErrorCode } from "@mel/core";
 import { createSessionClient } from "@/lib/supabase/server";
+import { requestOrigin } from "@/lib/origin";
 
 /**
  * Confirma o link do e-mail (botão de /auth/confirmar): verifica o token no
@@ -9,7 +10,7 @@ import { createSessionClient } from "@/lib/supabase/server";
  * uso único: repetir o envio cai em /entrar com "link expirou ou já foi usado".
  */
 export async function POST(request: NextRequest) {
-  const { origin } = request.nextUrl;
+  const origin = requestOrigin(request);
   const form = await request.formData();
   const link = emailLinkAction({ get: (name) => (typeof form.get(name) === "string" ? (form.get(name) as string) : null) });
   // 303: depois de um POST, o navegador segue com GET.

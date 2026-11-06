@@ -1,36 +1,68 @@
 # MEL — Teste no celular (rede local, só desenvolvimento)
 
-> Diagnóstico de 2026-11-06. Nada aqui vale para produção (produção terá domínio próprio com HTTPS).
+> Atualizado em 2026-11-06. Opção escolhida pelo proprietário: **HTTPS local** (sem túnel público, sem custo, nada exposto na internet). Nada aqui vale para produção.
 
-## Como está hoje (`http://172.18.4.238:3000`, mesma Wi-Fi)
+## Endereços (mesma Wi-Fi do PC)
 
-| Recurso | Funciona? | Evidência / motivo |
+| Endereço | Para quê |
+|---|---|
+| **https://172.18.4.238:3443** | App com HTTPS (GPS, push, instalar app) — exige o certificado de teste no celular |
+| http://172.18.4.238:3080 | Página para baixar o certificado **público** da CA de teste |
+| http://172.18.4.238:3000 | App em HTTP (continua funcionando; sem GPS e sem push) |
+
+## Como funciona
+
+- `npm run dev:https:certificados` cria, **fora do repositório** (`~/.mel-dev-https`), uma CA só deste PC e um certificado para `172.18.4.238` (válido até 12/2027). A chave privada da CA nunca sai do PC.
+- `npm run dev:https` liga um proxy TLS na porta 3443 que repassa para o app na porta 3000, e a página do certificado na 3080. Só escuta a rede local.
+- O app passa a montar redirecionamentos e a checagem de mesma origem a partir do endereço que o navegador usou (`apps/web/lib/origin.ts`). Antes, com o servidor em `0.0.0.0`, o retorno do login ia para `http://0.0.0.0:3000` e as APIs de parceiro, CPF, `/perfil/dados` e exclusão de conta recusavam o próprio site.
+- Se o IP do PC mudar: gerar de novo o certificado com o IP novo (`bash scripts/dev-https/gerar-certificados.sh <ip>`) e atualizar as listas do MapTiler e do Supabase.
+
+## Religar depois de reiniciar o PC
+
+1. App: build com `NEXT_PUBLIC_SITE_URL=https://172.18.4.238:3443` e `npx --workspace web next start -H 0.0.0.0 -p 3000`.
+2. `npm run dev:https`.
+3. Durante o teste de push: `npm run dev:push` (dispara o envio a cada 20 s; em produção é o agendador).
+
+## Instalar o certificado no celular (com o proprietário, só no aparelho de teste)
+
+Confira a impressão digital SHA-256 da CA se o celular mostrar: `68:D0:46:30:…:86:3A:DC:F6`.
+
+**Android (Chrome)**
+1. No celular, abra `http://172.18.4.238:3080` e toque em **Baixar certificado (Android)**.
+2. Configurações → Segurança e privacidade → Mais configurações de segurança → Criptografia e credenciais → **Instalar um certificado → Certificado de CA** → "Instalar assim mesmo" → escolha `mel-dev-ca.cer`. (O Android exige bloqueio de tela.)
+3. Abra **https://172.18.4.238:3443** no Chrome: deve abrir sem aviso de segurança.
+4. Ao terminar: Criptografia e credenciais → Credenciais confiáveis → aba **Usuário** → "MEL DEV CA local" → Remover.
+
+**iPhone (Safari)**
+1. No Safari, abra `http://172.18.4.238:3080` → **Baixar certificado (iPhone)** → Permitir.
+2. Ajustes → Geral → VPN e Gerenciamento de Dispositivos → perfil "MEL DEV CA local" → Instalar.
+3. Ajustes → Geral → Sobre → **Ajustes de Confiança de Certificados** → ative "MEL DEV CA local".
+4. Abra **https://172.18.4.238:3443** no Safari.
+5. Para push no iPhone (iOS 16.4+): Compartilhar → **Adicionar à Tela de Início** e abra pelo ícone.
+6. Ao terminar: remova o perfil em VPN e Gerenciamento de Dispositivos.
+
+## Roteiro de teste manual (ainda não executado — registrar o resultado de cada item)
+
+| # | Teste | Como |
 |---|---|---|
-| Navegação, cadastro, login por e-mail, alerta, avistamento, chat | ✅ | Corrigido em `34ea1b3` (`crypto.randomUUID` não existe em `http://` fora do localhost) |
-| Mapa (MapTiler) | ✅ | A chave de desenvolvimento aceita a origem `http://172.18.4.238:3000`: estilo, blocos e busca de endereço respondem 200; teste automatizado vê o mapa desenhado (9 blocos, nenhum erro) |
-| Login com Google | ✅ (falta só o teste com uma conta Google real) | O app pede ao Supabase `redirect_to=http://172.18.4.238:3000/auth/callback?…`; essa URL está nas *Redirect URLs* do `mel-dev` (painel) e versionada em `supabase/config.toml`. Sem isso, o Supabase devolvia para o *Site URL* (`localhost:3100`) |
-| GPS ("usar minha localização") | ❌ | Navegadores só liberam geolocalização em contexto seguro (HTTPS ou localhost) |
-| Notificações push e "instalar app" | ❌ | Service worker e Push API exigem contexto seguro |
-| PKCE do login | ⚠️ | Sem WebCrypto em `http://`, a biblioteca usa o método `plain` em vez de `S256`. Aceitável só em desenvolvimento |
+| 1 | Login com Google | Entrar → Continuar com Google → volta logado para o app em `https://…:3443`. Depende do item "Bloqueio" abaixo; até lá, testar pelo `http://…:3000` |
+| 2 | Cadastro e onboarding | Entrar → Criar conta (e-mail de teste seu) → completar "Que bom ter você na rede MEL" → Perfil |
+| 3 | Mapa MEL e localização | Mapa da Rede → alternar Lista/Mapa → tocar numa área → painel com os dados; "Perto de mim" |
+| 4 | GPS no celular | Perdi meu pet → etapa "Onde" → "Usar minha localização atual" → permitir → ponto no mapa |
+| 5 | Notificações push | Com `npm run dev:push` rodando no PC: Perfil → ativar notificações (ou Guardião) → em outro aparelho/aba, enviar um avistamento ou mensagem → notificação chega no celular |
+| 6 | Cadastro de interessado em adoção | Adoção → Quero adotar → preencher → "Em análise"; aprovar no /admin com um moderador de teste |
+| 7 | Chat privado de adoção | Interessado: ligar "Aceito ser contatado por quem anuncia" (precisa estar aprovado e na lista pública). Anunciante com anúncio aprovado: Adoção → aba Quero adotar → "Conversar" → mensagem → conversa aparece para os dois em Conversas |
+| 8 | Correção de dados | Perfil → Meus dados (`/perfil/dados`) → corrigir telefone (DDD inválido deve ser recusado) e pedir troca de e-mail (fica "pendente" até confirmar nos dois e-mails) |
 
-O IP `172.18.4.238` é privado e pode mudar (DHCP). Se mudar, atualizar as três listas: *Redirect URLs* do Supabase (`mel-dev`), origens da chave de desenvolvimento do MapTiler e `supabase/config.toml`.
+## Bloqueio real
 
-## Para testar GPS e push: HTTPS de teste (gratuito, temporário) — escolha do proprietário
+- **Supabase `mel-dev` → Authentication → URL Configuration → Redirect URLs:** incluir `https://172.18.4.238:3443/**` (já versionado em `supabase/config.toml`). Sem isso, login com Google e links de e-mail feitos pelo endereço HTTPS voltam para `localhost:3100`. Não usamos `supabase config push` porque ele desfaria ajustes feitos só no painel.
+- MapTiler: a chave de desenvolvimento já aceita `https://172.18.4.238:3443` (estilo do mapa responde 200).
 
-Nada abaixo foi configurado. As duas opções são sem custo; nenhuma toca produção.
+## Verificado automaticamente (2026-11-06)
 
-### Opção A (recomendada): HTTPS só na rede local, com certificado de desenvolvimento
-
-- Gera uma autoridade certificadora local (mkcert ou `next dev --experimental-https` com certificado para o IP) e serve o app em `https://172.18.4.238:3443`.
-- O celular precisa instalar e confiar nesse certificado (configurações de segurança do Android/iOS) — só no aparelho de teste.
-- **Nada fica exposto na internet.** Origem fixa: basta adicionar `https://172.18.4.238:3443` uma vez no MapTiler (chave de dev) e nas *Redirect URLs* do `mel-dev`.
-- Contras: passo manual de instalar o certificado; remover do celular ao terminar.
-
-### Opção B: túnel temporário da Cloudflare (`trycloudflare.com`)
-
-- `cloudflared tunnel --url http://localhost:3000` gera um endereço `https://<aleatório>.trycloudflare.com` sem conta e sem custo.
-- **Expõe o app de desenvolvimento (e o `mel-dev`) na internet** enquanto o túnel estiver aberto; o endereço muda a cada execução.
-- Exigiria liberar a origem no MapTiler e nas *Redirect URLs* a cada execução. **Não usar curinga** (`*.trycloudflare.com`): qualquer túnel de terceiros passaria a valer para a chave do mapa e para os retornos de login do `mel-dev`.
-- Precisa baixar o executável `cloudflared`.
-
-**Recomendação:** Opção A (não expõe nada). A Opção B só para um teste rápido e supervisionado, fechando o túnel e removendo a origem ao final.
+- Cadeia TLS validada pela CA local; cliente sem a CA é recusado (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`).
+- Em `https://172.18.4.238:3443`: contexto seguro, `crypto.randomUUID`, service worker, Push API e geolocalização disponíveis; mapa desenhado; o app pede ao Google `redirect_to=https://172.18.4.238:3443/auth/callback…`.
+- Retorno do login: `https://…:3443/entrar…` pelo HTTPS e `http://…:3000/entrar…` pelo HTTP (antes: `http://0.0.0.0:3000`).
+- Disparo de push em DEV responde 200.
+- E2E 77/77 depois da correção de origem.

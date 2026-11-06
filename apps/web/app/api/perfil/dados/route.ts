@@ -17,6 +17,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getPiiKeyringSafe } from "@/lib/pii/keys";
 import { writePartnerCpf } from "@/lib/pii/partnerCpf";
 import { serviceCpfDeps } from "@/lib/pii/server";
+import { isSameOrigin, requestOrigin } from "@/lib/origin";
 
 const json = (status: number, body: Record<string, unknown>) =>
   Response.json(body, { status, headers: { "Cache-Control": "no-store, private", "X-Robots-Tag": "noindex" } });
@@ -38,8 +39,7 @@ const requestSchema = personalDataChangeSchema;
  * Respostas e logs nunca trazem o valor (nem o antigo nem o novo).
  */
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) return json(403, { error: "Origem não permitida." });
+  if (!isSameOrigin(request)) return json(403, { error: "Origem não permitida." });
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato inválido." });
 
   const user = await getSessionUser();
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
         if (current && current.toLowerCase() === input.valor.toLowerCase()) {
           return json(422, { error: "Este já é o e-mail da sua conta.", fields: { valor: "Este já é o e-mail da sua conta." } });
         }
-        await requestEmailChange(session, input.valor, `${request.nextUrl.origin}/auth/callback?next=${encodeURIComponent("/perfil/dados")}`);
+        await requestEmailChange(session, input.valor, `${requestOrigin(request)}/auth/callback?next=${encodeURIComponent("/perfil/dados")}`);
         const service = createServiceClient();
         if (service) {
           await logPersonalDataChange(service, { actorId: user.id, subject: "account", field: "email", action: "email_change_requested" }).catch(() =>

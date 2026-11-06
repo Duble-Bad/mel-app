@@ -7,6 +7,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getPiiKeyringSafe } from "@/lib/pii/keys";
 import { precheckCpf, writePartnerCpf } from "@/lib/pii/partnerCpf";
 import { serviceCpfDeps } from "@/lib/pii/server";
+import { isSameOrigin } from "@/lib/origin";
 
 const json = (status: number, body: Record<string, unknown>) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
@@ -20,8 +21,7 @@ const json = (status: number, body: Record<string, unknown>) => Response.json(bo
  * Nunca registra em log o corpo da requisição nem o CPF.
  */
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== request.nextUrl.origin) return json(403, { error: "Origem não permitida." });
+  if (!isSameOrigin(request)) return json(403, { error: "Origem não permitida." });
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato inválido." });
 
   const user = await getSessionUser();
