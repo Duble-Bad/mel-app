@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, HandHeart, Lock, Store, UserRound } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import {
   BUSINESS_CATEGORY_LABELS,
   COMPANY_CATEGORIES,
@@ -92,8 +92,13 @@ const ONBOARDING_URL = `/onboarding?next=${encodeURIComponent("/parceiros#cadast
  * no envio, sem conta real, guarda o rascunho e leva ao login com o contexto
  * de parceiro. O servidor revalida tudo e cifra o CPF.
  */
+const noSubscribe = () => () => {};
+
 export function PartnerSignupForm() {
   const router = useRouter();
+  // Antes da hidratação o botão faria um envio HTML puro (sem validação, perdendo o
+  // preenchido): fica desabilitado até o formulário estar pronto (celular lento).
+  const ready = useSyncExternalStore(noSubscribe, () => true, () => false);
   const [kind, setKind] = useState<PartnerKind>("company");
   const [v, setV] = useState<Values>(EMPTY);
   const [cpf, setCpf] = useState("");
@@ -456,7 +461,7 @@ export function PartnerSignupForm() {
         </span>
       </div>
       {error && <Alert tone="error">{error}</Alert>}
-      <Button type="submit" loading={Boolean(busy)} loadingText={busy} className="rounded-full">
+      <Button type="submit" disabled={!ready} loading={Boolean(busy)} loadingText={busy} className="rounded-full">
         Enviar para moderação
       </Button>
     </form>
