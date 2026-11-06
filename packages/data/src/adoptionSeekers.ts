@@ -24,6 +24,7 @@ interface SeekerJson {
   whatsapp?: string | null;
   notify: boolean;
   show_public: boolean;
+  contact_ok?: boolean;
   review_note: string | null;
   reviewed_at: string | null;
   expires_at: string;
@@ -47,6 +48,7 @@ const toSeeker = (s: SeekerJson): AdoptionSeeker => ({
   whatsapp: s.whatsapp ?? null,
   notify: s.notify,
   showPublic: s.show_public,
+  contactOk: s.contact_ok === true,
   reviewNote: s.review_note,
   reviewedAt: s.reviewed_at,
   expiresAt: s.expires_at,
@@ -119,12 +121,68 @@ export async function listPublicAdoptionSeekers(
   if (error) fail(error);
   const res = data as unknown as {
     total: number;
-    items: Array<{ first_name: string | null; area_label: string; species: SeekerSpecies; sizes: PetSize[] | null; ages: SeekerAge[] | null }>;
+    items: Array<{
+      first_name: string | null;
+      area_label: string;
+      species: SeekerSpecies;
+      sizes: PetSize[] | null;
+      ages: SeekerAge[] | null;
+      contact_ref?: string;
+    }>;
   };
   return {
     total: res.total,
-    items: res.items.map((i) => ({ firstName: i.first_name, areaLabel: i.area_label, species: i.species, sizes: i.sizes ?? [], ages: i.ages ?? [] })),
+    items: res.items.map((i) => ({
+      firstName: i.first_name,
+      areaLabel: i.area_label,
+      species: i.species,
+      sizes: i.sizes ?? [],
+      ages: i.ages ?? [],
+      // Só vem para quem pode iniciar conversa (e só de quem aceitou contato).
+      ...(i.contact_ref ? { contactRef: i.contact_ref } : {}),
+    })),
   };
+}
+
+/** "Aceito ser contatado por quem anuncia" (liga/desliga; não volta para a moderação). */
+export async function setMyAdoptionSeekerContact(client: MelClient, enabled: boolean): Promise<void> {
+  const { error } = await client.rpc("set_my_adoption_seeker_contact", { p_enabled: enabled });
+  if (error) fail(error);
+}
+
+/** Anúncio de onde quem anuncia pode iniciar conversa com a fila. */
+export interface ContactListing {
+  code: string;
+  name: string;
+  photoUrl: string | null;
+}
+
+/** Anúncios DISPONÍVEIS da própria pessoa (vazio = não pode iniciar conversa com a fila). */
+export async function listMyListingsForSeekerContact(client: MelClient): Promise<ContactListing[]> {
+  const { data, error } = await client.rpc("list_my_listings_for_seeker_contact");
+  if (error) fail(error);
+  return ((data as unknown as Array<{ code: string; name: string; photo_path: string | null }>) ?? []).map((l) => ({
+    code: l.code,
+    name: l.name,
+    photoUrl: l.photo_path ? client.storage.from("pet-photos").getPublicUrl(l.photo_path).data.publicUrl : null,
+  }));
+}
+
+/**
+ * Quem anuncia abre (ou retoma) a conversa com uma pessoa da fila, já com a
+ * 1ª mensagem. Devolve o id da conversa (a mesma do chat de adoção).
+ */
+export async function startAdoptionSeekerConversation(
+  client: MelClient,
+  input: { listingCode: string; contactRef: string; body: string },
+): Promise<string> {
+  const { data, error } = await client.rpc("start_adoption_seeker_conversation", {
+    p_listing_code: input.listingCode,
+    p_seeker_ref: input.contactRef,
+    p_body: input.body,
+  });
+  if (error) fail(error);
+  return data as string;
 }
 
 /** Moderação: perfis em análise (com o WhatsApp privado). */

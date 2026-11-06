@@ -12,10 +12,11 @@ import {
   seekerPreferenceLabel,
   userErrorMessage,
 } from "@mel/core";
-import { renewMyAdoptionSeeker, setMyAdoptionSeekerNotify, withdrawMyAdoptionSeeker } from "@mel/data";
+import { renewMyAdoptionSeeker, setMyAdoptionSeekerContact, setMyAdoptionSeekerNotify, withdrawMyAdoptionSeeker } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { Switch } from "@/components/ui/Switch";
 import { useToast } from "@/components/ui/Toast";
 import { SeekerForm } from "./SeekerForm";
 
@@ -27,7 +28,7 @@ export function SeekerStatus({ seeker, firstName }: { seeker: AdoptionSeeker; fi
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [busy, setBusy] = useState<"renew" | "notify" | "cancel" | null>(null);
+  const [busy, setBusy] = useState<"renew" | "notify" | "contact" | "cancel" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelled, setCancelled] = useState(false);
   // Momento da montagem: suficiente para "vencido" e "faltam N dias".
@@ -36,7 +37,7 @@ export function SeekerStatus({ seeker, firstName }: { seeker: AdoptionSeeker; fi
   const expired = new Date(seeker.expiresAt).getTime() <= now;
   const daysLeft = Math.ceil((new Date(seeker.expiresAt).getTime() - now) / 86_400_000);
 
-  async function run(kind: "renew" | "notify" | "cancel", fn: () => Promise<unknown>, done: string) {
+  async function run(kind: "renew" | "notify" | "contact" | "cancel", fn: () => Promise<unknown>, done: string) {
     setBusy(kind);
     setError(null);
     try {
@@ -132,6 +133,27 @@ export function SeekerStatus({ seeker, firstName }: { seeker: AdoptionSeeker; fi
           <dd className="font-semibold">{seeker.whatsapp ? "Informado (só a moderação vê)" : "Não informado"}</dd>
         </div>
       </dl>
+
+      {/* Consentimento de contato (LGPD: opt-in, desliga quando quiser; não volta para a moderação). */}
+      <div className="rounded-[14px] border border-border p-4">
+        <Switch
+          checked={seeker.contactOk}
+          disabled={busy !== null || (!seeker.showPublic && !seeker.contactOk)}
+          onChange={(on) =>
+            run(
+              "contact",
+              () => setMyAdoptionSeekerContact(getBrowserClient(), on),
+              on ? "Pronto: quem anuncia pode puxar conversa com você." : "Contato desligado.",
+            )
+          }
+          label="Aceito ser contatado por quem anuncia"
+          description={
+            seeker.showPublic
+              ? "ONGs e protetores com animal disponível podem iniciar uma conversa pelo chat da MEL. Eles veem só o que aparece na lista. Você pode bloquear ou denunciar."
+              : "Só vale para quem aparece na lista pública “Querem adotar”. Para aparecer, edite seu interesse."
+          }
+        />
+      </div>
 
       {error && <Alert tone="error">{error}</Alert>}
 

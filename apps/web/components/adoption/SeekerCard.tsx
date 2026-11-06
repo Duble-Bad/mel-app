@@ -1,8 +1,12 @@
+import type { ReactNode } from "react";
 import { MapPin, PawPrint } from "lucide-react";
 import { seekerPreferenceLabel, type PublicSeeker } from "@mel/core";
 
-/** Pessoa na lista pública "Querem adotar": só primeiro nome, bairro e preferências (nada de contato). */
-export function SeekerCard({ s }: { s: PublicSeeker }) {
+/**
+ * Pessoa na lista pública "Querem adotar": só primeiro nome, bairro e
+ * preferências (nada de contato). `action`: o "Conversar", só para quem anuncia.
+ */
+export function SeekerCard({ s, action }: { s: PublicSeeker; action?: ReactNode }) {
   const initial = (s.firstName ?? "?").charAt(0).toUpperCase();
   return (
     <article className="flex h-full items-start gap-3.5 rounded-[18px] border border-border bg-surface p-5">
@@ -19,6 +23,7 @@ export function SeekerCard({ s }: { s: PublicSeeker }) {
           <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2} />
           <span className="truncate">{s.areaLabel}</span>
         </p>
+        {action}
       </div>
     </article>
   );

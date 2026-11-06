@@ -4,12 +4,15 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { CircleCheck, Heart, House, Lock, MessageCircle, Plus, Search, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { SEEKER_VALID_DAYS, SPECIES, type PublicAdoption, type PublicSeeker, type Species } from "@mel/core";
-import { listAdoptions, listPublicAdoptionSeekers } from "@mel/data";
+import { type ContactListing, listAdoptions, listMyListingsForSeekerContact, listPublicAdoptionSeekers } from "@mel/data";
+import { getSessionUser } from "@/lib/session";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createSessionClient } from "@/lib/supabase/server";
 import { AdoptionCard } from "@/components/adoption/AdoptionCard";
 import { AdoptionTabs } from "@/components/adoption/AdoptionTabs";
 import { ADOPTION_TABS, type AdoptionTabId } from "@/components/adoption/tabs";
 import { SeekerCard } from "@/components/adoption/SeekerCard";
+import { SeekerContactButton } from "@/components/adoption/SeekerContactButton";
 import { ButtonLink } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/States";
 import { PetCardSkeleton } from "@/components/ui/Surface";
@@ -66,12 +69,18 @@ export default function AdoptionListPage({ searchParams }: PageProps<"/adocao">)
 async function Content({ species, tab }: { species: Species | null; tab: AdoptionTabId }) {
   await connection();
   const client = createPublicClient();
-  const [adoptions, seekers] = await Promise.allSettled([
+  // Quem anuncia um animal disponível vê o "Conversar" na fila: a lista vem pela
+  // sessão (o banco só devolve a referência de contato para essa pessoa).
+  const user = await getSessionUser();
+  const session = user && !user.isAnonymous ? await createSessionClient() : null;
+  const [adoptions, seekers, contactListings] = await Promise.allSettled([
     listAdoptions(client, { species: species ? [species] : undefined, pageSize: 48 }),
-    listPublicAdoptionSeekers(client, { pageSize: 24 }),
+    listPublicAdoptionSeekers(session ?? client, { pageSize: 24 }),
+    session ? listMyListingsForSeekerContact(session) : Promise.resolve([] as ContactListing[]),
   ]);
   if (adoptions.status === "rejected") console.error("[adocao] falha nos anúncios", adoptions.reason);
   if (seekers.status === "rejected") console.error("[adocao] falha na fila pública", seekers.reason);
+  if (contactListings.status === "rejected") console.error("[adocao] falha nos anúncios para contato", contactListings.reason);
   return (
     <AdoptionTabs
       initial={tab}
@@ -82,7 +91,12 @@ async function Content({ species, tab }: { species: Species | null; tab: Adoptio
           ) : (
             <ErrorState>Não conseguimos carregar os anúncios agora. Atualize a página.</ErrorState>
           ),
-        "quero-adotar": <SeekersPanel seekers={seekers.status === "fulfilled" ? seekers.value : null} />,
+        "quero-adotar": (
+          <SeekersPanel
+            seekers={seekers.status === "fulfilled" ? seekers.value : null}
+            contactListings={contactListings.status === "fulfilled" ? contactListings.value : []}
+          />
+        ),
         "como-funciona": <HowItWorks />,
       }}
     />
@@ -146,7 +160,13 @@ const QUEUE_RULES = [
   `O interesse vale por ${SEEKER_VALID_DAYS} dias e pode ser renovado. Avisamos antes de expirar.`,
 ];
 
-function SeekersPanel({ seekers }: { seekers: { items: PublicSeeker[]; total: number } | null }) {
+function SeekersPanel({
+  seekers,
+  contactListings,
+}: {
+  seekers: { items: PublicSeeker[]; total: number } | null;
+  contactListings: ContactListing[];
+}) {
   return (
     <div className="flex flex-col gap-10">
       <div className="grid items-start gap-7 min-[960px]:grid-cols-2 min-[960px]:gap-14">
@@ -190,6 +210,11 @@ function SeekersPanel({ seekers }: { seekers: { items: PublicSeeker[]; total: nu
             <p className="mt-1 max-w-[62ch] text-text-secondary">
               Pessoas aprovadas pela moderação que escolheram aparecer aqui. Mostramos só o primeiro nome, o bairro e o que procuram.
             </p>
+            {contactListings.length > 0 && (
+              <p className="mt-1 max-w-[62ch] text-sm text-text-secondary">
+                Você tem animal disponível: em quem aceitou ser contatado aparece “Conversar”. A conversa fica no chat da MEL.
+              </p>
+            )}
           </div>
           {seekers && seekers.total > 0 && <p className="text-sm text-text-secondary">{seekers.total === 1 ? "1 pessoa" : `${seekers.total} pessoas`}</p>}
         </div>
@@ -205,7 +230,14 @@ function SeekersPanel({ seekers }: { seekers: { items: PublicSeeker[]; total: nu
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">
             {seekers.items.map((s, i) => (
               <li key={`${s.firstName}-${s.areaLabel}-${i}`}>
-                <SeekerCard s={s} />
+                <SeekerCard
+                  s={s}
+                  action={
+                    s.contactRef && contactListings.length > 0 ? (
+                      <SeekerContactButton contactRef={s.contactRef} firstName={s.firstName} listings={contactListings} />
+                    ) : undefined
+                  }
+                />
               </li>
             ))}
           </ul>

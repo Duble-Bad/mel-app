@@ -10,11 +10,12 @@ interface ConversationJson {
   pet_name: string;
   pet_thumb_path: string | null;
   my_role: "owner" | "helper";
-  peer_id: string;
+  peer_id: string | null;
   peer_name: string | null;
   peer_is_anonymous: boolean;
   from_sighting: boolean;
   from_found?: boolean;
+  from_seeker_queue?: boolean;
   blocked_by_me: boolean;
   can_send: boolean;
   created_at: string;
@@ -51,6 +52,7 @@ function toConversation(client: MelClient, c: ConversationJson): Conversation {
     peerIsAnonymous: c.peer_is_anonymous,
     fromSighting: c.from_sighting,
     fromFound: c.from_found === true,
+    fromSeekerQueue: c.from_seeker_queue === true,
     blockedByMe: c.blocked_by_me,
     canSend: c.can_send,
     createdAt: c.created_at,
