@@ -24,6 +24,8 @@ function styleUrl(theme: "light" | "dark" = "light"): string {
 
 function pinElement(kind: PinKind, label: string): HTMLButtonElement {
   const s = PIN_STYLE[kind];
+  // Mesmas cores da legenda do mapa da rede; no dourado (adoção, parceiro) o ícone é escuro.
+  const gold = kind === "adoption" || kind === "business";
   const el = document.createElement("button");
   el.type = "button";
   el.setAttribute("aria-label", `${s.label}: ${label}`);
@@ -33,8 +35,8 @@ function pinElement(kind: PinKind, label: string): HTMLButtonElement {
     height: "36px",
     borderRadius: "9999px",
     border: `3px solid ${colors.surface}`,
-    background: s.color,
-    color: colors["text-inverse"],
+    background: AREA_COLORS[kind],
+    color: gold ? "#1c1404" : "#ffffff",
     fontWeight: "700",
     boxShadow: "0 1px 4px rgb(0 0 0 / 0.35)",
     cursor: "pointer",
@@ -74,6 +76,7 @@ function areaDotElement(kind: PinKind, label: string, id: string): HTMLButtonEle
   el.type = "button";
   el.className = "mel-area-dot";
   el.dataset.pinId = id;
+  el.dataset.kind = kind;
   el.style.setProperty("--c", AREA_COLORS[kind]);
   // Mesmo nome acessível dos pinos ("Perdido: Thor"), mais o aviso de área aproximada.
   // No mapa da rede o tipo "sighting" é o "Visto" (solto na rua), como na legenda e nos filtros.
@@ -133,6 +136,8 @@ async function mountMap(el: HTMLElement, opts: MapOptions, mode: "pins" | "areas
     pitchWithRotate: false,
   });
   map.touchZoomRotate.disableRotation();
+  // Tema no contêiner: o CSS do mapa veste os controles (zoom, atribuição) no mesmo tema.
+  el.dataset.mapTheme = opts.theme ?? "light";
   // No mapa da rede os botões de zoom são da própria tela (estilo do Conceito B).
   if (mode === "pins") map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
 
@@ -252,6 +257,15 @@ async function mountMap(el: HTMLElement, opts: MapOptions, mode: "pins" | "areas
       map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
     }
   }
+  if (mode === "areas") {
+    // Vista atual (centro e zoom) no próprio elemento: o teste projeta as áreas e confere os pontos.
+    const view = () => {
+      const c = map.getCenter();
+      el.dataset.view = `${c.lat},${c.lng},${map.getZoom()}`;
+    };
+    view();
+    map.on("move", view);
+  }
   const refreshAreas = () => {
     (map.getSource(AREAS_ID) as { setData?: (d: unknown) => void } | undefined)?.setData?.(areaData());
     (map.getSource(`${AREAS_ID}-pts`) as { setData?: (d: unknown) => void } | undefined)?.setData?.(areaPoints());
@@ -281,6 +295,13 @@ async function mountMap(el: HTMLElement, opts: MapOptions, mode: "pins" | "areas
       markers = pins.map((pin) => {
         const node = mode === "areas" ? areaDotElement(pin.kind, pin.label, pin.id) : pinElement(pin.kind, pin.label);
         if (mode === "areas" && pin.id === activeId) node.setAttribute("data-active", "");
+        if (mode === "areas") {
+          // Coordenadas já públicas (célula de 100 m e o ponto na tela): o teste de geometria
+          // confere que o ponto fica sobre a sua área em qualquer zoom e posição.
+          const area = pin.area ?? pin.position;
+          node.dataset.pos = `${pin.position.lat},${pin.position.lng}`;
+          node.dataset.area = `${area.lat},${area.lng}`;
+        }
         node.addEventListener("click", () => pinClick.forEach((cb) => cb(pin.id)));
         return new maplibre.Marker({ element: node }).setLngLat([pin.position.lng, pin.position.lat]).addTo(map);
       });

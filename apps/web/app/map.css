@@ -345,15 +345,62 @@
   width: 20px;
   height: 20px;
 }
-/* A atribuição do MapTiler/OSM sobe para não ficar sob a legenda. */
+/* A atribuição do MapTiler/OSM (obrigatória) ganha uma linha própria no canto inferior
+   esquerdo; a legenda sobe para não ficar por cima dela, e os botões ficam à direita. */
 .mel-mapa__map .maplibregl-ctrl-bottom-right {
-  bottom: 0;
-  right: 64px;
+  right: auto;
+  bottom: 2px;
+  left: 6px;
+}
+.mel-mapa__map .mel-map-legend {
+  bottom: 36px;
 }
 
-/* Ponto central de cada área (marcador do MapLibre: o transform é dele, por isso o realce fica nos filhos). */
+/* Mapas de detalhe (alerta, encontrado): zoom da MEL no canto, menor. */
+.mel-map-controls--compact {
+  top: 10px;
+  right: 10px;
+  bottom: auto;
+}
+.mel-map-controls--compact button {
+  width: 40px;
+  height: 40px;
+}
+
+/* Atribuição obrigatória (MapTiler/OpenStreetMap) e zoom do MapLibre no tema escuro da MEL:
+   o "i" compacto vira um chip escuro discreto; aberto, o texto e os links continuam legíveis. */
+[data-map-theme="dark"] .maplibregl-ctrl-attrib.maplibregl-compact,
+[data-map-theme="dark"] .maplibregl-ctrl-attrib {
+  background: rgb(10 17 29 / 0.82);
+  color: #c9d1dc;
+}
+[data-map-theme="dark"] .maplibregl-ctrl-attrib a {
+  color: #dbe1ea;
+}
+[data-map-theme="dark"] .maplibregl-ctrl-attrib-button {
+  background-color: transparent;
+  filter: invert(1);
+}
+[data-map-theme="dark"] .maplibregl-ctrl-group {
+  border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(10 17 29 / 0.88);
+}
+[data-map-theme="dark"] .maplibregl-ctrl-group button + button {
+  border-top-color: rgb(255 255 255 / 0.16);
+}
+[data-map-theme="dark"] .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+
+/* Ponto central de cada área (marcador do MapLibre: o transform é dele, por isso o realce fica nos filhos).
+   Sem `position` aqui: o MapLibre põe `position: absolute; top: 0; left: 0` no marcador. Um
+   `position: relative` (como antes) vencia quando este CSS carregava depois do MapLibre (vindo
+   da home) e os pontos entravam no fluxo: cada um deslocado 30 px pela largura dos anteriores,
+   longe do seu círculo. A regra abaixo, mais específica, garante o absoluto em qualquer ordem. */
+.maplibregl-marker.mel-area-dot {
+  position: absolute;
+}
 .mel-area-dot {
-  position: relative;
   width: 30px;
   height: 30px;
   border: 0;

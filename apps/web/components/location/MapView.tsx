@@ -1,15 +1,22 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
+import "@/app/map.css";
 import { useEffect, useRef, useState } from "react";
-import type { LatLng, MapPin } from "@mel/core";
-import { mapLibreProvider } from "@/lib/map/maplibre";
+import { Minus, Plus } from "lucide-react";
+import type { LatLng, MapHandle, MapPin } from "@mel/core";
+import { type AreaMapHandle, mapLibreAreasProvider, mapLibreProvider } from "@/lib/map/maplibre";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 /**
  * Mapa só de visualização (página do alerta, listas). Só carrega o MapLibre e
  * pede o mapa ao MapTiler quando a área do mapa chega perto da tela: quem abre o
  * alerta pelo WhatsApp e toca em "Eu vi este pet" não paga ~1,5 MB nem uma carga
  * de mapa da cota.
+ *
+ * Mesmo tema do mapa da rede (segue o tema da tela). Com `approximate`, os pontos
+ * são áreas aproximadas (círculo de ~100 m em volta do ponto público, igual ao /mapa)
+ * e os botões de zoom são os da MEL; sem ele (parceiros), pinos com o zoom do MapLibre.
  */
 export function MapView({
   center,
@@ -18,6 +25,7 @@ export function MapView({
   path,
   label,
   className = "h-56",
+  approximate = false,
 }: {
   center: LatLng;
   zoom?: number;
@@ -26,8 +34,12 @@ export function MapView({
   path?: LatLng[];
   label: string;
   className?: string;
+  /** Pontos públicos aproximados: desenha a área de ~100 m, como no mapa da rede. */
+  approximate?: boolean;
 }) {
+  const { resolvedTheme } = useTheme();
   const el = useRef<HTMLDivElement>(null);
+  const handle = useRef<AreaMapHandle | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [near, setNear] = useState(false);
   // Antes de chegar perto da tela, o mapa só espera (nada é baixado).
@@ -58,13 +70,15 @@ export function MapView({
     if (!near || !el.current) return;
     let cancelled = false;
     let destroy: (() => void) | undefined;
-    mapLibreProvider
-      .mount(el.current, { center, zoom })
-      .then((map) => {
+    const provider = approximate ? mapLibreAreasProvider : mapLibreProvider;
+    provider
+      .mount(el.current, { center, zoom, theme: resolvedTheme })
+      .then((map: MapHandle) => {
         if (cancelled) return map.destroy();
         map.setPins(pins);
         if (path && path.length > 1) map.drawPath(path);
         if (pins.length > 1) map.fitTo(pins.map((p) => p.position));
+        handle.current = approximate ? (map as AreaMapHandle) : null;
         destroy = () => map.destroy();
         setStatus("ready");
       })
@@ -74,15 +88,26 @@ export function MapView({
       });
     return () => {
       cancelled = true;
+      handle.current = null;
       destroy?.();
     };
-    // Mapa estático: criado uma vez com os dados da página.
+    // Mapa estático: criado uma vez com os dados da página (o tema remonta o estilo).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [near]);
+  }, [near, resolvedTheme]);
 
   return (
     <div className="relative overflow-hidden rounded-lg border-2 border-border">
       <div ref={el} role="img" aria-label={label} className={`${className} w-full bg-surface-muted`} data-map-status={shown} />
+      {approximate && shown === "ready" && (
+        <div className="mel-map-controls mel-map-controls--compact">
+          <button type="button" aria-label="Aproximar" onClick={() => handle.current?.zoomBy(1)}>
+            <Plus aria-hidden="true" />
+          </button>
+          <button type="button" aria-label="Afastar" onClick={() => handle.current?.zoomBy(-1)}>
+            <Minus aria-hidden="true" />
+          </button>
+        </div>
+      )}
       {shown === "loading" && (
         <p role="status" className="absolute inset-0 flex items-center justify-center bg-surface-muted text-text-secondary">
           Carregando mapa…
