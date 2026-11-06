@@ -210,6 +210,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               key={visibleSightings.length}
               center={c.point}
               zoom={15}
+              areaLabel={c.areaLabel}
               pins={[
                 { id: c.code, kind: "lost", position: c.point, label: `${c.pet.name}, último local conhecido` },
                 ...visibleSightings.map((s, i) => ({

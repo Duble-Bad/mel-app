@@ -353,7 +353,8 @@
   left: 6px;
 }
 .mel-mapa__map .mel-map-legend {
-  bottom: 36px;
+  /* Acima do "i" fechado (24 px + margem do MapLibre), sem encostar no canto da legenda. */
+  bottom: 44px;
 }
 
 /* Mapas de detalhe (alerta, encontrado): zoom da MEL no canto, menor. */

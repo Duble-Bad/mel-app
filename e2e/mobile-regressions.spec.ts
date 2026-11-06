@@ -258,3 +258,29 @@ test("photo gallery: thumbnails, enlarge, next/previous, close (✕ and Esc) and
   await page.reload();
   await expect(page.getByRole("img", { name: "Foto indisponível" })).toBeVisible();
 });
+
+test("detail map opens with the public area name visible, taller, with attribution — directly and from the map side panel", async ({ page }) => {
+  test.slow();
+  const t = await createTutorWithActiveAlert("detail-map", { petName: "Regiao" });
+  created.push(t.email);
+  const check = async () => {
+    const section = page.locator('section[aria-labelledby="mapa"]');
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.locator('[data-map-status="ready"]')).toBeVisible({ timeout: 20_000 });
+    // O bairro aparece sem interação (não depende dos rótulos do estilo no zoom inicial).
+    await expect(section.getByTestId("map-area-label")).toHaveText("Sé, São Paulo – SP");
+    // Mais alto que antes (224 px) e sem rolagem horizontal.
+    expect((await section.locator('[data-map-status="ready"]').boundingBox())!.height).toBeGreaterThanOrEqual(280);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await expect(section.locator(".maplibregl-ctrl-attrib")).toContainText("OpenStreetMap");
+  };
+  await page.goto(`/alerta/${t.code}`);
+  await check();
+
+  // Pelo painel lateral do mapa da rede (navegação no cliente).
+  await page.goto("/mapa");
+  await page.getByTestId("case-card").filter({ hasText: "Regiao" }).first().click();
+  await page.getByTestId("map-selected").getByRole("link", { name: "Ver alerta" }).click();
+  await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}`));
+  await check();
+});

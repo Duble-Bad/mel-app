@@ -3,7 +3,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/map.css";
 import { useEffect, useRef, useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import { MapPin as MapPinIcon, Minus, Plus } from "lucide-react";
 import type { LatLng, MapHandle, MapPin } from "@mel/core";
 import { type AreaMapHandle, mapLibreAreasProvider, mapLibreProvider } from "@/lib/map/maplibre";
 import { useTheme } from "@/components/theme/ThemeProvider";
@@ -17,6 +17,8 @@ import { useTheme } from "@/components/theme/ThemeProvider";
  * Mesmo tema do mapa da rede (segue o tema da tela). Com `approximate`, os pontos
  * são áreas aproximadas (círculo de ~100 m em volta do ponto público, igual ao /mapa)
  * e os botões de zoom são os da MEL; sem ele (parceiros), pinos com o zoom do MapLibre.
+ * `areaLabel` fica num chip fixo: o bairro aparece sem depender dos rótulos do estilo
+ * (que somem no zoom 14 exato do estilo escuro e podem cair fora de um mapa baixo).
  */
 export function MapView({
   center,
@@ -24,8 +26,9 @@ export function MapView({
   pins,
   path,
   label,
-  className = "h-56",
+  className = "h-72 sm:h-[340px]",
   approximate = false,
+  areaLabel,
 }: {
   center: LatLng;
   zoom?: number;
@@ -36,6 +39,8 @@ export function MapView({
   className?: string;
   /** Pontos públicos aproximados: desenha a área de ~100 m, como no mapa da rede. */
   approximate?: boolean;
+  /** Região pública (ex.: "Mooca, São Paulo – SP"), sempre visível sobre o mapa. */
+  areaLabel?: string | null;
 }) {
   const { resolvedTheme } = useTheme();
   const el = useRef<HTMLDivElement>(null);
@@ -98,6 +103,12 @@ export function MapView({
   return (
     <div className="relative overflow-hidden rounded-lg border-2 border-border">
       <div ref={el} role="img" aria-label={label} className={`${className} w-full bg-surface-muted`} data-map-status={shown} />
+      {areaLabel && shown === "ready" && (
+        <p className="mel-map-chip pointer-events-none absolute top-2.5 left-2.5 z-[2] flex max-w-[calc(100%-72px)] items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold" data-testid="map-area-label">
+          <MapPinIcon aria-hidden="true" className="size-3.5 shrink-0 text-[#f6b928]" strokeWidth={2.25} />
+          <span className="truncate">{areaLabel}</span>
+        </p>
+      )}
       {approximate && shown === "ready" && (
         <div className="mel-map-controls mel-map-controls--compact">
           <button type="button" aria-label="Aproximar" onClick={() => handle.current?.zoomBy(1)}>

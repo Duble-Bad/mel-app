@@ -187,8 +187,10 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
             </h2>
             <MapView
               center={f.point}
-              zoom={14}
+              // 14,5: no zoom 14 exato o estilo escuro do MapTiler não posiciona nenhum rótulo.
+              zoom={14.5}
               approximate
+              areaLabel={f.areaLabel ? `${f.areaLabel} · área aproximada` : "Área aproximada"}
               pins={[{ id: f.code, kind: f.custody === "street" ? "sighting" : "found", position: f.point, label: "Região aproximada" }]}
               label="Mapa da região aproximada onde o animal foi encontrado"
             />
