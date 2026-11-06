@@ -55,8 +55,11 @@ Estado: **31 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev
 | 38 | `20261106125000_adoption_my_interest.sql` | Decisão 7 | `my_interest` no anúncio (só para quem enviou). **Pendente no `mel-prod`.** |
 | 39 | `20261106130000_partner_kind_and_documents.sql` | Decisões 8–10 | `partner_kind`; CNPJ obrigatório para empresa/ONG (privado, fila de verificação desligada); `partner_documents` (CPF só cifrado + HMAC único, só service role), `pii_access_grants`, `partner_document_access_log`; ponto aproximado para ONG e protetor; patrocínio fora da ordenação. **Pendente no `mel-prod`.** |
 | 40 | `20261106140000_export_my_data_seekers_partners.sql` | LGPD | "Baixar meus dados" com a fila de adoção e o registro (sem número) do CPF. **Pendente no `mel-prod`.** |
+| 41 | `20261106150000_adoption_seeker_chat.sql` | Decisão do proprietário (chat de adoção) | Anunciante com anúncio disponível inicia conversa privada com interessado aprovado que aceitou contato (`contact_ok`, desligado por padrão; `contact_ref` aleatória e renovável); reusa `conversations` (`adoption_seeker_id`); limites diários; push pelo gatilho existente. **Pendente no `mel-prod`.** |
+| 42 | `20261106160000_pii_admin_reveal_and_document_state.sql` | Decisão do proprietário + requisitos de CPF | CPF completo só para titular e admin com autorização explícita (moderador vê só o estado); `read_state` (ok/ilegível/chave indisponível); guarda/troca/recifra do CPF só pelo servidor, duplicidade entre versões de HMAC; `personal_data_changes` (auditoria sem valores); troca de CPF volta para revisão. **Pendente no `mel-prod`.** |
+| 43 | `20261106161000_contact_validation_and_holder_corrections.sql` | Requisitos de dados | Regra de telefone (DDD válido, celular/fixo) só para valores novos ou alterados; auditoria de troca de CNPJ e telefones; `my_personal_data()` e correção do WhatsApp da fila pelo titular. **Pendente no `mel-prod`.** |
 
-Inventário resultante das 40 migrations (banco reconstruído, 2026-11-05; o `mel-prod` ainda está nas 23 primeiras): 29 tabelas, 363 colunas, 18 enums, 51 funções `public` + 64 `private`, 31 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 64 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
+Inventário resultante das 43 migrations (banco reconstruído, 2026-11-06; o `mel-prod` ainda está nas 23 primeiras): 30 tabelas, 376 colunas, 18 enums, 59 funções `public` + 71 `private`, 40 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 65 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
 
 ## Garantias versionadas
 
@@ -72,7 +75,7 @@ Inventário resultante das 40 migrations (banco reconstruído, 2026-11-05; o `me
 1. `npx supabase migration new <nome>` e escreva o SQL (com RLS, grants e `search_path`).
 2. `npm run db:push` (só aplica no `mel-dev`; a trava recusa qualquer outro alvo) e `npm run db:types`.
 3. Testes: `npm run check`, `npm run test:db`, E2E se tocar em fluxo.
-4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 40).
+4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 43).
 5. Push na `main`. O workflow de reconstrução gera `schema-fingerprint.generated.json`; versione-o como `supabase/schema-fingerprint.json` (ou rode `node scripts/schema-audit/audit.mjs --write-fingerprint` contra um Supabase local).
 6. Produção: só com autorização explícita, pelo procedimento de [08-deploy-producao.md](08-deploy-producao.md).
 

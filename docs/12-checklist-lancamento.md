@@ -29,7 +29,7 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 | # | Item | Observação |
 |---|---|---|
 | 2.1 | Checks verdes no commit que vai para produção | Pre-flight confere pela API do GitHub |
-| 2.2 | Aplicar as migrations **24–40** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade; 30 traz o push do tutor; 31 recupera push preso; 32 muda o ponto público para 100 m; 33–38 fila de adoção; 39 parceiros (CPF cifrado, CNPJ); 40 LGPD. Pre-flight e pós-deploy já esperam 40. Antes: configurar as chaves `MEL_PII_*` no servidor |
+| 2.2 | Aplicar as migrations **24–43** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade; 30 traz o push do tutor; 31 recupera push preso; 32 muda o ponto público para 100 m; 33–38 fila de adoção; 39 parceiros (CPF cifrado, CNPJ); 40 LGPD. 41 chat de adoção; 42–43 CPF/dados pessoais. Pre-flight e pós-deploy já esperam 43. Antes: configurar as chaves `MEL_PII_*` no servidor |
 | 2.3 | Pós-deploy aprovado (catálogo + impressão digital) | Reprovado → não seguir |
 | 2.4 | `scripts/sighting-media-neutral-names.mjs` (listar → `--apply` → conferir 0/0) | Passo a passo no `08`. Se listar 0 e 0, nada a fazer |
 

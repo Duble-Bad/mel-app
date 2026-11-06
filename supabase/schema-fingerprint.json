@@ -1,43 +1,43 @@
 {
   "columns": {
-    "count": 363,
-    "sha256": "4305c84cdbf50ee587bdcccce527a3d790db872e9a490a9417a2b2382ef4777b"
+    "count": 376,
+    "sha256": "b1d0e81f0221e6da1e498b57228cffc7f4150756e06da0672c9ca5411edc794f"
   },
   "constraints": {
-    "count": 230,
-    "sha256": "2b7f0b7cf59de93040e2e59d695aee05602c8d8eb28b210e06a5f877d0ad23dd"
+    "count": 239,
+    "sha256": "2f21a048456b59e92d1ba659fca64610ae8e3cbdd9a14970236127b6ecab42c4"
   },
   "indexes": {
-    "count": 104,
-    "sha256": "240d9417c4b39510540d0c0fca239ab9bc05a676098d794a3397800ac94eceb8"
+    "count": 112,
+    "sha256": "1ddf90168b41a46225f05d629407c535cdab6a0a7d0ab16a61878f2135380390"
   },
   "enums": {
     "count": 18,
     "sha256": "56a8aabc42963c93cf8ba555f271fee9b097ce5ad95c22b3cbb66011f8484c27"
   },
   "functions": {
-    "count": 115,
-    "sha256": "4fba7f9e4832f4da653239afff24101ca8c65afe058b11e6388d66161fa0d674"
+    "count": 130,
+    "sha256": "f37a91aad155e1a1da941fde90bb677234df4df2df6a99370b619cf31076b450"
   },
   "function_grants": {
-    "count": 345,
-    "sha256": "1aa2204f013f249f6da7b5eee48d05b08450ccf10a616a1cb52ed1104379a73e"
+    "count": 390,
+    "sha256": "f9731488a3cc9c4ea30b94c83b9177cc8ab4af74f6fa52d263069a4041f25020"
   },
   "triggers": {
-    "count": 31,
-    "sha256": "6698a29de4553328c4415c434615d5c04b14a0441b4ce232d16636e72797704e"
+    "count": 40,
+    "sha256": "ac7e24604d3963057c6459049abb3534bb65b5cb51d2a4b064d4a7a6b2b860f0"
   },
   "policies": {
-    "count": 73,
-    "sha256": "9dcd5a0e30e39f17baf87691dd42636433a4f3577f4f1e37d48fd1893dd4ebc2"
+    "count": 74,
+    "sha256": "c420016b3547908ffaf7beeb0ea80ea920a623318c9276c17efafc542d43a789"
   },
   "rls": {
-    "count": 29,
-    "sha256": "856fb39b92e5a4616ca1b47c035a8fa4e81367b8014e2f927380c82f91ad0326"
+    "count": 30,
+    "sha256": "22a01c5329d6700768a8986d3ed672ea2a49e9a2a1a3bde8f6b936c6873805a9"
   },
   "table_grants": {
-    "count": 249,
-    "sha256": "2f4e26f92a7f73be607c20712ada36d75e5e34c3659cabbcae2dd9608aff91d9"
+    "count": 257,
+    "sha256": "e80545cec1d7ff7e0b6e8c282a6ca16bd4d88b917fd9179b6a1285d52e09711b"
   },
   "schema_grants": {
     "count": 6,
