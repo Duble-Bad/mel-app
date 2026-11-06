@@ -5,23 +5,23 @@ import "@/app/map.css";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Clock, LoaderCircle, LocateFixed, MapPin, Minus, Plus, Search, SearchX, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { distanceMeters, formatDistance, type PublicCaseItem, type SearchFilters, userErrorMessage } from "@mel/core";
-import { listAdoptions, searchPublicCases } from "@mel/data";
+import { distanceMeters, formatDistance, PERIOD_LABELS, PUBLIC_KINDS, type PublicCaseItem, type RadiusKm, type SearchFilters, userErrorMessage } from "@mel/core";
+import { listAdoptions, searchAdoptionsOnMap, searchPublicCases } from "@mel/data";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { type AreaMapHandle, mapLibreAreasProvider } from "@/lib/map/maplibre";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { useTheme } from "@/components/theme/ThemeProvider";
-import { adoptionEntry, caseEntry, feedQuery, type FeedEntry, type FeedState, includesAdoption, includesCases, KIND_BADGE, kindsFor } from "./feed";
+import { adoptionEntry, adoptionMapEntry, caseEntry, FEED_KINDS, feedQuery, type FeedEntry, type FeedState, includesAdoption, includesCases, KIND_BADGE, kindsFor } from "./feed";
 import { FeedFiltersBar } from "./FeedFiltersBar";
-import { toPins, ZOOM_BY_RADIUS } from "./pins";
+import { casePoint, spreadPins, ZOOM_BY_RADIUS } from "./pins";
 import { MapDrawer } from "./MapDrawer";
 import { PetPhoto } from "@/components/ui/PetPhoto";
 
-const LEGEND = ["lost", "found", "sighting", "adoption"] as const;
+const CASE_LEGEND = ["lost", "found", "sighting"] as const;
 
 type Load =
   | { status: "loading" }
-  | { status: "ok"; cases: PublicCaseItem[]; total: number; entries: FeedEntry[]; adoptions: number }
+  | { status: "ok"; cases: PublicCaseItem[]; total: number; entries: FeedEntry[]; adoptions: number; adoptionPins: FeedEntry[] }
   | { status: "error" };
 
 /**
@@ -29,7 +29,7 @@ type Load =
  * com áreas aproximadas (~100 m) à direita; no celular, alternador Lista/Mapa.
  * Tocar numa área ou num cartão abre a gaveta com os dados públicos do caso.
  */
-export function MapExplorer({ state }: { state: FeedState }) {
+export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedState; showAdoptionOnMap?: boolean }) {
   const { filters, feed } = state;
   const router = useRouter();
   const pathname = usePathname();
@@ -53,6 +53,13 @@ export function MapExplorer({ state }: { state: FeedState }) {
   const load: Load = result?.key === filtersKey ? result.load : { status: "loading" };
   const entries = load.status === "ok" ? load.entries : [];
   const selected = (picked?.key === filtersKey && entries.find((e) => e.id === picked.id)) || null;
+  // Em "Todos", tipos sem nenhum caso no raio/período: diz isso claramente (antes parecia
+  // que Perdido e Visto tinham sumido do mapa, quando só estavam fora dos 5 km padrão).
+  const missingKinds = load.status === "ok" && feed === "all" && load.total > 0 ? PUBLIC_KINDS.filter((k) => !load.cases.some((c) => c.kind === k)) : [];
+  const wider = ([3, 5, 10] as RadiusKm[]).find((r) => r > filters.radiusKm);
+  const noCasesOnMap = load.status === "ok" && load.cases.length === 0 && load.adoptionPins.length === 0;
+  // Legenda só com o que pode aparecer no mapa (adoção só com a configuração ligada).
+  const legend = showAdoptionOnMap ? [...CASE_LEGEND, "adoption" as const] : CASE_LEGEND;
   const keyRef = useRef(filtersKey);
   // Centro e raio atuais para o "Buscar nesta área" (o onMove é registrado uma vez só).
   const areaRef = useRef({ center: filters.center, radiusKm: filters.radiusKm });
@@ -116,18 +123,30 @@ export function MapExplorer({ state }: { state: FeedState }) {
     const cases = includesCases(feed)
       ? searchPublicCases(client, { ...filters, kinds: kindsFor(feed) }, { pageSize: 100 })
       : Promise.resolve({ items: [] as PublicCaseItem[], total: 0 });
-    // Adoção não tem ponto público: entra só na lista. Falhar aqui não derruba o mapa.
-    const adoptions = includesAdoption(feed)
-      ? listAdoptions(client, { species: filters.species, pageSize: feed === "adoption" ? 60 : 12 }).catch((err) => {
+    // Adoção: com a configuração do administrador ligada, anúncios da região no mapa (ponto
+    // público aproximado); desligada, só na lista. Falhar aqui não derruba o mapa.
+    const adoptions: Promise<{ entries: FeedEntry[]; total: number; onMap: boolean }> = !includesAdoption(feed)
+      ? Promise.resolve({ entries: [], total: 0, onMap: false })
+      : (showAdoptionOnMap
+          ? searchAdoptionsOnMap(client, { center: filters.center, radiusKm: filters.radiusKm, species: filters.species }).then((items) => ({
+              entries: items.map(adoptionMapEntry),
+              total: items.length,
+              onMap: true,
+            }))
+          : listAdoptions(client, { species: filters.species, pageSize: feed === "adoption" ? 60 : 12 }).then((a) => ({
+              entries: a.items.map(adoptionEntry),
+              total: a.total,
+              onMap: false,
+            }))
+        ).catch((err) => {
           console.error("[mapa] adoção falhou", err);
-          return { items: [], total: 0 };
-        })
-      : Promise.resolve({ items: [], total: 0 });
+          return { entries: [], total: 0, onMap: false };
+        });
     Promise.all([cases, adoptions])
       .then(([c, a]) => {
         if (cancelled) return;
-        const entries = [...c.items.map(caseEntry), ...a.items.map(adoptionEntry)];
-        setResult({ key, load: { status: "ok", cases: c.items, total: c.total, entries, adoptions: a.total } });
+        const entries = [...c.items.map(caseEntry), ...a.entries];
+        setResult({ key, load: { status: "ok", cases: c.items, total: c.total, entries, adoptions: a.total, adoptionPins: a.onMap ? a.entries : [] } });
       })
       .catch((err) => {
         console.error("[mapa] busca falhou", err);
@@ -142,7 +161,11 @@ export function MapExplorer({ state }: { state: FeedState }) {
   // Áreas: desenha quando o mapa está pronto E há resultado, em qualquer ordem
   // (a busca pode terminar antes ou depois de o mapa carregar).
   useEffect(() => {
-    if (mapState === "ready") handle.current?.setPins(toPins(result?.load.status === "ok" ? result.load.cases : []));
+    if (mapState !== "ready") return;
+    const ok = result?.load.status === "ok" ? result.load : null;
+    // Casos e (com a configuração ligada) anúncios de adoção, todos pelo ponto público aproximado.
+    const adoptionPoints = (ok?.adoptionPins ?? []).flatMap((e) => (e.position ? [{ id: e.id, kind: "adoption" as const, position: e.position, label: e.title }] : []));
+    handle.current?.setPins(spreadPins([...(ok?.cases ?? []).map(casePoint), ...adoptionPoints]));
   }, [mapState, mapVersion, result]);
 
   // Realce: a área do cartão sob o mouse ou a do caso aberto.
@@ -186,6 +209,20 @@ export function MapExplorer({ state }: { state: FeedState }) {
         {toggle}
       </div>
 
+      {missingKinds.length > 0 && (
+        <p role="status" data-testid="map-missing-kinds" className="-mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary">
+          <span>
+            Sem {joinPt(missingKinds.map((k) => FEED_KINDS.find((o) => o.value === k)!.label))} até {filters.radiusKm} km
+            {filters.period === "todos" ? "" : ` nos últimos ${PERIOD_LABELS[filters.period]}`}.
+          </span>
+          {wider && (
+            <button type="button" onClick={() => go({ radiusKm: wider })} className="font-semibold text-link underline underline-offset-4">
+              Ampliar para {wider} km
+            </button>
+          )}
+        </p>
+      )}
+
       {/* Avisos do GPS fora da lista: na aba Mapa (celular) a lista fica escondida. */}
       {geoError ? (
         <p role="alert" className="-mt-3 text-sm font-medium text-danger">
@@ -222,7 +259,7 @@ export function MapExplorer({ state }: { state: FeedState }) {
               ))}
             </ul>
           )}
-          {load.status === "ok" && load.adoptions > 0 && (
+          {load.status === "ok" && load.adoptions > 0 && !showAdoptionOnMap && (
             <p className="text-xs text-text-muted">Anúncios de adoção aparecem só na lista: eles não marcam local no mapa.</p>
           )}
         </section>
@@ -240,6 +277,19 @@ export function MapExplorer({ state }: { state: FeedState }) {
           {mapState === "error" && (
             <p role="alert" className="absolute inset-0 flex items-center justify-center p-6 text-center text-[#dbe1ea]">
               Não conseguimos mostrar o mapa agora. A lista continua funcionando.
+            </p>
+          )}
+
+          {noCasesOnMap && mapState === "ready" && (
+            <p role="status" data-testid="map-empty" className="mel-map-chip absolute top-1/2 left-1/2 z-[2] w-max max-w-[calc(100%-40px)] -translate-x-1/2 -translate-y-1/2 px-4 py-3 text-center text-sm">
+              {feed === "adoption" && !showAdoptionOnMap ? (
+                "Anúncios de adoção aparecem só na lista."
+              ) : (
+                <>
+                  Nenhum caso no mapa com esses filtros.
+                  {wider ? ` Tente ampliar para ${wider} km.` : " Tente outro período."}
+                </>
+              )}
             </p>
           )}
 
@@ -270,8 +320,8 @@ export function MapExplorer({ state }: { state: FeedState }) {
             </button>
           </div>
 
-          <div className="mel-map-chip mel-map-legend" aria-hidden="true">
-            {LEGEND.map((k) => (
+          <div className="mel-map-chip mel-map-legend" aria-hidden="true" data-testid="map-legend">
+            {legend.map((k) => (
               <span key={k} className={`mel-kind--${k}`}>
                 <i />
                 {KIND_BADGE[k]}
@@ -284,6 +334,11 @@ export function MapExplorer({ state }: { state: FeedState }) {
       {selected && <MapDrawer entry={selected} onClose={() => setPicked(null)} />}
     </div>
   );
+}
+
+/** "Perdidos", "Perdidos e Vistos", "Perdidos, Encontrados e Vistos". */
+function joinPt(items: string[]): string {
+  return items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} e ${items.at(-1)}`;
 }
 
 function countText(load: Load, feed: FeedState["feed"], radiusKm: number): string {
