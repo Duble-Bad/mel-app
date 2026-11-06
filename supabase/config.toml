@@ -162,9 +162,10 @@ site_url = "http://localhost:3100"
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
 # 172.18.4.238 = PC de desenvolvimento na rede local (teste pelo celular). HTTP :3000 no painel do
-# mel-dev desde 2026-11-05; HTTPS local :3443 (docs/19-teste-no-celular.md) a incluir no painel.
+# mel-dev desde 2026-11-05. O Supabase Auth RECUSA retorno para IP (não-loopback) mesmo na lista:
+# para login pelo celular vale o nome 172-18-4-238.sslip.io (docs/19-teste-no-celular.md).
 # Só desenvolvimento: produção nunca usa este arquivo.
-additional_redirect_urls = ["http://localhost:3000/**", "http://localhost:3100/**", "http://172.18.4.238:3000/**", "https://172.18.4.238:3443/**"]
+additional_redirect_urls = ["http://localhost:3000/**", "http://localhost:3100/**", "http://172.18.4.238:3000/**", "https://172.18.4.238:3443/**", "https://172-18-4-238.sslip.io:3443/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
