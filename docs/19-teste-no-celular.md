@@ -25,7 +25,7 @@
 
 ## Instalar o certificado no celular (com o proprietário, só no aparelho de teste)
 
-Confira a impressão digital SHA-256 da CA se o celular mostrar: `68:D0:46:30:…:86:3A:DC:F6`.
+Confira a impressão digital SHA-256 da CA antes de instalar: `55:6D:1E:7B:45:9C:58:4B:B8:C6:93:34:3B:33:D9:50:A1:CC:04:89:2C:6D:2B:3A:62:4D:A8:CD:81:C7:02:15` (SHA-1: `0B:38:4D:49:AA:2F:C6:BA:9F:DD:E0:54:CF:BD:4E:EE:98:C3:D6:52`).
 
 **Android (Chrome)**
 1. No celular, abra `http://172.18.4.238:3080` e toque em **Baixar certificado (Android)**.
@@ -45,7 +45,7 @@ Confira a impressão digital SHA-256 da CA se o celular mostrar: `68:D0:46:30:�
 
 | # | Teste | Como |
 |---|---|---|
-| 1 | Login com Google | Entrar → Continuar com Google → volta logado para o app em `https://…:3443`. Depende do item "Bloqueio" abaixo; até lá, testar pelo `http://…:3000` |
+| 1 | Login com Google | Bloqueado pelo IP (ver "Bloqueio real"); depende da alternativa por nome |
 | 2 | Cadastro e onboarding | Entrar → Criar conta (e-mail de teste seu) → completar "Que bom ter você na rede MEL" → Perfil |
 | 3 | Mapa MEL e localização | Mapa da Rede → alternar Lista/Mapa → tocar numa área → painel com os dados; "Perto de mim" |
 | 4 | GPS no celular | Perdi meu pet → etapa "Onde" → "Usar minha localização atual" → permitir → ponto no mapa |
@@ -54,15 +54,35 @@ Confira a impressão digital SHA-256 da CA se o celular mostrar: `68:D0:46:30:�
 | 7 | Chat privado de adoção | Interessado: ligar "Aceito ser contatado por quem anuncia" (precisa estar aprovado e na lista pública). Anunciante com anúncio aprovado: Adoção → aba Quero adotar → "Conversar" → mensagem → conversa aparece para os dois em Conversas |
 | 8 | Correção de dados | Perfil → Meus dados (`/perfil/dados`) → corrigir telefone (DDD inválido deve ser recusado) e pedir troca de e-mail (fica "pendente" até confirmar nos dois e-mails) |
 
-## Bloqueio real
+## Bloqueio real: o Supabase Auth não aceita retorno para endereço IP
 
-- **Supabase `mel-dev` → Authentication → URL Configuration → Redirect URLs:** incluir `https://172.18.4.238:3443/**` (já versionado em `supabase/config.toml`). Sem isso, login com Google e links de e-mail feitos pelo endereço HTTPS voltam para `localhost:3100`. Não usamos `supabase config push` porque ele desfaria ajustes feitos só no painel.
-- MapTiler: a chave de desenvolvimento já aceita `https://172.18.4.238:3443` (estilo do mapa responde 200).
+Verificado em 2026-11-06. O Supabase Auth **recusa qualquer endereço de retorno cujo host seja um IP que não seja loopback, antes de consultar a lista de Redirect URLs** (código do Supabase Auth, `IsRedirectURLValid`). Prova no `mel-dev`, pedindo links sem enviar e-mail (`generateLink`):
+
+| Retorno pedido | Supabase devolve para |
+|---|---|
+| `http://localhost:3000/x` | `http://localhost:3000/x` ✅ |
+| `http://172.18.4.238:3000/x` (na lista) | `http://localhost:3100` (Site URL) ❌ |
+| `https://172.18.4.238:3443/x` (na lista) | `http://localhost:3100` (Site URL) ❌ |
+
+Consequência: pelo IP, **login com Google e links de e-mail** (confirmação, recuperação, troca de e-mail) **nunca voltam para o celular**, nem em HTTP nem em HTTPS. Cadastro e login por e-mail e senha funcionam (não dependem de retorno). A conclusão anterior de que "Google pelo celular funcionava" estava errada (só o pedido saía certo).
+
+### Alternativa gratuita proposta (aguardando aprovação; nada configurado)
+
+Usar um **nome** que aponta para o IP da rede, em vez do IP: `172-18-4-238.sslip.io` (serviço público de DNS gratuito; resolve para `172.18.4.238`, conferido). Sem túnel e sem expor nada: só traduz o nome para o IP privado, e o tráfego continua dentro da Wi-Fi.
+
+O que mudaria (só em DEV):
+1. Certificado: CA e certificado refeitos para `172-18-4-238.sslip.io` (a restrição de nomes da CA passaria a incluir só esse nome, o IP e localhost).
+2. App: `https://172-18-4-238.sslip.io:3443`.
+3. Painel do `mel-dev` → Redirect URLs: `https://172-18-4-238.sslip.io:3443/**`.
+4. MapTiler (chave de dev): origem `https://172-18-4-238.sslip.io:3443`.
+
+Riscos: depende de um DNS de terceiro (só para resolver o nome; ele vê o IP privado consultado); alguns roteadores bloqueiam respostas de DNS com IP privado ("DNS rebinding protection") — se acontecer, o nome não resolve nessa Wi-Fi.
 
 ## Verificado automaticamente (2026-11-06)
 
 - Cadeia TLS validada pela CA local; cliente sem a CA é recusado (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`).
-- Em `https://172.18.4.238:3443`: contexto seguro, `crypto.randomUUID`, service worker, Push API e geolocalização disponíveis; mapa desenhado; o app pede ao Google `redirect_to=https://172.18.4.238:3443/auth/callback…`.
+- Em `https://172.18.4.238:3443`: contexto seguro, `crypto.randomUUID`, service worker, Push API e geolocalização disponíveis; mapa desenhado. O app pede ao Google `redirect_to=https://172.18.4.238:3443/auth/callback…`, mas o Supabase recusa retorno para IP (acima).
+- CA com restrição de nomes (só `172.18.4.238`, `127.0.0.1`, `localhost`): um certificado para `www.google.com` assinado por ela é recusado ("permitted subtree violation"). SHA-256 da CA: `55:6D:1E:7B:45:9C:58:4B:B8:C6:93:34:3B:33:D9:50:A1:CC:04:89:2C:6D:2B:3A:62:4D:A8:CD:81:C7:02:15`.
 - Retorno do login: `https://…:3443/entrar…` pelo HTTPS e `http://…:3000/entrar…` pelo HTTP (antes: `http://0.0.0.0:3000`).
 - Disparo de push em DEV responde 200.
 - E2E 77/77 depois da correção de origem.

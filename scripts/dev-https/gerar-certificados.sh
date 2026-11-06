@@ -16,12 +16,15 @@ chmod 700 "$DIR" 2>/dev/null || true
 cd "$DIR"
 
 # CA: criada uma vez e reaproveitada (o celular só precisa confiar nela uma vez).
+# nameConstraints: mesmo que a chave da CA vazasse, ela só valeria para este IP e
+# localhost — nunca para outros sites (o celular recusa qualquer outro nome).
 if [ ! -f ca.key ]; then
   openssl genrsa -out ca.key 4096 2>/dev/null
   openssl req -x509 -new -key ca.key -sha256 -days 825 -out ca.crt \
     -subj "/O=MEL desenvolvimento/CN=MEL DEV CA local (somente testes)" \
     -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
-    -addext "keyUsage=critical,keyCertSign,cRLSign"
+    -addext "keyUsage=critical,keyCertSign,cRLSign" \
+    -addext "nameConstraints=critical,permitted;IP:$IP/255.255.255.255,permitted;IP:127.0.0.1/255.255.255.255,permitted;DNS:localhost"
   echo "CA criada em $DIR/ca.crt"
 fi
 
