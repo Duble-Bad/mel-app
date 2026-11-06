@@ -92,12 +92,18 @@ const SHAPES = [[1280, 960], [960, 1280], [1080, 1080], [1600, 900], [1280, 960]
 async function demoImage({ species, color, title }, n, total) {
   const [w, h] = SHAPES[n % SHAPES.length];
   const fur = FUR[color] ?? "#c98a3f";
-  const s = Math.min(w, h) / 1080;
-  const cx = w / 2, cy = h / 2 + 30 * s;
-  // Faixas dentro do quadrado central: continuam visíveis no recorte quadrado (capa e miniaturas).
-  const top = (h - Math.min(w, h)) / 2, bottom = top + Math.min(w, h);
+  // Área segura = o que sobra em TODOS os recortes do app: quadrado (página do caso, miniaturas)
+  // e faixa larga ~1,8:1 (painel do mapa no celular). Faixas e rosto ficam só nela.
+  const sw = Math.min(w, h);
+  const sh = Math.min(h, w / 1.8);
+  const top = (h - sh) / 2;
+  const u = Math.min(sh / 600, sw / 860);
+  const bandTop = 84 * u, bandBottom = 104 * u;
+  const cx = w / 2;
+  const cy = top + bandTop + (sh - bandTop - bandBottom) / 2 + 12 * u;
+  const s = (u * 140) / 230; // escala do desenho (rosto com raio de 140u)
   const ears = species === "cat"
-    ? `<path d="M${cx - 230 * s} ${cy - 120 * s} L${cx - 170 * s} ${cy - 330 * s} L${cx - 60 * s} ${cy - 200 * s}Z M${cx + 230 * s} ${cy - 120 * s} L${cx + 170 * s} ${cy - 330 * s} L${cx + 60 * s} ${cy - 200 * s}Z" fill="${fur}" stroke="#111" stroke-width="${6 * s}"/>`
+    ? `<path d="M${cx - 230 * s} ${cy - 120 * s} L${cx - 170 * s} ${cy - 310 * s} L${cx - 60 * s} ${cy - 200 * s}Z M${cx + 230 * s} ${cy - 120 * s} L${cx + 170 * s} ${cy - 310 * s} L${cx + 60 * s} ${cy - 200 * s}Z" fill="${fur}" stroke="#111" stroke-width="${6 * s}"/>`
     : `<ellipse cx="${cx - 215 * s}" cy="${cy - 40 * s}" rx="${75 * s}" ry="${170 * s}" transform="rotate(18 ${cx - 215 * s} ${cy - 40 * s})" fill="${fur}" stroke="#111" stroke-width="${6 * s}"/><ellipse cx="${cx + 215 * s}" cy="${cy - 40 * s}" rx="${75 * s}" ry="${170 * s}" transform="rotate(-18 ${cx + 215 * s} ${cy - 40 * s})" fill="${fur}" stroke="#111" stroke-width="${6 * s}"/>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
     <rect width="100%" height="100%" fill="${BGS[n % BGS.length]}"/>
@@ -109,11 +115,11 @@ async function demoImage({ species, color, title }, n, total) {
     <circle cx="${cx - 77 * s}" cy="${cy - 53 * s}" r="${8 * s}" fill="#fff"/><circle cx="${cx + 93 * s}" cy="${cy - 53 * s}" r="${8 * s}" fill="#fff"/>
     <ellipse cx="${cx}" cy="${cy + 55 * s}" rx="${34 * s}" ry="${24 * s}" fill="#111"/>
     <path d="M${cx} ${cy + 78 * s} q${-30 * s} ${45 * s} ${-70 * s} ${20 * s} M${cx} ${cy + 78 * s} q${30 * s} ${45 * s} ${70 * s} ${20 * s}" fill="none" stroke="#111" stroke-width="${7 * s}" stroke-linecap="round"/>
-    <rect x="0" y="${top}" width="${w}" height="${120 * s}" fill="#f6b928"/>
-    <text x="${w / 2}" y="${top + 82 * s}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="${64 * s}" fill="#1c1404" letter-spacing="${6 * s}">DEMONSTRAÇÃO</text>
-    <rect x="0" y="${bottom - 150 * s}" width="${w}" height="${150 * s}" fill="#0a111d" opacity="0.88"/>
-    <text x="${w / 2}" y="${bottom - 92 * s}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="${40 * s}" fill="#ffffff">${title} · imagem ${n + 1} de ${total}</text>
-    <text x="${w / 2}" y="${bottom - 40 * s}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${32 * s}" fill="#dbe1ea">Ilustração de teste MEL — não é um animal real</text>
+    <rect x="0" y="${top}" width="${w}" height="${bandTop}" fill="#f6b928"/>
+    <text x="${cx}" y="${top + 58 * u}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="${48 * u}" fill="#1c1404" letter-spacing="${5 * u}">DEMONSTRAÇÃO</text>
+    <rect x="0" y="${top + sh - bandBottom}" width="${w}" height="${bandBottom}" fill="#0a111d" opacity="0.9"/>
+    <text x="${cx}" y="${top + sh - 60 * u}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="${28 * u}" fill="#ffffff">${title} · imagem ${n + 1} de ${total}</text>
+    <text x="${cx}" y="${top + sh - 24 * u}" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${22 * u}" fill="#dbe1ea">Ilustração de teste MEL — não é um animal real</text>
   </svg>`;
   const img = sharp(Buffer.from(svg));
   return { full: await img.clone().jpeg({ quality: 82 }).toBuffer(), thumb: await img.clone().resize(320, 320, { fit: "cover" }).jpeg({ quality: 78 }).toBuffer() };

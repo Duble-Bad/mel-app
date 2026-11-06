@@ -118,6 +118,10 @@ test("partners: visitor fills the form without an account, signs in with partner
   await page.getByRole("button", { name: /Usar minha localização atual/ }).click();
   await expect(page.getByTestId("picked-label")).toBeVisible();
   await page.getByLabel("Instagram").fill("@patinhasrascunho");
+  // Sede institucional autorizada: a marcação precisa sobreviver ao login (não publica nada sozinha).
+  const consent = page.getByRole("checkbox", { name: /endereço institucional .* autorizo/ });
+  await consent.check();
+  await page.getByLabel("Endereço como aparece no perfil").fill("Rua Fictícia da Sede, 200 – Sé");
   await page.getByRole("checkbox", { name: /Li e aceito as regras do programa/ }).check();
   await page.getByRole("button", { name: "Enviar para moderação" }).click();
 
@@ -134,4 +138,6 @@ test("partners: visitor fills the form without an account, signs in with partner
   await expect(page.getByText("Recuperamos sua inscrição.")).toBeVisible();
   await expect(page.getByRole("radio", { name: /^ONG/ })).toBeChecked();
   await expect(page.getByLabel("Nome da ONG")).toHaveValue("Patinhas Rascunho");
+  await expect(page.getByRole("checkbox", { name: /endereço institucional .* autorizo/ })).toBeChecked();
+  await expect(page.getByLabel("Endereço como aparece no perfil")).toHaveValue("Rua Fictícia da Sede, 200 – Sé");
 });

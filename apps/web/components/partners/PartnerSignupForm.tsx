@@ -57,6 +57,11 @@ interface Draft {
   kind: PartnerKind;
   values: Values;
   helpsLost: boolean;
+  /**
+   * Autorização do endereço público (empresa/ONG). Só nesta aba, até o envio:
+   * não publica nada — no banco ainda depende da aprovação e da validação do administrador.
+   */
+  addressPublic?: boolean;
   where: PickedLocation | null;
   savedAt: number;
 }
@@ -123,6 +128,8 @@ export function PartnerSignupForm() {
       setKind(d.kind);
       setV(d.values);
       setHelpsLost(d.helpsLost);
+      // Protetor nunca divulga endereço: a marcação só volta para empresa/ONG.
+      setAddressPublic(d.kind !== "independent" && d.addressPublic === true);
       setWhere(d.where);
       setRestored(true);
     });
@@ -179,7 +186,7 @@ export function PartnerSignupForm() {
     const { data } = await client.auth.getSession();
     const user = data.session?.user;
     if (!user || user.is_anonymous) {
-      saveDraft({ kind, values: v, helpsLost, where });
+      saveDraft({ kind, values: v, helpsLost, addressPublic, where });
       setBusy("Abrindo o login…");
       router.push(SIGN_IN_URL);
       return;
@@ -199,12 +206,12 @@ export function PartnerSignupForm() {
       });
       const body = (await res.json().catch(() => ({}))) as { code?: string; error?: string; fields?: Record<string, string>; needsAccount?: boolean; needsOnboarding?: boolean };
       if (res.status === 401 || body.needsAccount) {
-        saveDraft({ kind, values: v, helpsLost, where });
+        saveDraft({ kind, values: v, helpsLost, addressPublic, where });
         router.push(SIGN_IN_URL);
         return;
       }
       if (body.needsOnboarding) {
-        saveDraft({ kind, values: v, helpsLost, where });
+        saveDraft({ kind, values: v, helpsLost, addressPublic, where });
         router.push(ONBOARDING_URL);
         return;
       }
