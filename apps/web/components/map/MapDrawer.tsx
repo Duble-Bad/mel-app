@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock, Eye, Heart, MapPin, PawPrint, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, Clock, Eye, Heart, MapPin, ShieldCheck, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { formatDistance, timeAgo } from "@mel/core";
 import { KIND_BADGE, type FeedEntry } from "./feed";
+import { PetPhoto } from "@/components/ui/PetPhoto";
 
 /**
  * Gaveta de detalhes do mapa (Conceito B): lateral no computador, folha que
@@ -65,14 +66,7 @@ export function MapDrawer({ entry: e, onClose }: { entry: FeedEntry; onClose: ()
           <X aria-hidden="true" className="size-[22px]" strokeWidth={2} />
         </button>
         <div className="mel-drawer__media">
-          {e.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- miniatura já otimizada no upload
-            <img src={e.photoUrl} alt={`Foto de ${e.title}`} />
-          ) : (
-            <span className="flex size-full items-center justify-center text-text-muted">
-              <PawPrint aria-hidden="true" className="size-14" strokeWidth={1.5} />
-            </span>
-          )}
+          <PetPhoto src={e.photoUrl} alt={`Foto de ${e.title}`} iconClassName="size-14" />
         </div>
         <div className="grid gap-4 p-[22px]">
           <span className="mel-badge">{KIND_BADGE[e.kind]}</span>

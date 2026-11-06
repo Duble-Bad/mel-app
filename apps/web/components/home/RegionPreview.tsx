@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { cache } from "react";
 import { connection } from "next/server";
-import { ChevronRight, MapPin, PawPrint, SearchX, ShieldCheck } from "lucide-react";
+import { ChevronRight, MapPin, SearchX, ShieldCheck } from "lucide-react";
 import { DEFAULT_CENTER, DEFAULT_CENTER_LABEL, itemHref, itemTitle, timeAgo, type PublicCaseItem, type PublicKind } from "@mel/core";
 import { searchPublicCases } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
+import { PetPhoto } from "@/components/ui/PetPhoto";
 
 const KIND: Record<PublicKind, { label: string; color: string }> = {
   lost: { label: "Perdido", color: "var(--color-status-lost-accent)" },
@@ -58,14 +59,7 @@ export async function RegionListPanel() {
           <li key={`${item.kind}-${item.code}`} className="border-b border-border last:border-b-0">
             <Link href={itemHref(item)} className="group grid grid-cols-[64px_1fr_auto] items-center gap-3.5 px-4 py-3 transition-colors hover:bg-surface-muted sm:px-5">
               <span className="size-16 overflow-hidden rounded-xl bg-surface-muted">
-                {item.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- miniatura já otimizada no upload
-                  <img src={item.photoUrl} alt="" loading="lazy" className="size-full object-cover" />
-                ) : (
-                  <span className="flex size-full items-center justify-center text-text-muted">
-                    <PawPrint aria-hidden="true" className="size-7" strokeWidth={1.5} />
-                  </span>
-                )}
+                <PetPhoto src={item.photoUrl} alt="" loading="lazy" className="size-full object-cover" iconClassName="size-7" />
               </span>
               <span className="flex min-w-0 flex-col gap-0.5">
                 {/* Tom escurecido: texto branco legível sobre a cor do status. */}
@@ -108,8 +102,9 @@ const ROADS = (
 );
 
 /**
- * Prévia leve do mapa (sem MapLibre): ruas ilustrativas e as áreas dos casos
- * reais posicionadas em relação ao centro padrão. Ilustração, não cartografia.
+ * Prévia leve do mapa (sem MapLibre e sem requisições ao MapTiler): ruas
+ * ilustrativas e as áreas dos casos reais em relação ao centro padrão. Fica
+ * identificada como prévia e o cartão inteiro abre o mapa real (/mapa).
  */
 function MapPreview({ items }: { items: PublicCaseItem[] }) {
   const mPerLat = 111_320;
@@ -124,7 +119,11 @@ function MapPreview({ items }: { items: PublicCaseItem[] }) {
   const scale = 400 / span;
 
   return (
-    <div className="mh-map relative min-h-[300px] overflow-hidden sm:min-h-[360px]">
+    <Link
+      href="/mapa"
+      aria-label="Abrir o mapa real da rede MEL (a imagem é só uma prévia ilustrativa)"
+      className="mh-map group relative block h-full min-h-[300px] overflow-hidden sm:min-h-[360px]"
+    >
       <svg viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true" className="absolute inset-0 size-full">
         <path className="mh-map__park" d="M700 460 q 90 -30 160 20 q 30 80 -40 120 q -100 10 -130 -50 z" />
         <path className="mh-map__park" d="M90 600 q 70 -20 120 10 q 10 60 -60 80 q -80 -10 -60 -90z" />
@@ -148,11 +147,15 @@ function MapPreview({ items }: { items: PublicCaseItem[] }) {
         <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2} />
         Áreas aproximadas (~100 m) para proteger tutores
       </p>
-      <p className="absolute bottom-3.5 left-3.5 z-[1] max-w-[calc(100%-28px)] rounded-xl border border-border-strong bg-background/90 px-3 py-2 text-[12.5px] text-text-secondary">
+      <p className="absolute bottom-3.5 left-3.5 z-[1] max-w-[calc(100%-190px)] rounded-xl border border-border-strong bg-background/90 px-3 py-2 text-[12.5px] leading-snug text-text-secondary">
+        <strong className="text-text-primary">Prévia ilustrativa</strong> (ruas desenhadas) ·{" "}
         {items.length === 0
-          ? `Nenhum caso recente perto do ${DEFAULT_CENTER_LABEL}.`
+          ? `nenhum caso recente perto do ${DEFAULT_CENTER_LABEL}`
           : `${items.length === 1 ? "1 caso recente" : `${items.length} casos recentes`} perto do ${DEFAULT_CENTER_LABEL}`}
       </p>
-    </div>
+      <span className="absolute right-3.5 bottom-3.5 z-[1] inline-flex min-h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground shadow-primary transition-transform group-hover:translate-x-0.5">
+        Abrir mapa real <ChevronRight aria-hidden="true" className="size-4" strokeWidth={2.5} />
+      </span>
+    </Link>
   );
 }

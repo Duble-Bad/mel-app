@@ -3,7 +3,7 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/map.css";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, Clock, LoaderCircle, LocateFixed, MapPin, Minus, PawPrint, Plus, Search, SearchX, ShieldCheck } from "lucide-react";
+import { ChevronRight, Clock, LoaderCircle, LocateFixed, MapPin, Minus, Plus, Search, SearchX, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { distanceMeters, formatDistance, itemTitle, type PublicCaseItem, type SearchFilters, userErrorMessage } from "@mel/core";
 import { listAdoptions, searchPublicCases } from "@mel/data";
@@ -14,6 +14,7 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import { adoptionEntry, caseEntry, feedQuery, type FeedEntry, type FeedState, includesAdoption, includesCases, KIND_BADGE, kindsFor } from "./feed";
 import { FeedFiltersBar } from "./FeedFiltersBar";
 import { MapDrawer } from "./MapDrawer";
+import { PetPhoto } from "@/components/ui/PetPhoto";
 
 const ZOOM_BY_RADIUS: Record<number, number> = { 1: 15, 3: 13.5, 5: 12.8, 10: 11.8 };
 const LEGEND = ["lost", "found", "sighting", "adoption"] as const;
@@ -53,8 +54,11 @@ export function MapExplorer({ state }: { state: FeedState }) {
   const entries = load.status === "ok" ? load.entries : [];
   const selected = (picked?.key === filtersKey && entries.find((e) => e.id === picked.id)) || null;
   const keyRef = useRef(filtersKey);
+  // Centro e raio atuais para o "Buscar nesta área" (o onMove é registrado uma vez só).
+  const areaRef = useRef({ center: filters.center, radiusKm: filters.radiusKm });
   useEffect(() => {
     keyRef.current = filtersKey;
+    areaRef.current = { center: filters.center, radiusKm: filters.radiusKm };
   });
 
   // Monta o mapa (de novo quando o tema muda: estilo claro/escuro).
@@ -73,7 +77,8 @@ export function MapExplorer({ state }: { state: FeedState }) {
         unsubs.push(
           h.onMove((b) => {
             const c = { lat: (b.north + b.south) / 2, lng: (b.east + b.west) / 2 };
-            setMovedTo(distanceMeters(c, filters.center) > filters.radiusKm * 300 ? c : null);
+            const { center, radiusKm } = areaRef.current;
+            setMovedTo(distanceMeters(c, center) > radiusKm * 300 ? c : null);
           }),
         );
       })
@@ -87,9 +92,21 @@ export function MapExplorer({ state }: { state: FeedState }) {
       handle.current?.destroy();
       handle.current = null;
     };
-    // filters.center/radius mudam o endereço e remontam via key no componente pai.
+    // Centro/raio novos não remontam: o efeito abaixo move o mapa já montado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolvedTheme]);
+
+  // "Perto de mim" e "Buscar nesta área": move o mapa sem recriá-lo (mantém a aba
+  // Mapa, o zoom e os filtros). Só o raio novo reajusta o zoom.
+  const lastArea = useRef({ lat: filters.center.lat, lng: filters.center.lng, radiusKm: filters.radiusKm });
+  useEffect(() => {
+    const prev = lastArea.current;
+    const { lat, lng } = filters.center;
+    if (prev.lat === lat && prev.lng === lng && prev.radiusKm === filters.radiusKm) return;
+    lastArea.current = { lat, lng, radiusKm: filters.radiusKm };
+    setMovedTo(null);
+    handle.current?.setCenter({ lat, lng }, prev.radiusKm === filters.radiusKm ? undefined : (ZOOM_BY_RADIUS[filters.radiusKm] ?? 13));
+  }, [filters.center, filters.radiusKm]);
 
   // Busca casos (e adoção, em "Todos"/"Adoção") sempre que os filtros mudam.
   useEffect(() => {
@@ -169,16 +186,25 @@ export function MapExplorer({ state }: { state: FeedState }) {
         {toggle}
       </div>
 
+      {/* Avisos do GPS fora da lista: na aba Mapa (celular) a lista fica escondida. */}
+      {geoError ? (
+        <p role="alert" className="-mt-3 text-sm font-medium text-danger">
+          {geoError}
+        </p>
+      ) : (
+        filters.hasCenter && (
+          <p role="status" data-testid="map-near-me" className="-mt-3 flex items-center gap-1.5 text-sm text-text-secondary">
+            <LocateFixed aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2} />
+            Mostrando casos perto da sua localização aproximada.
+          </p>
+        )
+      )}
+
       <div className="mel-mapa animate-enter" data-view={view}>
         <section aria-labelledby="lista-casos" className="mel-mapa__list flex min-w-0 flex-col gap-2.5">
           <h2 id="lista-casos" className="sr-only">
             Lista de casos
           </h2>
-          {geoError && (
-            <p role="alert" className="text-sm font-medium text-danger">
-              {geoError}
-            </p>
-          )}
           {load.status === "loading" ? (
             <ListSkeleton />
           ) : load.status === "ok" && entries.length === 0 ? (
@@ -285,14 +311,7 @@ function CaseRow({ entry: e, active, onOpen, onHover }: { entry: FeedEntry; acti
       onBlur={() => onHover(null)}
       aria-haspopup="dialog"
     >
-      {e.photoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- miniatura já otimizada no upload
-        <img src={e.photoUrl} alt="" loading="lazy" className="mel-case__thumb" />
-      ) : (
-        <span className="mel-case__thumb flex items-center justify-center text-text-muted">
-          <PawPrint aria-hidden="true" className="size-8" strokeWidth={1.5} />
-        </span>
-      )}
+      <PetPhoto src={e.photoUrl} alt="" loading="lazy" className="mel-case__thumb" fallbackClassName="mel-case__thumb flex items-center justify-center" iconClassName="size-8" />
       <span className="block min-w-0">
         <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
         <strong>{e.title}</strong>
@@ -350,6 +369,7 @@ function toPins(items: PublicCaseItem[]) {
         id: `${i.kind}-${i.code}`,
         kind: i.kind,
         position: { lat: i.position.lat + r * Math.sin(angle), lng: i.position.lng + r * Math.cos(angle) },
+        area: i.position,
         label: itemTitle(i),
       };
     }),

@@ -1,8 +1,9 @@
 import "@/app/map.css";
 import Link from "next/link";
-import { Clock, MapPin, PawPrint } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import { formatDistance, type PublicAdoption, type PublicCaseItem } from "@mel/core";
 import { adoptionEntry, caseEntry, KIND_BADGE, type FeedEntry } from "./feed";
+import { PetPhoto } from "@/components/ui/PetPhoto";
 
 /**
  * Cartão do mural (Conceito B): foto dominante 4:3 com o selo do tipo sobre
@@ -23,14 +24,7 @@ function FeedCard({ entry: e, testId }: { entry: FeedEntry; testId: string }) {
   return (
     <Link href={e.href} data-testid={testId} className={`mel-pet mel-kind--${e.kind} focus-visible:outline-offset-2`}>
       <div className="mel-pet__media">
-        {e.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- miniatura já otimizada no upload
-          <img src={e.photoUrl} alt="" loading="lazy" decoding="async" width={600} height={450} />
-        ) : (
-          <span className="flex size-full items-center justify-center text-text-muted">
-            <PawPrint aria-hidden="true" className="size-10" strokeWidth={1.5} />
-          </span>
-        )}
+        <PetPhoto src={e.photoUrl} alt="" loading="lazy" decoding="async" width={600} height={450} />
         <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
       </div>
       <div className="mel-pet__body">

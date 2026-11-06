@@ -10,6 +10,8 @@ export interface MapPin {
   kind: PinKind;
   position: LatLng;
   label: string;
+  /** Centro da célula pública quando o ponto foi afastado só na tela (vários casos na mesma célula). */
+  area?: LatLng;
 }
 
 export interface MapOptions {

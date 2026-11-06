@@ -466,6 +466,14 @@
   height: 100%;
   object-fit: cover;
 }
+/* Celular: a foto (ou o aviso sem foto) não empurra título, situação e ações para
+   fora da tela — no máximo ~28% da altura visível. */
+@media (max-width: 1023px) {
+  .mel-drawer__media {
+    aspect-ratio: auto;
+    height: min(28dvh, 240px);
+  }
+}
 .mel-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;

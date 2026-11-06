@@ -162,23 +162,38 @@ async function mountMap(el: HTMLElement, opts: MapOptions, mode: "pins" | "areas
   let activeId: string | null = null;
 
   // Áreas: uma fonte GeoJSON com um círculo por caso; `active` realça o selecionado.
+  // Uma área por célula pública (e por tipo): vários casos na mesma célula não
+  // empilham círculos translúcidos; os pontos continuam separados para o toque.
+  const areaCells = () => {
+    const cells = new Map<string, { pin: MapPin; center: LatLng; active: boolean }>();
+    for (const pin of areaPins) {
+      const center = pin.area ?? pin.position;
+      const key = `${pin.kind}|${center.lat}|${center.lng}`;
+      const cell = cells.get(key);
+      if (cell) cell.active ||= pin.id === activeId;
+      else cells.set(key, { pin, center, active: pin.id === activeId });
+    }
+    return [...cells.values()];
+  };
   const areaData = () => ({
     type: "FeatureCollection" as const,
-    features: areaPins.map((pin) => ({
+    features: areaCells().map(({ pin, center, active }) => ({
       type: "Feature" as const,
-      properties: { id: pin.id, color: AREA_COLORS[pin.kind], active: pin.id === activeId ? 1 : 0 },
-      geometry: { type: "Polygon" as const, coordinates: [circlePolygon(pin.position, AREA_RADIUS_M)] },
+      properties: { id: pin.id, color: AREA_COLORS[pin.kind], active: active ? 1 : 0 },
+      geometry: { type: "Polygon" as const, coordinates: [circlePolygon(center, AREA_RADIUS_M)] },
     })),
   });
   const areaPoints = () => ({
     type: "FeatureCollection" as const,
-    features: areaPins.map((pin) => ({
+    features: areaCells().map(({ pin, center, active }) => ({
       type: "Feature" as const,
-      properties: { id: pin.id, color: AREA_COLORS[pin.kind], active: pin.id === activeId ? 1 : 0 },
-      geometry: { type: "Point" as const, coordinates: [pin.position.lng, pin.position.lat] },
+      properties: { id: pin.id, color: AREA_COLORS[pin.kind], active: active ? 1 : 0 },
+      geometry: { type: "Point" as const, coordinates: [center.lng, center.lat] },
     })),
   });
-  const activeOpacity: ExpressionSpecification = ["case", ["==", ["get", "active"], 1], 0.4, 0.22];
+  // Preenchimento leve: os nomes das ruas continuam legíveis (antes 0.22, e áreas na mesma
+  // célula somavam). A área de privacidade em si não muda; só o quanto ela pinta o mapa.
+  const activeOpacity: ExpressionSpecification = ["case", ["==", ["get", "active"], 1], 0.2, 0.08];
   if (mode === "areas") {
     map.addSource(AREAS_ID, { type: "geojson", data: areaData() });
     // Afastado (bairro/cidade), 100 m teriam ~5 px: um halo de no mínimo 22 px
@@ -194,8 +209,8 @@ async function mountMap(el: HTMLElement, opts: MapOptions, mode: "pins" | "areas
         "circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 0, 22, 14.95, 22, 20, 730],
         "circle-opacity": ["interpolate", ["linear"], ["zoom"], 14.6, activeOpacity, 15.4, 0],
         "circle-stroke-color": ["get", "color"],
-        "circle-stroke-width": 1.5,
-        "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 14.6, 0.8, 15.4, 0],
+        "circle-stroke-width": 1.25,
+        "circle-stroke-opacity": ["interpolate", ["linear"], ["zoom"], 14.6, 0.55, 15.4, 0],
       },
     });
     map.addLayer({
@@ -210,16 +225,27 @@ async function mountMap(el: HTMLElement, opts: MapOptions, mode: "pins" | "areas
       source: AREAS_ID,
       paint: {
         "line-color": ["get", "color"],
-        "line-width": 2,
+        "line-width": 1.5,
         "line-dasharray": [2.5, 2.5],
-        "line-opacity": ["interpolate", ["linear"], ["zoom"], 14.6, 0, 15.4, 1],
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 14.6, 0, 15.4, 0.7],
       },
     });
     // Tocar em qualquer parte do círculo (ou do halo) abre o caso, não só no ponto central.
+    // A área é da célula (pode ter vários casos): abre o ponto mais perto do toque. Toque
+    // num ponto já foi tratado pelo próprio marcador.
     for (const layer of [`${AREAS_ID}-fill`, `${AREAS_ID}-halo`]) {
       map.on("click", layer, (e) => {
+        if ((e.originalEvent.target as Element | null)?.closest?.(".maplibregl-marker")) return;
         const id = e.features?.[0]?.properties?.id;
-        if (typeof id === "string") pinClick.forEach((cb) => cb(id));
+        const cellPin = areaPins.find((p) => p.id === id);
+        if (!cellPin) return;
+        const cell = cellPin.area ?? cellPin.position;
+        const sameCell = areaPins.filter((p) => p.kind === cellPin.kind && (p.area ?? p.position).lat === cell.lat && (p.area ?? p.position).lng === cell.lng);
+        const at = e.lngLat;
+        const nearest = sameCell.reduce((best, p) =>
+          Math.hypot(p.position.lat - at.lat, p.position.lng - at.lng) < Math.hypot(best.position.lat - at.lat, best.position.lng - at.lng) ? p : best,
+        );
+        pinClick.forEach((cb) => cb(nearest.id));
       });
       map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
       map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));

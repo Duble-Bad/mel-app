@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Menu, X } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -81,8 +82,15 @@ export function MobileNav({ account }: { account?: React.ReactNode }) {
       >
         {open ? <X aria-hidden="true" className="size-5" /> : <Menu aria-hidden="true" className="size-5" />}
       </button>
-      {open && (
-        <div id="menu-celular" className="fixed inset-x-0 top-16 bottom-0 z-40 animate-enter overflow-y-auto border-t border-border bg-background px-4 pt-4 pb-8">
+      {/* Portal no <body>: o cabeçalho tem backdrop-filter, que vira o "containing block"
+          de qualquer position:fixed dentro dele — o painel ficava preso nos 64 px do
+          cabeçalho e só "Início" aparecia. Fica abaixo do cabeçalho, que mantém o X visível. */}
+      {open &&
+        createPortal(
+          <div
+            id="menu-celular"
+            className="fixed inset-x-0 top-16 z-30 h-[calc(100dvh-4rem)] animate-enter overflow-y-auto overscroll-contain border-t border-border bg-background px-4 pt-4 pb-[max(2rem,env(safe-area-inset-bottom))] lg:hidden"
+          >
           <nav aria-label="Principal">
             <ul className="flex flex-col gap-1">
               {NAV_ITEMS.map((item) => {
@@ -105,8 +113,9 @@ export function MobileNav({ account }: { account?: React.ReactNode }) {
             </ul>
           </nav>
           {account && <div className="mt-6 flex flex-col gap-3 border-t border-border pt-6">{account}</div>}
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

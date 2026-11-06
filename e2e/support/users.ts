@@ -42,8 +42,17 @@ export async function deleteUserById(id: string) {
 
 export async function deleteUserByEmail(email: string) {
   const client = admin();
-  // Usuários de teste são poucos; a primeira página basta.
-  const { data } = await client.auth.admin.listUsers({ perPage: 200 });
-  const user = data.users.find((u) => u.email === email);
-  if (user) await client.auth.admin.deleteUser(user.id);
+  // Percorre todas as páginas: só a primeira (200) deixava de achar os usuários
+  // mais novos quando o mel-dev passou de 200 contas — e os testes não limpavam
+  // o que criavam (alertas de teste acumulando no mapa e no mural).
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await client.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const user = data.users.find((u) => u.email === email);
+    if (user) {
+      await client.auth.admin.deleteUser(user.id);
+      return;
+    }
+    if (data.users.length < 1000) return;
+  }
 }

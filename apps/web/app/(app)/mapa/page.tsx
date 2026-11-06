@@ -37,7 +37,8 @@ export default function MapPage({ searchParams }: PageProps<"/mapa">) {
           const filters = parseSearchParams(q);
           const state = { filters, ...parseFeed(q, filters) };
           // Centro/raio novos remontam o mapa já no lugar certo.
-          return <MapExplorer key={`${filters.center.lat},${filters.center.lng},${filters.radiusKm}`} state={state} />;
+          // Sem key: trocar centro/raio move o mapa já montado (não volta para "Lista" nem perde o zoom).
+          return <MapExplorer state={state} />;
         })}
       </Suspense>
     </main>

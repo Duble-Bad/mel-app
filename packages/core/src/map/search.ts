@@ -59,13 +59,15 @@ export function parseSearchParams(params: Params, fixedKinds?: PublicKind[]): Se
     species,
     period,
     radiusKm,
-    center: hasCenter ? { lat: round5(lat), lng: round5(lng) } : DEFAULT_CENTER,
+    center: hasCenter ? { lat: roundCenter(lat), lng: roundCenter(lng) } : DEFAULT_CENTER,
     hasCenter,
     page,
   };
 }
 
-const round5 = (n: number) => Math.round(n * 1e5) / 1e5;
+// Centro da busca no endereço com 3 casas (~110 m, a mesma ordem da grade pública de
+// 100 m): o link compartilhado de "Perto de mim" não revela onde a pessoa está.
+const roundCenter = (n: number) => Math.round(n * 1e3) / 1e3;
 
 /** Filtros → query string (só o que difere do padrão, para links curtos). */
 export function toSearchParams(f: SearchFilters, fixedKinds?: PublicKind[]): string {
@@ -75,8 +77,8 @@ export function toSearchParams(f: SearchFilters, fixedKinds?: PublicKind[]): str
   if (f.period !== "30d") p.set("periodo", f.period);
   if (f.radiusKm !== 5) p.set("raio", String(f.radiusKm));
   if (f.hasCenter) {
-    p.set("lat", String(round5(f.center.lat)));
-    p.set("lng", String(round5(f.center.lng)));
+    p.set("lat", String(roundCenter(f.center.lat)));
+    p.set("lng", String(roundCenter(f.center.lng)));
   }
   if (f.page > 1) p.set("pagina", String(f.page));
   const s = p.toString();

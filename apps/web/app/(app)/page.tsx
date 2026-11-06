@@ -282,14 +282,15 @@ function IconTile({ Icon }: { Icon: LucideIcon }) {
 
 function Panel({ title, href, linkLabel, delay, children }: { title: string; href: string; linkLabel: string; delay?: string; children: ReactNode }) {
   return (
-    <div data-reveal style={delay ? ({ "--d": delay } as React.CSSProperties) : undefined} className="overflow-hidden rounded-[22px] border border-border bg-surface">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4.5 py-1.5">
+    <div data-reveal style={delay ? ({ "--d": delay } as React.CSSProperties) : undefined} className="flex flex-col overflow-hidden rounded-[22px] border border-border bg-surface">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4.5 py-1.5">
         <h3 className="text-lg font-extrabold">{title}</h3>
         <Link href={href} className="inline-flex min-h-11 items-center text-sm font-bold text-primary hover:underline">
           {linkLabel}
         </Link>
       </div>
-      {children}
+      {/* Os dois painéis têm a mesma altura (grade): a prévia do mapa ocupa o espaço todo. */}
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
