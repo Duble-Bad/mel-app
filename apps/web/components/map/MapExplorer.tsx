@@ -5,7 +5,7 @@ import "@/app/map.css";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Clock, LoaderCircle, LocateFixed, MapPin, Minus, Plus, Search, SearchX, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { distanceMeters, formatDistance, itemTitle, type PublicCaseItem, type SearchFilters, userErrorMessage } from "@mel/core";
+import { distanceMeters, formatDistance, type PublicCaseItem, type SearchFilters, userErrorMessage } from "@mel/core";
 import { listAdoptions, searchPublicCases } from "@mel/data";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { type AreaMapHandle, mapLibreAreasProvider } from "@/lib/map/maplibre";
@@ -13,10 +13,10 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import { adoptionEntry, caseEntry, feedQuery, type FeedEntry, type FeedState, includesAdoption, includesCases, KIND_BADGE, kindsFor } from "./feed";
 import { FeedFiltersBar } from "./FeedFiltersBar";
+import { toPins, ZOOM_BY_RADIUS } from "./pins";
 import { MapDrawer } from "./MapDrawer";
 import { PetPhoto } from "@/components/ui/PetPhoto";
 
-const ZOOM_BY_RADIUS: Record<number, number> = { 1: 15, 3: 13.5, 5: 12.8, 10: 11.8 };
 const LEGEND = ["lost", "found", "sighting", "adoption"] as const;
 
 type Load =
@@ -348,30 +348,5 @@ function ListSkeleton() {
         </div>
       ))}
     </div>
-  );
-}
-
-/**
- * Casos na mesma célula aproximada (grade de 100 m) cairiam no mesmo ponto e
- * só o de cima seria clicável: abre-os num círculo (~45 m, dentro da célula), só na tela.
- */
-function toPins(items: PublicCaseItem[]) {
-  const groups = new Map<string, PublicCaseItem[]>();
-  for (const i of items) {
-    const k = `${i.position.lat},${i.position.lng}`;
-    groups.set(k, [...(groups.get(k) ?? []), i]);
-  }
-  return [...groups.values()].flatMap((group) =>
-    group.map((i, n) => {
-      const angle = (2 * Math.PI * n) / group.length;
-      const r = group.length > 1 ? 0.0004 : 0;
-      return {
-        id: `${i.kind}-${i.code}`,
-        kind: i.kind,
-        position: { lat: i.position.lat + r * Math.sin(angle), lng: i.position.lng + r * Math.cos(angle) },
-        area: i.position,
-        label: itemTitle(i),
-      };
-    }),
   );
 }

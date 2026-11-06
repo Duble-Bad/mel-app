@@ -76,7 +76,8 @@ function areaDotElement(kind: PinKind, label: string, id: string): HTMLButtonEle
   el.dataset.pinId = id;
   el.style.setProperty("--c", AREA_COLORS[kind]);
   // Mesmo nome acessível dos pinos ("Perdido: Thor"), mais o aviso de área aproximada.
-  el.setAttribute("aria-label", `${s.label}: ${label} (área aproximada)`);
+  // No mapa da rede o tipo "sighting" é o "Visto" (solto na rua), como na legenda e nos filtros.
+  el.setAttribute("aria-label", `${kind === "sighting" ? "Visto" : s.label}: ${label} (área aproximada)`);
   el.innerHTML = '<span class="mel-area-dot__pulse" aria-hidden="true"></span><span class="mel-area-dot__core" aria-hidden="true"></span>';
   return el;
 }

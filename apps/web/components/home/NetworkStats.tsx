@@ -25,15 +25,29 @@ async function getTotals(): Promise<Totals | null> {
   const db = createServiceClient();
   if (!db) return null;
   const head = { count: "exact", head: true } as const;
+  // Contas de demonstração (app_metadata.mel_demo, scripts/demo-casos) não entram nos números.
+  const demo = await demoAccountIds(db);
+  const notDemo = `(${demo.length ? demo.join(",") : "00000000-0000-0000-0000-000000000000"})`;
   const [people, pets, reunions, adoptions] = await Promise.all([
-    db.from("profiles").select("id", head).eq("is_anonymous", false),
-    db.from("pets").select("id", head),
-    db.from("lost_cases").select("id", head).eq("status", "FOUND"),
-    db.from("adoption_listings").select("id", head).eq("status", "ADOPTED"),
+    db.from("profiles").select("id", head).eq("is_anonymous", false).not("id", "in", notDemo),
+    db.from("pets").select("id", head).not("owner_id", "in", notDemo),
+    db.from("lost_cases").select("id", head).eq("status", "FOUND").not("owner_id", "in", notDemo),
+    db.from("adoption_listings").select("id", head).eq("status", "ADOPTED").not("owner_id", "in", notDemo),
   ]);
   const failed = [people, pets, reunions, adoptions].find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
   return { people: people.count ?? 0, pets: pets.count ?? 0, reunions: reunions.count ?? 0, adoptions: adoptions.count ?? 0 };
+}
+
+async function demoAccountIds(db: NonNullable<ReturnType<typeof createServiceClient>>): Promise<string[]> {
+  const ids: string[] = [];
+  for (let page = 1; page <= 50; page++) {
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    ids.push(...data.users.filter((u) => u.app_metadata?.mel_demo === true).map((u) => u.id));
+    if (data.users.length < 1000) break;
+  }
+  return ids;
 }
 
 const ITEMS: { key: keyof Totals; label: string; Icon: LucideIcon }[] = [

@@ -91,3 +91,19 @@ test("test cleanup finds and deletes the users it created, even with hundreds of
   expect(data.user).toBeNull();
 });
 
+
+test("the home map preview is the real map with real database cases, and opens /mapa", async ({ page }) => {
+  test.slow();
+  const t = await createTutorWithActiveAlert("home-map", { petName: "Cacau" }); // alerta real no centro padrão
+  created.push(t.email);
+  await page.goto("/");
+  const preview = page.getByTestId("home-map");
+  await preview.scrollIntoViewIfNeeded();
+  // Mesmos casos do /mapa: o número vem do banco (inclui o alerta criado agora) e o mapa é o MapLibre.
+  await expect(preview).toHaveAttribute("data-map-status", "ready", { timeout: 20_000 });
+  expect(Number(await preview.getAttribute("data-cases"))).toBeGreaterThan(0);
+  await expect(preview.locator("canvas.maplibregl-canvas")).toHaveCount(1);
+  await expect(page.getByText(/Prévia ilustrativa|ruas desenhadas/)).toHaveCount(0);
+  await preview.getByRole("link", { name: /Abrir o mapa da rede MEL/ }).click();
+  await expect(page).toHaveURL(/\/mapa$/);
+});
