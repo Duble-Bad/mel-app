@@ -24,6 +24,12 @@ Diagnóstico de 2026-11-05 ([10-status.md](10-status.md#-prontidão-para-o-pilot
 
 As correções escolhidas na auditoria final para antes do Feature Freeze ficam fora desta lista (são produto, não configuração).
 
+## 1.1 Antes do piloto (DEV)
+
+| # | Item | Por quê |
+|---|---|---|
+| 1.1.1 | Remover os casos de demonstração: `node --env-file=.env.local scripts/demo-casos/demo.mjs remover` | Os 9 casos "DEMO" só existem para teste no `mel-dev`; nunca vão para produção |
+
 ## 2. Schema (`mel-prod`) — procedimento de [08-deploy-producao.md](08-deploy-producao.md)
 
 | # | Item | Observação |
