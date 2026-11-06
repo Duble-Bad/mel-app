@@ -92,8 +92,10 @@ Riscos: depende de um DNS de terceiro (só para resolver o nome; ele vê o IP pr
 
 Verificado: o nome resolve para `172.18.4.238` no PC (resolvedor do sistema, 1.1.1.1 e 8.8.8.8); TLS pelo nome validado pela CA; HTTP e HTTPS pelo IP continuam funcionando; retorno do login montado como `https://172-18-4-238.sslip.io:3443/entrar…`; o app pede ao Google `redirect_to=https://172-18-4-238.sslip.io:3443/auth/callback…`; contexto seguro, GPS, service worker e Push disponíveis.
 
-Falta configurar (painéis de DEV, sem custo):
-1. **Supabase `mel-dev`** → Authentication → URL Configuration → Redirect URLs: `https://172-18-4-238.sslip.io:3443/**`. Teste real hoje (`generateLink`): devolve para o Site URL (`http://localhost:3100`) porque o nome ainda não está na lista; `localhost:3000` é preservado (controle).
-2. **MapTiler** (chave de desenvolvimento) → Allowed HTTP origins: `https://172-18-4-238.sslip.io:3443`. Hoje o estilo do mapa responde 403 para essa origem.
+Liberações de DEV feitas pelo proprietário (2026-11-06) e reverificadas:
+1. **Supabase `mel-dev`** → Redirect URLs com `https://172-18-4-238.sslip.io:3443/**`: `generateLink` devolve para `https://172-18-4-238.sslip.io:3443/auth/callback…` (com e sem `next`), sem cair no Site URL; controle `localhost:3000` preservado.
+2. **MapTiler** (chave de dev) com a origem `https://172-18-4-238.sslip.io:3443`: estilo 200; no app, 11 respostas do MapTiler sem nenhum erro de autorização e mapa desenhado.
+
+Testes manuais no celular: **ainda não executados** (aguardando o proprietário).
 
 Nada aqui usa serviço pago: sslip.io (DNS público gratuito), certificado próprio, Supabase e MapTiler nos planos gratuitos já em uso.
