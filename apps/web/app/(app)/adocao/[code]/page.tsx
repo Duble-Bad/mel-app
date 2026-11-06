@@ -12,6 +12,7 @@ import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/States";
+import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 const isCode = (c: string) => /^[a-z2-9]{6}$/i.test(c);
@@ -152,22 +153,13 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
 }
 
 function Gallery({ a }: { a: PublicAdoption }) {
-  const [first, ...rest] = a.photoUrls;
   return (
-    <div className="flex flex-col gap-2">
-      {first && (
-        // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
-        <img src={first} alt={`Foto de ${a.name}`} className="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
-      )}
-      {rest.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 px-[var(--mel-page-gutter)]">
-          {rest.map((u, i) => (
-            // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
-            <img key={u} src={u} alt={`Foto ${i + 2} de ${a.name}`} loading="lazy" className="aspect-square w-full rounded-md object-cover" />
-          ))}
-        </div>
-      )}
-    </div>
+    <PhotoGallery
+      photos={a.photoUrls.map((url) => ({ url }))}
+      name={a.name}
+      mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero"
+      thumbsClassName="px-[var(--mel-page-gutter)]"
+    />
   );
 }
 

@@ -13,6 +13,8 @@ interface AlertOptions {
   breed?: string;
   uniqueMarks?: string;
   withPhoto?: boolean;
+  /** Quantas fotos (cores sólidas diferentes); `withPhoto` equivale a 1. */
+  photos?: number;
   /** Número FICTÍCIO publicado como WhatsApp no alerta. */
   whatsapp?: string;
   /** Chat da MEL ligado (padrão: sim). */
@@ -63,9 +65,10 @@ export async function createTutorWithActiveAlert(label: string, petNameOrOptions
       uniqueMarks: opts.uniqueMarks,
     }),
   );
-  if (opts.withPhoto) {
-    const png = new Blob([new Uint8Array(solidPng(400, 400, [176, 120, 64]))], { type: "image/png" });
-    await addPetPhoto(client, pet, { full: png, thumb: png, width: 400, height: 400 }, 0);
+  const shades: [number, number, number][] = [[176, 120, 64], [64, 120, 176], [90, 160, 90], [160, 80, 140], [200, 170, 60], [90, 90, 90]];
+  for (let n = 0; n < (opts.photos ?? (opts.withPhoto ? 1 : 0)); n++) {
+    const png = new Blob([new Uint8Array(solidPng(400, 400, shades[n % shades.length]!))], { type: "image/png" });
+    await addPetPhoto(client, pet, { full: png, thumb: png, width: 400, height: 400 }, n);
   }
   const draft = await startLostCase(client, user.id, pet.id);
   await updateLostCase(client, draft.id, {
