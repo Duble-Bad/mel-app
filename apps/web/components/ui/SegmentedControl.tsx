@@ -10,6 +10,8 @@ interface Option<T extends string> {
 /**
  * Abas em pílula com indicador deslizante (tablist ARIA: setas ←/→ trocam).
  * O conteúdo de cada aba é responsabilidade de quem usa (`aria-controls`).
+ * Aba ativa no dourado oficial da MEL (#f6b928, texto #1c1404: contraste 10:1) nos dois temas;
+ * a inativa fica sem fundo, em texto secundário: a diferença não depende só de nuance.
  */
 export function SegmentedControl<T extends string>({
   label,
@@ -37,10 +39,10 @@ export function SegmentedControl<T extends string>({
   }
 
   return (
-    <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="relative grid rounded-md bg-surface-muted p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+    <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="relative grid rounded-md border border-border bg-surface-muted p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
       <span
         aria-hidden="true"
-        className="absolute inset-y-1 left-1 rounded-[11px] border border-border bg-surface-elevated shadow-sm transition-transform duration-300 ease-mel"
+        className="absolute inset-y-1 left-1 rounded-[11px] bg-[#f6b928] shadow-[0_4px_14px_-4px_rgb(246_185_40/0.55)] transition-transform duration-300 ease-mel"
         style={{ width: `calc((100% - 8px) / ${options.length})`, transform: `translateX(${index * 100}%)` }}
       />
       {options.map((o, i) => {
@@ -57,8 +59,8 @@ export function SegmentedControl<T extends string>({
             aria-controls={controls}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(o.value)}
-            className={`relative z-10 min-h-11 rounded-[11px] text-sm font-semibold transition-colors duration-200 ${
-              selected ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
+            className={`relative z-10 min-h-11 rounded-[11px] text-sm transition-colors duration-200 focus-visible:outline-offset-2 ${
+              selected ? "font-bold text-[#1c1404]" : "font-semibold text-text-secondary hover:text-text-primary"
             }`}
           >
             {o.label}
