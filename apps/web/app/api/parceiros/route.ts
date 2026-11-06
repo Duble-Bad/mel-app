@@ -1,24 +1,14 @@
 import { type NextRequest } from "next/server";
 import { fieldErrors, needsOnboarding, partnerInputSchema, partnerRecord, userErrorMessage } from "@mel/core";
-import {
-  createPartner,
-  DataError,
-  deletePartnerById,
-  logPartnerDocumentAccess,
-  partnerDocumentHmacExists,
-  recentDuplicateRejections,
-  storePartnerDocument,
-} from "@mel/data";
+import { createPartner, DataError, deletePartnerById } from "@mel/data";
 import { getCurrentProfile, getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getPiiKeyring } from "@/lib/pii/keys";
-import { partnerCpfAad, piiLookupHmac, type PiiKeyring, sealPii } from "@/lib/pii/crypto";
+import { getPiiKeyringSafe } from "@/lib/pii/keys";
+import { precheckCpf, writePartnerCpf } from "@/lib/pii/partnerCpf";
+import { serviceCpfDeps } from "@/lib/pii/server";
 
 const json = (status: number, body: Record<string, unknown>) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
-
-const DUPLICATE = "Este CPF já está em outro cadastro de protetor. Se é você, fale com a equipe da MEL pelo e-mail de contato.";
-const MAX_DUPLICATES_PER_DAY = 5;
 
 /**
  * Inscrição de parceiro (empresa, ONG ou protetor independente).
@@ -50,25 +40,12 @@ export async function POST(request: NextRequest) {
   const input = parsed.data;
 
   const service = createServiceClient();
-  let pii: { hmac: string; ring: PiiKeyring } | null = null;
+  const ring = input.kind === "independent" ? getPiiKeyringSafe("api/parceiros") : null;
   if (input.kind === "independent") {
-    let ring;
-    try {
-      ring = getPiiKeyring();
-    } catch (err) {
-      console.error("[api/parceiros] chaves de PII mal configuradas", (err as Error).message);
-      ring = null;
-    }
     if (!ring || !service) return json(503, { error: "O cadastro de protetores está indisponível no momento. Tente mais tarde." });
-    if ((await recentDuplicateRejections(service, user.id)) >= MAX_DUPLICATES_PER_DAY) {
-      return json(429, { error: "Muitas tentativas hoje. Fale com a equipe da MEL." });
-    }
-    const hmac = piiLookupHmac(ring, "cpf", input.cpf);
-    if (await partnerDocumentHmacExists(service, hmac)) {
-      await logPartnerDocumentAccess(service, { businessId: null, businessCode: null, actorId: user.id, action: "duplicate_rejected" });
-      return json(409, { error: DUPLICATE, fields: { cpf: "Este CPF já está em outro cadastro." } });
-    }
-    pii = { hmac, ring };
+    // Duplicidade em todas as versões de HMAC configuradas (rotação sem brecha).
+    const blocked = await precheckCpf(serviceCpfDeps(service), ring, user.id, input.cpf);
+    if (blocked) return json(blocked.status, { error: blocked.error, ...(blocked.field ? { fields: { cpf: blocked.field } } : {}) });
   }
 
   let created: { code: string; id: string };
@@ -81,29 +58,15 @@ export async function POST(request: NextRequest) {
     return json(500, { error: "Não conseguimos enviar agora. Tente de novo." });
   }
 
-  if (input.kind === "independent" && pii && service) {
-    try {
-      const box = sealPii(pii.ring, input.cpf, partnerCpfAad(created.id));
-      await storePartnerDocument(service, {
-        businessId: created.id,
-        ownerId: user.id,
-        ciphertext: box.ciphertext,
-        iv: box.iv,
-        authTag: box.authTag,
-        keyVersion: box.keyVersion,
-        lookupHmac: pii.hmac,
-        hmacKeyVersion: pii.ring.hmacVersion,
-      });
-      await logPartnerDocumentAccess(service, { businessId: created.id, businessCode: created.code, actorId: user.id, action: "stored" });
-    } catch (err) {
+  if (input.kind === "independent" && ring && service) {
+    // Cifra AQUI e grava pela RPC atômica (checa duplicidade de novo, sob trava, e registra o acesso).
+    const saved = await writePartnerCpf(serviceCpfDeps(service), ring, { businessId: created.id, actorId: user.id, cpf: input.cpf, mode: "signup" });
+    if (!saved.ok) {
       // Sem CPF guardado, o cadastro de protetor não fica.
       await deletePartnerById(service, created.id).catch(() => console.error("[api/parceiros] compensação falhou", created.code));
-      if (err instanceof DataError && err.code === "23505") {
-        await logPartnerDocumentAccess(service, { businessId: null, businessCode: null, actorId: user.id, action: "duplicate_rejected" }).catch(() => {});
-        return json(409, { error: DUPLICATE, fields: { cpf: "Este CPF já está em outro cadastro." } });
-      }
-      console.error("[api/parceiros] falha ao guardar documento", err instanceof DataError ? err.code : (err as Error).name);
-      return json(500, { error: "Não conseguimos enviar agora. Tente de novo." });
+      return json(saved.status === 409 && saved.field ? 409 : 500, saved.field
+        ? { error: saved.error, fields: { cpf: saved.field } }
+        : { error: "Não conseguimos enviar agora. Tente de novo." });
     }
   }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cnpjLookupEnabled, cnpjRetryDelayMs, CNPJ_LOOKUP_MAX_ATTEMPTS, shouldRetryCnpjLookup } from "./cnpjLookup";
-import { formatCnpj, formatCpf, isValidCnpj, isValidCpf, maskCpf, normalizeCnpj, normalizeCpf } from "./documents";
+import { maskCpf } from "../contact/masks";
+import { documentStateLabel, formatCnpj, formatCpf, isValidCnpj, isValidCpf, normalizeCnpj, normalizeCpf } from "./documents";
 import { partnerInputSchema, partnerRecord } from "./partners";
 
 describe("CPF", () => {
@@ -22,8 +23,16 @@ describe("CPF", () => {
   it("normalizes, formats and masks", () => {
     expect(normalizeCpf("529.982.247-25")).toBe("52998224725");
     expect(formatCpf("52998224725")).toBe("529.982.247-25");
-    expect(maskCpf("52998224725")).toBe("***.982.247-**");
-    expect(maskCpf("x")).toBe("***");
+    // Privacidade: só os 3 últimos dígitos (decisão do proprietário: ***.***.**9-00).
+    expect(maskCpf("52998224725")).toBe("***.***.**7-25");
+    expect(maskCpf("52998224725")).not.toContain("529");
+    expect(maskCpf("x")).toBe("***.***.***-**");
+  });
+  it("moderation sees only the document state, never the number", () => {
+    expect(documentStateLabel(true, "ok")).toBe("CPF informado ✓");
+    expect(documentStateLabel(true, "unreadable")).toContain("ilegível");
+    expect(documentStateLabel(true, "key_unavailable")).toContain("indisponível");
+    expect(documentStateLabel(false, null)).toContain("pendente");
   });
 });
 

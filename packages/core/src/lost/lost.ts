@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseBrPhone, PHONE_MESSAGES } from "../contact/phone";
 import type { FoundHow } from "./reunion";
 import type { LatLng } from "../geo/geo";
 import type { BrState } from "../profile/profile";
@@ -120,12 +121,13 @@ export const detailsStepSchema = z.object({
     .default(null),
 });
 
-/** Telefone brasileiro só com dígitos (DDD + número), sem +55. */
+/**
+ * Telefone brasileiro só com dígitos (DDD + número), sem +55. Regra central
+ * em contact/phone.ts (DDD existente, 9 no celular, fixo 2–5), a mesma do banco.
+ */
 export function normalizeBrPhone(value: string): string | null {
-  let digits = value.replace(/\D/g, "");
-  if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
-  if (digits.startsWith("0")) digits = digits.slice(1);
-  return /^[1-9][0-9][0-9]{8,9}$/.test(digits) ? digits : null;
+  const p = parseBrPhone(value);
+  return p.ok ? p.national : null;
 }
 
 /** "(11) 98765-4321" */
@@ -144,12 +146,16 @@ export const contactStepSchema = z
   })
   .transform((c, ctx) => {
     const wantsPhone = c.contactWhatsappPublic || c.contactPhonePublic;
-    const phone = c.contactPhone ? normalizeBrPhone(c.contactPhone) : null;
+    const parsed = c.contactPhone ? parseBrPhone(c.contactPhone) : null;
+    const phone = parsed?.ok ? parsed.national : null;
     if (wantsPhone && !phone) {
       ctx.addIssue({
         code: "custom",
         path: ["contactPhone"],
-        message: "Informe um celular com DDD, por exemplo (11) 98765-4321.",
+        message:
+          parsed && !parsed.ok && parsed.problem !== "empty" && parsed.problem !== "length"
+            ? PHONE_MESSAGES[parsed.problem]
+            : "Informe um celular com DDD, por exemplo (11) 98765-4321.",
       });
       return z.NEVER;
     }

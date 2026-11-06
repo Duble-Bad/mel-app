@@ -28,6 +28,8 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
   const profile = await requireOnboardedProfile("/admin");
   // Fora da moderação, a página "não existe" (não revela o painel).
   if (profile.role !== "moderator" && profile.role !== "admin") notFound();
+  // CPF completo: só administrador (o servidor ainda exige a concessão explícita).
+  const isAdmin = profile.role === "admin";
   const client = await createSessionClient();
   let data;
   try {
@@ -181,7 +183,7 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
                 </p>
                 <p className="text-sm text-text-secondary">{b.addressLabel}</p>
                 <p className="line-clamp-3 text-sm">{b.description}</p>
-                <PartnerReviewInfo b={b} />
+                <PartnerReviewInfo b={b} canRevealCpf={isAdmin} />
                 <BusinessReview code={b.code} name={b.name} />
               </li>
             ))}

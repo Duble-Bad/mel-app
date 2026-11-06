@@ -22,8 +22,24 @@ export function isValidCpf(value: string): boolean {
 
 export const formatCpf = (cpf: string) => cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
 
-/** Mostra só o miolo: ***.456.789-** (padrão de mascaramento usado pelo gov.br). */
-export const maskCpf = (cpf: string) => (/^\d{11}$/.test(cpf) ? `***.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-**` : "***");
+// Máscara de privacidade do CPF (maskCpf): contact/masks.ts.
+
+/**
+ * Estado do CPF cifrado guardado (partner_documents.read_state):
+ * - ok: abre normalmente;
+ * - unreadable: cifrado, IV ou tag corrompidos (a abertura autenticada falhou);
+ * - key_unavailable: a versão de chave usada não está configurada no servidor.
+ * Em nenhum caso a conta ou o cadastro são apagados; o titular cadastra de novo.
+ */
+export type DocumentReadState = "ok" | "unreadable" | "key_unavailable";
+
+/** O que a MODERAÇÃO vê do CPF (nunca o número). */
+export function documentStateLabel(hasDocument: boolean, state: DocumentReadState | null): string {
+  if (!hasDocument) return "CPF pendente (não guardado)";
+  if (state === "unreadable") return "CPF ilegível: pedir novo cadastro ao protetor";
+  if (state === "key_unavailable") return "CPF indisponível no momento (chave ausente)";
+  return "CPF informado ✓";
+}
 
 /** CNPJ normalizado: maiúsculas, sem pontuação (aceita o formato alfanumérico de 2026). */
 export function normalizeCnpj(value: string): string {

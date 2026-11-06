@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AtSign, BadgeCheck, Clock, Globe, MapPin, MessageCircle, Phone, Store, Tag } from "lucide-react";
 import { Suspense } from "react";
@@ -175,7 +176,7 @@ function OwnerPrivateData({ b }: { b: PublicBusiness }) {
   return (
     <section aria-labelledby="dados-privados" className="flex flex-col gap-3 rounded-card border border-border/70 bg-surface-muted/40 p-4">
       <h2 id="dados-privados" className="font-semibold">
-        Dados do cadastro <span className="font-normal text-text-secondary">(só você e a moderação veem)</span>
+        Dados do cadastro <span className="font-normal text-text-secondary">(só você e a moderação veem; o CPF, só você e administradores autorizados)</span>
       </h2>
       <dl className="grid gap-2 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
         <dt className="text-text-secondary">Tipo</dt>
@@ -202,7 +203,19 @@ function OwnerPrivateData({ b }: { b: PublicBusiness }) {
           </>
         )}
       </dl>
-      {b.kind === "independent" && (p.hasDocument ? <CpfReveal code={b.code} audience="owner" /> : <p className="text-sm text-text-secondary">Nenhum CPF guardado.</p>)}
+      {b.kind === "independent" &&
+        (!p.hasDocument ? (
+          <p className="text-sm text-text-secondary">Nenhum CPF guardado.</p>
+        ) : (p.documentState ?? "ok") === "ok" ? (
+          <CpfReveal code={b.code} audience="owner" />
+        ) : (
+          <p className="text-sm font-semibold text-status-lost">
+            {p.documentState === "unreadable" ? "Não conseguimos ler o CPF guardado." : "O CPF guardado está indisponível no momento."} Seu cadastro continua; cadastre o CPF de novo.
+          </p>
+        ))}
+      <Link href="/perfil/dados" className="inline-flex min-h-11 items-center text-sm font-semibold text-link underline-offset-4 hover:underline">
+        Corrigir documento ou telefones
+      </Link>
     </section>
   );
 }

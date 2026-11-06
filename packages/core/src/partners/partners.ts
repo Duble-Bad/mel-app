@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { normalizeBrPhone } from "../lost/lost";
-import { isValidCnpj, isValidCpf, normalizeCnpj, normalizeCpf } from "./documents";
+import { CNPJ_MESSAGE, cnpjField, cpfField, optionalPhoneField } from "../contact/schemas";
+import { type DocumentReadState, isValidCnpj, normalizeCnpj } from "./documents";
 
 export const BUSINESS_CATEGORIES = ["vet", "petshop", "grooming", "hotel", "trainer", "ngo", "other"] as const;
 export type BusinessCategory = (typeof BUSINESS_CATEGORIES)[number];
@@ -42,20 +42,8 @@ export const CNPJ_CHECK_LABELS: Record<CnpjCheckStatus, string> = {
   ERROR: "Consulta falhou (nova tentativa agendada)",
 };
 
-const optionalPhone = z
-  .string()
-  .trim()
-  .transform((v, ctx) => {
-    if (!v) return null;
-    const n = normalizeBrPhone(v);
-    if (!n) {
-      ctx.addIssue({ code: "custom", message: "Informe um telefone com DDD, ex.: (11) 3333-4444." });
-      return z.NEVER;
-    }
-    return n;
-  })
-  .nullable()
-  .default(null);
+// Telefone: regra central (contact/phone.ts), a mesma do banco.
+const optionalPhone = optionalPhoneField;
 
 const website = z
   .string()
@@ -73,13 +61,7 @@ const instagram = z
   .default(null)
   .refine((v) => v === null || /^[A-Za-z0-9._]{1,30}$/.test(v), "Use só o usuário do Instagram (ex.: @meupetshop).");
 
-const CNPJ_MESSAGE = "Confira os 14 caracteres do CNPJ.";
-const cnpj = z
-  .string({ error: "Informe o CNPJ." })
-  .trim()
-  .min(1, "Informe o CNPJ.")
-  .transform((v) => normalizeCnpj(v))
-  .refine(isValidCnpj, CNPJ_MESSAGE);
+const cnpj = cnpjField;
 
 const optionalCnpj = z
   .string()
@@ -155,12 +137,7 @@ const independentSchema = z.object({
   kind: z.literal("independent"),
   ...common,
   ...place,
-  cpf: z
-    .string({ error: "Informe o CPF." })
-    .trim()
-    .min(1, "Informe o CPF.")
-    .transform((v) => normalizeCpf(v))
-    .refine(isValidCpf, "Confira os 11 números do CPF."),
+  cpf: cpfField,
 });
 
 const CONTACT_MESSAGE = "Informe ao menos um contato: telefone, WhatsApp, site ou Instagram.";
@@ -225,6 +202,8 @@ export interface BusinessPrivateData {
   cnpjStatus: CnpjCheckStatus | null;
   /** Protetor: há CPF cifrado guardado. */
   hasDocument: boolean;
+  /** Protetor: o CPF guardado abre? (a moderação vê só isto, nunca o número). */
+  documentState: DocumentReadState | null;
 }
 
 export interface PublicBusiness {

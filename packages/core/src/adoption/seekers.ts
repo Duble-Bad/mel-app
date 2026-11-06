@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidBrPhone, parseBrPhone } from "../contact/phone";
 import { GUARDIAN_RADII_M } from "../guardian/guardian";
 import { PET_SIZES, type PetSize, type Species } from "../pet/pet";
 
@@ -65,8 +66,14 @@ export function hasContactInfo(text: string): boolean {
   return /[0-9][0-9 ().-]{7,}[0-9]/.test(text) || /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(text) || /(https?:\/\/|www\.)/i.test(text);
 }
 
-/** Só dígitos; vazio vira null. */
+/**
+ * Forma canônica (DDD + número, sem +55) quando válido pela regra central
+ * (contact/phone.ts); senão só os dígitos, para a validação abaixo recusar.
+ * Vazio vira null.
+ */
 export function normalizeWhatsapp(raw: string | null | undefined): string | null {
+  const p = parseBrPhone(raw);
+  if (p.ok) return p.national;
   const digits = (raw ?? "").replace(/\D/g, "");
   return digits || null;
 }
@@ -95,7 +102,7 @@ export const seekerInputSchema = z.object({
     .nullable()
     .default(null)
     .transform(normalizeWhatsapp)
-    .refine((v) => v === null || /^[0-9]{10,13}$/.test(v), "WhatsApp inválido. Use DDD e número."),
+    .refine((v) => v === null || isValidBrPhone(v), "WhatsApp inválido. Use DDD e número (celular com 9 na frente)."),
   notify: z.boolean().default(true),
   showPublic: z.boolean().default(false),
   consent: z.literal(true, { error: "Para entrar na fila, precisamos do seu consentimento." }),
@@ -119,6 +126,8 @@ export interface AdoptionSeeker {
   whatsapp: string | null;
   notify: boolean;
   showPublic: boolean;
+  /** "Aceito ser contatado por quem anuncia" (opt-in; só vale com a lista pública). */
+  contactOk: boolean;
   reviewNote: string | null;
   reviewedAt: string | null;
   expiresAt: string;
@@ -136,6 +145,11 @@ export interface PublicSeeker {
   species: SeekerSpecies;
   sizes: PetSize[];
   ages: SeekerAge[];
+  /**
+   * Referência opaca para iniciar conversa: só vem para quem anuncia um animal
+   * disponível e só de quem aceitou contato. Não é id de perfil nem de conta.
+   */
+  contactRef?: string | null;
 }
 
 /** Grupos de porte presentes na preferência (vazio = tanto faz). */

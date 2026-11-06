@@ -1,12 +1,13 @@
-import { CNPJ_CHECK_LABELS, formatCnpj, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
+import { CNPJ_CHECK_LABELS, documentStateLabel, formatCnpj, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
 import { CpfReveal } from "@/components/partners/CpfReveal";
 
 /**
- * Moderação de parceiros: tipo, documentos e situação do CNPJ. O CPF nunca vem
- * na página — "Ver CPF" pede ao servidor, que exige concessão explícita e
- * registra cada acesso. Nada de "verificado" por CPF válido.
+ * Moderação de parceiros: tipo, documentos e situação do CNPJ. Do CPF, a
+ * moderação vê só o ESTADO (informado / ilegível / pendente). "Ver CPF"
+ * aparece só para ADMINISTRADOR; o servidor ainda exige a concessão explícita
+ * e registra cada acesso. Nada de "verificado" por CPF válido.
  */
-export function PartnerReviewInfo({ b }: { b: PublicBusiness }) {
+export function PartnerReviewInfo({ b, canRevealCpf = false }: { b: PublicBusiness; canRevealCpf?: boolean }) {
   const p = b.private;
   return (
     <div className="flex flex-col gap-2 rounded-md bg-surface-muted/60 p-3 text-sm" data-testid="admin-partner-info">
@@ -40,12 +41,15 @@ export function PartnerReviewInfo({ b }: { b: PublicBusiness }) {
           <span className="font-semibold">Responsável:</span> {p.responsibleName}
         </p>
       )}
-      {b.kind === "independent" &&
-        (p?.hasDocument ? (
-          <CpfReveal code={b.code} audience="moderator" />
-        ) : (
-          <p className="font-semibold text-status-lost">Sem CPF guardado: não pode ser aprovado.</p>
-        ))}
+      {b.kind === "independent" && (
+        <>
+          <p data-testid="admin-cpf-state" className={p?.hasDocument && (p.documentState ?? "ok") === "ok" ? "font-semibold" : "font-semibold text-status-lost"}>
+            {documentStateLabel(Boolean(p?.hasDocument), p?.documentState ?? null)}
+            {!p?.hasDocument && " — não pode ser aprovado."}
+          </p>
+          {canRevealCpf && p?.hasDocument && (p.documentState ?? "ok") === "ok" && <CpfReveal code={b.code} audience="admin" />}
+        </>
+      )}
     </div>
   );
 }

@@ -1,18 +1,22 @@
 "use client";
 
 import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 
 /**
  * CPF guardado (cifrado) de um protetor. Nada vem na página: cada clique pede
- * ao servidor, que confere quem é e REGISTRA o acesso. Mascarado primeiro;
- * completo só num segundo pedido explícito. Esconde de novo ao sair.
+ * ao servidor, que confere quem é (titular ou ADMINISTRADOR autorizado) e
+ * REGISTRA o acesso. Mascarado primeiro; completo só num segundo pedido
+ * explícito. Esconde de novo ao sair. Se o cifrado não abrir, o titular
+ * recebe o caminho para cadastrar de novo (nada é apagado).
  */
-export function CpfReveal({ code, audience }: { code: string; audience: "owner" | "moderator" }) {
+export function CpfReveal({ code, audience }: { code: string; audience: "owner" | "admin" }) {
   const [value, setValue] = useState<{ cpf: string; full: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reregister, setReregister] = useState(false);
 
   async function load(full: boolean) {
     setBusy(true);
@@ -24,7 +28,8 @@ export function CpfReveal({ code, audience }: { code: string; audience: "owner" 
         body: JSON.stringify({ completo: full }),
         cache: "no-store",
       });
-      const body = (await res.json().catch(() => ({}))) as { cpf?: string; full?: boolean; error?: string };
+      const body = (await res.json().catch(() => ({}))) as { cpf?: string; full?: boolean; error?: string; reregister?: boolean };
+      setReregister(body.reregister === true);
       if (!res.ok || !body.cpf) setError(body.error ?? "Não conseguimos consultar agora.");
       else setValue({ cpf: body.cpf, full: Boolean(body.full) });
     } catch {
@@ -52,13 +57,21 @@ export function CpfReveal({ code, audience }: { code: string; audience: "owner" 
         )}
       </div>
       <p className="text-caption text-text-secondary">
-        {audience === "moderator"
+        {audience === "admin"
           ? "Cada consulta fica registrada com seu nome, a data e o parceiro. CPF válido não é identidade verificada."
-          : "Só você e a moderação autorizada podem ver; cada acesso fica registrado. Apagado se o cadastro for recusado ou a conta excluída."}
+          : "Só você e administradores autorizados podem ver; cada acesso fica registrado. Apagado se o cadastro for recusado ou a conta excluída."}
       </p>
       {error && (
         <p role="alert" className="text-sm font-medium text-danger">
           {error}
+          {reregister && (
+            <>
+              {" "}
+              <Link href="/perfil/dados" className="font-semibold text-link underline">
+                Cadastrar o CPF de novo
+              </Link>
+            </>
+          )}
         </p>
       )}
     </div>

@@ -1,4 +1,4 @@
-import type { BusinessCategory, BusinessInput, CnpjCheckStatus, OfferInput, PartnerKind, PartnerRecord, PublicBusiness } from "@mel/core";
+import type { BusinessCategory, BusinessInput, CnpjCheckStatus, DocumentReadState, OfferInput, PartnerKind, PartnerRecord, PublicBusiness } from "@mel/core";
 import { DataError, type MelClient } from "./client";
 import { randomId } from "./randomId";
 
@@ -107,7 +107,7 @@ interface BusinessJson {
   distance_m: number | null;
   is_owner: boolean;
   review_note: string | null;
-  private: { cnpj: string | null; legal_name: string | null; responsible_name: string | null; cnpj_status: CnpjCheckStatus | null; has_document: boolean } | null;
+  private: { cnpj: string | null; legal_name: string | null; responsible_name: string | null; cnpj_status: CnpjCheckStatus | null; has_document: boolean; document_state?: DocumentReadState | null } | null;
   offers: { id: string; title: string; description: string | null; starts_at: string | null; ends_at: string | null; is_sponsored: boolean }[];
 }
 
@@ -142,6 +142,7 @@ const toBusiness = (client: MelClient, b: BusinessJson): PublicBusiness => ({
         responsibleName: b.private.responsible_name,
         cnpjStatus: b.private.cnpj_status,
         hasDocument: b.private.has_document,
+        documentState: b.private.document_state ?? null,
       }
     : null,
   offers: (b.offers ?? []).map((o) => ({

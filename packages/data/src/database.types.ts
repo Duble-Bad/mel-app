@@ -172,6 +172,8 @@ export type Database = {
           area_point: unknown
           children: boolean | null
           consented_at: string
+          contact_ok: boolean
+          contact_ref: string
           created_at: string
           edits_count: number
           edits_day: string | null
@@ -201,6 +203,8 @@ export type Database = {
           area_point?: unknown
           children?: boolean | null
           consented_at: string
+          contact_ok?: boolean
+          contact_ref?: string
           created_at?: string
           edits_count?: number
           edits_day?: string | null
@@ -230,6 +234,8 @@ export type Database = {
           area_point?: unknown
           children?: boolean | null
           consented_at?: string
+          contact_ok?: boolean
+          contact_ref?: string
           created_at?: string
           edits_count?: number
           edits_day?: string | null
@@ -588,6 +594,7 @@ export type Database = {
       conversations: {
         Row: {
           adoption_listing_id: string | null
+          adoption_seeker_id: string | null
           created_at: string
           created_by: string
           found_case_id: string | null
@@ -602,6 +609,7 @@ export type Database = {
         }
         Insert: {
           adoption_listing_id?: string | null
+          adoption_seeker_id?: string | null
           created_at?: string
           created_by: string
           found_case_id?: string | null
@@ -616,6 +624,7 @@ export type Database = {
         }
         Update: {
           adoption_listing_id?: string | null
+          adoption_seeker_id?: string | null
           created_at?: string
           created_by?: string
           found_case_id?: string | null
@@ -634,6 +643,13 @@ export type Database = {
             columns: ["adoption_listing_id"]
             isOneToOne: false
             referencedRelation: "adoption_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_adoption_seeker_id_fkey"
+            columns: ["adoption_seeker_id"]
+            isOneToOne: false
+            referencedRelation: "adoption_seekers"
             referencedColumns: ["id"]
           },
           {
@@ -1178,6 +1194,9 @@ export type Database = {
           key_version: number
           lookup_hmac: string
           owner_id: string
+          read_state: string
+          read_state_at: string | null
+          updated_at: string
         }
         Insert: {
           auth_tag: string
@@ -1190,6 +1209,9 @@ export type Database = {
           key_version: number
           lookup_hmac: string
           owner_id: string
+          read_state?: string
+          read_state_at?: string | null
+          updated_at?: string
         }
         Update: {
           auth_tag?: string
@@ -1202,6 +1224,9 @@ export type Database = {
           key_version?: number
           lookup_hmac?: string
           owner_id?: string
+          read_state?: string
+          read_state_at?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1214,6 +1239,44 @@ export type Database = {
           {
             foreignKeyName: "partner_documents_owner_id_fkey"
             columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_data_changes: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          field: string
+          id: number
+          subject: string
+          subject_ref: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          field: string
+          id?: never
+          subject: string
+          subject_ref?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          field?: string
+          id?: never
+          subject?: string
+          subject_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_data_changes_actor_id_fkey"
+            columns: ["actor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1838,6 +1901,7 @@ export type Database = {
         }
         Returns: Json
       }
+      list_my_listings_for_seeker_contact: { Args: never; Returns: Json }
       list_orphan_sighting_media: {
         Args: { p_limit?: number; p_min_age?: string }
         Returns: string[]
@@ -1847,7 +1911,12 @@ export type Database = {
         Returns: Json
       }
       mark_conversation_read: { Args: { p_id: string }; Returns: undefined }
+      mark_partner_document_state: {
+        Args: { p_actor?: string; p_business_id: string; p_state: string }
+        Returns: boolean
+      }
       my_conversation_for_case: { Args: { p_code: string }; Returns: string }
+      my_personal_data: { Args: never; Returns: Json }
       nearby_lost_cases: {
         Args: {
           p_lat: number
@@ -1873,6 +1942,19 @@ export type Database = {
       open_conversation_from_sighting: {
         Args: { p_sighting_id: string }
         Returns: string
+      }
+      reencrypt_partner_document: {
+        Args: {
+          p_auth_tag: string
+          p_business_id: string
+          p_ciphertext: string
+          p_expected_ciphertext: string
+          p_hmac_key_version: number
+          p_iv: string
+          p_key_version: number
+          p_lookup_hmac: string
+        }
+        Returns: boolean
       }
       renew_my_adoption_seeker: { Args: never; Returns: string }
       report_content: {
@@ -1914,6 +1996,19 @@ export type Database = {
         }
         Returns: Json
       }
+      save_partner_document: {
+        Args: {
+          p_actor: string
+          p_auth_tag: string
+          p_business_id: string
+          p_ciphertext: string
+          p_iv: string
+          p_key_version: number
+          p_lookups: Json
+          p_mode: string
+        }
+        Returns: string
+      }
       save_push_subscription: {
         Args: {
           p_auth: string
@@ -1940,9 +2035,21 @@ export type Database = {
         Args: { p_blocked: boolean; p_id: string }
         Returns: undefined
       }
+      set_my_adoption_seeker_contact: {
+        Args: { p_enabled: boolean }
+        Returns: undefined
+      }
       set_my_adoption_seeker_notify: {
         Args: { p_enabled: boolean }
         Returns: undefined
+      }
+      set_my_adoption_seeker_whatsapp: {
+        Args: { p_whatsapp: string }
+        Returns: undefined
+      }
+      start_adoption_seeker_conversation: {
+        Args: { p_body: string; p_listing_code: string; p_seeker_ref: string }
+        Returns: string
       }
       start_conversation: {
         Args: { p_body: string; p_code: string }

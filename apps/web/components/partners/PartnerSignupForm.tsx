@@ -9,11 +9,15 @@ import {
   COMPANY_CATEGORIES,
   formatCnpj,
   formatCpf,
+  formatCnpjInput,
+  formatCpfInput,
+  formatPhoneInput,
   isValidCnpj,
   isValidCpf,
   NGO_ACTIVITY_AREAS,
   normalizeCnpj,
   normalizeCpf,
+  optionalPhoneField,
   PARTNER_KIND_LABELS,
   partnerInputSchema,
   fieldErrors,
@@ -323,7 +327,7 @@ export function PartnerSignupForm() {
               placeholder="000.000.000-00"
               maxLength={14}
               value={cpf}
-              onChange={(e) => setCpf(e.target.value)}
+              onChange={(e) => setCpf(formatCpfInput(e.target.value))}
               onBlur={() => {
                 const n = normalizeCpf(cpf);
                 if (!n) return;
@@ -333,7 +337,7 @@ export function PartnerSignupForm() {
                 } else setErrors((x) => ({ ...x, cpf: "Confira os 11 números do CPF." }));
               }}
               error={errors.cpf || undefined}
-              hint="Obrigatório e privado: cifrado, visto só por você e pela moderação autorizada (cada acesso fica registrado). Nunca é publicado."
+              hint="Obrigatório e privado: cifrado, visto só por você e por administradores autorizados (cada acesso fica registrado). Nunca é publicado."
             />
           </>
         )}
@@ -383,8 +387,25 @@ export function PartnerSignupForm() {
         </section>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <TextField label="Telefone" optional type="tel" inputMode="tel" value={v.phone} onChange={set("phone")} error={errors.phone} />
-          <TextField label="WhatsApp" optional type="tel" inputMode="tel" value={v.whatsapp} onChange={set("whatsapp")} error={errors.whatsapp} />
+          {(["phone", "whatsapp"] as const).map((f) => (
+            <TextField
+              key={f}
+              label={f === "phone" ? "Telefone" : "WhatsApp"}
+              optional
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
+              placeholder={f === "phone" ? "(11) 3333-3333" : "(11) 99999-9999"}
+              value={v[f]}
+              onChange={(e) => setV((c) => ({ ...c, [f]: formatPhoneInput(e.target.value) }))}
+              onBlur={() => {
+                // Mesma regra do servidor e do banco (DDD existente, 9 no celular, fixo 2–5).
+                const r = optionalPhoneField.safeParse(v[f]);
+                setErrors((x) => ({ ...x, [f]: r.success ? "" : (r.error.issues[0]?.message ?? "") }));
+              }}
+              error={errors[f] || undefined}
+            />
+          ))}
           <TextField label="Site" optional type="url" placeholder="https://" value={v.website} onChange={set("website")} error={errors.website} />
           <TextField label="Instagram" optional placeholder="@seuperfil" value={v.instagram} onChange={set("instagram")} error={errors.instagram} />
         </div>
@@ -451,7 +472,7 @@ function CnpjField({ value, onChange, error, onError }: { value: string; onChang
       autoCapitalize="characters"
       maxLength={18}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(formatCnpjInput(e.target.value))}
       onBlur={() => {
         const n = normalizeCnpj(value);
         if (!n) return;

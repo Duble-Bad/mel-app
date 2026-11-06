@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { partnerInputSchema, partnerRecord } from "@mel/core";
 import { openPii, parsePiiKeyring, partnerCpfAad, piiLookupHmac, sealPii } from "../../../apps/web/lib/pii/crypto";
-import { canViewPartnerDocuments, getPartnerDocument, logPartnerDocumentAccess, storePartnerDocument } from "../src/partnerDocuments";
+import { canRevealPartnerDocuments, getPartnerDocument, logPartnerDocumentAccess, storePartnerDocument } from "../src/partnerDocuments";
 import { createPartner, getBusiness, listBusinesses, reviewBusiness } from "../src/partners";
 import { anonClient, createTestUser, serviceClient } from "./helpers";
 
@@ -113,11 +113,13 @@ describe("partner documents: privacy", () => {
     expect(error).not.toBeNull();
   });
 
-  it("CPF access needs moderator role AND an explicit grant", async () => {
-    expect(await canViewPartnerDocuments(serviceClient(), stranger.id)).toEqual({ moderator: false, granted: false });
-    expect(await canViewPartnerDocuments(serviceClient(), moderator.id)).toEqual({ moderator: true, granted: false });
-    await serviceClient().from("pii_access_grants").insert({ user_id: moderator.id, note: "teste" } as never);
-    expect(await canViewPartnerDocuments(serviceClient(), moderator.id)).toEqual({ moderator: true, granted: true });
+  it("full CPF needs the ADMIN role AND an explicit grant; an ordinary moderator never gets it (owner decision 2026-11-06)", async () => {
+    expect(await canRevealPartnerDocuments(serviceClient(), stranger.id)).toEqual({ moderator: false, admin: false, granted: false });
+    expect(await canRevealPartnerDocuments(serviceClient(), moderator.id)).toEqual({ moderator: true, admin: false, granted: false });
+    // O banco recusa conceder acesso ao CPF a quem não é administrador.
+    const { error } = await serviceClient().from("pii_access_grants").insert({ user_id: moderator.id, note: "teste" } as never);
+    expect(error?.message).toContain("Só administradores podem receber acesso ao CPF");
+    expect(await canRevealPartnerDocuments(serviceClient(), moderator.id)).toEqual({ moderator: true, admin: false, granted: false });
   });
 
   it("owner and moderator see registration data; strangers and the public never do", async () => {

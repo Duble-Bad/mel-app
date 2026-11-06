@@ -26,6 +26,7 @@ import {
   seekerInputSchema,
   type SeekerSizeGroup,
   sizeGroupsOf,
+  formatPhoneInput,
   userErrorMessage,
 } from "@mel/core";
 import { saveMyAdoptionSeeker } from "@mel/data";
@@ -119,7 +120,7 @@ function SeekerFormFields({ viewer, firstName, initial, onSaved, onCancel, draft
   const router = useRouter();
   const toast = useToast();
   const [d, setD] = useState<Draft>(() => ({ ...fromSeeker(initial), ...draft }));
-  const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? "");
+  const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ? formatPhoneInput(initial.whatsapp) : "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -213,7 +214,7 @@ function SeekerFormFields({ viewer, firstName, initial, onSaved, onCancel, draft
             placeholder="(11) 90000-0000"
             value={whatsapp}
             maxLength={20}
-            onChange={(e) => setWhatsapp(e.target.value)}
+            onChange={(e) => setWhatsapp(formatPhoneInput(e.target.value))}
             error={errors.whatsapp}
             hint="Nunca fica público. Só a moderação vê; o contato com quem doa é pelo chat."
           />
