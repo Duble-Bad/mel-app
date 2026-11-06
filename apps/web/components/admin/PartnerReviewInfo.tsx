@@ -13,7 +13,14 @@ export function PartnerReviewInfo({ b, canRevealCpf = false }: { b: PublicBusine
     <div className="flex flex-col gap-2 rounded-md bg-surface-muted/60 p-3 text-sm" data-testid="admin-partner-info">
       <p className="flex flex-wrap items-center gap-2">
         <span className="rounded-full bg-primary-soft px-2.5 py-0.5 font-semibold text-primary-soft-foreground">{PARTNER_KIND_LABELS[b.kind]}</span>
-        {b.kind !== "company" && <span className="text-text-secondary">{b.addressLabel} (região aproximada)</span>}
+        {b.kind === "independent" && <span className="text-text-secondary">{b.addressLabel} (região aproximada)</span>}
+        {b.kind !== "independent" && (
+          <span className="text-text-secondary" data-testid="admin-partner-address">
+            {p?.addressPublicConsent
+              ? `Endereço público autorizado pelo parceiro${p.addressPublicVerified ? " e validado" : " — aguardando validação do administrador"}`
+              : "Sem autorização para mostrar o endereço: em público só bairro/cidade"}
+          </span>
+        )}
         {b.activityArea && <span className="text-text-secondary">· {b.activityArea}</span>}
       </p>
       {b.kind !== "independent" && (

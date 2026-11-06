@@ -113,9 +113,18 @@ const place = {
   city: z.string().trim().min(2, "Informe a cidade (ex.: São Paulo – SP).").max(80, "Use até 80 caracteres."),
 };
 
+/** Empresa/ONG: "endereço comercial/institucional público e autorizo exibir" (validado pelo administrador). */
+const addressPublic = z.boolean().default(false);
+const optionalPlace = {
+  neighborhood: optionalText(80),
+  city: optionalText(80),
+};
+
 const companySchema = z.object({
   kind: z.literal("company"),
   ...common,
+  ...optionalPlace,
+  addressPublic,
   category: z.enum(COMPANY_CATEGORIES, { error: "Escolha a categoria." }),
   cnpj,
   legalName: z.string().trim().min(2, "Informe a razão social.").max(150, "Use até 150 caracteres."),
@@ -127,6 +136,9 @@ const ngoSchema = z.object({
   kind: z.literal("ngo"),
   ...common,
   ...place,
+  addressPublic,
+  /** Só com endereço institucional autorizado (senão vale bairro/cidade). */
+  addressLabel: optionalText(200),
   cnpj,
   legalName: optionalText(150),
   activityArea: z.enum(NGO_ACTIVITY_AREAS, { error: "Escolha a área de atuação." }),
@@ -148,6 +160,9 @@ export const partnerInputSchema = z
     if (p.kind !== "independent" && !p.phone && !p.whatsapp && !p.website && !p.instagram) {
       ctx.addIssue({ code: "custom", path: ["phone"], message: CONTACT_MESSAGE });
     }
+    if (p.kind === "ngo" && p.addressPublic && (p.addressLabel ?? "").length < 5) {
+      ctx.addIssue({ code: "custom", path: ["addressLabel"], message: "Informe o endereço institucional (rua, número e bairro)." });
+    }
   });
 export type PartnerInput = z.output<typeof partnerInputSchema>;
 
@@ -167,13 +182,16 @@ export function partnerRecord(p: PartnerInput) {
   };
   if (p.kind === "company") {
     return { ...base, category: p.category, cnpj: p.cnpj, legalName: p.legalName, addressLabel: p.addressLabel, hours: p.hours,
-      city: null, neighborhood: null, activityArea: null, responsibleName: null };
+      city: p.city, neighborhood: p.neighborhood, activityArea: null, responsibleName: null, addressPublicConsent: p.addressPublic };
   }
   const where = { city: p.city, neighborhood: p.neighborhood, addressLabel: `${p.neighborhood}, ${p.city}`, hours: null };
   if (p.kind === "ngo") {
-    return { ...base, ...where, category: "ngo" as const, cnpj: p.cnpj, legalName: p.legalName, activityArea: p.activityArea, responsibleName: p.responsibleName };
+    // Endereço institucional só com autorização (o banco guarda o ponto exato só nesse caso).
+    const label = p.addressPublic && p.addressLabel ? p.addressLabel : where.addressLabel;
+    return { ...base, ...where, addressLabel: label, category: "ngo" as const, cnpj: p.cnpj, legalName: p.legalName, activityArea: p.activityArea,
+      responsibleName: p.responsibleName, addressPublicConsent: p.addressPublic };
   }
-  return { ...base, ...where, category: "ngo" as const, cnpj: null, legalName: null, activityArea: null, responsibleName: null };
+  return { ...base, ...where, category: "ngo" as const, cnpj: null, legalName: null, activityArea: null, responsibleName: null, addressPublicConsent: false };
 }
 export type PartnerRecord = ReturnType<typeof partnerRecord>;
 
@@ -204,6 +222,10 @@ export interface BusinessPrivateData {
   hasDocument: boolean;
   /** Protetor: o CPF guardado abre? (a moderação vê só isto, nunca o número). */
   documentState: DocumentReadState | null;
+  /** O parceiro declarou endereço comercial/institucional e autorizou divulgar. */
+  addressPublicConsent: boolean;
+  /** Um administrador validou o endereço público. */
+  addressPublicVerified: boolean;
 }
 
 export interface PublicBusiness {
@@ -214,6 +236,8 @@ export interface PublicBusiness {
   category: BusinessCategory;
   description: string;
   addressLabel: string;
+  /** Endereço e ponto exatos são públicos (empresa/ONG aprovada, autorizada e validada). */
+  addressPublic: boolean;
   city: string | null;
   neighborhood: string | null;
   activityArea: string | null;
@@ -235,5 +259,8 @@ export interface PublicBusiness {
   offers: BusinessOffer[];
 }
 
-/** ONG e protetor mostram só bairro/cidade e um ponto aproximado. */
-export const hasApproximateLocation = (b: Pick<PublicBusiness, "kind">) => b.kind !== "company";
+/**
+ * Sem endereço público validado (protetor sempre; empresa/ONG até autorizar e o
+ * administrador validar): só bairro/cidade e um ponto aproximado (~1 km).
+ */
+export const hasApproximateLocation = (b: Pick<PublicBusiness, "addressPublic">) => !b.addressPublic;

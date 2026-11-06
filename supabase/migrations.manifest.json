@@ -172,6 +172,14 @@
     {
       "file": "20261106161000_contact_validation_and_holder_corrections.sql",
       "sha256": "eabcef9986df81064eac173201561bc265b8488b59c55efc95661bcaf7b8a646"
+    },
+    {
+      "file": "20261106170000_map_adoption_setting_and_public_address.sql",
+      "sha256": "1cd0197607c833e0ef4532c07fe093dca72f116706e659454b38e09f9165d4be"
+    },
+    {
+      "file": "20261106171000_partner_address_consent_grant.sql",
+      "sha256": "e38eaa3ad349c19ac6acf8408be1056ee63e9012e0f8187d42c3b268afa243b5"
     }
   ]
 }

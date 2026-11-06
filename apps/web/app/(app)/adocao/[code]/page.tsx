@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, HeartHandshake, MapPin, MessageCircle, Minus, X } from "lucide-react";
 import { Suspense } from "react";
-import { ADOPTION_STATUS_LABELS, ageLabel, colorLabel, SEX_LABELS, SIZE_LABELS, SPECIES_LABELS, TEMPERAMENT_LABELS, type PublicAdoption } from "@mel/core";
+import { ADOPTION_STATUS_LABELS, ageLabel, institutionLine, colorLabel, SEX_LABELS, SIZE_LABELS, SPECIES_LABELS, TEMPERAMENT_LABELS, type PublicAdoption } from "@mel/core";
 import { getAdoption } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
@@ -87,6 +87,17 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
           {a.areaLabel && (
             <p className="flex items-center gap-1.5">
               <MapPin aria-hidden="true" className="size-4 text-brand" strokeWidth={2} /> {a.areaLabel}
+              <span className="text-sm text-text-secondary">(região aproximada do animal)</span>
+            </p>
+          )}
+          {a.institution && (
+            // Instituição ≠ local do animal: ele pode estar em lar temporário, nunca divulgado.
+            <p className="text-sm text-text-secondary" data-testid="adoption-institution">
+              {institutionLine(a.institution)} —{" "}
+              <Link href={`/parceiros/${a.institution.code}`} className="font-semibold text-link underline-offset-4 hover:underline">
+                ver perfil{a.institution.addressPublic ? " e endereço público da instituição" : ""}
+              </Link>
+              . O animal pode não estar na sede.
             </p>
           )}
         </header>

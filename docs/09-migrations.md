@@ -75,7 +75,7 @@ Inventário resultante das 43 migrations (banco reconstruído, 2026-11-06; o `me
 1. `npx supabase migration new <nome>` e escreva o SQL (com RLS, grants e `search_path`).
 2. `npm run db:push` (só aplica no `mel-dev`; a trava recusa qualquer outro alvo) e `npm run db:types`.
 3. Testes: `npm run check`, `npm run test:db`, E2E se tocar em fluxo.
-4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 43).
+4. Atualize `supabase/migrations.manifest.json` (nova entrada com o sha256) e os números esperados em `scripts/prod/postdeploy-check.mjs` (`EXPECTED`) e no pre-flight (`EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`, hoje 45).
 5. Push na `main`. O workflow de reconstrução gera `schema-fingerprint.generated.json`; versione-o como `supabase/schema-fingerprint.json` (ou rode `node scripts/schema-audit/audit.mjs --write-fingerprint` contra um Supabase local).
 6. Produção: só com autorização explícita, pelo procedimento de [08-deploy-producao.md](08-deploy-producao.md).
 

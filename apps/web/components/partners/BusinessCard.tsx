@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BadgeCheck, HandHeart, MapPin, Store, UserRound } from "lucide-react";
-import { BUSINESS_CATEGORY_LABELS, formatDistance, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
+import { BUSINESS_CATEGORY_LABELS, formatDistance, hasApproximateLocation, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
 import { visibleOffers } from "./flags";
 
 const KIND_ICON = { company: Store, ngo: HandHeart, independent: UserRound } as const;
@@ -44,7 +44,7 @@ export function BusinessCard({ b }: { b: PublicBusiness }) {
           <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand" strokeWidth={2} />
           <span className="min-w-0 break-words">
             {b.addressLabel}
-            {b.kind !== "company" && <span className="text-text-secondary"> (região aproximada)</span>}
+            {hasApproximateLocation(b) && <span className="text-text-secondary"> (região aproximada)</span>}
             {b.distanceM != null && <span className="text-text-secondary"> · a {formatDistance(b.distanceM)}</span>}
           </span>
         </span>

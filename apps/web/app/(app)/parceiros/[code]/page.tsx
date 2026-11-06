@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AtSign, BadgeCheck, Clock, Globe, MapPin, MessageCircle, Phone, Store, Tag } from "lucide-react";
 import { Suspense } from "react";
-import { BUSINESS_CATEGORY_LABELS, CNPJ_CHECK_LABELS, formatCnpj, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
+import { BUSINESS_CATEGORY_LABELS, CNPJ_CHECK_LABELS, formatCnpj, hasApproximateLocation, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
 import { getBusiness } from "@mel/data";
 import { getCurrentProfile } from "@/lib/session";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -15,6 +15,7 @@ import { NewOfferForm, OfferActions } from "@/components/partners/PartnerClient"
 import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
+import { PublicAddressControl } from "@/components/admin/PublicAddressControl";
 
 const isCode = (c: string) => /^[a-z2-9]{6}$/i.test(c);
 
@@ -47,11 +48,17 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
   const approved = b.status === "APPROVED";
   const sponsored = sponsoredOffersEnabled();
   const offers = visibleOffers(b.offers, sponsored);
-  const approximate = b.kind !== "company";
+  // Endereço exato em público só com autorização do parceiro E validação do administrador (o banco decide).
+  const approximate = hasApproximateLocation(b);
+  // Dono e moderação recebem o endereço guardado; em público ele não aparece.
+  const insiderOnly = approximate && (b.isOwner || isMod);
 
   return (
     <article className="flex flex-col gap-6">
       {b.isOwner && <OwnerStatus b={b} justPublished={Boolean(q.novo)} />}
+      {profile?.role === "admin" && approved && b.kind !== "independent" && b.private && (
+        <PublicAddressControl code={b.code} consent={b.private.addressPublicConsent} verified={b.private.addressPublicVerified} />
+      )}
       <header className="flex items-start gap-4">
         <span className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary-soft text-primary-soft-foreground">
           {b.logoUrl ? (
@@ -91,7 +98,11 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
         <ul className="flex flex-col gap-2.5">
           <Row icon={MapPin}>
             {b.addressLabel}
-            {approximate && <span className="text-text-secondary"> (região aproximada)</span>}
+            {insiderOnly ? (
+              <span className="text-text-secondary"> (só você e a moderação veem; em público aparece só a região aproximada)</span>
+            ) : (
+              approximate && <span className="text-text-secondary"> (região aproximada)</span>
+            )}
           </Row>
           {b.hours && <Row icon={Clock}>{b.hours}</Row>}
           {b.phone && (

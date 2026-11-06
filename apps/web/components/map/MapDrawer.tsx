@@ -91,6 +91,11 @@ export function MapDrawer({ entry: e, onClose }: { entry: FeedEntry; onClose: ()
               </p>
             )}
           </div>
+          {e.note && (
+            <p className="text-sm text-text-secondary" data-testid="map-selected-note">
+              {e.note}
+            </p>
+          )}
           {e.facts.length > 0 && (
             <dl className="mel-facts">
               {e.facts.map((f) => (
@@ -141,7 +146,7 @@ function DrawerActions({ entry: e }: { entry: FeedEntry }) {
   if (e.kind === "adoption") {
     return (
       <Link href={e.href} className={primary}>
-        <Heart aria-hidden="true" className="size-5" strokeWidth={2} /> Ver anúncio de adoção
+        <Heart aria-hidden="true" className="size-5" strokeWidth={2} /> Ver detalhes
       </Link>
     );
   }

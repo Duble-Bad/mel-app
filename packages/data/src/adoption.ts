@@ -1,4 +1,4 @@
-import type { AdoptionInput, AdoptionStatus, InterestInput, PetSize, PublicAdoption, Species } from "@mel/core";
+import type { AdoptionInput, AdoptionInstitution, AdoptionMapItem, AdoptionStatus, InterestInput, LatLng, PetSize, PublicAdoption, Species } from "@mel/core";
 import { DataError, type MelClient } from "./client";
 import { randomId } from "./randomId";
 
@@ -70,7 +70,18 @@ interface AdoptionJson {
   review_note: string | null;
   interests: number | null;
   my_interest?: boolean;
+  institution?: InstitutionJson | null;
 }
+
+interface InstitutionJson {
+  code: string;
+  name: string;
+  kind: "ngo" | "company";
+  address_public: boolean;
+}
+
+const toInstitution = (i: InstitutionJson | null | undefined): AdoptionInstitution | null =>
+  i ? { code: i.code, name: i.name, kind: i.kind, addressPublic: i.address_public === true } : null;
 
 const toAdoption = (client: MelClient, a: AdoptionJson): PublicAdoption => ({
   code: a.code,
@@ -95,6 +106,7 @@ const toAdoption = (client: MelClient, a: AdoptionJson): PublicAdoption => ({
   reviewNote: a.review_note,
   interests: a.interests,
   myInterest: a.my_interest === true,
+  institution: toInstitution(a.institution),
 });
 
 export async function getAdoption(client: MelClient, code: string): Promise<PublicAdoption | null> {
@@ -156,4 +168,51 @@ export async function listAdoptionsForReview(client: MelClient): Promise<PublicA
 export async function reviewAdoption(client: MelClient, code: string, approve: boolean, note?: string): Promise<void> {
   const { error } = await client.rpc("admin_review_adoption", { p_code: code, p_approve: approve, p_note: note });
   if (error) fail(error);
+}
+
+interface AdoptionMapJson {
+  code: string;
+  name: string;
+  species: Species;
+  size: PetSize | null;
+  sex: AdoptionMapItem["sex"];
+  age_months: number | null;
+  area_label: string | null;
+  photo_path: string | null;
+  published_at: string | null;
+  lat: number;
+  lng: number;
+  distance_m: number | null;
+  institution: InstitutionJson | null;
+}
+
+/**
+ * Anúncios no mapa da rede, pelo ponto público aproximado. Vazio quando o
+ * administrador não ligou "mostrar adoção no mapa" (o banco decide).
+ */
+export async function searchAdoptionsOnMap(
+  client: MelClient,
+  f: { center: LatLng; radiusKm: number; species?: Species[] },
+): Promise<AdoptionMapItem[]> {
+  const { data, error } = await client.rpc("search_adoptions_on_map", {
+    p_lat: f.center.lat,
+    p_lng: f.center.lng,
+    p_radius_m: Math.round(f.radiusKm * 1000),
+    p_species: f.species?.length ? f.species : undefined,
+  });
+  if (error) fail(error);
+  return ((data as unknown as AdoptionMapJson[]) ?? []).map((a) => ({
+    code: a.code,
+    name: a.name,
+    species: a.species,
+    size: a.size,
+    sex: a.sex,
+    ageMonths: a.age_months,
+    areaLabel: a.area_label,
+    photoUrl: a.photo_path ? photoUrl(client, a.photo_path) : null,
+    publishedAt: a.published_at,
+    position: { lat: a.lat, lng: a.lng },
+    distanceM: a.distance_m,
+    institution: toInstitution(a.institution),
+  }));
 }

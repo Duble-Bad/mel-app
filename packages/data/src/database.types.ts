@@ -267,6 +267,67 @@ export type Database = {
           },
         ]
       }
+      app_setting_changes: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: number
+          key: string
+          value: Json
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: never
+          key: string
+          value: Json
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: never
+          key?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_setting_changes_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -395,6 +456,9 @@ export type Database = {
         Row: {
           activity_area: string | null
           address_label: string
+          address_public_consent: boolean
+          address_public_verified_at: string | null
+          address_public_verified_by: string | null
           approved_at: string | null
           category: Database["public"]["Enums"]["business_category"]
           city: string | null
@@ -427,6 +491,9 @@ export type Database = {
         Insert: {
           activity_area?: string | null
           address_label: string
+          address_public_consent?: boolean
+          address_public_verified_at?: string | null
+          address_public_verified_by?: string | null
           approved_at?: string | null
           category: Database["public"]["Enums"]["business_category"]
           city?: string | null
@@ -459,6 +526,9 @@ export type Database = {
         Update: {
           activity_area?: string | null
           address_label?: string
+          address_public_consent?: boolean
+          address_public_verified_at?: string | null
+          address_public_verified_by?: string | null
           approved_at?: string | null
           category?: Database["public"]["Enums"]["business_category"]
           city?: string | null
@@ -489,6 +559,13 @@ export type Database = {
           whatsapp?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "businesses_address_public_verified_by_fkey"
+            columns: ["address_public_verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "businesses_owner_id_fkey"
             columns: ["owner_id"]
@@ -1827,6 +1904,14 @@ export type Database = {
         Args: { p_approve: boolean; p_code: string; p_note?: string }
         Returns: undefined
       }
+      admin_set_business_public_address: {
+        Args: { p_code: string; p_public: boolean }
+        Returns: undefined
+      }
+      admin_set_map_setting: {
+        Args: { p_key: string; p_value: boolean }
+        Returns: Json
+      }
       claim_push_batch: {
         Args: { p_limit?: number }
         Returns: {
@@ -1875,6 +1960,7 @@ export type Database = {
       get_business: { Args: { p_code: string }; Returns: Json }
       get_conversation: { Args: { p_id: string }; Returns: Json }
       get_lost_case_timeline: { Args: { p_code: string }; Returns: Json }
+      get_map_settings: { Args: never; Returns: Json }
       get_my_adoption_seeker: { Args: never; Returns: Json }
       get_my_conversations: { Args: never; Returns: Json }
       get_my_matches: { Args: { p_found_code?: string }; Returns: Json }
@@ -2017,6 +2103,16 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: undefined
+      }
+      search_adoptions_on_map: {
+        Args: {
+          p_lat: number
+          p_limit?: number
+          p_lng: number
+          p_radius_m?: number
+          p_species?: Database["public"]["Enums"]["species"][]
+        }
+        Returns: Json
       }
       search_public_cases: {
         Args: {

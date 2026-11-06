@@ -15,6 +15,7 @@ export * from "./moderation";
 export * from "./adoption";
 export * from "./adoptionSeekers";
 export * from "./partners";
+export * from "./settings";
 export * from "./partnerDocuments";
 export * from "./personalData";
 export * from "./privacy";

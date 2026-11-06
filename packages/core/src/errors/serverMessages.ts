@@ -109,4 +109,10 @@ export const SERVER_MESSAGES: readonly string[] = [
   "Requisição inválida.",
   "Só administradores podem receber acesso ao CPF.",
   "Telefone inválido. Use DDD e número (celular com 9 na frente).",
+  "Configuração desconhecida.",
+  "Parceiro não encontrado.",
+  "Protetor independente não divulga endereço: só a região aproximada.",
+  "Só administradores mudam esta configuração.",
+  "Só administradores validam endereços públicos.",
+  "Só empresa ou ONG aprovada que autorizou a divulgação do endereço.",
 ];

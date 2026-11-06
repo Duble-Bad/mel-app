@@ -97,6 +97,38 @@ export interface PublicAdoption {
   interests: number | null;
   /** Quem está vendo já enviou interesse (pode cancelar). */
   myInterest?: boolean;
+  /** ONG ou empresa aprovada de quem anuncia (o animal pode não estar na sede). */
+  institution?: AdoptionInstitution | null;
+}
+
+export interface AdoptionInstitution {
+  code: string;
+  name: string;
+  kind: "ngo" | "company";
+  /** A instituição tem endereço público validado (no perfil dela). */
+  addressPublic: boolean;
+}
+
+/** Anúncio no mapa da rede (só com a configuração do administrador ligada). */
+export interface AdoptionMapItem {
+  code: string;
+  name: string;
+  species: Species;
+  size: PetSize | null;
+  sex: PetSex;
+  ageMonths: number | null;
+  areaLabel: string | null;
+  photoUrl: string | null;
+  publishedAt: string | null;
+  /** Ponto público APROXIMADO do anúncio (célula de 100 m), nunca a casa de quem doa. */
+  position: { lat: number; lng: number };
+  distanceM: number | null;
+  institution: AdoptionInstitution | null;
+}
+
+/** "Disponível para adoção pela ONG X" (nunca diz que o animal está na sede). */
+export function institutionLine(i: AdoptionInstitution): string {
+  return `Disponível para adoção pela ${i.kind === "ngo" ? "ONG" : "empresa parceira"} ${i.name}`;
 }
 
 /** "Filhote (4 meses)", "2 anos", "Idade não informada". */

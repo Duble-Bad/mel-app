@@ -74,6 +74,7 @@ export async function createPartner(client: MelClient, ownerId: string, p: Partn
       activity_area: p.activityArea,
       city: p.city,
       neighborhood: p.neighborhood,
+      address_public_consent: p.addressPublicConsent,
     } as never)
     .select("id, short_code")
     .single();
@@ -90,6 +91,7 @@ interface BusinessJson {
   category: BusinessCategory;
   description: string;
   address_label: string;
+  address_public?: boolean;
   city: string | null;
   neighborhood: string | null;
   activity_area: string | null;
@@ -107,7 +109,7 @@ interface BusinessJson {
   distance_m: number | null;
   is_owner: boolean;
   review_note: string | null;
-  private: { cnpj: string | null; legal_name: string | null; responsible_name: string | null; cnpj_status: CnpjCheckStatus | null; has_document: boolean; document_state?: DocumentReadState | null } | null;
+  private: { cnpj: string | null; legal_name: string | null; responsible_name: string | null; cnpj_status: CnpjCheckStatus | null; has_document: boolean; document_state?: DocumentReadState | null; address_public_consent?: boolean; address_public_verified?: boolean } | null;
   offers: { id: string; title: string; description: string | null; starts_at: string | null; ends_at: string | null; is_sponsored: boolean }[];
 }
 
@@ -119,6 +121,7 @@ const toBusiness = (client: MelClient, b: BusinessJson): PublicBusiness => ({
   category: b.category,
   description: b.description,
   addressLabel: b.address_label,
+  addressPublic: b.address_public === true,
   city: b.city ?? null,
   neighborhood: b.neighborhood ?? null,
   activityArea: b.activity_area ?? null,
@@ -143,6 +146,8 @@ const toBusiness = (client: MelClient, b: BusinessJson): PublicBusiness => ({
         cnpjStatus: b.private.cnpj_status,
         hasDocument: b.private.has_document,
         documentState: b.private.document_state ?? null,
+        addressPublicConsent: b.private.address_public_consent === true,
+        addressPublicVerified: b.private.address_public_verified === true,
       }
     : null,
   offers: (b.offers ?? []).map((o) => ({
@@ -204,5 +209,11 @@ export async function listBusinessesForReview(client: MelClient): Promise<Public
 
 export async function reviewBusiness(client: MelClient, code: string, approve: boolean, note?: string): Promise<void> {
   const { error } = await client.rpc("admin_review_business", { p_code: code, p_approve: approve, p_note: note });
+  if (error) fail(error);
+}
+
+/** Administrador: libera (ou retira) o endereço exato de empresa/ONG aprovada que autorizou. */
+export async function setBusinessPublicAddress(client: MelClient, code: string, isPublic: boolean): Promise<void> {
+  const { error } = await client.rpc("admin_set_business_public_address", { p_code: code, p_public: isPublic });
   if (error) fail(error);
 }

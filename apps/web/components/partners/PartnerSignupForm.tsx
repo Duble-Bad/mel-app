@@ -103,6 +103,8 @@ export function PartnerSignupForm() {
   const [v, setV] = useState<Values>(EMPTY);
   const [cpf, setCpf] = useState("");
   const [helpsLost, setHelpsLost] = useState(false);
+  // Empresa/ONG: endereço comercial/institucional público e autorizado (o administrador ainda valida).
+  const [addressPublic, setAddressPublic] = useState(false);
   const [where, setWhere] = useState<PickedLocation | null>(null);
   const [logo, setLogo] = useState<File | null>(null);
   const [terms, setTerms] = useState(false);
@@ -131,7 +133,8 @@ export function PartnerSignupForm() {
   }, [done]);
 
   const set = (key: keyof Values) => (e: { target: { value: string } }) => setV((cur) => ({ ...cur, [key]: e.target.value }));
-  const approximate = kind !== "company";
+  // Ponto aproximado e só bairro/cidade: protetor sempre; ONG sem endereço institucional autorizado.
+  const approximate = kind === "independent" || (kind === "ngo" && !addressPublic);
 
   function draftInput(logoPath: string | null) {
     const common = {
@@ -147,10 +150,12 @@ export function PartnerSignupForm() {
       logoPath,
     };
     if (kind === "company")
-      return { ...common, category: v.category || undefined, cnpj: v.cnpj, legalName: v.legalName, addressLabel: v.addressLabel || where?.label || "", hours: v.hours };
+      return { ...common, category: v.category || undefined, cnpj: v.cnpj, legalName: v.legalName, addressLabel: v.addressLabel || where?.label || "", hours: v.hours,
+        neighborhood: v.neighborhood, city: v.city, addressPublic };
     const place = { neighborhood: v.neighborhood, city: v.city };
     if (kind === "ngo")
-      return { ...common, ...place, cnpj: v.cnpj, legalName: v.legalName, activityArea: v.activityArea || undefined, responsibleName: v.responsibleName };
+      return { ...common, ...place, cnpj: v.cnpj, legalName: v.legalName, activityArea: v.activityArea || undefined, responsibleName: v.responsibleName,
+        addressPublic, addressLabel: addressPublic ? v.addressLabel || where?.label || "" : undefined };
     return { ...common, ...place, cpf };
   }
 
@@ -357,7 +362,8 @@ export function PartnerSignupForm() {
           error={errors.description}
         />
 
-        {approximate && (
+        {/* Bairro e cidade: o que aparece em público enquanto o endereço não for liberado. */}
+        {(approximate || kind === "company" || addressPublic) && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <TextField label="Bairro" placeholder="Ex.: Tatuapé" maxLength={80} value={v.neighborhood} onChange={set("neighborhood")} error={errors.neighborhood} />
             <TextField label="Cidade" placeholder="Ex.: São Paulo – SP" maxLength={80} value={v.city} onChange={set("city")} error={errors.city} />
@@ -366,7 +372,7 @@ export function PartnerSignupForm() {
 
         <section aria-labelledby="parceiro-local" className="flex flex-col gap-3">
           <h3 id="parceiro-local" className="text-sm font-semibold">
-            {approximate ? "Região no mapa" : "Endereço do estabelecimento"}
+            {approximate ? "Região no mapa" : kind === "ngo" ? "Endereço institucional" : "Endereço do estabelecimento"}
           </h3>
           <LocationPicker
             value={where}
@@ -382,10 +388,32 @@ export function PartnerSignupForm() {
             privacyNote={
               approximate
                 ? "Guardamos só um ponto aproximado (cerca de 1 km). Em público aparecem apenas o bairro e a cidade, nunca o endereço."
-                : "Endereço de estabelecimento é público no diretório."
+                : addressPublic
+                  ? "O endereço exato só aparece depois que a equipe da MEL validar. Até lá, em público, só o bairro e a cidade."
+                  : "Sem a autorização abaixo, em público aparecem só o bairro, a cidade e um ponto aproximado (~1 km)."
             }
           />
           {errors.position && <p className="text-sm font-medium text-danger">{errors.position}</p>}
+          {kind !== "independent" && (
+            <label className="flex items-start gap-3 rounded-md border border-border p-3 text-sm" data-testid="partner-address-public">
+              <input
+                type="checkbox"
+                className="mt-1 size-5 shrink-0 accent-[#f6b928]"
+                checked={addressPublic}
+                onChange={(e) => setAddressPublic(e.target.checked)}
+                aria-labelledby="endereco-publico-titulo"
+                aria-describedby="endereco-publico-ajuda"
+              />
+              <span>
+                <span id="endereco-publico-titulo" className="font-semibold">
+                  Este é um endereço {kind === "ngo" ? "institucional (sede ou unidade de atendimento)" : "comercial"} aberto ao público e autorizo a MEL a mostrá-lo no mapa
+                </span>
+                <span id="endereco-publico-ajuda" className="mt-1 block text-text-secondary">
+                  Não marque se for residência, atendimento em casa ou lar temporário: nesse caso aparecem só o bairro e a cidade. A equipe da MEL valida antes de publicar.
+                </span>
+              </span>
+            </label>
+          )}
           {!approximate && (
             <TextField label="Endereço como aparece no perfil" maxLength={200} value={v.addressLabel} onChange={set("addressLabel")} error={errors.addressLabel} />
           )}

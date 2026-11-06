@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { parseSearchParams } from "@mel/core";
+import { getMapSettings } from "@mel/data";
+import { createPublicClient } from "@/lib/supabase/public";
 import { parseFeed } from "@/components/map/feed";
 import { MapExplorer } from "@/components/map/MapExplorer";
 import { LoadingState } from "@/components/ui/States";
@@ -33,12 +35,15 @@ export default function MapPage({ searchParams }: PageProps<"/mapa">) {
         </nav>
       </header>
       <Suspense fallback={<LoadingState label="Carregando mapa…" />}>
-        {searchParams.then((q) => {
+        {Promise.all([
+          searchParams,
+          // Configuração do administrador (padrão: adoção fora do mapa). Falhou: fica desligada.
+          getMapSettings(createPublicClient()).catch(() => ({ showAdoptionOnMap: false })),
+        ]).then(([q, settings]) => {
           const filters = parseSearchParams(q);
           const state = { filters, ...parseFeed(q, filters) };
-          // Centro/raio novos remontam o mapa já no lugar certo.
           // Sem key: trocar centro/raio move o mapa já montado (não volta para "Lista" nem perde o zoom).
-          return <MapExplorer state={state} />;
+          return <MapExplorer state={state} showAdoptionOnMap={settings.showAdoptionOnMap} />;
         })}
       </Suspense>
     </main>

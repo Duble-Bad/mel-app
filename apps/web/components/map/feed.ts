@@ -1,6 +1,7 @@
 import {
   ageLabel,
   colorLabel,
+  institutionLine,
   itemHref,
   itemTitle,
   PET_SIZES,
@@ -10,6 +11,7 @@ import {
   SPECIES_LABELS,
   timeAgo,
   toSearchParams,
+  type AdoptionMapItem,
   type PetSize,
   type PublicAdoption,
   type PublicCaseItem,
@@ -92,6 +94,8 @@ export interface FeedEntry {
   description: string | null;
   /** Ponto público aproximado (grade de ~100 m); null = fica só na lista. */
   position: PublicCaseItem["position"] | null;
+  /** Linha extra (ex.: instituição do anúncio de adoção). */
+  note?: string | null;
 }
 
 const VERB: Record<PublicKind, string> = { lost: "Sumiu", found: "Encontrado", sighting: "Visto" };
@@ -142,5 +146,31 @@ export function adoptionEntry(a: PublicAdoption): FeedEntry {
     description: a.description,
     // A listagem pública de adoção não traz ponto (nem aproximado): só na lista.
     position: null,
+    note: a.institution ? `${institutionLine(a.institution)}. O animal pode não estar na sede.` : null,
+  };
+}
+
+/** Anúncio no mapa da rede (configuração do administrador ligada): ponto público aproximado. */
+export function adoptionMapEntry(a: AdoptionMapItem): FeedEntry {
+  const facts = [
+    { label: "Espécie", value: SPECIES_LABELS[a.species] },
+    { label: "Sexo", value: a.sex !== "unknown" ? SEX_LABELS[a.sex] : "" },
+    { label: "Porte", value: a.size ? SIZE_LABELS[a.size].label : "" },
+    { label: "Idade", value: a.ageMonths != null ? ageLabel(a.ageMonths) : "" },
+  ].filter((f) => f.value);
+  return {
+    id: `adoption-${a.code}`,
+    kind: "adoption",
+    href: `/adocao/${a.code}`,
+    title: a.name,
+    photoUrl: a.photoUrl,
+    areaLabel: a.areaLabel,
+    distanceM: a.distanceM,
+    when: [ageLabel(a.ageMonths), a.size && `Porte ${SIZE_LABELS[a.size].label.toLowerCase()}`].filter(Boolean).join(" · "),
+    at: a.publishedAt,
+    facts,
+    description: null,
+    position: a.position,
+    note: a.institution ? `${institutionLine(a.institution)}. O animal pode não estar na sede.` : null,
   };
 }
