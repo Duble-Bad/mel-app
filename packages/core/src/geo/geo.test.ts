@@ -19,14 +19,14 @@ describe("distanceMeters", () => {
 
 describe("fuzzPoint", () => {
   it("moves the point by at most half a cell diagonal", () => {
-    const fuzzed = fuzzPoint(se, 250);
-    expect(distanceMeters(se, fuzzed)).toBeLessThanOrEqual((250 * Math.SQRT2) / 2 + 1);
+    const fuzzed = fuzzPoint(se);
+    expect(distanceMeters(se, fuzzed)).toBeLessThanOrEqual((100 * Math.SQRT2) / 2 + 1);
   });
 
   it("is deterministic and groups nearby points into the same cell", () => {
-    const a = fuzzPoint(se, 250);
-    const b = fuzzPoint({ lat: se.lat + 0.00001, lng: se.lng + 0.00001 }, 250);
-    expect(fuzzPoint(se, 250)).toEqual(a);
+    const a = fuzzPoint(se);
+    const b = fuzzPoint({ lat: se.lat + 0.00001, lng: se.lng + 0.00001 });
+    expect(fuzzPoint(se)).toEqual(a);
     expect(b).toEqual(a);
   });
 });

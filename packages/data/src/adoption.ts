@@ -1,5 +1,6 @@
-import type { AdoptionInput, AdoptionStatus, InterestInput, PetSize, PublicAdoption, Species } from "@mel/core";
+import type { AdoptionInput, AdoptionInstitution, AdoptionMapItem, AdoptionStatus, InterestInput, LatLng, PetSize, PublicAdoption, Species } from "@mel/core";
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 function fail(error: { message: string; code?: string }): never {
   throw new DataError(error.message, error.code);
@@ -10,7 +11,7 @@ const photoUrl = (client: MelClient, path: string) => client.storage.from("pet-p
 /** Foto do anúncio (já reduzida, sem EXIF) na pasta de quem doa. */
 export async function uploadAdoptionPhoto(client: MelClient, userId: string, image: Blob): Promise<string> {
   const ext = image.type === "image/jpeg" ? "jpg" : image.type === "image/png" ? "png" : "webp";
-  const path = `${userId}/adocao/${crypto.randomUUID()}.${ext}`;
+  const path = `${userId}/adocao/${randomId()}.${ext}`;
   const { error } = await client.storage.from("pet-photos").upload(path, image, { contentType: image.type, cacheControl: "31536000", upsert: false });
   if (error) throw new DataError(error.message, undefined, { context: "upload" });
   return path;
@@ -68,7 +69,19 @@ interface AdoptionJson {
   is_owner: boolean;
   review_note: string | null;
   interests: number | null;
+  my_interest?: boolean;
+  institution?: InstitutionJson | null;
 }
+
+interface InstitutionJson {
+  code: string;
+  name: string;
+  kind: "ngo" | "company";
+  address_public: boolean;
+}
+
+const toInstitution = (i: InstitutionJson | null | undefined): AdoptionInstitution | null =>
+  i ? { code: i.code, name: i.name, kind: i.kind, addressPublic: i.address_public === true } : null;
 
 const toAdoption = (client: MelClient, a: AdoptionJson): PublicAdoption => ({
   code: a.code,
@@ -92,6 +105,8 @@ const toAdoption = (client: MelClient, a: AdoptionJson): PublicAdoption => ({
   isOwner: a.is_owner,
   reviewNote: a.review_note,
   interests: a.interests,
+  myInterest: a.my_interest === true,
+  institution: toInstitution(a.institution),
 });
 
 export async function getAdoption(client: MelClient, code: string): Promise<PublicAdoption | null> {
@@ -129,11 +144,19 @@ export async function submitAdoptionInterest(client: MelClient, code: string, i:
     p_code: code,
     p_housing: i.housing,
     p_other_pets: i.otherPets,
-    p_children: i.children,
+    // Opcional: null = não informado (o tipo gerado não expressa argumento nulo).
+    p_children: i.children as boolean,
     p_message: i.message,
   });
   if (error) fail(error);
   return data as string;
+}
+
+/** Cancela o próprio interesse num anúncio (a linha é apagada). false = não havia interesse. */
+export async function withdrawAdoptionInterest(client: MelClient, code: string): Promise<boolean> {
+  const { data, error } = await client.rpc("withdraw_adoption_interest", { p_code: code });
+  if (error) fail(error);
+  return data === true;
 }
 
 export async function listAdoptionsForReview(client: MelClient): Promise<PublicAdoption[]> {
@@ -145,4 +168,51 @@ export async function listAdoptionsForReview(client: MelClient): Promise<PublicA
 export async function reviewAdoption(client: MelClient, code: string, approve: boolean, note?: string): Promise<void> {
   const { error } = await client.rpc("admin_review_adoption", { p_code: code, p_approve: approve, p_note: note });
   if (error) fail(error);
+}
+
+interface AdoptionMapJson {
+  code: string;
+  name: string;
+  species: Species;
+  size: PetSize | null;
+  sex: AdoptionMapItem["sex"];
+  age_months: number | null;
+  area_label: string | null;
+  photo_path: string | null;
+  published_at: string | null;
+  lat: number;
+  lng: number;
+  distance_m: number | null;
+  institution: InstitutionJson | null;
+}
+
+/**
+ * Anúncios no mapa da rede, pelo ponto público aproximado. Vazio quando o
+ * administrador não ligou "mostrar adoção no mapa" (o banco decide).
+ */
+export async function searchAdoptionsOnMap(
+  client: MelClient,
+  f: { center: LatLng; radiusKm: number; species?: Species[] },
+): Promise<AdoptionMapItem[]> {
+  const { data, error } = await client.rpc("search_adoptions_on_map", {
+    p_lat: f.center.lat,
+    p_lng: f.center.lng,
+    p_radius_m: Math.round(f.radiusKm * 1000),
+    p_species: f.species?.length ? f.species : undefined,
+  });
+  if (error) fail(error);
+  return ((data as unknown as AdoptionMapJson[]) ?? []).map((a) => ({
+    code: a.code,
+    name: a.name,
+    species: a.species,
+    size: a.size,
+    sex: a.sex,
+    ageMonths: a.age_months,
+    areaLabel: a.area_label,
+    photoUrl: a.photo_path ? photoUrl(client, a.photo_path) : null,
+    publishedAt: a.published_at,
+    position: { lat: a.lat, lng: a.lng },
+    distanceM: a.distance_m,
+    institution: toInstitution(a.institution),
+  }));
 }

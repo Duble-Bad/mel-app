@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEL — Conceito B · Entrar ou criar conta</title>
+<link rel="icon" href="../assets/marca/mel-beacon-tile-dark.svg">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="entrar" data-no-footer>
+<main id="conteudo" class="auth">
+  <div class="auth__art" aria-hidden="true">
+    <img src="../assets/fotos/golden-flor.jpg" alt="">
+    <div class="auth__quote enter" style="--d:.3s"><p>“Em 9 horas, três vizinhos viram o Thor. No fim do dia ele estava em casa.”</p><span>História ilustrativa · Vila Mariana – SP</span></div>
+  </div>
+  <div class="auth__form">
+    <div class="auth__box enter">
+      <h1 id="title">Que bom ver você</h1>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Entrar ou criar conta" data-i="0">
+        <span class="tabs__ind" aria-hidden="true"></span>
+        <button role="tab" id="t-in" aria-selected="true" aria-controls="form" type="button">Entrar</button>
+        <button role="tab" id="t-up" aria-selected="false" aria-controls="form" type="button" tabindex="-1">Criar conta</button>
+      </div>
+
+      <button class="btn btn--google btn--block" type="button" id="google"><i data-icon="google"></i>Continuar com Google</button>
+      <div class="divider">ou com e-mail</div>
+
+      <div class="alert alert--info" id="anon"><i data-icon="info"></i><span>Você já ajudou sem conta neste aparelho. <strong>Crie sua conta</strong> para manter seus avistamentos.</span></div>
+
+      <form class="form" id="form" novalidate role="tabpanel" aria-labelledby="t-in">
+        <div class="alert alert--error" id="form-error" hidden><i data-icon="alert"></i><span>E-mail ou senha não conferem. Confira e tente de novo.</span></div>
+        <div class="field" id="f-name" hidden>
+          <label for="name">Seu nome</label>
+          <input class="input" id="name" name="name" autocomplete="name" placeholder="Como podemos te chamar?">
+          <p class="error" id="e-name">Conte como podemos te chamar.</p>
+        </div>
+        <div class="field" id="f-email">
+          <label for="email">E-mail</label>
+          <input class="input" id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="voce@exemplo.com" aria-describedby="e-email">
+          <p class="error" id="e-email">Digite um e-mail válido, como nome@exemplo.com.</p>
+        </div>
+        <div class="field" id="f-pass">
+          <div style="display:flex;justify-content:space-between;align-items:center"><label for="pass">Senha</label><a class="link" href="#" id="forgot" style="font-size:14px">Esqueci minha senha</a></div>
+          <div class="pw"><input class="input" id="pass" name="pass" type="password" autocomplete="current-password" placeholder="Sua senha" aria-describedby="rules e-pass">
+            <button type="button" id="toggle" aria-label="Mostrar senha" aria-pressed="false"><i data-icon="eye"></i></button></div>
+          <p class="error" id="e-pass">A senha precisa ter pelo menos 8 caracteres.</p>
+          <ul class="rules" id="rules" hidden aria-live="polite"><li id="r-len"><span class="tick"><i data-icon="check"></i></span>Pelo menos 8 caracteres</li></ul>
+        </div>
+        <p class="annot" id="annot" hidden><strong>Nota de design:</strong> a referência mostrava também “uma letra maiúscula” e “um número”. Hoje a regra real (app e Supabase) é só <strong>mínimo de 8 caracteres</strong>. Exigir mais é uma regra nova e depende da sua decisão.</p>
+        <button class="btn btn--gold btn--block" type="submit" id="submit">Entrar</button>
+        <p class="hint" id="terms" hidden style="text-align:center">Ao criar a conta, você aceita os <a class="link" href="#">Termos de uso</a> e a <a class="link" href="#">Política de privacidade</a>.</p>
+      </form>
+      <p style="text-align:center;color:var(--muted)"><span id="sw-text">Primeira vez na MEL?</span> <button class="link-btn" type="button" id="switch">Crie sua conta grátis</button></p>
+      <a class="link" href="index.html" style="text-align:center;display:block"><span aria-hidden="true">←</span> Voltar para o início</a>
+    </div>
+  </div>
+</main>
+<script>
+window.MEL = {
+  init() {
+    const { icon } = window.MELB;
+    const $ = (id) => document.getElementById(id);
+    let mode = "in";
+    const setMode = (m) => {
+      mode = m;
+      const up = m === "up";
+      $("tabs").dataset.i = up ? "1" : "0";
+      $("t-in").setAttribute("aria-selected", String(!up)); $("t-in").tabIndex = up ? -1 : 0;
+      $("t-up").setAttribute("aria-selected", String(up)); $("t-up").tabIndex = up ? 0 : -1;
+      $("form").setAttribute("aria-labelledby", up ? "t-up" : "t-in");
+      $("f-name").hidden = !up; $("rules").hidden = !up; $("annot").hidden = !up; $("terms").hidden = !up;
+      $("forgot").hidden = up;
+      $("title").textContent = up ? "Crie sua conta grátis" : "Que bom ver você";
+      $("submit").textContent = up ? "Criar conta" : "Entrar";
+      $("pass").autocomplete = up ? "new-password" : "current-password";
+      $("pass").placeholder = up ? "Crie uma senha" : "Sua senha";
+      $("sw-text").textContent = up ? "Já tem conta?" : "Primeira vez na MEL?";
+      $("switch").textContent = up ? "Entre aqui" : "Crie sua conta grátis";
+      $("form-error").hidden = true;
+      document.querySelectorAll(".field").forEach((f) => f.classList.remove("invalid"));
+      if (up) $("f-name").classList.add("fields-swap");
+    };
+    $("t-in").onclick = () => setMode("in");
+    $("t-up").onclick = () => setMode("up");
+    $("tabs").addEventListener("keydown", (e) => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") { setMode(mode === "in" ? "up" : "in"); $(mode === "up" ? "t-up" : "t-in").focus(); } });
+    $("switch").onclick = () => setMode(mode === "in" ? "up" : "in");
+    if (location.hash === "#criar") setMode("up");
+
+    $("toggle").onclick = () => {
+      const show = $("pass").type === "password";
+      $("pass").type = show ? "text" : "password";
+      $("toggle").setAttribute("aria-pressed", String(show));
+      $("toggle").setAttribute("aria-label", show ? "Ocultar senha" : "Mostrar senha");
+      $("toggle").innerHTML = icon(show ? "eyeOff" : "eye");
+    };
+    $("pass").addEventListener("input", () => {
+      $("r-len").classList.toggle("ok", $("pass").value.length >= 8);
+      if ($("f-pass").classList.contains("invalid") && $("pass").value.length >= 8) $("f-pass").classList.remove("invalid");
+    });
+    $("email").addEventListener("blur", () => { if ($("email").value) $("f-email").classList.toggle("invalid", !/^\S+@\S+\.\S+$/.test($("email").value)); });
+
+    $("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const bad = [];
+      if (mode === "up" && !$("name").value.trim()) bad.push("f-name");
+      if (!/^\S+@\S+\.\S+$/.test($("email").value)) bad.push("f-email");
+      if ($("pass").value.length < 8) bad.push("f-pass");
+      document.querySelectorAll(".field").forEach((f) => f.classList.toggle("invalid", bad.includes(f.id)));
+      document.querySelectorAll(".field input").forEach((i) => i.setAttribute("aria-invalid", String(bad.includes(i.closest(".field").id))));
+      if (bad.length) return document.querySelector(`#${bad[0]} input`).focus();
+      const b = $("submit");
+      b.disabled = true; b.textContent = mode === "up" ? "Criando sua conta…" : "Entrando…";
+      setTimeout(() => {
+        b.disabled = false; b.textContent = mode === "up" ? "Criar conta" : "Entrar";
+        if (mode === "in") { $("form-error").hidden = false; }
+        else { $("form").innerHTML = `<div class="success"><span class="success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg></span><h2>Conta criada!</h2><p>Só mais um passo: escolha seu bairro para receber alertas da sua região.</p><a class="btn btn--gold btn--block" href="index.html">Continuar</a></div>`; }
+      }, 900);
+    });
+    $("google").onclick = () => { $("google").innerHTML = "Abrindo o Google…"; $("google").disabled = true; setTimeout(() => { $("google").disabled = false; $("google").innerHTML = icon("google") + "Continuar com Google"; }, 1200); };
+    $("forgot").onclick = (e) => { e.preventDefault(); $("form-error").hidden = true; };
+  },
+};
+</script>
+</body>
+</html>

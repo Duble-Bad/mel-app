@@ -1,5 +1,8 @@
 // Tema da MEL: preferência (o que a pessoa escolheu) × tema resolvido (o que
-// está na tela). "system" segue prefers-color-scheme do aparelho.
+// está na tela). "system" segue prefers-color-scheme do aparelho. Padrão (nada
+// escolhido): escuro, a identidade aprovada (Conceito B, 2026-11-05).
+
+export const DEFAULT_THEME = "dark" as const;
 
 export const THEME_PREFERENCES = ["system", "light", "dark"] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];
@@ -12,4 +15,4 @@ export const THEME_STORAGE_KEY = "mel-theme";
  * Roda no <head>, ANTES da primeira pintura: aplica data-theme no <html> para
  * não piscar branco antes do escuro. Mantido mínimo e sem dependências.
  */
-export const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem("${THEME_STORAGE_KEY}");if(p!=="light"&&p!=="dark")p="system";var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.dataset.theme=d?"dark":"light";r.dataset.themePref=p;}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem("${THEME_STORAGE_KEY}");if(p!=="light"&&p!=="dark"&&p!=="system")p="${DEFAULT_THEME}";var d=p==="dark"||(p==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.dataset.theme=d?"dark":"light";r.dataset.themePref=p;}catch(e){}})();`;

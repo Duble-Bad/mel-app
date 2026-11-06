@@ -142,6 +142,19 @@ jobs:
           MEL_TEST_CAPTCHA=1 npx vitest run --config vitest.db.config.ts tests/captcha.test.ts 2>&1 | tee /tmp/captcha.txt
           exit "${PIPESTATUS[0]}"
 
+      # Impressão digital e relatório do banco reconstruído: depois de uma migration
+      # nova, baixe e versione como supabase/schema-fingerprint.json (sem dados).
+      - name: Guardar impressão digital e relatório
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: schema-fingerprint
+          path: |
+            schema-fingerprint.generated.json
+            schema-audit-report.md
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Relatório
         if: always()
         run: |

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEL — Conceito B · Parceiros</title>
+<link rel="icon" href="../assets/marca/mel-beacon-tile-dark.svg">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="parceiros">
+<main id="conteudo">
+  <section class="container split" style="padding-block:48px 24px">
+    <div class="enter">
+      <span class="eyebrow">Programa de parceiros</span>
+      <h1 style="font-size:clamp(34px,5vw,52px);font-weight:900;margin-top:10px">Seja um parceiro da MEL</h1>
+      <p class="section__lead">Clínicas, pet shops, ONGs, protetores e serviços que ajudam animais a voltar para casa. Parceria pela causa: sem mensalidade, sem venda dentro da MEL.</p>
+      <ul class="checks">
+        <li><i data-icon="checkCircle"></i><span><strong>Ponto de apoio no mapa:</strong> quem encontra um animal sabe onde pedir ajuda perto.</span></li>
+        <li><i data-icon="checkCircle"></i><span><strong>Alertas da sua região:</strong> receba casos próximos e ajude a divulgar.</span></li>
+        <li><i data-icon="checkCircle"></i><span><strong>Adoção com fila de interessados</strong> (ONGs e protetores).</span></li>
+        <li><i data-icon="checkCircle"></i><span><strong>Selo de parceiro verificado</strong> após a moderação.</span></li>
+      </ul>
+    </div>
+    <div class="card enter" style="--d:.12s;display:grid;gap:14px">
+      <h2 style="font-size:22px">Antes de começar</h2>
+      <p style="color:var(--muted)">Você pode ler tudo sem conta. Para enviar a inscrição, pedimos login, assim a moderação consegue falar com você e só você edita o perfil.</p>
+      <ol style="margin:0;padding-left:20px;display:grid;gap:8px;color:#d6dbe3">
+        <li>Escolha a categoria e preencha o essencial (2 minutos).</li>
+        <li>A moderação analisa em até 3 dias úteis.</li>
+        <li>Aprovado, seu perfil aparece no mapa e no mural de parceiros.</li>
+      </ol>
+      <a class="btn btn--gold" href="#inscricao">Quero me inscrever</a>
+    </div>
+  </section>
+
+  <section class="section" id="inscricao" style="padding-top:32px">
+    <div class="container" style="max-width:900px">
+      <div class="card reveal" id="box">
+        <h2 style="font-size:28px">Cadastrar minha organização</h2>
+        <p style="color:var(--muted);margin:6px 0 22px">Escolha como você atua. Os campos mudam conforme a categoria.</p>
+        <form class="form" id="form" novalidate>
+          <fieldset style="border:0;padding:0;margin:0">
+            <legend class="label" style="font-weight:700;margin-bottom:10px">Tipo de parceiro <span class="req">*</span></legend>
+            <div class="cats">
+              <label class="cat"><input type="radio" name="cat" value="empresa" checked><i data-icon="store"></i><strong>Empresa ou serviço pet</strong><span>Clínica, pet shop, banho e tosa, hotel, adestramento.</span></label>
+              <label class="cat"><input type="radio" name="cat" value="ong"><i data-icon="handHeart"></i><strong>ONG</strong><span>Organização de proteção animal com CNPJ.</span></label>
+              <label class="cat"><input type="radio" name="cat" value="protetor"><i data-icon="person"></i><strong>Protetor(a) independente</strong><span>Pessoa que resgata e cuida, sem CNPJ.</span></label>
+            </div>
+          </fieldset>
+          <div id="fields"></div>
+          <label class="check" id="f-terms"><input type="checkbox" id="ok-terms"> <span>Li e aceito as regras do programa: nada de venda de animais e informações verdadeiras.</span></label>
+          <p class="error" id="e-terms" style="display:none;color:#ff8a8e;font-weight:600;font-size:13.5px">Aceite as regras para enviar.</p>
+          <div class="alert alert--info"><i data-icon="lock"></i><span>Dados de contato e documentos ficam só com a moderação. Publicamos apenas o nome público, a categoria, o bairro e os canais que você escolher mostrar.</span></div>
+          <button class="btn btn--gold btn--block" type="submit">Enviar para moderação</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+window.MEL = {
+  init() {
+    const { hydrateIcons } = window.MELB;
+    const $ = (id) => document.getElementById(id);
+    const f = (id, label, { req = false, opt = false, ph = "", type = "text", hint = "", input = "", err = "" } = {}) => `
+      <div class="field"><label for="${id}">${label} ${req ? '<span class="req">*</span>' : ""}${opt ? '<span class="opt">(opcional)</span>' : ""}</label>
+      ${input || `<input class="input" id="${id}" type="${type}" placeholder="${ph}" ${req ? "required" : ""}>`}
+      ${hint ? `<p class="hint">${hint}</p>` : ""}<p class="error">${err || "Preencha este campo."}</p></div>`;
+    const sel = (id, opts, req) => `<select class="input" id="${id}" ${req ? "required" : ""}><option value="">Selecione</option>${opts.map((o) => `<option>${o}</option>`).join("")}</select>`;
+    const FORMS = {
+      empresa: `<div class="form-grid form-grid--2">${f("pub", "Nome público", { req: true, ph: "Ex.: Clínica Pet Vida" })}${f("tipo", "Categoria", { req: true, input: sel("tipo", ["Clínica veterinária", "Pet shop", "Banho e tosa", "Hotel / creche", "Adestramento", "Outro serviço"], true), err: "Escolha a categoria." })}</div>
+        <div class="form-grid form-grid--2">${f("cnpj", "CNPJ", { opt: true, ph: "00.000.000/0000-00", hint: "Ajuda a moderação a verificar. Não é publicado." })}${f("cid", "Cidade e bairro", { req: true, ph: "Ex.: Vila Mariana, São Paulo – SP" })}</div>
+        ${f("site", "Site ou Instagram", { opt: true, ph: "@clinicapetvida" })}`,
+      ong: `<div class="form-grid form-grid--2">${f("pub", "Nome da ONG", { req: true, ph: "Ex.: Patinhas do Bem" })}${f("cnpj", "CNPJ", { req: true, ph: "00.000.000/0000-00", hint: "Obrigatório para ONG. Validamos o número; não é publicado.", err: "Informe um CNPJ válido." })}</div>
+        <div class="form-grid form-grid--2">${f("area", "Área de atuação", { req: true, input: sel("area", ["Cães e gatos", "Só cães", "Só gatos", "Resgate e lar temporário"], true), err: "Escolha a área." })}${f("cid", "Cidade e bairro", { req: true, ph: "Ex.: Butantã, São Paulo – SP" })}</div>
+        ${f("resp", "Pessoa responsável", { req: true, ph: "Nome de quem responde pela ONG", hint: "Visível só para a moderação." })}`,
+      protetor: `<div class="form-grid form-grid--2">${f("pub", "Seu nome ou apelido público", { req: true, ph: "Ex.: Tia Lu dos Gatos" })}${f("cid", "Cidade e bairro", { req: true, ph: "Ex.: Tatuapé, São Paulo – SP" })}</div>
+        ${f("como", "Como você atua", { req: true, input: '<textarea class="input" id="como" required placeholder="Ex.: resgato gatos da região, tenho lar temporário para até 4 animais…"></textarea>', err: "Conte um pouco como você atua." })}
+        <p class="alert alert--ok"><i data-icon="shield"></i><span>Não pedimos CPF. A moderação valida seu perfil pela conta e por uma conversa rápida.</span></p>`,
+    };
+    const render = (cat, anim) => {
+      $("fields").innerHTML = `<div class="${anim ? "fields-swap" : ""}" style="display:grid;gap:16px">${FORMS[cat]}</div>`;
+      $("fields").querySelectorAll("i[data-icon]").length && hydrateIcons($("fields"));
+    };
+    document.querySelectorAll('input[name="cat"]').forEach((r) => r.addEventListener("change", () => render(r.value, true)));
+    render("empresa");
+    const onlyDigits = (s) => s.replace(/\D/g, "");
+    $("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      let first = null;
+      $("fields").querySelectorAll("[required]").forEach((i) => {
+        let bad = !i.value.trim();
+        if (i.id === "cnpj") bad = onlyDigits(i.value).length !== 14;
+        i.closest(".field").classList.toggle("invalid", bad); i.setAttribute("aria-invalid", String(bad));
+        if (bad && !first) first = i;
+      });
+      const cnpjOpt = $("cnpj");
+      if (cnpjOpt && !cnpjOpt.required && cnpjOpt.value && onlyDigits(cnpjOpt.value).length !== 14) { cnpjOpt.closest(".field").classList.add("invalid"); cnpjOpt.closest(".field").querySelector(".error").textContent = "CNPJ incompleto. Deixe em branco se preferir."; first ??= cnpjOpt; }
+      const t = $("ok-terms").checked; $("e-terms").style.display = t ? "none" : "flex"; if (!t && !first) first = $("ok-terms");
+      if (first) return first.focus();
+      const name = $("pub").value;
+      $("box").innerHTML = `<div class="success"><span class="success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17 19 7"/></svg></span>
+        <h2 tabindex="-1" id="ok">Enviado para moderação</h2><p><strong>${name.replace(/</g, "&lt;")}</strong> está em análise. Respondemos em até 3 dias úteis pelas notificações da MEL. Enquanto isso, nada fica público.</p><a class="btn btn--gold" href="index.html">Voltar ao início</a></div>`;
+      $("ok").focus();
+    });
+  },
+};
+</script>
+</body>
+</html>

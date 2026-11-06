@@ -79,7 +79,7 @@ export function GuardianForm({ userId, initial }: { userId: string; initial: Gua
         <h2 id="area" className="text-xl font-bold">
           Área que você quer proteger
         </h2>
-        <LocationPicker value={area} onChange={setArea} privacyNote="Guardamos só uma área aproximada (cerca de 250 m). Ninguém vê onde você mora." />
+        <LocationPicker value={area} onChange={setArea} privacyNote="Guardamos só uma área aproximada (cerca de 100 m). Ninguém vê onde você mora." />
         {errors.area && <p className="text-sm font-medium text-danger">{errors.area}</p>}
       </section>
 

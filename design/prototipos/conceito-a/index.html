@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="pt-BR" class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MEL · Conceito A — Comunidade e acolhimento</title>
+  <meta name="description" content="Protótipo visual da MEL — rede comunitária gratuita de apoio a animais perdidos, encontrados e para adoção.">
+  <meta name="theme-color" content="#fbf6ec">
+  <link rel="icon" href="../assets/marca/mel-beacon-tile-light.svg">
+  <link rel="preload" href="../assets/fontes/Figtree-800.woff" as="font" type="font/woff" crossorigin>
+  <link rel="preload" href="../assets/fotos/beagle-sorrindo.jpg" as="image">
+  <link rel="stylesheet" href="styles.css">
+  <script>document.documentElement.classList.remove("no-js");</script>
+</head>
+<body>
+  <!-- Ícones (traço simples, estilo Lucide) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+      <symbol id="i-paw" viewBox="0 0 24 24" fill="currentColor"><circle cx="5.2" cy="10.2" r="2.2"/><circle cx="9" cy="5.6" r="2.2"/><circle cx="15" cy="5.6" r="2.2"/><circle cx="18.8" cy="10.2" r="2.2"/><path d="M12 11.2c-2.9 0-6.2 4.4-6.2 7 0 1.7 1.3 2.6 3 2.6 1.2 0 2.1-.6 3.2-.6s2 .6 3.2.6c1.7 0 3-.9 3-2.6 0-2.6-3.3-7-6.2-7z"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></symbol>
+      <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 10h.01M15 10h.01"/></symbol>
+      <symbol id="i-hands" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3.1a4 4 0 0 1 0 7.8"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></symbol>
+      <symbol id="i-home-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 17.5s-3.2-2-3.2-4a1.7 1.7 0 0 1 3.2-.8 1.7 1.7 0 0 1 3.2.8c0 2-3.2 4-3.2 4z"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="header" id="topo">
+    <div class="container header-inner">
+      <a class="brand" href="#topo" aria-label="MEL — início">
+        <span class="brand-mark"><img src="../assets/marca/mel-beacon-honey.svg" alt="" width="30" height="30"></span>
+        MEL
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="#topo" aria-current="page">Início</a>
+        <a href="#">Mapa da Rede</a>
+        <a href="#mural">Mural</a>
+        <a href="#adocao">Adoção</a>
+        <a href="#parceiros">Parceiros</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-ghost btn-sm" href="#">Entrar</a>
+        <a class="btn btn-primary btn-sm" href="#">Criar conta</a>
+      </div>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-movel" aria-label="Abrir menu">
+        <span class="bars" aria-hidden="true"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="mobile-menu" id="menu-movel">
+    <nav aria-label="Menu">
+      <a href="#topo" aria-current="page">Início</a>
+      <a href="#">Mapa da Rede</a>
+      <a href="#mural">Mural</a>
+      <a href="#adocao">Adoção</a>
+      <a href="#parceiros">Parceiros</a>
+    </nav>
+    <div class="menu-cta">
+      <a class="btn btn-ghost" href="#">Entrar</a>
+      <a class="btn btn-primary" href="#">Criar conta</a>
+    </div>
+  </div>
+
+  <main id="conteudo">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="titulo">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow"><span class="dot" aria-hidden="true"></span>Rede comunitária e gratuita</span>
+          <h1 id="titulo">Uma rede inteira procurando <span class="accent">com você<svg viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M4 14c60-10 150-12 292-4"/></svg></span>.</h1>
+          <p class="lead">Quando um pet se perde, cada vizinho conta. Na MEL, quem perdeu, quem encontrou e quem viu se conectam para trazer os animais de volta para casa — e abrir novos lares para quem precisa.</p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#"><svg aria-hidden="true"><use href="#i-user-plus"/></svg>Criar conta gratuita</a>
+            <a class="btn btn-ghost" href="#como-funciona">Como funciona</a>
+          </div>
+          <div class="trust">
+            <span class="avatars" aria-hidden="true">
+              <img src="../assets/fotos/beagle-sorrindo.jpg" alt="" width="36" height="36">
+              <img src="../assets/fotos/gato-frajola.jpg" alt="" width="36" height="36">
+              <img src="../assets/fotos/corgi-filhote.jpg" alt="" width="36" height="36">
+            </span>
+            <span><strong>Vizinhos, protetores e ONGs</strong> ajudando juntos, sem custo.</span>
+          </div>
+        </div>
+
+        <div class="hero-art">
+          <div class="hero-photo">
+            <img src="../assets/fotos/beagle-sorrindo.jpg" alt="Beagle sorridente olhando para a câmera em uma trilha" width="1200" height="900" fetchpriority="high">
+          </div>
+          <div class="float-card float-b" aria-hidden="true">
+            <span class="badge-ico" style="background:var(--found-soft);color:var(--found)"><svg><use href="#i-heart"/></svg></span>
+            <span><strong>Nina voltou para casa</strong><span>Reencontro em 2 dias</span></span>
+          </div>
+          <div class="float-card float-a" aria-hidden="true">
+            <img src="../assets/fotos/gato-olhos-verdes.jpg" alt="" width="48" height="48">
+            <span><strong>Frajola foi visto</strong><span>Perto de você · há 12 min</span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AÇÕES -->
+    <section class="actions" aria-labelledby="acoes-titulo">
+      <div class="container">
+        <div class="actions-panel reveal">
+          <div class="actions-head">
+            <h2 id="acoes-titulo">Como você quer ajudar hoje?</h2>
+            <p>Leva menos de 2 minutos.</p>
+          </div>
+          <div class="action-grid">
+            <a class="action lost" href="#">
+              <span class="ico"><svg aria-hidden="true"><use href="#i-alert"/></svg></span>
+              <h3>Perdi meu pet</h3>
+              <p>Crie o alerta e mobilize a vizinhança agora.</p>
+              <span class="go">Criar alerta <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+            <a class="action found" href="#">
+              <span class="ico"><svg aria-hidden="true"><use href="#i-paw"/></svg></span>
+              <h3>Encontrei um pet</h3>
+              <p>Ajude a devolver o animal à família dele.</p>
+              <span class="go">Avisar a rede <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+            <a class="action seen" href="#">
+              <span class="ico"><svg aria-hidden="true"><use href="#i-eye"/></svg></span>
+              <h3>Vi um pet</h3>
+              <p>Registre onde e quando, com segurança.</p>
+              <span class="go">Registrar <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+            <a class="action adopt" href="#adocao">
+              <span class="ico"><svg aria-hidden="true"><use href="#i-heart"/></svg></span>
+              <h3>Quero adotar</h3>
+              <p>Conheça quem procura um lar e cadastre seu interesse.</p>
+              <span class="go">Ver animais <svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMO FUNCIONA -->
+    <section class="section" id="como-funciona" aria-labelledby="cf-titulo">
+      <div class="container">
+        <div class="section-head center reveal">
+          <span class="kicker">Como funciona</span>
+          <h2 id="cf-titulo">Três passos simples. Uma vizinhança inteira atenta.</h2>
+          <p>Você não precisa enfrentar isso sozinho. A rede faz o alerta chegar a quem está perto.</p>
+        </div>
+        <div class="steps">
+          <article class="step reveal" style="--d:.05s">
+            <span class="step-num">1</span>
+            <h3>Publique o alerta</h3>
+            <p>Foto, nome, onde e quando. A MEL monta um cartaz com QR code pronto para compartilhar.</p>
+            <p class="note"><svg aria-hidden="true"><use href="#i-shield"/></svg>Seu endereço nunca aparece: mostramos só a região aproximada.</p>
+          </article>
+          <article class="step reveal" style="--d:.15s">
+            <span class="step-num">2</span>
+            <h3>A rede é avisada</h3>
+            <p>Quem está perto recebe o alerta e pode registrar um avistamento com foto e localização.</p>
+            <p class="note"><svg aria-hidden="true"><use href="#i-bell"/></svg>Guardiões da região recebem notificação na hora.</p>
+          </article>
+          <article class="step reveal" style="--d:.25s">
+            <span class="step-num">3</span>
+            <h3>O reencontro</h3>
+            <p>Você acompanha as pistas em uma linha do tempo e conversa com quem ajudou, sem expor seu telefone.</p>
+            <p class="note"><svg aria-hidden="true"><use href="#i-heart"/></svg>Ao encerrar, a rede comemora junto com você.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- MURAL -->
+    <section class="section section-mural" id="mural" aria-labelledby="mural-titulo">
+      <div class="container">
+        <div class="section-head-row">
+          <div class="section-head reveal">
+            <span class="kicker">Mural da comunidade</span>
+            <h2 id="mural-titulo">Eles precisam ser vistos</h2>
+            <p>Animais perdidos, encontrados e à espera de um lar perto de você.</p>
+          </div>
+          <a class="btn btn-ghost reveal" href="#">Ver mural completo <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+
+        <div class="filters" role="group" aria-label="Filtrar mural">
+          <button class="chip" type="button" data-filter="todos" aria-pressed="true">Todos</button>
+          <button class="chip" type="button" data-filter="lost" aria-pressed="false">Perdidos</button>
+          <button class="chip" type="button" data-filter="found" aria-pressed="false">Encontrados</button>
+          <button class="chip" type="button" data-filter="adopt" aria-pressed="false">Para adoção</button>
+        </div>
+
+        <div class="mural" aria-live="polite">
+          <article class="pet reveal" data-kind="lost" style="--d:.05s">
+            <a href="#">
+              <div class="pet-photo">
+                <img src="../assets/fotos/golden-flor.jpg" alt="Golden retriever sentado segurando uma flor" width="1200" height="1924" loading="lazy" style="object-position:50% 8%">
+                <span class="tag lost">Perdido</span>
+              </div>
+              <div class="pet-body">
+                <h3>Thor</h3>
+                <div class="pet-meta">
+                  <span><svg aria-hidden="true"><use href="#i-pin"/></svg>Vila Mariana · São Paulo</span>
+                  <span><svg aria-hidden="true"><use href="#i-clock"/></svg>Desde há 2 dias</span>
+                </div>
+              </div>
+            </a>
+          </article>
+          <article class="pet reveal" data-kind="found" style="--d:.12s">
+            <a href="#">
+              <div class="pet-photo">
+                <img src="../assets/fotos/gato-tigrado-escada.jpg" alt="Gato tigrado sentado em uma escada clara" width="1200" height="1600" loading="lazy" style="object-position:50% 25%">
+                <span class="tag found">Encontrado</span>
+              </div>
+              <div class="pet-body">
+                <h3>Gatinho tigrado</h3>
+                <div class="pet-meta">
+                  <span><svg aria-hidden="true"><use href="#i-pin"/></svg>Pinheiros · São Paulo</span>
+                  <span><svg aria-hidden="true"><use href="#i-clock"/></svg>Acolhido há 1 dia</span>
+                </div>
+              </div>
+            </a>
+          </article>
+          <article class="pet reveal" data-kind="adopt" style="--d:.19s">
+            <a href="#">
+              <div class="pet-photo">
+                <img src="../assets/fotos/pastor-australiano.jpg" alt="Cão pastor australiano sorrindo na praia" width="1200" height="800" loading="lazy">
+                <span class="tag adopt">Adoção</span>
+              </div>
+              <div class="pet-body">
+                <h3>Bidu</h3>
+                <div class="pet-meta">
+                  <span><svg aria-hidden="true"><use href="#i-pin"/></svg>Saúde · São Paulo</span>
+                  <span><svg aria-hidden="true"><use href="#i-paw"/></svg>2 anos · porte médio</span>
+                </div>
+              </div>
+            </a>
+          </article>
+          <article class="pet reveal" data-kind="lost" style="--d:.26s">
+            <a href="#">
+              <div class="pet-photo">
+                <img src="../assets/fotos/gato-frajola.jpg" alt="Gato frajola preto e branco apoiado em uma mureta" width="1200" height="826" loading="lazy">
+                <span class="tag lost">Perdido</span>
+              </div>
+              <div class="pet-body">
+                <h3>Mimi</h3>
+                <div class="pet-meta">
+                  <span><svg aria-hidden="true"><use href="#i-pin"/></svg>Liberdade · São Paulo</span>
+                  <span><svg aria-hidden="true"><use href="#i-clock"/></svg>Desde ontem</span>
+                </div>
+              </div>
+            </a>
+          </article>
+          <article class="pet reveal hidden" data-kind="adopt">
+            <a href="#">
+              <div class="pet-photo">
+                <img src="../assets/fotos/gatinho-pata.jpg" alt="Filhote de gato levantando a pata" width="1200" height="1799" loading="lazy" style="object-position:50% 40%">
+                <span class="tag adopt">Adoção</span>
+              </div>
+              <div class="pet-body">
+                <h3>Pipoca</h3>
+                <div class="pet-meta">
+                  <span><svg aria-hidden="true"><use href="#i-pin"/></svg>Mooca · São Paulo</span>
+                  <span><svg aria-hidden="true"><use href="#i-paw"/></svg>4 meses · porte pequeno</span>
+                </div>
+              </div>
+            </a>
+          </article>
+          <article class="pet reveal hidden" data-kind="found">
+            <a href="#">
+              <div class="pet-photo">
+                <img src="../assets/fotos/cao-vira-lata-rua.jpg" alt="Cachorro branco com manchas pretas na calçada" width="1200" height="800" loading="lazy">
+                <span class="tag found">Encontrado</span>
+              </div>
+              <div class="pet-body">
+                <h3>Cão de coleira azul</h3>
+                <div class="pet-meta">
+                  <span><svg aria-hidden="true"><use href="#i-pin"/></svg>Butantã · São Paulo</span>
+                  <span><svg aria-hidden="true"><use href="#i-clock"/></svg>Acolhido há 3 horas</span>
+                </div>
+              </div>
+            </a>
+          </article>
+        </div>
+
+        <p class="privacy-note"><svg aria-hidden="true"><use href="#i-shield"/></svg>A localização exibida é aproximada (raio de cerca de 250 m) e nenhum contato pessoal é mostrado no mural. Exemplos com dados fictícios.</p>
+      </div>
+    </section>
+
+    <!-- REENCONTROS -->
+    <section class="section" aria-labelledby="re-titulo">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="kicker">Reencontros</span>
+          <h2 id="re-titulo">Cada volta para casa começa com alguém que se importou</h2>
+        </div>
+        <div class="stories">
+          <figure class="story-feature reveal" style="margin:0">
+            <img src="../assets/fotos/dois-caes-trilha.jpg" alt="Dois cães pequenos correndo juntos em uma trilha ao pôr do sol" width="1200" height="801" loading="lazy">
+            <div class="content">
+              <span class="pill-gold"><svg width="14" height="14" aria-hidden="true"><use href="#i-heart"/></svg>Reencontro</span>
+              <blockquote>“Uma vizinha viu a Lola duas ruas abaixo e registrou na MEL. Em quatro horas ela estava no meu colo.”</blockquote>
+              <cite>Carla, Vila Madalena — história ilustrativa</cite>
+            </div>
+          </figure>
+          <div class="story-list">
+            <article class="story reveal" style="--d:.08s">
+              <img src="../assets/fotos/gato-laranja.jpg" alt="Gato laranja deitado olhando para cima" width="84" height="84" loading="lazy">
+              <div>
+                <span class="when">Reencontrado em 3 dias</span>
+                <p>“O Fred fugiu na mudança. O cartaz com QR code circulou no grupo do prédio e um porteiro avisou.”</p>
+                <strong>Rafael, Santana</strong>
+              </div>
+            </article>
+            <article class="story reveal" style="--d:.16s">
+              <img src="../assets/fotos/cao-tricolor.jpg" alt="Cão tricolor de orelhas dobradas" width="84" height="84" loading="lazy">
+              <div>
+                <span class="when">Devolvido em 1 dia</span>
+                <p>“Encontrei um cachorro assustado no ponto de ônibus. Publiquei e a dona apareceu na mesma noite.”</p>
+                <strong>Juliana, Tatuapé</strong>
+              </div>
+            </article>
+            <article class="story reveal" style="--d:.24s">
+              <img src="../assets/fotos/corgi-filhote.jpg" alt="Filhote de corgi sentado" width="84" height="84" loading="lazy">
+              <div>
+                <span class="when">Adotado</span>
+                <p>“Cadastrei meu interesse sem ter nenhum filhote disponível. Duas semanas depois veio o aviso.”</p>
+                <strong>Marcos, Lapa</strong>
+              </div>
+            </article>
+            <span class="sample">Histórias ilustrativas para este protótipo.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NÚMEROS -->
+    <section class="container" aria-labelledby="num-titulo">
+      <div class="numbers reveal">
+        <h2 id="num-titulo">Uma comunidade que cresce a cada pet que volta para casa</h2>
+        <div class="numbers-grid">
+          <div class="num"><strong data-count="12480" data-prefix="+">0</strong><span>pessoas na rede</span></div>
+          <div class="num"><strong data-count="3920">0</strong><span>pets cadastrados</span></div>
+          <div class="num"><strong data-count="1876">0</strong><span>reencontros</span></div>
+          <div class="num"><strong data-count="642">0</strong><span>adoções responsáveis</span></div>
+        </div>
+        <p class="illustrative">Dados ilustrativos — no app real, os números vêm da própria rede.</p>
+      </div>
+    </section>
+
+    <!-- ADOÇÃO -->
+    <section class="section" id="adocao" aria-labelledby="ad-titulo">
+      <div class="container adopt-band">
+        <div class="adopt-photos reveal">
+          <img class="tall" src="../assets/fotos/corgi-filhote.jpg" alt="Filhote de corgi sentado em fundo laranja" width="1200" height="1811" loading="lazy">
+          <img class="sq" src="../assets/fotos/gato-olhos-verdes.jpg" alt="Gato tigrado de olhos verdes olhando para cima" width="1200" height="1200" loading="lazy">
+          <img class="sq" src="../assets/fotos/filhotes.jpg" alt="Ninhada de filhotes deitados em um degrau" width="1200" height="800" loading="lazy">
+        </div>
+        <div class="reveal" style="--d:.1s">
+          <span class="kicker">Adoção responsável</span>
+          <h2 style="font-size:clamp(30px,5vw,44px);font-weight:800">Um novo lar, no tempo certo</h2>
+          <p style="margin-top:12px;color:var(--navy-700);font-size:18px">Mesmo quando não há um animal disponível, você pode deixar seu interesse registrado. Avisamos quando aparecer um pet compatível com a sua rotina.</p>
+          <ul class="checklist">
+            <li><span class="tick"><svg aria-hidden="true"><use href="#i-check"/></svg></span>Diga espécie, porte e idade que combinam com você</li>
+            <li><span class="tick"><svg aria-hidden="true"><use href="#i-check"/></svg></span>Seu contato fica privado — só é compartilhado com seu consentimento</li>
+            <li><span class="tick"><svg aria-hidden="true"><use href="#i-check"/></svg></span>Cancele o interesse quando quiser</li>
+          </ul>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#">Cadastrar meu interesse</a>
+            <a class="btn btn-ghost" href="#">Ver animais disponíveis</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARCEIROS -->
+    <section class="section" id="parceiros" aria-labelledby="pa-titulo" style="padding-top:0">
+      <div class="container">
+        <div class="partners reveal">
+          <div>
+            <span class="kicker">Parceiros da rede</span>
+            <h2 id="pa-titulo" style="font-size:clamp(28px,4.4vw,40px);font-weight:800">Quem cuida de animais fortalece a MEL</h2>
+            <p style="margin-top:12px;color:var(--navy-700);font-size:17.5px">Clínicas, pet shops, ONGs e protetores independentes ajudam a divulgar alertas, acolher animais e orientar adoções. A participação é gratuita e passa por moderação.</p>
+            <div class="hero-cta"><a class="btn btn-gold" href="#">Conhecer o programa</a></div>
+          </div>
+          <div class="partner-types">
+            <div class="ptype"><span class="badge-ico"><svg aria-hidden="true"><use href="#i-building"/></svg></span><span><strong>Empresas</strong><span>Clínicas, pet shops, hotéis e serviços</span></span></div>
+            <div class="ptype"><span class="badge-ico"><svg aria-hidden="true"><use href="#i-home-heart"/></svg></span><span><strong>ONGs</strong><span>Abrigos e organizações de proteção animal</span></span></div>
+            <div class="ptype"><span class="badge-ico"><svg aria-hidden="true"><use href="#i-hands"/></svg></span><span><strong>Protetores independentes</strong><span>Pessoas que resgatam e acolhem</span></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section class="final" aria-labelledby="fi-titulo">
+      <div class="container reveal">
+        <img class="mark" src="../assets/marca/mel-beacon-honey.svg" alt="" width="64" height="64">
+        <h2 id="fi-titulo">Faça parte da rede que não desiste</h2>
+        <p>É gratuito, leva um minuto, e você passa a ser os olhos de alguém que está procurando.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#">Criar conta gratuita</a>
+          <a class="btn btn-ghost" href="#">Quero ser Guardião</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a class="brand" href="#topo"><span class="brand-mark"><img src="../assets/marca/mel-beacon-ink.svg" alt="" width="30" height="30"></span>MEL</a>
+          <p>Rede comunitária gratuita de apoio a animais perdidos, encontrados e disponíveis para adoção.</p>
+        </div>
+        <div>
+          <h3>Ajudar</h3>
+          <ul><li><a href="#">Perdi meu pet</a></li><li><a href="#">Encontrei um pet</a></li><li><a href="#">Vi um pet</a></li><li><a href="#">Quero adotar</a></li></ul>
+        </div>
+        <div>
+          <h3>Explorar</h3>
+          <ul><li><a href="#">Mapa da Rede</a></li><li><a href="#mural">Mural</a></li><li><a href="#parceiros">Parceiros</a></li><li><a href="#">Nossa origem</a></li></ul>
+        </div>
+        <div>
+          <h3>Sobre</h3>
+          <ul><li><a href="#">Termos de uso</a></li><li><a href="#">Privacidade</a></li><li><a href="#">Contato</a></li></ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 MEL · Feito pela comunidade, para a comunidade.</span>
+        <span>Protótipo com dados fictícios.</span>
+      </div>
+    </div>
+  </footer>
+
+  <a class="proto-pill" href="../index.html">Protótipo — Conceito A · voltar</a>
+
+  <script src="app.js"></script>
+</body>
+</html>

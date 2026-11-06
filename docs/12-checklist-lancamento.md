@@ -24,12 +24,18 @@ Diagnóstico de 2026-11-05 ([10-status.md](10-status.md#-prontidão-para-o-pilot
 
 As correções escolhidas na auditoria final para antes do Feature Freeze ficam fora desta lista (são produto, não configuração).
 
+## 1.1 Antes do piloto (DEV)
+
+| # | Item | Por quê |
+|---|---|---|
+| 1.1.1 | Remover os casos de demonstração: `node --env-file=.env.local scripts/demo-casos/demo.mjs remover` | Os 9 casos "DEMO" só existem para teste no `mel-dev`; nunca vão para produção |
+
 ## 2. Schema (`mel-prod`) — procedimento de [08-deploy-producao.md](08-deploy-producao.md)
 
 | # | Item | Observação |
 |---|---|---|
 | 2.1 | Checks verdes no commit que vai para produção | Pre-flight confere pela API do GitHub |
-| 2.2 | Aplicar as migrations **24–31** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade; 30 traz o push do tutor; 31 recupera push preso. Pre-flight e pós-deploy já esperam 31 |
+| 2.2 | Aplicar as migrations **24–45** | 24 (Radar v2) e 29 (avistamentos) são P0 de privacidade; 30 traz o push do tutor; 31 recupera push preso; 32 muda o ponto público para 100 m; 33–38 fila de adoção; 39 parceiros (CPF cifrado, CNPJ); 40 LGPD. 41 chat de adoção; 42–43 CPF/dados pessoais; 44–45 adoção no mapa (padrão desligado) e endereço público de parceiros. Pre-flight e pós-deploy já esperam 45. Antes: configurar as chaves `MEL_PII_*` no servidor |
 | 2.3 | Pós-deploy aprovado (catálogo + impressão digital) | Reprovado → não seguir |
 | 2.4 | `scripts/sighting-media-neutral-names.mjs` (listar → `--apply` → conferir 0/0) | Passo a passo no `08`. Se listar 0 e 0, nada a fazer |
 

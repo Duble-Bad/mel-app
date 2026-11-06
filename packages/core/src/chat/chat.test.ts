@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatChatTime, mentionsPayment, messageBodySchema, peerLabel, reportSchema } from "./chat";
+import { firstContactIssue, formatChatTime, mentionsPayment, messageBodySchema, peerLabel, reportSchema } from "./chat";
 
 describe("messageBodySchema", () => {
   it("trims and rejects empty or too long messages", () => {
@@ -52,5 +52,23 @@ describe("formatChatTime", () => {
     expect(formatChatTime("2026-10-28T14:05:00-03:00", now)).toBe("Hoje 14:05");
     expect(formatChatTime("2026-10-27T09:12:00-03:00", now)).toBe("Ontem 09:12");
     expect(formatChatTime("2026-10-12T18:30:00-03:00", now)).toBe("12/10 18:30");
+  });
+});
+
+describe("firstContactIssue", () => {
+  it("accepts a plain introduction", () => {
+    expect(firstContactIssue("Olá, Ana! Sou a Carla, protetora. A Pipoca combina com o que você procura. Quer conhecer?")).toBeNull();
+  });
+
+  it("blocks links, phone numbers and e-mails in the first message", () => {
+    for (const t of ["veja https://exemplo.com", "www.golpe.com.br", "fala comigo: (41) 99999-0000", "carla@exemplo.com", "site pipoca.com"]) {
+      expect(firstContactIssue(t)).not.toBeNull();
+    }
+  });
+
+  it("peerLabel names the queue origin for whoever listed the animal", () => {
+    expect(
+      peerLabel({ myRole: "owner", peerName: null, peerIsAnonymous: false, petName: "Pipoca", fromSighting: false, context: "adoption", fromSeekerQueue: true }),
+    ).toBe("Pessoa da fila “Querem adotar”");
   });
 });

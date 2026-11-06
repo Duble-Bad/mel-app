@@ -1,8 +1,17 @@
 import { DataError, type MelClient } from "./client";
+import { randomId } from "./randomId";
 
 export interface AppNotification {
   id: string;
-  kind: "sighting_new" | "message_new" | "reunion_thanks" | "match_new" | "guardian_alert" | "guardian_resolved";
+  kind:
+    | "sighting_new"
+    | "message_new"
+    | "reunion_thanks"
+    | "match_new"
+    | "guardian_alert"
+    | "guardian_resolved"
+    | "adoption_match"
+    | "adoption_seeker_expiring";
   /** Texto pronto para exibir. */
   title: string;
   body: string;
@@ -35,8 +44,34 @@ export function toAppNotification(row: Row): AppNotification {
     species?: "dog" | "cat" | "other";
     custody?: string;
     area_label?: string | null;
+    expires_at?: string;
   };
   const pet = p.pet_name ?? "seu pet";
+  // Fila de adoção (migrations 20261106123000/124000).
+  if (row.kind === "adoption_match") {
+    const where = p.area_label ? ` perto de ${p.area_label}` : "";
+    return {
+      id: row.id,
+      kind: "adoption_match",
+      title: `${pet} pode ser o seu novo amigo`,
+      body: `Um animal compatível com o seu perfil está para adoção${where}.`,
+      href: `/adocao/${p.code}`,
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
+  if (row.kind === "adoption_seeker_expiring") {
+    const date = p.expires_at ? new Date(p.expires_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }) : null;
+    return {
+      id: row.id,
+      kind: "adoption_seeker_expiring",
+      title: "Ainda procura um pet para adotar?",
+      body: date ? `Seu interesse vence em ${date}. Renove para continuar recebendo avisos.` : "Renove seu interesse para continuar recebendo avisos.",
+      href: "/adocao/quero-adotar",
+      readAt: row.read_at,
+      createdAt: row.created_at,
+    };
+  }
   if (row.kind === "guardian_alert") {
     const where = p.area_label ? ` perto de ${p.area_label}` : "";
     const animal = p.species === "cat" ? "Gato" : p.species === "dog" ? "Cachorro" : "Animal";
@@ -168,7 +203,7 @@ export function subscribeToNotifications(
     // Nome único por assinatura: duas telas ouvindo o mesmo usuário (sininho e
     // página do alerta) com o mesmo nome reaproveitariam o canal já assinado e
     // a biblioteca lança erro ao adicionar outra escuta.
-    .channel(`notifications:${userId}:${crypto.randomUUID()}`)
+    .channel(`notifications:${userId}:${randomId()}`)
     .on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },

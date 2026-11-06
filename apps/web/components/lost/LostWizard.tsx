@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { contactStepSchema, detailsStepSchema, fieldErrors, firstIncompleteStep, formatBrPhone, formatDateTimeBr, LOST_STEPS, type LostCase, type LostStep, type Pet, petSummary, publicAreaFrom, userErrorMessage, type Wearing, WEARING, WEARING_LABELS, whenStepSchema, whereStepSchema } from "@mel/core";
+import { contactStepSchema, detailsStepSchema, fieldErrors, firstIncompleteStep, formatBrPhone, formatDateTimeBr, formatPhoneInput, LOST_STEPS, type LostCase, type LostStep, type Pet, petSummary, publicAreaFrom, userErrorMessage, type Wearing, WEARING, WEARING_LABELS, whenStepSchema, whereStepSchema } from "@mel/core";
 import { activateLostCase, discardDraft, startLostCase, updateLostCase, type LostCasePatch } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { kickPushDispatch } from "@/lib/push/client";
@@ -296,7 +296,7 @@ function WhereStep({
           setPicked(v);
           setError(null);
         }}
-        privacyNote="No alerta mostramos um local aproximado (cerca de 250 m) e só o bairro. Seu endereço não aparece."
+        privacyNote="No alerta mostramos um local aproximado (cerca de 100 m) e só o bairro. Seu endereço não aparece."
       />
       <label className="flex min-h-12 items-start gap-3">
         <input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
@@ -532,7 +532,7 @@ function ContactStep({
           autoComplete="tel-national"
           placeholder="(11) 98765-4321"
           value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
           error={error}
         />
       )}

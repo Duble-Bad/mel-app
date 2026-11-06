@@ -9,7 +9,7 @@ import { MelMark } from "./MelLogo";
  */
 export function BrandStory() {
   return (
-    <section aria-labelledby="historia" className="overflow-hidden rounded-card border border-border/70 bg-surface-warm p-5 shadow-sm">
+    <section aria-labelledby="historia" className="h-full overflow-hidden rounded-card border border-border bg-surface-warm p-6 shadow-sm sm:p-7">
       <div className="flex items-start gap-5">
         <figure className="relative shrink-0">
           <Image

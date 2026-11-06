@@ -24,7 +24,7 @@ reconfirmar antes de migrar.
 
 **Não dependem do fornecedor:**
 - GPS (`navigator.geolocation`);
-- Radar, busca por raio, aproximação de 250 m e ponto público (PostGIS);
+- Radar, busca por raio, aproximação de 100 m e ponto público (PostGIS);
 - cartaz/QR (sem mapa);
 - pinos e trajeto (desenhados no navegador pelo MapLibre);
 - carregamento sob demanda (`MapView`, IntersectionObserver).

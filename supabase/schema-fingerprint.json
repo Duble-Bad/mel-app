@@ -1,43 +1,43 @@
 {
   "columns": {
-    "count": 297,
-    "sha256": "ba2fb3b64a323fde692fae2c7d4a31bfed6c53dce10054dfc5fb18f23ee6bbe0"
+    "count": 388,
+    "sha256": "36b4d38d4a333341e05a450ff327d4c67a29abe52aba7cb7e63bb70b57a3d6ef"
   },
   "constraints": {
-    "count": 182,
-    "sha256": "de7e2b6456c7a3ea8060d9e5eec68f009233053e65b9ee3ebd194bf06521039e"
+    "count": 247,
+    "sha256": "70f1c4e32b01038dbc44467f471bfed4da755f2b7edfe121ec3af41953e2ac7d"
   },
   "indexes": {
-    "count": 84,
-    "sha256": "1c6ce5d61560fada8be9e5cec151d01cbff552d95cfe9f53b39b2b53ead32785"
+    "count": 115,
+    "sha256": "c0fdf895a4c7e2df825cae925d02ad367556e37ea2f65f1df81da12bd2dcea66"
   },
   "enums": {
-    "count": 16,
-    "sha256": "f82ed1b34235e587062d579b4870452387bfdd2eab371ca1c1c431e19ed219f4"
+    "count": 18,
+    "sha256": "56a8aabc42963c93cf8ba555f271fee9b097ce5ad95c22b3cbb66011f8484c27"
   },
   "functions": {
-    "count": 97,
-    "sha256": "4cf427b1b83b6a78723263e39fb7fe23b2953ad32e4b5e8b391f5f5325a6794f"
+    "count": 138,
+    "sha256": "6b285488a3cc2bf353e307a410802ff0bca3b8eae34ffc57ead581e521db8bd9"
   },
   "function_grants": {
-    "count": 291,
-    "sha256": "aa50282755123dffd4537d6861e351c2719ac004a9dbcd35842997342bd0702b"
+    "count": 414,
+    "sha256": "e3a1b49ffac2d26884f7ce2250283a197fc8053efd53d87c6674427fae8c085e"
   },
   "triggers": {
-    "count": 27,
-    "sha256": "4df3047589b87c972df4fe24febbd47a1795b94b0e5fc902c6a8458308f0934d"
+    "count": 40,
+    "sha256": "ac7e24604d3963057c6459049abb3534bb65b5cb51d2a4b064d4a7a6b2b860f0"
   },
   "policies": {
-    "count": 69,
-    "sha256": "4a8fac92aa2b20454c21e9c8d4a93a90b7b4b3b17016c07f4945a447e5e5ad29"
+    "count": 75,
+    "sha256": "ef49a59d068bd99c5258ddb3f5ed425c024e8bb8e2d9a7d7e9ae409b8acbb60d"
   },
   "rls": {
-    "count": 24,
-    "sha256": "085ed157e3b4df5726be98571426e7c1c07d0337e57499ee708134f8617ab65b"
+    "count": 32,
+    "sha256": "1a4e7cff8c625835a39b11fdcc60bc7d2e3f441c627a6da68a4718375bb0a587"
   },
   "table_grants": {
-    "count": 211,
-    "sha256": "87756e804ed78d264ad11b91d17f58701ed77dd9020f748ca6685e413f46b914"
+    "count": 272,
+    "sha256": "0401ce768618fb75d1ef92579547c80a4767eae65cac96976c4e8462c553c24c"
   },
   "schema_grants": {
     "count": 6,

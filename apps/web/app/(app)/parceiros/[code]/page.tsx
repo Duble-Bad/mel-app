@@ -1,17 +1,21 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AtSign, BadgeCheck, Clock, Globe, MapPin, MessageCircle, Phone, Store, Tag } from "lucide-react";
 import { Suspense } from "react";
-import { BUSINESS_CATEGORY_LABELS, type PublicBusiness } from "@mel/core";
+import { BUSINESS_CATEGORY_LABELS, CNPJ_CHECK_LABELS, formatCnpj, hasApproximateLocation, PARTNER_KIND_LABELS, type PublicBusiness } from "@mel/core";
 import { getBusiness } from "@mel/data";
 import { getCurrentProfile } from "@/lib/session";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
+import { CpfReveal } from "@/components/partners/CpfReveal";
+import { sponsoredOffersEnabled, visibleOffers } from "@/components/partners/flags";
 import { NewOfferForm, OfferActions } from "@/components/partners/PartnerClient";
 import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { LoadingState } from "@/components/ui/States";
+import { PublicAddressControl } from "@/components/admin/PublicAddressControl";
 
 const isCode = (c: string) => /^[a-z2-9]{6}$/i.test(c);
 
@@ -42,10 +46,19 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
   if (!b) notFound();
   const isMod = profile?.role === "moderator" || profile?.role === "admin";
   const approved = b.status === "APPROVED";
+  const sponsored = sponsoredOffersEnabled();
+  const offers = visibleOffers(b.offers, sponsored);
+  // Endereço exato em público só com autorização do parceiro E validação do administrador (o banco decide).
+  const approximate = hasApproximateLocation(b);
+  // Dono e moderação recebem o endereço guardado; em público ele não aparece.
+  const insiderOnly = approximate && (b.isOwner || isMod);
 
   return (
     <article className="flex flex-col gap-6">
       {b.isOwner && <OwnerStatus b={b} justPublished={Boolean(q.novo)} />}
+      {profile?.role === "admin" && approved && b.kind !== "independent" && b.private && (
+        <PublicAddressControl code={b.code} consent={b.private.addressPublicConsent} verified={b.private.addressPublicVerified} />
+      )}
       <header className="flex items-start gap-4">
         <span className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary-soft text-primary-soft-foreground">
           {b.logoUrl ? (
@@ -57,7 +70,15 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
         </span>
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-3xl font-bold">{b.name}</h1>
-          <p className="text-text-secondary">{BUSINESS_CATEGORY_LABELS[b.category]}</p>
+          <p className="flex flex-wrap items-center gap-x-2 text-text-secondary">
+            {b.kind === "company" ? BUSINESS_CATEGORY_LABELS[b.category] : PARTNER_KIND_LABELS[b.kind]}
+            {b.activityArea && <span>· {b.activityArea}</span>}
+          </p>
+          {b.cnpjVerified && (
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-status-found">
+              <BadgeCheck aria-hidden="true" className="size-4" strokeWidth={2} /> CNPJ verificado
+            </p>
+          )}
           {b.helpsLost && (
             <p className="flex items-center gap-1.5 text-sm font-semibold text-status-found">
               <BadgeCheck aria-hidden="true" className="size-4" strokeWidth={2} /> Ajuda com pets perdidos
@@ -68,12 +89,21 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
 
       <p className="whitespace-pre-line">{b.description}</p>
 
+      {b.isOwner && b.private && <OwnerPrivateData b={b} />}
+
       <section aria-labelledby="contato" className="flex flex-col gap-3 rounded-card border border-border/70 bg-surface p-4 shadow-xs">
         <h2 id="contato" className="font-semibold">
           Onde e como falar
         </h2>
         <ul className="flex flex-col gap-2.5">
-          <Row icon={MapPin}>{b.addressLabel}</Row>
+          <Row icon={MapPin}>
+            {b.addressLabel}
+            {insiderOnly ? (
+              <span className="text-text-secondary"> (só você e a moderação veem; em público aparece só a região aproximada)</span>
+            ) : (
+              approximate && <span className="text-text-secondary"> (região aproximada)</span>
+            )}
+          </Row>
           {b.hours && <Row icon={Clock}>{b.hours}</Row>}
           {b.phone && (
             <Row icon={Phone}>
@@ -104,19 +134,19 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
             </Row>
           )}
         </ul>
-        <MapView center={b.position} zoom={15} label={`Localização de ${b.name}`} pins={[{ id: b.code, kind: "business", position: b.position, label: b.name }]} />
+        <MapView center={b.position} zoom={approximate ? 13 : 15} label={approximate ? `Região aproximada de ${b.name}` : `Localização de ${b.name}`} pins={[{ id: b.code, kind: "business", position: b.position, label: b.name }]} />
       </section>
 
-      {(b.offers.length > 0 || (b.isOwner && approved)) && (
+      {(offers.length > 0 || (b.isOwner && approved)) && (
         <section aria-labelledby="ofertas" className="flex flex-col gap-3">
           <h2 id="ofertas" className="text-xl font-bold">
             Ofertas
           </h2>
-          {b.offers.length === 0 ? (
+          {offers.length === 0 ? (
             <p className="text-text-secondary">Nenhuma oferta publicada ainda.</p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {b.offers.map((o) => (
+              {offers.map((o) => (
                 <li key={o.id} data-testid="business-offer" className="flex flex-col gap-1.5 rounded-card border border-border/70 bg-surface p-4 shadow-xs">
                   <p className="flex flex-wrap items-center gap-2 font-semibold">
                     <Tag aria-hidden="true" className="size-4 text-brand" strokeWidth={2} /> {o.title}
@@ -124,7 +154,7 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
                   </p>
                   {o.description && <p className="text-sm text-text-secondary">{o.description}</p>}
                   {o.endsAt && <p className="text-sm text-text-secondary">Válida até {o.endsAt.split("-").reverse().join("/")}</p>}
-                  {(b.isOwner || isMod) && approved && <OfferActions offer={o} canEdit={b.isOwner} canSponsor={isMod} />}
+                  {(b.isOwner || (isMod && sponsored)) && approved && <OfferActions offer={o} canEdit={b.isOwner} canSponsor={isMod && sponsored} />}
                 </li>
               ))}
             </ul>
@@ -133,7 +163,9 @@ async function Content({ params, searchParams }: PageProps<"/parceiros/[code]">)
         </section>
       )}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-text-secondary">Parceiro revisado pela equipe da MEL. Ofertas marcadas como “Patrocinado” são divulgação paga ou apoio à rede.</p>
+        <p className="text-sm text-text-secondary">
+          Parceiro revisado pela equipe da MEL.{sponsored && " Ofertas marcadas como “Patrocinado” são divulgação paga ou apoio à rede."}
+        </p>
         {!b.isOwner && approved && <ReportButton type="business" targetKey={b.code} />}
       </div>
     </article>
@@ -149,15 +181,71 @@ function Row({ icon: Icon, children }: { icon: typeof MapPin; children: React.Re
   );
 }
 
+/** Só para o dono: dados de cadastro que nunca são públicos. */
+function OwnerPrivateData({ b }: { b: PublicBusiness }) {
+  const p = b.private!;
+  return (
+    <section aria-labelledby="dados-privados" className="flex flex-col gap-3 rounded-card border border-border/70 bg-surface-muted/40 p-4">
+      <h2 id="dados-privados" className="font-semibold">
+        Dados do cadastro <span className="font-normal text-text-secondary">(só você e a moderação veem; o CPF, só você e administradores autorizados)</span>
+      </h2>
+      <dl className="grid gap-2 text-sm sm:grid-cols-[auto_1fr] sm:gap-x-4">
+        <dt className="text-text-secondary">Tipo</dt>
+        <dd>{PARTNER_KIND_LABELS[b.kind]}</dd>
+        {p.cnpj && (
+          <>
+            <dt className="text-text-secondary">CNPJ</dt>
+            <dd className="tabular-nums">
+              {formatCnpj(p.cnpj)}
+              {p.cnpjStatus && <span className="text-text-secondary"> · {CNPJ_CHECK_LABELS[p.cnpjStatus]}</span>}
+            </dd>
+          </>
+        )}
+        {p.legalName && (
+          <>
+            <dt className="text-text-secondary">Razão social</dt>
+            <dd>{p.legalName}</dd>
+          </>
+        )}
+        {p.responsibleName && (
+          <>
+            <dt className="text-text-secondary">Responsável</dt>
+            <dd>{p.responsibleName}</dd>
+          </>
+        )}
+      </dl>
+      {b.kind === "independent" &&
+        (!p.hasDocument ? (
+          <p className="text-sm text-text-secondary">Nenhum CPF guardado.</p>
+        ) : (p.documentState ?? "ok") === "ok" ? (
+          <CpfReveal code={b.code} audience="owner" />
+        ) : (
+          <p className="text-sm font-semibold text-status-lost">
+            {p.documentState === "unreadable" ? "Não conseguimos ler o CPF guardado." : "O CPF guardado está indisponível no momento."} Seu cadastro continua; cadastre o CPF de novo.
+          </p>
+        ))}
+      <Link href="/perfil/dados" className="inline-flex min-h-11 items-center text-sm font-semibold text-link underline-offset-4 hover:underline">
+        Corrigir documento ou telefones
+      </Link>
+    </section>
+  );
+}
+
 function OwnerStatus({ b, justPublished }: { b: PublicBusiness; justPublished: boolean }) {
   if (b.status === "PENDING_REVIEW")
     return (
       <Alert tone="info">
-        {justPublished ? <strong>Cadastro enviado! </strong> : null}A equipe da MEL está revisando. Assim que for aprovado, sua empresa aparece no
-        diretório e no mapa.
+        {justPublished ? <strong>Cadastro enviado! </strong> : null}A equipe da MEL está revisando. Assim que for aprovado, seu perfil aparece
+        na lista de parceiros e no mapa.
       </Alert>
     );
-  if (b.status === "REJECTED") return <Alert tone="error">O cadastro não foi aprovado.{b.reviewNote ? ` Motivo: ${b.reviewNote}` : ""}</Alert>;
+  if (b.status === "REJECTED")
+    return (
+      <Alert tone="error">
+        O cadastro não foi aprovado.{b.reviewNote ? ` Motivo: ${b.reviewNote}` : ""}
+        {b.kind === "independent" && " O CPF guardado foi apagado."} Para corrigir, faça uma nova inscrição em Parceiros.
+      </Alert>
+    );
   if (b.status === "SUSPENDED") return <Alert tone="error">Este perfil está suspenso pela moderação.</Alert>;
-  return <Alert tone="success">Sua empresa está publicada no diretório. Publique ofertas abaixo.</Alert>;
+  return <Alert tone="success">{b.kind === "company" ? "Sua empresa está publicada no diretório. Publique ofertas abaixo." : "Seu perfil está publicado na lista de parceiros."}</Alert>;
 }

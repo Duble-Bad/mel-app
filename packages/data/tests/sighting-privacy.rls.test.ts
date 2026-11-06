@@ -61,7 +61,7 @@ async function upload(client: MelClient) {
   return path;
 }
 
-const PUBLIC = fuzzPoint(CORNER, 250);
+const PUBLIC = fuzzPoint(CORNER);
 const isExact = (i: RawItem) => i.lat === CORNER.lat && i.lng === CORNER.lng;
 const isPublic = (i: RawItem) => Math.abs(i.lat - PUBLIC.lat) < 1e-6 && Math.abs(i.lng - PUBLIC.lng) < 1e-6 && !i.point_is_exact;
 
@@ -215,7 +215,7 @@ describe("utilidade da pista", () => {
     expect(forPublic!.position).not.toEqual(CORNER);
     const offset = distanceMeters(CORNER, forPublic!.position);
     expect(offset).toBeGreaterThan(0);
-    expect(offset).toBeLessThanOrEqual(180); // meia diagonal da célula de 250 m
+    expect(offset).toBeLessThanOrEqual(75); // meia diagonal da célula de 100 m
     // Rua exata só para o tutor; o público fica com bairro e cidade (migration 30).
     expect(forTutor!.placeLabel).toBe("Rua da Bahia, Centro, Belo Horizonte – MG");
     expect(forPublic!.placeLabel).toBe("Centro, Belo Horizonte – MG");

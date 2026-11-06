@@ -39,13 +39,16 @@ export interface Conversation {
   petName: string;
   petThumbUrl: string | null;
   myRole: "owner" | "helper";
-  peerId: string;
+  /** null em conversas abertas a partir da fila "Querem adotar" (dados mínimos). */
+  peerId: string | null;
   /** Primeiro nome de quem ajuda (só para o tutor; nunca de conta anônima). */
   peerName: string | null;
   peerIsAnonymous: boolean;
   fromSighting: boolean;
   /** Tutor abriu a conversa a partir de uma correspondência do Radar. */
   fromFound: boolean;
+  /** Quem anuncia abriu a conversa a partir da fila "Querem adotar". */
+  fromSeekerQueue: boolean;
   blockedByMe: boolean;
   canSend: boolean;
   createdAt: string;
@@ -63,12 +66,12 @@ export interface ChatMessage {
 
 /** Como a outra pessoa aparece: o tutor nunca é exposto por nome a quem ajuda. */
 export function peerLabel(
-  c: Pick<Conversation, "myRole" | "peerName" | "peerIsAnonymous" | "petName" | "fromSighting"> & { fromFound?: boolean; context?: Conversation["context"] },
+  c: Pick<Conversation, "myRole" | "peerName" | "peerIsAnonymous" | "petName" | "fromSighting"> & { fromFound?: boolean; fromSeekerQueue?: boolean; context?: Conversation["context"] },
 ): string {
   if (c.myRole === "helper") return c.context === "adoption" ? `Quem está doando ${c.petName}` : `Tutor(a) de ${c.petName}`;
   if (c.peerName) return c.peerName;
   if (c.fromFound) return "Quem encontrou um pet parecido";
-  if (c.context === "adoption") return "Pessoa interessada em adotar";
+  if (c.context === "adoption") return c.fromSeekerQueue ? "Pessoa da fila “Querem adotar”" : "Pessoa interessada em adotar";
   return c.fromSighting ? "Quem enviou o avistamento" : "Visitante sem cadastro";
 }
 
@@ -129,4 +132,19 @@ export function formatChatTime(iso: string, now = new Date()): string {
   if (day(d) === day(now)) return `Hoje ${time}`;
   if (day(d) === day(new Date(now.getTime() - 86_400_000))) return `Ontem ${time}`;
   return `${fmt({ day: "2-digit", month: "2-digit" })} ${time}`;
+}
+
+/** Mesma regra do banco (start_adoption_seeker_conversation): a 1ª mensagem para a fila não leva contato nem link. */
+export const FIRST_CONTACT_RULE =
+  "Na primeira mensagem, não envie links, telefone nem e-mail. Apresente-se e conte sobre o animal; o contato continua pelo chat da MEL.";
+
+const FIRST_CONTACT_PATTERNS = [
+  /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|br|io|me|ly)\b)/i,
+  /[0-9][0-9 ().-]{7,}[0-9]/,
+  /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
+];
+
+/** Primeira mensagem de quem anuncia para alguém da fila: null se pode enviar, ou o motivo. */
+export function firstContactIssue(text: string): string | null {
+  return FIRST_CONTACT_PATTERNS.some((re) => re.test(text)) ? FIRST_CONTACT_RULE : null;
 }

@@ -23,7 +23,7 @@ describe("parseSearchParams", () => {
       species: ["dog"],
       period: "7d",
       radiusKm: 10,
-      center: { lat: -23.54891, lng: -46.63885 },
+      center: { lat: -23.549, lng: -46.639 }, // ~110 m: o link não revela o ponto exato
       hasCenter: true,
       page: 2,
     });

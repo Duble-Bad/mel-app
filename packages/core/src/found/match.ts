@@ -6,7 +6,7 @@ import { PET_SIZES, type PetSex, type PetSize, type Species } from "../pet/pet";
  * animal encontrado/visto. ESPELHO de private.match_score (SQL) — um teste de
  * banco confere a paridade. Mudou aqui? Mude lá (nova migração) e suba a versão.
  *
- * PRIVACIDADE: as posições são os pontos PÚBLICOS (centro da célula de 250 m),
+ * PRIVACIDADE: as posições são os pontos PÚBLICOS (centro da célula de 100 m),
  * nunca os exatos; a distância sai só como faixa e a pontuação usa um degrau
  * por faixa — nada aqui permite reconstruir um ponto privado.
  */

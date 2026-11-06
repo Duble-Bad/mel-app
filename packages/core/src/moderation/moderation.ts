@@ -13,6 +13,7 @@ export const REPORT_TARGET_LABELS: Record<string, string> = {
   user: "Pessoa (chat)",
   message: "Mensagem",
   adoption: "Adoção",
+  adoption_seeker: "Interessado em adotar",
   business: "Parceiro",
 };
 

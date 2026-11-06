@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111923">
+  <title>MEL · Conceito C — Ação imediata</title>
+  <link rel="icon" href="../assets/marca/mel-beacon-tile-light.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <!-- Ícones (sprite) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5M12 17.2v.1" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-paw" viewBox="0 0 24 24"><ellipse cx="6" cy="10" rx="2" ry="2.6" fill="currentColor"/><ellipse cx="10" cy="6" rx="2" ry="2.6" fill="currentColor"/><ellipse cx="14.5" cy="6" rx="2" ry="2.6" fill="currentColor"/><ellipse cx="18.3" cy="10" rx="2" ry="2.6" fill="currentColor"/><path d="M12.2 11.5c-2.6 0-5.6 3.6-5.6 6.1 0 1.6 1.2 2.4 2.6 2.4 1.2 0 2-.6 3-.6s1.8.6 3 .6c1.4 0 2.6-.8 2.6-2.4 0-2.5-3-6.1-5.6-6.1Z" fill="currentColor"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5s-8.5-5-8.5-11A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 8.5 2.9c0 6-8.5 11-8.5 11Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7M6 9.5V20h12V9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="currentColor"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="4" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="13" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="13" y="13" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20.5c1.2-4 4-5.8 7.5-5.8s6.3 1.8 7.5 5.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11Z" fill="currentColor"/><circle cx="12" cy="10" r="2.4" fill="#fff"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.6-2.5h6.8L17 8h3v11H4V8Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.2 7.5 9.5 4.3-1.3 7.5-4.9 7.5-9.5V6L12 3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m8.8 12 2.3 2.3 4.2-4.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="17.5" cy="5.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="6.5" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="18.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8.7 10.8 6.6-4M8.7 13.2l6.6 4" stroke="currentColor" stroke-width="2"/></symbol>
+  </svg>
+
+  <header class="topbar">
+    <div class="wrap topbar__in">
+      <a class="logo" href="#" aria-label="MEL — início">
+        <img src="../assets/marca/mel-beacon-tile-light.svg" alt="" width="36" height="36">
+        <span>MEL</span>
+      </a>
+      <nav class="topnav" aria-label="Principal">
+        <a href="#" aria-current="page">Início</a>
+        <a href="#mapa">Mapa da rede</a>
+        <a href="#perto">Mural</a>
+        <a href="#acoes">Adoção</a>
+        <a href="#">Parceiros</a>
+      </nav>
+      <button class="place" type="button" aria-label="Sua região: Vila Mariana, São Paulo. Trocar">
+        <svg aria-hidden="true"><use href="#i-pin"/></svg>
+        <span>Vila Mariana</span>
+        <svg class="place__chev" aria-hidden="true"><use href="#i-chev"/></svg>
+      </button>
+      <a class="btn btn--ghost topbar__login" href="#">Entrar</a>
+      <button class="btn btn--honey topbar__publish" type="button" data-open-sheet>
+        <svg aria-hidden="true"><use href="#i-plus"/></svg> Publicar alerta
+      </button>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <!-- 1. Bloco de ação: tudo acima da dobra no celular -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap">
+        <p class="hero__eyebrow"><span class="dot" aria-hidden="true"></span> 1.284 pessoas ativas perto de você</p>
+        <h1 id="hero-title">Uma rede inteira procurando <em>com você.</em></h1>
+        <p class="hero__lead">O que aconteceu? Toque e publique em <strong>menos de 2 minutos</strong>. Grátis, sempre.</p>
+
+        <div class="hero__visual" aria-hidden="true">
+          <img class="hero__photo" src="../assets/fotos/dois-caes-trilha.jpg" alt="" width="520" height="360">
+          <div class="float float--a"><img src="../assets/fotos/golden-flor.jpg" alt="" width="44" height="44"><div><b>Reencontro!</b><span>Luna voltou para casa · há 2 h</span></div></div>
+          <div class="float float--b"><span class="float__dot"></span><div><b>Novo avistamento</b><span>a 400 m de você · agora</span></div></div>
+        </div>
+
+        <div class="actions" id="acoes" role="list">
+          <button class="action action--lost" type="button" role="listitem" data-flow="lost">
+            <span class="action__icon"><svg aria-hidden="true"><use href="#i-alert"/></svg></span>
+            <span class="action__text">
+              <span class="action__title">Perdi meu pet</span>
+              <span class="action__sub">Alerta para a vizinhança agora</span>
+            </span>
+            <svg class="action__go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
+          <button class="action action--found" type="button" role="listitem" data-flow="found">
+            <span class="action__icon"><svg aria-hidden="true"><use href="#i-paw"/></svg></span>
+            <span class="action__text">
+              <span class="action__title">Encontrei um pet</span>
+              <span class="action__sub">Ajude a voltar para casa</span>
+            </span>
+            <svg class="action__go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
+          <button class="action action--seen" type="button" role="listitem" data-flow="seen">
+            <span class="action__icon"><svg aria-hidden="true"><use href="#i-eye"/></svg></span>
+            <span class="action__text">
+              <span class="action__title">Vi um pet</span>
+              <span class="action__sub">Avise onde e quando, sem conta</span>
+            </span>
+            <svg class="action__go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
+          <button class="action action--adopt" type="button" role="listitem" data-flow="adopt">
+            <span class="action__icon"><svg aria-hidden="true"><use href="#i-heart"/></svg></span>
+            <span class="action__text">
+              <span class="action__title">Quero adotar</span>
+              <span class="action__sub">Veja quem espera um lar</span>
+            </span>
+            <svg class="action__go" aria-hidden="true"><use href="#i-arrow"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Urgência perto de você -->
+    <section class="near" id="perto" aria-labelledby="near-title">
+      <div class="wrap near__grid">
+        <div class="near__list">
+          <div class="sect-head">
+            <h2 id="near-title">Alertas perto de você agora</h2>
+            <a class="link" href="#">Ver todos <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+          <div class="chips" role="group" aria-label="Filtrar alertas">
+            <button class="chip" aria-pressed="true" data-filter="all">Todos <b>6</b></button>
+            <button class="chip" aria-pressed="false" data-filter="lost">Perdidos <b>3</b></button>
+            <button class="chip" aria-pressed="false" data-filter="found">Encontrados <b>2</b></button>
+            <button class="chip" aria-pressed="false" data-filter="seen">Vistos <b>1</b></button>
+          </div>
+          <ul class="alerts" id="alerts">
+            <li class="alert" data-kind="lost">
+              <img src="../assets/fotos/beagle-sorrindo.jpg" alt="Beagle tricolor sorrindo" width="80" height="80" loading="lazy">
+              <div class="alert__body">
+                <p class="alert__tags"><span class="tag tag--lost">Perdido</span><span class="tag tag--urgent">Urgente</span></p>
+                <h3>Thor · Beagle</h3>
+                <p class="alert__meta"><span><svg aria-hidden="true"><use href="#i-pin"/></svg>a 650 m</span><span><svg aria-hidden="true"><use href="#i-clock"/></svg>há 25 min</span></p>
+              </div>
+              <button class="btn btn--small btn--ink" type="button" data-seen="Thor">Vi este pet</button>
+            </li>
+            <li class="alert" data-kind="found">
+              <img src="../assets/fotos/gato-frajola.jpg" alt="Gato frajola preto e branco" width="80" height="80" loading="lazy">
+              <div class="alert__body">
+                <p class="alert__tags"><span class="tag tag--found">Encontrado</span></p>
+                <h3>Gato frajola, sem coleira</h3>
+                <p class="alert__meta"><span><svg aria-hidden="true"><use href="#i-pin"/></svg>a 1,1 km</span><span><svg aria-hidden="true"><use href="#i-clock"/></svg>há 1 h</span></p>
+              </div>
+              <button class="btn btn--small btn--ink" type="button" data-seen="o frajola">É meu</button>
+            </li>
+            <li class="alert" data-kind="lost">
+              <img src="../assets/fotos/corgi-filhote.jpg" alt="Filhote de corgi caramelo" width="80" height="80" loading="lazy">
+              <div class="alert__body">
+                <p class="alert__tags"><span class="tag tag--lost">Perdido</span><span class="tag tag--urgent">Urgente</span></p>
+                <h3>Paçoca · Corgi filhote</h3>
+                <p class="alert__meta"><span><svg aria-hidden="true"><use href="#i-pin"/></svg>a 1,4 km</span><span><svg aria-hidden="true"><use href="#i-clock"/></svg>há 2 h</span></p>
+              </div>
+              <button class="btn btn--small btn--ink" type="button" data-seen="Paçoca">Vi este pet</button>
+            </li>
+            <li class="alert" data-kind="seen">
+              <img src="../assets/fotos/cao-vira-lata-rua.jpg" alt="Cão branco com manchas pretas na calçada" width="80" height="80" loading="lazy">
+              <div class="alert__body">
+                <p class="alert__tags"><span class="tag tag--seen">Visto</span></p>
+                <h3>Cão branco e preto, coleira azul</h3>
+                <p class="alert__meta"><span><svg aria-hidden="true"><use href="#i-pin"/></svg>a 1,8 km</span><span><svg aria-hidden="true"><use href="#i-clock"/></svg>há 3 h</span></p>
+              </div>
+              <button class="btn btn--small btn--ink" type="button" data-seen="o cão">Vi também</button>
+            </li>
+            <li class="alert" data-kind="lost">
+              <img src="../assets/fotos/gato-olhos-verdes.jpg" alt="Gato tigrado de olhos verdes" width="80" height="80" loading="lazy">
+              <div class="alert__body">
+                <p class="alert__tags"><span class="tag tag--lost">Perdido</span></p>
+                <h3>Mimi · Gata tigrada</h3>
+                <p class="alert__meta"><span><svg aria-hidden="true"><use href="#i-pin"/></svg>a 2,3 km</span><span><svg aria-hidden="true"><use href="#i-clock"/></svg>ontem</span></p>
+              </div>
+              <button class="btn btn--small btn--ink" type="button" data-seen="Mimi">Vi este pet</button>
+            </li>
+            <li class="alert" data-kind="found">
+              <img src="../assets/fotos/cao-chocolate.jpg" alt="Cão marrom chocolate" width="80" height="80" loading="lazy">
+              <div class="alert__body">
+                <p class="alert__tags"><span class="tag tag--found">Encontrado</span></p>
+                <h3>Cão marrom, porte grande</h3>
+                <p class="alert__meta"><span><svg aria-hidden="true"><use href="#i-pin"/></svg>a 2,9 km</span><span><svg aria-hidden="true"><use href="#i-clock"/></svg>ontem</span></p>
+              </div>
+              <button class="btn btn--small btn--ink" type="button" data-seen="o cão marrom">É meu</button>
+            </li>
+          </ul>
+        </div>
+
+        <aside class="minimap" id="mapa" aria-labelledby="map-title">
+          <div class="sect-head">
+            <h2 id="map-title">Mapa da rede</h2>
+            <span class="muted">raio de 3 km</span>
+          </div>
+          <div class="minimap__frame" role="img" aria-label="Mapa ilustrativo com 6 alertas num raio de 3 km. Locais aproximados em 250 metros.">
+            <svg class="minimap__streets" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <rect width="400" height="300" fill="#e9e3d4"/>
+              <path d="M-10 70 L410 40 M-10 160 L410 140 M-10 250 L410 235 M60 -10 L90 310 M180 -10 L170 310 M300 -10 L330 310" stroke="#fff" stroke-width="14"/>
+              <path d="M-10 115 L410 90 M-10 205 L410 190 M120 -10 L130 310 M240 -10 L250 310 M360 -10 L380 310" stroke="#fff" stroke-width="6"/>
+              <path d="M-20 300 C 100 220, 160 260, 260 180 S 380 120, 420 60" stroke="#f3cf7a" stroke-width="10" fill="none"/>
+              <rect x="190" y="200" width="70" height="50" rx="8" fill="#cfe3c4"/>
+              <rect x="20" y="20" width="44" height="40" rx="8" fill="#cfe3c4"/>
+            </svg>
+            <span class="area" style="--x:48%;--y:46%"></span>
+            <span class="pin pin--you" style="--x:48%;--y:46%"><span class="sr">Você</span></span>
+            <span class="pin pin--lost pulse" style="--x:38%;--y:34%"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <span class="pin pin--found" style="--x:62%;--y:30%"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <span class="pin pin--lost pulse" style="--x:70%;--y:62%"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <span class="pin pin--seen" style="--x:28%;--y:66%"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <span class="pin pin--lost" style="--x:84%;--y:40%"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <span class="pin pin--found" style="--x:18%;--y:28%"><svg aria-hidden="true"><use href="#i-pin"/></svg></span>
+            <p class="minimap__note"><svg aria-hidden="true"><use href="#i-shield"/></svg> Locais aproximados (250 m) para proteger tutores</p>
+          </div>
+          <div class="legend" aria-hidden="true">
+            <span><i class="lg lg--lost"></i>Perdido</span><span><i class="lg lg--found"></i>Encontrado</span><span><i class="lg lg--seen"></i>Visto</span>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 3. Demonstração: publicar em 3 passos -->
+    <section class="steps" id="passos" aria-labelledby="steps-title">
+      <div class="wrap steps__grid">
+        <div class="steps__copy">
+          <p class="kicker">Rápido de verdade</p>
+          <h2 id="steps-title">Publicar alerta em <span class="hl">3 passos</span></h2>
+          <p class="steps__lead">Sem formulário longo. A MEL monta o cartaz, avisa quem está perto e protege seu contato.</p>
+          <ol class="stepnav" role="tablist" aria-label="Passos do alerta">
+            <li><button role="tab" aria-selected="true" aria-controls="step-panel" data-step="0"><b>1</b><span>Foto do pet</span></button></li>
+            <li><button role="tab" aria-selected="false" aria-controls="step-panel" data-step="1"><b>2</b><span>Onde e quando</span></button></li>
+            <li><button role="tab" aria-selected="false" aria-controls="step-panel" data-step="2"><b>3</b><span>Contato protegido</span></button></li>
+          </ol>
+        </div>
+
+        <div class="phone" aria-live="polite">
+          <div class="phone__bar">
+            <span class="phone__flow" id="flow-label">Perdi meu pet</span>
+            <span class="phone__count" id="step-count">Passo 1 de 3</span>
+          </div>
+          <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+          <div class="phone__panel" id="step-panel" role="tabpanel">
+            <!-- conteúdo trocado pelo app.js -->
+          </div>
+          <div class="phone__foot">
+            <button class="btn btn--ghost-dark" type="button" id="step-back">Voltar</button>
+            <button class="btn btn--honey" type="button" id="step-next">Próximo <svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Confiança -->
+    <section class="trust" aria-label="Como a MEL protege você">
+      <div class="wrap trust__grid">
+        <div class="trust__item"><svg aria-hidden="true"><use href="#i-shield"/></svg><div><h3>Contato protegido</h3><p>Conversas pela MEL. Seu telefone só aparece se você quiser.</p></div></div>
+        <div class="trust__item"><svg aria-hidden="true"><use href="#i-map"/></svg><div><h3>Local aproximado</h3><p>O mapa mostra a região (250 m), nunca o endereço exato.</p></div></div>
+        <div class="trust__item"><svg aria-hidden="true"><use href="#i-heart"/></svg><div><h3>Gratuito e comunitário</h3><p>Sem anúncios, sem venda de animais. Feito por e para a vizinhança.</p></div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__in">
+      <a class="logo logo--foot" href="#"><img src="../assets/marca/mel-beacon-honey.svg" alt="" width="28" height="28"><span>MEL</span></a>
+      <p>Rede comunitária gratuita para pets perdidos, encontrados e adoção responsável.</p>
+      <nav aria-label="Rodapé"><a href="#">Termos</a><a href="#">Privacidade</a><a href="#">Parceiros</a></nav>
+    </div>
+  </footer>
+
+  <!-- Barra inferior (celular) -->
+  <nav class="tabbar" aria-label="Navegação do app">
+    <a href="#" aria-current="page"><svg aria-hidden="true"><use href="#i-home"/></svg><span>Início</span></a>
+    <a href="#mapa"><svg aria-hidden="true"><use href="#i-map"/></svg><span>Mapa</span></a>
+    <button type="button" class="tabbar__publish" data-open-sheet aria-haspopup="dialog">
+      <span class="tabbar__fab"><svg aria-hidden="true"><use href="#i-plus"/></svg></span><span>Publicar</span>
+    </button>
+    <a href="#perto"><svg aria-hidden="true"><use href="#i-grid"/></svg><span>Mural</span></a>
+    <a href="#"><svg aria-hidden="true"><use href="#i-user"/></svg><span>Conta</span></a>
+  </nav>
+
+  <!-- Folha de ações -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__scrim" data-close-sheet></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <span class="sheet__grip" aria-hidden="true"></span>
+      <div class="sheet__head">
+        <h2 id="sheet-title">O que aconteceu?</h2>
+        <button class="iconbtn" type="button" data-close-sheet aria-label="Fechar"><svg aria-hidden="true"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="sheet__list">
+        <button class="sheet__item sheet__item--lost" type="button" data-flow="lost"><span class="action__icon"><svg aria-hidden="true"><use href="#i-alert"/></svg></span><span><b>Perdi meu pet</b><small>Alerta imediato num raio de 3 km</small></span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="sheet__item sheet__item--found" type="button" data-flow="found"><span class="action__icon"><svg aria-hidden="true"><use href="#i-paw"/></svg></span><span><b>Encontrei um pet</b><small>Está comigo ou ficou no local</small></span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="sheet__item sheet__item--seen" type="button" data-flow="seen"><span class="action__icon"><svg aria-hidden="true"><use href="#i-eye"/></svg></span><span><b>Vi um pet</b><small>Avistamento rápido, sem conta</small></span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="sheet__item sheet__item--adopt" type="button" data-flow="adopt"><span class="action__icon"><svg aria-hidden="true"><use href="#i-heart"/></svg></span><span><b>Quero adotar</b><small>Animais disponíveis e fila de interesse</small></span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <a class="proto-pill" href="../index.html">Protótipo — Conceito C</a>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

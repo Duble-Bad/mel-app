@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authCallbackAction, safeErrorCode } from "@mel/core";
 import { createSessionClient } from "@/lib/supabase/server";
+import { requestOrigin } from "@/lib/origin";
 
 /**
  * Retorno do Supabase: login com Google, vínculo do Google à sessão anônima
@@ -8,7 +9,8 @@ import { createSessionClient } from "@/lib/supabase/server";
  * dentro do site: erro → /entrar?erro=<código>; sucesso → `next` interno.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = request.nextUrl;
+  const { searchParams } = request.nextUrl;
+  const origin = requestOrigin(request);
   const action = authCallbackAction(searchParams);
 
   if (action.kind === "error") {

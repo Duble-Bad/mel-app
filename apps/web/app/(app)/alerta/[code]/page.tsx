@@ -24,6 +24,7 @@ import { siteOrigin } from "@/lib/site";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
+import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
 import { CloseLostCaseButton } from "@/components/lost/CloseLostCaseButton";
@@ -100,8 +101,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
   return (
     <article className="flex flex-col gap-6">
       {photo ? (
-        // eslint-disable-next-line @next/next/no-img-element -- foto já otimizada (1280px) no upload
-        <img src={photo.url} alt={`Foto de ${c.pet.name}`} className="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-lg" />
+        <PhotoGallery photos={c.pet.photos} name={c.pet.name} mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-lg" thumbsClassName="px-4" />
       ) : (
         <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-5xl" aria-hidden="true">
           {c.pet.species === "cat" ? "🐱" : c.pet.species === "dog" ? "🐶" : "🐾"}
@@ -210,6 +210,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               key={visibleSightings.length}
               center={c.point}
               zoom={15}
+              areaLabel={c.areaLabel}
               pins={[
                 { id: c.code, kind: "lost", position: c.point, label: `${c.pet.name}, último local conhecido` },
                 ...visibleSightings.map((s, i) => ({
@@ -225,7 +226,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               }`}
             />
             <p className="text-sm text-text-secondary">
-              {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 250 m)"}. `}
+              {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 100 m)"}. `}
               {visibleSightings.length > 0 &&
                 `Pontos com olho (👁): avistamentos, ligados por linha tracejada em ordem de horário${
                   visibleSightings.some((s) => !s.pointIsExact) ? " (localização aproximada)" : ""

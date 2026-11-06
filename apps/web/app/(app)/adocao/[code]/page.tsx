@@ -3,15 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, HeartHandshake, MapPin, MessageCircle, Minus, X } from "lucide-react";
 import { Suspense } from "react";
-import { ADOPTION_STATUS_LABELS, ageLabel, colorLabel, SEX_LABELS, SIZE_LABELS, SPECIES_LABELS, TEMPERAMENT_LABELS, type PublicAdoption } from "@mel/core";
+import { ADOPTION_STATUS_LABELS, ageLabel, institutionLine, colorLabel, SEX_LABELS, SIZE_LABELS, SPECIES_LABELS, TEMPERAMENT_LABELS, type PublicAdoption } from "@mel/core";
 import { getAdoption } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
-import { AdoptionStatusControls } from "@/components/adoption/AdoptionClient";
+import { AdoptionStatusControls, WithdrawInterest } from "@/components/adoption/AdoptionClient";
 import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/States";
+import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
 const isCode = (c: string) => /^[a-z2-9]{6}$/i.test(c);
@@ -86,14 +87,34 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
           {a.areaLabel && (
             <p className="flex items-center gap-1.5">
               <MapPin aria-hidden="true" className="size-4 text-brand" strokeWidth={2} /> {a.areaLabel}
+              <span className="text-sm text-text-secondary">(região aproximada do animal)</span>
+            </p>
+          )}
+          {a.institution && (
+            // Instituição ≠ local do animal: ele pode estar em lar temporário, nunca divulgado.
+            <p className="text-sm text-text-secondary" data-testid="adoption-institution">
+              {institutionLine(a.institution)} —{" "}
+              <Link href={`/parceiros/${a.institution.code}`} className="font-semibold text-link underline-offset-4 hover:underline">
+                ver perfil{a.institution.addressPublic ? " e endereço público da instituição" : ""}
+              </Link>
+              . O animal pode não estar na sede.
             </p>
           )}
         </header>
 
         {!a.isOwner && open && (
           <ButtonLink href={`/adocao/${a.code}/interesse`}>
-            <HeartHandshake aria-hidden="true" className="size-5" strokeWidth={2} /> Quero adotar {a.name}
+            <HeartHandshake aria-hidden="true" className="size-5" strokeWidth={2} /> {a.myInterest ? `Atualizar meu interesse em ${a.name}` : `Quero adotar ${a.name}`}
           </ButtonLink>
+        )}
+        {!a.isOwner && a.myInterest && <WithdrawInterest code={a.code} petName={a.name} />}
+        {!a.isOwner && !open && (
+          <div className="flex flex-col gap-2">
+            <p className="text-text-secondary">Este pet já encontrou família ou não recebe mais interessados.</p>
+            <ButtonLink href="/adocao/quero-adotar" variant="secondary">
+              Entrar na fila de interessados
+            </ButtonLink>
+          </div>
         )}
         {a.status === "ADOPTED" && <Alert tone="success">{a.name} já encontrou um lar. Obrigado a todos que ajudaram!</Alert>}
 
@@ -143,22 +164,13 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
 }
 
 function Gallery({ a }: { a: PublicAdoption }) {
-  const [first, ...rest] = a.photoUrls;
   return (
-    <div className="flex flex-col gap-2">
-      {first && (
-        // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
-        <img src={first} alt={`Foto de ${a.name}`} className="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
-      )}
-      {rest.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 px-[var(--mel-page-gutter)]">
-          {rest.map((u, i) => (
-            // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
-            <img key={u} src={u} alt={`Foto ${i + 2} de ${a.name}`} loading="lazy" className="aspect-square w-full rounded-md object-cover" />
-          ))}
-        </div>
-      )}
-    </div>
+    <PhotoGallery
+      photos={a.photoUrls.map((url) => ({ url }))}
+      name={a.name}
+      mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero"
+      thumbsClassName="px-[var(--mel-page-gutter)]"
+    />
   );
 }
 

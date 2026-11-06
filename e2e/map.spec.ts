@@ -46,6 +46,8 @@ test("the map shows pins, opens a card when a pin is tapped and lists the same c
   await page.goto("/mapa?tipos=lost&raio=1");
   await expect(page.getByRole("heading", { name: "Mapa da rede MEL" })).toBeVisible();
   await expect(page.getByTestId("map-count")).toContainText(/caso/);
+  // Celular: a tela abre na lista (Conceito B); o alternador mostra o mapa.
+  await page.getByRole("group", { name: "Visualização" }).getByRole("button", { name: "Mapa" }).click();
   await expect(page.getByRole("region", { name: /Mapa de casos/ })).toBeVisible();
   const pin = page.getByRole("button", { name: /Perdido: Brigadeiro/ });
   await expect(pin).toBeVisible({ timeout: 20_000 });
@@ -53,6 +55,7 @@ test("the map shows pins, opens a card when a pin is tapped and lists the same c
   await expect(page.getByTestId("map-selected")).toContainText("Brigadeiro");
   await page.getByTestId("map-selected").getByRole("button", { name: "Fechar" }).click();
   await expect(page.getByTestId("map-selected")).toHaveCount(0);
+  await page.getByRole("group", { name: "Visualização" }).getByRole("button", { name: "Lista" }).click();
   await expect(page.getByRole("region", { name: "Lista de casos" }).getByText("Brigadeiro")).toBeVisible();
 });
 

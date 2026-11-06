@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# HTTPS de DESENVOLVIMENTO na rede local (docs/19-teste-no-celular.md, opção A).
+# Gera uma autoridade certificadora (CA) só deste PC e um certificado para o IP
+# da rede e para o nome sslip.io desse IP. Tudo fica FORA do repositório, em
+# ~/.mel-dev-https. A chave da CA nunca sai deste PC: o celular recebe só o
+# certificado público da CA.
+#
+# Por que o nome: o Supabase Auth recusa retorno de login para IP (não-loopback),
+# mesmo na lista de Redirect URLs; `172-18-4-238.sslip.io` resolve para o IP.
+#
+# Uso: bash scripts/dev-https/gerar-certificados.sh [ip]   (padrão: 172.18.4.238)
+# Trocar o IP ou o nome exige refazer a CA (apague ~/.mel-dev-https antes).
+set -euo pipefail
+# Git Bash (Windows) converteria "/O=..." em caminho de arquivo.
+export MSYS_NO_PATHCONV=1
+
+IP="${1:-172.18.4.238}"
+NAME="${IP//./-}.sslip.io"
+DIR="${MEL_DEV_HTTPS_DIR:-$HOME/.mel-dev-https}"
+mkdir -p "$DIR"
+chmod 700 "$DIR" 2>/dev/null || true
+cd "$DIR"
+
+# CA: criada uma vez e reaproveitada (o celular só precisa confiar nela uma vez).
+# nameConstraints: mesmo que a chave da CA vazasse, ela só valeria para este IP,
+# este nome e localhost — nunca para outros sites (o celular recusa outros nomes).
+if [ ! -f ca.key ]; then
+  openssl genrsa -out ca.key 4096 2>/dev/null
+  openssl req -x509 -new -key ca.key -sha256 -days 825 -out ca.crt \
+    -subj "/O=MEL desenvolvimento/CN=MEL DEV CA local (somente testes)" \
+    -addext "basicConstraints=critical,CA:TRUE,pathlen:0" \
+    -addext "keyUsage=critical,keyCertSign,cRLSign" \
+    -addext "nameConstraints=critical,permitted;DNS:$NAME,permitted;IP:$IP/255.255.255.255,permitted;IP:127.0.0.1/255.255.255.255,permitted;DNS:localhost"
+  echo "CA criada em $DIR/ca.crt"
+fi
+
+# Certificado do servidor (refeito a cada execução; validade < 398 dias, exigência do iOS/Chrome).
+openssl genrsa -out servidor.key 2048 2>/dev/null
+openssl req -new -key servidor.key -out servidor.csr -subj "/O=MEL desenvolvimento/CN=$NAME"
+cat > servidor.ext <<EOF
+basicConstraints=CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=serverAuth
+subjectAltName=DNS:$NAME,IP:$IP,IP:127.0.0.1,DNS:localhost
+EOF
+openssl x509 -req -in servidor.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
+  -out servidor.crt -days 397 -sha256 -extfile servidor.ext 2>/dev/null
+rm -f servidor.csr servidor.ext
+
+# Formato DER (.cer) para Android/iOS.
+openssl x509 -in ca.crt -outform der -out ca.cer
+
+echo "Certificado do servidor para $NAME e $IP: $DIR/servidor.crt (válido até $(openssl x509 -in servidor.crt -noout -enddate | cut -d= -f2))"
+echo "Impressão digital SHA-256 da CA (confira no celular):"
+openssl x509 -in ca.crt -noout -fingerprint -sha256 | cut -d= -f2

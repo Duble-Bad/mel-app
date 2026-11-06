@@ -4,11 +4,14 @@ import { notFound } from "next/navigation";
 import { ExternalLink, Inbox, ShieldAlert } from "lucide-react";
 import { Suspense } from "react";
 import { BUSINESS_CATEGORY_LABELS, formatDateTimeBr, MODERATION_ACTION_LABELS, REPORT_REASON_LABELS, REPORT_TARGET_LABELS, timeAgo } from "@mel/core";
-import { getAdminOverview, getAuditLog, listAdminReports, listAdoptionsForReview, listBusinessesForReview } from "@mel/data";
+import { getAdminOverview, getAuditLog, getMapSettings, listAdminReports, listAdoptionsForReview, listBusinessesForReview } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AdoptionReview } from "@/components/admin/AdoptionReview";
+import { MapSettingsControl } from "@/components/admin/MapSettingsControl";
 import { ModerationActions } from "@/components/admin/ModerationActions";
+import { SeekerQueue } from "@/components/admin/SeekerQueue";
+import { PartnerReviewInfo } from "@/components/admin/PartnerReviewInfo";
 import { BusinessReview } from "@/components/partners/PartnerClient";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 
@@ -26,17 +29,20 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
   const profile = await requireOnboardedProfile("/admin");
   // Fora da moderação, a página "não existe" (não revela o painel).
   if (profile.role !== "moderator" && profile.role !== "admin") notFound();
+  // CPF completo: só administrador (o servidor ainda exige a concessão explícita).
+  const isAdmin = profile.role === "admin";
   const client = await createSessionClient();
   let data;
   try {
-    const [overview, reports, audit, adoptions, businesses] = await Promise.all([
+    const [overview, reports, audit, adoptions, businesses, mapSettings] = await Promise.all([
       getAdminOverview(client),
       listAdminReports(client, tab === "open"),
       getAuditLog(client, 15),
       listAdoptionsForReview(client),
       listBusinessesForReview(client),
+      getMapSettings(client),
     ]);
-    data = { overview, reports, audit, adoptions, businesses };
+    data = { overview, reports, audit, adoptions, businesses, mapSettings };
   } catch (error) {
     console.error("[admin] falha", error);
     return <ErrorState>Não conseguimos carregar o painel agora. Atualize a página.</ErrorState>;
@@ -72,6 +78,15 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
           ))}
         </dl>
       </section>
+
+      {isAdmin && (
+        <section aria-labelledby="mapa-rede" className="flex flex-col gap-3 rounded-card border border-border/70 bg-surface p-4">
+          <h2 id="mapa-rede" className="text-lg font-bold">
+            Mapa da rede <span className="text-sm font-normal text-text-secondary">(só administradores)</span>
+          </h2>
+          <MapSettingsControl showAdoptionOnMap={data.mapSettings.showAdoptionOnMap} />
+        </section>
+      )}
 
       <section aria-labelledby="fila" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -159,6 +174,8 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
         )}
       </section>
 
+      <SeekerQueue />
+
       <section aria-labelledby="parceiros" className="flex flex-col gap-3">
         <h2 id="parceiros" className="text-xl font-bold">
           Parceiros aguardando aprovação
@@ -177,6 +194,7 @@ async function Content({ tab }: { tab: "open" | "closed" }) {
                 </p>
                 <p className="text-sm text-text-secondary">{b.addressLabel}</p>
                 <p className="line-clamp-3 text-sm">{b.description}</p>
+                <PartnerReviewInfo b={b} canRevealCpf={isAdmin} />
                 <BusinessReview code={b.code} name={b.name} />
               </li>
             ))}

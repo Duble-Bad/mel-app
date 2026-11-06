@@ -18,7 +18,7 @@ describe("businessInputSchema", () => {
     const r = businessInputSchema.safeParse({ ...valid, phone: "123", website: "http://inseguro.com", instagram: "nome com espaço" });
     expect(r.success).toBe(false);
     const msgs = r.error!.issues.map((i) => i.message);
-    expect(msgs).toContain("Informe um telefone com DDD, ex.: (11) 3333-4444.");
+    expect(msgs).toContain("Use DDD + número: 11 dígitos no celular, 10 no fixo.");
     expect(msgs).toContain("Use um endereço que comece com https://");
     expect(msgs).toContain("Use só o usuário do Instagram (ex.: @meupetshop).");
   });

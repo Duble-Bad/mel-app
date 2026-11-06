@@ -19,6 +19,7 @@ import { CloseFoundCase } from "@/components/found/CloseFoundCase";
 import { MatchCard } from "@/components/found/MatchCard";
 import { ReportButton } from "@/components/report/ReportButton";
 import { MapView } from "@/components/location/MapView";
+import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, LoadingState } from "@/components/ui/States";
@@ -69,8 +70,7 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
   return (
     <article className="flex flex-col gap-6">
       {f.photoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
-        <img src={f.photoUrl} alt="Foto do animal encontrado" className="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
+        <PhotoGallery photos={[{ url: f.photoUrl }]} name="animal encontrado" mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
       ) : (
         <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-text-muted" aria-hidden="true">
           <PawPrint className="size-12" strokeWidth={1.5} />
@@ -187,7 +187,10 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
             </h2>
             <MapView
               center={f.point}
-              zoom={14}
+              // 14,5: no zoom 14 exato o estilo escuro do MapTiler não posiciona nenhum rótulo.
+              zoom={14.5}
+              approximate
+              areaLabel={f.areaLabel ? `${f.areaLabel} · área aproximada` : "Área aproximada"}
               pins={[{ id: f.code, kind: f.custody === "street" ? "sighting" : "found", position: f.point, label: "Região aproximada" }]}
               label="Mapa da região aproximada onde o animal foi encontrado"
             />

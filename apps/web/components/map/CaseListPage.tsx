@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { ChevronLeft, ChevronRight, Map as MapIcon, SearchX } from "lucide-react";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { DEFAULT_CENTER_LABEL, PAGE_SIZE, parseSearchParams, toSearchParams, type PublicKind } from "@mel/core";
 import { searchPublicCases } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -13,30 +13,38 @@ import { PetCardSkeleton } from "@/components/ui/Surface";
 
 type Params = Record<string, string | string[] | undefined>;
 
-/** Lista pública (perdidos ou encontrados) com filtros no endereço e paginação. */
+/**
+ * Lista pública com filtros no endereço e paginação. `kinds` fixa o tipo
+ * (perdidos, encontrados); sem ele (mural), os tipos viram filtros.
+ */
 export function CaseListPage({
   title,
   intro,
   path,
   kinds,
+  aside,
   searchParams,
 }: {
   title: string;
   intro: string;
   path: string;
-  kinds: PublicKind[];
+  kinds?: PublicKind[];
+  aside?: ReactNode;
   searchParams: Promise<Params>;
 }) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="text-text-secondary">{intro}</p>
+    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-14">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex max-w-2xl flex-col gap-2">
+          <h1 className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">{title}</h1>
+          <p className="text-text-secondary sm:text-body-lg">{intro}</p>
         </div>
-        <ButtonLink href="/mapa" variant="secondary" size="md" className="w-auto">
-          <MapIcon aria-hidden="true" className="size-4" strokeWidth={2} /> Ver no mapa
-        </ButtonLink>
+        <div className="flex flex-wrap gap-2">
+          {aside}
+          <ButtonLink href="/mapa" variant="secondary" size="md" className="w-auto">
+            <MapIcon aria-hidden="true" className="size-4" strokeWidth={2} /> Ver no mapa
+          </ButtonLink>
+        </div>
       </header>
       <Suspense fallback={<ListSkeleton />}>
         {searchParams.then((q) => (
@@ -47,7 +55,7 @@ export function CaseListPage({
   );
 }
 
-async function Results({ params, path, kinds }: { params: Params; path: string; kinds: PublicKind[] }) {
+async function Results({ params, path, kinds }: { params: Params; path: string; kinds?: PublicKind[] }) {
   // Lista "agora" (período relativo à hora atual): sempre renderizada na requisição.
   await connection();
   const filters = parseSearchParams(params, kinds);

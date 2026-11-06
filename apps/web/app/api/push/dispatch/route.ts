@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 import { isSchedulerAuthorized, runScheduledMaintenance } from "@mel/core";
-import { purgeOrphanSightingMedia } from "@mel/data";
+import { purgeOrphanSightingMedia, runAdoptionRetention } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
 import { dispatchPushQueue, type DispatchResult } from "@/lib/push/dispatch";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -20,10 +20,21 @@ function respond(result: DispatchResult, extra?: { orphansRemoved: number | null
   return Response.json({ ...result, ...extra }, { status: result.disabled ? 503 : 200, headers: { "Cache-Control": "no-store" } });
 }
 
-/** Apaga fotos órfãs antigas do sighting-media (só o agendador). */
+/**
+ * Faxina do agendador: retenção da adoção (interesses de anúncios encerrados há
+ * 30 dias, perfis da fila vencidos, lembrete "Ainda procura?") e fotos órfãs
+ * antigas do sighting-media. Uma falha da adoção não impede a das fotos.
+ */
 async function cleanOrphans(): Promise<number> {
   const service = createServiceClient();
-  return service ? purgeOrphanSightingMedia(service) : 0;
+  if (!service) return 0;
+  try {
+    const r = await runAdoptionRetention(service);
+    if (r.interestsRemoved || r.seekersRemoved || r.reminded) console.info("[manutenção] retenção da adoção", r);
+  } catch (err) {
+    console.error("[manutenção] retenção da adoção falhou", err instanceof Error ? err.message : String(err));
+  }
+  return purgeOrphanSightingMedia(service);
 }
 
 /**

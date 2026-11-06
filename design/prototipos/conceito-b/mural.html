@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MEL — Conceito B · Mural</title>
+<link rel="icon" href="../assets/marca/mel-beacon-tile-dark.svg">
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="mural">
+<main id="conteudo" class="container" style="padding-bottom:64px">
+  <header class="page-head enter">
+    <h1>Mural da MEL</h1>
+    <p>Acompanhe os pets perdidos, encontrados e disponíveis para adoção na sua região.</p>
+  </header>
+  <div class="toolbar enter" style="--d:.1s">
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+      <div class="chips" id="f-kind" role="group" aria-label="Filtrar por tipo">
+        <button class="chip" type="button" data-value="all" aria-pressed="true">Todos</button>
+        <button class="chip" type="button" data-value="lost" aria-pressed="false">Perdidos</button>
+        <button class="chip" type="button" data-value="found" aria-pressed="false">Encontrados</button>
+        <button class="chip" type="button" data-value="seen" aria-pressed="false">Vistos</button>
+        <button class="chip" type="button" data-value="adopt" aria-pressed="false">Adoção</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <label class="sr-only" for="sp">Espécie</label>
+        <select class="input" id="sp" style="min-height:44px;width:auto"><option value="">Cães e gatos</option><option>Cão</option><option>Gato</option></select>
+        <label class="sr-only" for="sz">Porte</label>
+        <select class="input" id="sz" style="min-height:44px;width:auto"><option value="">Qualquer porte</option><option>Pequeno</option><option>Médio</option><option>Grande</option></select>
+      </div>
+    </div>
+    <p class="meta" id="count" aria-live="polite"></p>
+  </div>
+  <div class="grid-pets" id="grid"></div>
+  <div class="alert alert--info reveal" style="margin-top:28px">
+    <i data-icon="shield"></i><span>O mural mostra só o que é público: foto, nome, bairro e há quanto tempo. Pets marcados como privados, telefones e endereços nunca aparecem. Casos encerrados saem do mural automaticamente.</span>
+  </div>
+</main>
+<script>
+window.MEL = {
+  init() {
+    const { PETS, petCard, chipGroup, swap, icon } = window.MELB;
+    const st = { kind: "all", sp: "", sz: "" };
+    const grid = document.getElementById("grid");
+    const render = () => {
+      const items = PETS.filter((p) => (st.kind === "all" || p.kind === st.kind) && (!st.sp || p.species === st.sp) && (!st.sz || p.size === st.sz));
+      document.getElementById("count").textContent = `${items.length} ${items.length === 1 ? "pet" : "pets"}`;
+      grid.classList.remove("list-anim"); void grid.offsetWidth; grid.classList.add("list-anim");
+      grid.innerHTML = items.length ? items.map((p) => petCard(p)).join("")
+        : `<div class="empty" style="grid-column:1/-1">${icon("search")}<h3>Nenhum pet com esses filtros</h3><p>Tente outro porte ou espécie.</p></div>`;
+    };
+    chipGroup(document.getElementById("f-kind"), (v) => { st.kind = v; swap(render); });
+    document.getElementById("sp").onchange = (e) => { st.sp = e.target.value; swap(render); };
+    document.getElementById("sz").onchange = (e) => { st.sz = e.target.value; swap(render); };
+    render();
+  },
+};
+</script>
+</body>
+</html>

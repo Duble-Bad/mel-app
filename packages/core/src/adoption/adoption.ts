@@ -2,6 +2,8 @@ import { z } from "zod";
 import { PET_COLORS, PET_SEXES, PET_SIZES, SPECIES, type PetColor, type PetSex, type PetSize, type Species } from "../pet/pet";
 import type { LatLng } from "../geo/geo";
 
+export * from "./seekers";
+
 export const ADOPTION_STATUSES = ["PENDING_REVIEW", "AVAILABLE", "IN_PROCESS", "ADOPTED", "REJECTED", "REMOVED"] as const;
 export type AdoptionStatus = (typeof ADOPTION_STATUSES)[number];
 
@@ -64,7 +66,8 @@ export type AdoptionInput = z.output<typeof adoptionInputSchema>;
 export const interestSchema = z.object({
   housing: z.enum(HOUSING, { error: "Conte onde você mora." }),
   otherPets: z.boolean({ error: "Diga se já tem outros pets." }),
-  children: z.boolean({ error: "Diga se há crianças em casa." }),
+  /** Opcional (decisão do proprietário): null = prefere não informar. */
+  children: z.boolean().nullable().default(null),
   message: z.string().trim().min(10, "Conte um pouco sobre você (pelo menos 10 caracteres).").max(1000, "Use até 1000 caracteres."),
 });
 export type InterestInput = z.output<typeof interestSchema>;
@@ -92,6 +95,40 @@ export interface PublicAdoption {
   reviewNote: string | null;
   /** Só para quem doa. */
   interests: number | null;
+  /** Quem está vendo já enviou interesse (pode cancelar). */
+  myInterest?: boolean;
+  /** ONG ou empresa aprovada de quem anuncia (o animal pode não estar na sede). */
+  institution?: AdoptionInstitution | null;
+}
+
+export interface AdoptionInstitution {
+  code: string;
+  name: string;
+  kind: "ngo" | "company";
+  /** A instituição tem endereço público validado (no perfil dela). */
+  addressPublic: boolean;
+}
+
+/** Anúncio no mapa da rede (só com a configuração do administrador ligada). */
+export interface AdoptionMapItem {
+  code: string;
+  name: string;
+  species: Species;
+  size: PetSize | null;
+  sex: PetSex;
+  ageMonths: number | null;
+  areaLabel: string | null;
+  photoUrl: string | null;
+  publishedAt: string | null;
+  /** Ponto público APROXIMADO do anúncio (célula de 100 m), nunca a casa de quem doa. */
+  position: { lat: number; lng: number };
+  distanceM: number | null;
+  institution: AdoptionInstitution | null;
+}
+
+/** "Disponível para adoção pela ONG X" (nunca diz que o animal está na sede). */
+export function institutionLine(i: AdoptionInstitution): string {
+  return `Disponível para adoção pela ${i.kind === "ngo" ? "ONG" : "empresa parceira"} ${i.name}`;
 }
 
 /** "Filhote (4 meses)", "2 anos", "Idade não informada". */
