@@ -34,13 +34,14 @@ const TEXT = "#f5f2ea";
 const MUTED = "#b3bdcc";
 
 /** Faixa do status no topo (px). */
-const BAND: Record<PosterV2Format, number> = { impressao: 230, square: 92, portrait: 104, story: 132, landscape: 0 };
+const BAND: Record<PosterV2Format, number> = { impressao: 230, square: 92, portrait: 104, story: 300, landscape: 0 };
 
 /** Área de fotos de cada formato (abaixo da faixa do status). */
 const AREA: Record<PosterV2Format, { width: number; height: number; gap: number }> = {
   square: { width: 1080, height: 610, gap: 0 },
   portrait: { width: 1080, height: 800, gap: 0 },
-  story: { width: 1080, height: 1100, gap: 0 },
+  // Stories: 1920 − faixa 300 − painel ~670 − área segura de baixo 220 (conferido: nada cortado).
+  story: { width: 1080, height: 760, gap: 0 },
   landscape: { width: 700, height: 630, gap: 0 },
   impressao: { width: 1654 - 2 * 90, height: 1000, gap: 24 },
 };
@@ -52,7 +53,8 @@ const AREA: Record<PosterV2Format, { width: number; height: number; gap: number 
  * (quadrado/4:5) ou embaixo (Stories, A4, horizontal). A principal nunca fica pequena.
  */
 export function photoLayout(format: PosterV2Format, count: number, mainAspect: number | null = null): PhotoLayout {
-  const extras = Math.min(2, Math.max(0, count - 1));
+  // Horizontal (1200×630): só a foto principal — miniaturas não acrescentam nada nesse tamanho.
+  const extras = format === "landscape" ? 0 : Math.min(2, Math.max(0, count - 1));
   const { width: W, height: H, gap } = AREA[format];
   const split = (total: number, n: number) => Array.from({ length: n }, () => Math.floor((total - gap * (n - 1)) / n));
   if (!extras) return { main: { width: W, height: H }, extras: [], extrasDirection: "column" };
@@ -66,11 +68,15 @@ export function photoLayout(format: PosterV2Format, count: number, mainAspect: n
     case "portrait":
       return { main: { width: 740, height: H }, extras: split(H, extras).map((eh) => ({ width: W - 740, height: eh })), extrasDirection: "column" };
     case "story":
-      return { main: { width: W, height: 760 }, extras: split(W, extras).map((ew) => ({ width: ew, height: H - 760 })), extrasDirection: "row" };
+      // Coluna ao lado: a principal continua alta mesmo com a faixa e as áreas seguras.
+      return { main: { width: 740, height: H }, extras: split(H, extras).map((eh) => ({ width: W - 740, height: eh })), extrasDirection: "column" };
     case "landscape":
       return { main: { width: W, height: 460 }, extras: split(W, extras).map((ew) => ({ width: ew, height: H - 460 })), extrasDirection: "row" };
-    case "impressao":
-      return { main: { width: W, height: 680 }, extras: split(W, extras).map((ew) => ({ width: ew, height: H - 680 - gap })), extrasDirection: "row" };
+    case "impressao": {
+      // Coluna: a principal fica alta (larga demais viraria foto inteira com laterais desfocadas).
+      const mw = Math.round(W * 0.64);
+      return { main: { width: mw, height: H }, extras: split(H, extras).map((eh) => ({ width: W - mw - gap, height: eh })), extrasDirection: "column" };
+    }
   }
 }
 
@@ -143,7 +149,13 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
           AMBIENTE DE TESTE — DEV
         </div>
       )}
-      {shown ? (
+      {dev && shown ? (
+        // Em DEV o endereço técnico (sslip.io) não vai para o cartaz: só o código do alerta.
+        <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", color }}>
+          <span style={{ fontSize: size }}>Código do alerta:&nbsp;</span>
+          <span style={{ fontSize: Math.round(size * 1.3), fontWeight: 800, color: strong, letterSpacing: 2 }}>{content.displayCode}</span>
+        </div>
+      ) : shown ? (
         <div style={{ display: "flex", alignItems: "baseline", flexWrap: "wrap", color }}>
           <span style={{ fontSize: size }}>{urlPrefix}</span>
           <span style={{ fontSize: Math.round(size * 1.3), fontWeight: 800, color: strong, letterSpacing: 2 }}>{content.displayCode}</span>
@@ -191,17 +203,17 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
         <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "30px 32px", justifyContent: "space-between", borderLeft: `8px solid ${accent}` }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", alignSelf: "flex-start", background: accent, color: "#fff", fontSize: 30, fontWeight: 800, letterSpacing: 2, padding: "4px 16px", borderRadius: 8 }}>{content.headline}</div>
-            <div style={{ display: "flex", fontSize: nameSize(66), fontWeight: 800, lineHeight: 1 }}>{content.name}</div>
+            <div style={{ display: "flex", fontSize: nameSize(84), fontWeight: 800, lineHeight: 1 }}>{content.name}</div>
             <div style={{ display: "flex", fontSize: 22, fontWeight: 700, color: MUTED }}>{content.details}</div>
-            {content.lastSeen && <div style={{ display: "flex", fontSize: 22, fontWeight: 700 }}>{content.lastSeen}</div>}
-            {content.when && <div style={{ display: "flex", fontSize: 20, color: MUTED }}>{content.when}</div>}
+            {content.lastSeen && <div style={{ display: "flex", fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{content.lastSeen.replace(/^Visto por último: /, "")}</div>}
+            {content.when && <div style={{ display: "flex", fontSize: 22, color: MUTED }}>{content.when}</div>}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {qrBlock(150, 16)}
             <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-              <div style={{ display: "flex", fontSize: 34, fontWeight: 800, color: GOLD, lineHeight: 1 }}>{content.cta}</div>
+              <div style={{ display: "flex", fontSize: 38, fontWeight: 800, color: GOLD, lineHeight: 1 }}>{content.cta}</div>
               {content.contact && <div style={{ display: "flex", fontSize: 20, fontWeight: 800 }}>{content.contact}</div>}
-              {urlLine(16)}
+              {urlLine(17)}
             </div>
           </div>
         </div>
@@ -209,30 +221,36 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
     );
   }
 
-  // ---------------- Stories (9:16): texto na largura toda, QR na linha de baixo ----------------
+  // ---------------- Stories (9:16) ----------------
+  // Áreas seguras dos apps: o topo (~250 px: barra de progresso e perfil) e a base
+  // (~220 px: campo de resposta) ficam sem nada essencial. O PROCURA-SE fica logo abaixo
+  // da área do topo; a base só leva a assinatura da MEL (pode ser coberta sem perda).
   if (format === "story") {
-    const marks = content.marks && content.marks.length > 96 ? `${content.marks.slice(0, 95).trimEnd()}…` : content.marks;
     return (
       <div style={{ width, height, display: "flex", flexDirection: "column", background: NAVY, fontFamily: "Figtree", color: TEXT }}>
-        {band(92, BAND.story)}
+        <div style={{ display: "flex", flexShrink: 0, height: 300, alignItems: "flex-end", justifyContent: "center", paddingBottom: 26, background: accent, color: "#fff", fontSize: 96, fontWeight: 800, letterSpacing: 8 }}>
+          {content.headline}
+        </div>
         {gallery(0)}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "36px 52px 40px", justifyContent: "space-between", borderTop: `8px solid ${accent}`, background: PANEL }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", fontSize: nameSize(110), fontWeight: 800, lineHeight: 1 }}>{content.name}</div>
-            <div style={{ display: "flex", fontSize: 38, fontWeight: 700, color: MUTED }}>{content.details}</div>
-            {content.lastSeen && <div style={{ display: "flex", fontSize: 38, fontWeight: 700 }}>{content.lastSeen}</div>}
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "30px 52px 0", gap: 18, borderTop: `8px solid ${accent}`, background: PANEL }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", fontSize: nameSize(108), fontWeight: 800, lineHeight: 1 }}>{content.name}</div>
+            <div style={{ display: "flex", fontSize: 36, fontWeight: 700, color: MUTED }}>{content.details}</div>
+            {content.lastSeen && <div style={{ display: "flex", fontSize: 36, fontWeight: 700, lineHeight: 1.2 }}>{content.lastSeen}</div>}
             {content.when && <div style={{ display: "flex", fontSize: 32, color: MUTED }}>{content.when}</div>}
-            {marks && <div style={{ display: "flex", fontSize: 30, lineHeight: 1.25 }}>{marks}</div>}
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 32 }}>
             <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 10 }}>
-              <div style={{ display: "flex", fontSize: 62, fontWeight: 800, color: GOLD, lineHeight: 1 }}>{content.cta}</div>
+              <div style={{ display: "flex", fontSize: 60, fontWeight: 800, color: GOLD, lineHeight: 1 }}>{content.cta}</div>
               {content.action && <div style={{ display: "flex", fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>{content.action}</div>}
               {content.contact && <div style={{ display: "flex", fontSize: 34, fontWeight: 800 }}>{content.contact}</div>}
               {urlLine(24)}
             </div>
-            {qrBlock(230, 26)}
+            {qrBlock(200, 24)}
           </div>
+        </div>
+        <div style={{ display: "flex", flexShrink: 0, height: 220, alignItems: "center", justifyContent: "center", background: PANEL, color: "#8f9bb0", fontSize: 30, fontWeight: 700 }}>
+          MEL · Uma rede inteira procurando com você.
         </div>
       </div>
     );

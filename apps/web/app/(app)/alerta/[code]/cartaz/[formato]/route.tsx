@@ -60,13 +60,24 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     const wanted = params.get("fotos");
     const order = wanted && /^\d(,\d){0,2}$/.test(wanted) ? wanted.split(",").map(Number) : [0, 1, 2];
     const picked = order.map((i) => photos[i]).filter((p): p is (typeof photos)[number] => Boolean(p));
-    const fetched = await Promise.all(picked.map(async (p) => ({ source: await fetchPhoto(p.url), focus: p.focus })));
+    // ?foco=x,y (só nesta avaliação em DEV): simula o enquadramento do tutor na foto principal,
+    // sem gravar nada, para conferir se um ponto único serve aos cinco formatos.
+    const simulated = /^(\d{1,3}),(\d{1,3})$/.exec(params.get("foco") ?? "");
+    const fetched = await Promise.all(
+      picked.map(async (p, i) => ({
+        source: await fetchPhoto(p.url),
+        focus: i === 0 && simulated ? { x: Math.min(100, Number(simulated[1])), y: Math.min(100, Number(simulated[2])) } : p.focus,
+      })),
+    );
     const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"] } => f.source !== null);
     const [{ layout, photos: ready }, qr] = await Promise.all([composePhotos(formato, sources), qrDataUrl(url, formato === "impressao" ? 860 : 600)]);
     const { width, height } = V2_FORMATS[formato];
     // Sem o domínio oficial configurado (DEV), o link vai marcado como ambiente de teste.
     const dev = !process.env.NEXT_PUBLIC_SITE_URL;
-    return new ImageResponse(<PosterV2 format={formato} content={content} photos={ready} layout={layout} qr={qr} url={url} dev={dev} />, {
+    // Horário marcado como aproximado pelo tutor: "por volta das 22:00".
+    const proposalContent =
+      c.lostAtUncertain && content.when ? { ...content, when: content.when.replace(/ às (\d{1,2}:\d{2})$/, ", por volta das $1") } : content;
+    return new ImageResponse(<PosterV2 format={formato} content={proposalContent} photos={ready} layout={layout} qr={qr} url={url} dev={dev} />, {
       width,
       height,
       fonts: posterFonts,

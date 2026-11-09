@@ -68,6 +68,8 @@ export async function cropToDataUrl(source: Buffer, width: number, height: numbe
 
 /**
  * Encaixa a foto no espaço do cartaz SEM cortar o que identifica o animal:
+ * - recorte grande demais (sobraria menos que `minKept`): foto INTEIRA, mesmo com
+ *   enquadramento do tutor (o ponto não salva orelhas/rosto num corte de 50%);
  * - com enquadramento do tutor: recorta em volta do ponto escolhido;
  * - se o recorte manteria ao menos `minKept` da foto (65%): recorte normal;
  * - senão (ex.: foto vertical num espaço largo): mostra a foto INTEIRA, sem
@@ -81,7 +83,6 @@ export async function fitToDataUrl(
   focus?: PhotoFocus,
   { minKept = 0.65, position = "attention" }: { minKept?: number; position?: "attention" | "centre" } = {},
 ): Promise<string | null> {
-  if (focus) return cropToDataUrl(source, width, height, focus);
   try {
     const w = Math.round(width);
     const h = Math.round(height);
@@ -90,7 +91,7 @@ export async function fitToDataUrl(
     const ir = (meta.width ?? w) / (meta.height ?? h);
     const br = w / h;
     const kept = Math.min(ir / br, br / ir);
-    if (kept >= minKept) return cropToDataUrl(upright, w, h, null, position);
+    if (kept >= minKept) return cropToDataUrl(upright, w, h, focus ?? null, position);
     const backdrop = await sharp(upright).resize(w, h, { fit: "cover" }).blur(28).modulate({ brightness: 0.45 }).toBuffer();
     const fg = await sharp(upright).resize(w, h, { fit: "inside" }).toBuffer();
     const fm = await sharp(fg).metadata();

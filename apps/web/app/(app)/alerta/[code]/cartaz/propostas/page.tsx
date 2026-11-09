@@ -28,25 +28,26 @@ const BEFORE: Record<PosterV2Format, { path: string; kind: "image" | "page"; siz
 const CHANGES: Record<PosterV2Format, string[]> = {
   impressao: [
     "Passa a ser imagem PNG em 200 dpi (1654×2339), além da página para imprimir.",
-    "Fundo branco para economizar tinta; faixa PROCURA-SE no topo.",
-    "Foto principal grande e até duas complementares; QR grande com “Escaneie e avise”.",
+    "Fundo branco (economiza tinta); faixa PROCURA-SE no topo.",
+    "Foto principal alta (64% da largura) e até duas complementares em coluna.",
+    "Data com horário aproximado; QR grande com “Escaneie e avise” e código do alerta.",
   ],
   square: [
     "Faixa PROCURA-SE no topo, fora da foto (antes o selo ficava sobre a imagem).",
-    "Foto ocupa ~56% do cartaz; com foto vertical, coluna alta sem faixas desfocadas.",
-    "Nome, região e data logo abaixo da foto; QR à direita.",
+    "Foto ocupa ~56% do cartaz; recorte que não corta rosto, orelhas nem laço.",
+    "Nome, região, data e chamada logo abaixo; QR à direita.",
   ],
   portrait: [
-    "Formato do feed do Instagram (4:5) com a foto ocupando ~59% do cartaz.",
-    "Mesma hierarquia do quadrado, com mais espaço para a foto.",
+    "Formato do feed do Instagram (4:5), foto ocupando ~59% do cartaz.",
+    "Complementares em coluna, proporcionais; bloco inferior sem textos espremidos.",
   ],
   story: [
-    "Foto ocupa ~57% da tela; texto na largura toda (nome sem quebrar).",
-    "QR na linha de baixo, junto da chamada; sem espaços vazios no meio.",
+    "Respeita as áreas seguras dos apps: nada essencial no topo (~250 px) nem na base (~220 px).",
+    "Foto principal alta com complementares em coluna; QR e código do alerta visíveis.",
   ],
   landscape: [
-    "Agora 1200×630 (antes 1920×1080): tamanho certo para prévias e grupos.",
-    "Foto à esquerda em altura total; status, nome, região, data e QR à direita.",
+    "Agora 1200×630 (antes 1920×1080): tamanho de prévia de link.",
+    "Só a foto principal (miniaturas não ajudam nesse tamanho); nome grande e texto enxuto.",
   ],
 };
 
@@ -55,14 +56,14 @@ export default function PosterComparisonPage({ params, searchParams }: PageProps
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10">
       <Suspense fallback={<LoadingState label="Preparando a comparação…" />}>
         {Promise.all([params, searchParams]).then(([{ code }, q]) => (
-          <Comparison code={code} fotos={typeof q.fotos === "string" ? q.fotos : null} />
+          <Comparison code={code} fotos={typeof q.fotos === "string" ? q.fotos : null} foco={typeof q.foco === "string" ? q.foco : null} />
         ))}
       </Suspense>
     </main>
   );
 }
 
-async function Comparison({ code, fotos }: { code: string; fotos: string | null }) {
+async function Comparison({ code, fotos, foco }: { code: string; fotos: string | null; foco: string | null }) {
   if (process.env.MEL_DEV_ROUTES !== "1") notFound();
   if (!/^[a-z2-9]{6}$/i.test(code)) notFound();
   const c = await getPublicLostCase(createPublicClient(), code);
@@ -71,7 +72,9 @@ async function Comparison({ code, fotos }: { code: string; fotos: string | null 
   const photos = c.pet.photos;
   const v = photos.map((p) => `${p.isPrimary ? 1 : 0}${p.focus ? `${p.focus.x}.${p.focus.y}` : "a"}`).join("-").slice(0, 60) || "0";
   const active = fotos && /^\d(,\d){0,2}$/.test(fotos) ? fotos : null;
-  const q = `modelo=proposta&v=${v}${active ? `&fotos=${active}` : ""}`;
+  // foco=x,y: simulação do enquadramento do tutor na foto principal (não grava nada).
+  const focus = foco && /^\d{1,3},\d{1,3}$/.test(foco) ? foco : null;
+  const q = `modelo=proposta&v=${v}${active ? `&fotos=${active}` : ""}${focus ? `&foco=${focus}` : ""}`;
   // Combinações para os testes: cada foto sozinha e cada foto como principal com as duas seguintes.
   const combos: { label: string; value: string | null }[] = [{ label: "Capa e ordem do cadastro", value: null }];
   photos.forEach((_, i) => combos.push({ label: `Só a foto ${i + 1}`, value: String(i) }));
@@ -141,6 +144,11 @@ async function Comparison({ code, fotos }: { code: string; fotos: string | null 
                 </figcaption>
                 {/* eslint-disable-next-line @next/next/no-img-element -- imagem gerada sob demanda */}
                 <img src={after} alt={`Proposta ${meta.label}`} loading="lazy" width={meta.width} height={meta.height} className={`w-full rounded-md border border-border ${f === "story" ? "mx-auto max-w-64" : f === "impressao" || f === "portrait" ? "mx-auto max-w-sm" : ""}`} />
+                <details className="text-sm">
+                  <summary className="min-h-10 cursor-pointer py-2 font-semibold text-link">Ver na largura de um celular (360 px)</summary>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- mesma imagem, na largura de uma tela de celular */}
+                  <img src={after} alt={`Proposta ${meta.label} em 360 px`} loading="lazy" style={{ width: 360, maxWidth: "100%" }} className="rounded-md border border-border" />
+                </details>
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   <a href={after} target="_blank" className="text-sm font-semibold text-link underline-offset-4 hover:underline">
                     Ver em tamanho real
