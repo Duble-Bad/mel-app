@@ -29,17 +29,19 @@ const CHANGES: Record<PosterV2Format, string[]> = {
   impressao: [
     "Passa a ser imagem PNG em 200 dpi (1654×2339), além da página para imprimir.",
     "Fundo branco (economiza tinta); faixa PROCURA-SE no topo.",
-    "Foto principal alta (64% da largura) e até duas complementares em coluna.",
+    "Foto principal alta e até duas complementares em coluna, com espaço proporcional ao formato de cada foto.",
+    "Foto única vertical: centralizada, sem laterais desfocadas.",
     "Data com horário aproximado; QR grande com “Escaneie e avise” e código do alerta.",
   ],
   square: [
     "Faixa PROCURA-SE no topo, fora da foto (antes o selo ficava sobre a imagem).",
     "Foto ocupa ~56% do cartaz; recorte que não corta rosto, orelhas nem laço.",
+    "Complementares empilhadas ou lado a lado, o que cortar menos; nenhuma com laterais desfocadas.",
     "Nome, região, data e chamada logo abaixo; QR à direita.",
   ],
   portrait: [
     "Formato do feed do Instagram (4:5), foto ocupando ~59% do cartaz.",
-    "Complementares em coluna, proporcionais; bloco inferior sem textos espremidos.",
+    "Complementares proporcionais ao formato de cada foto; bloco inferior sem textos espremidos.",
   ],
   story: [
     "Respeita as áreas seguras dos apps: nada essencial no topo (~250 px) nem na base (~220 px).",
@@ -48,6 +50,7 @@ const CHANGES: Record<PosterV2Format, string[]> = {
   landscape: [
     "Agora 1200×630 (antes 1920×1080): tamanho de prévia de link.",
     "Só a foto principal (miniaturas não ajudam nesse tamanho); nome grande e texto enxuto.",
+    "Foto vertical: a área da foto estreita e o texto ganha o espaço (sem laterais desfocadas).",
   ],
 };
 
@@ -103,6 +106,16 @@ async function Comparison({ code, fotos, foco }: { code: string; fotos: string |
             </a>
           ))}
         </nav>
+        <p className="text-sm">
+          Protótipos (sem gravar nada):{" "}
+          <Link href={`/alerta/${c.code}/cartaz/editor`} className="font-semibold text-link underline-offset-4 hover:underline">
+            editor de personalização
+          </Link>{" "}
+          ·{" "}
+          <Link href="/dev/bonificacao" className="font-semibold text-link underline-offset-4 hover:underline">
+            bonificação (caso fictício)
+          </Link>
+        </p>
       </div>
 
       {ORDER.map((f) => {

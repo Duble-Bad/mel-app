@@ -70,7 +70,17 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
       })),
     );
     const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"] } => f.source !== null);
-    const [{ layout, photos: ready }, qr] = await Promise.all([composePhotos(formato, sources), qrDataUrl(url, formato === "impressao" ? 860 : 600)]);
+    // ?zoom=1..3 (protótipo do editor, DEV): enquadramento explícito da principal neste formato
+    // (ponto do ?foco + aproximação), aplicado só nesta imagem — nada é gravado.
+    const zoom = Number(params.get("zoom"));
+    const framing =
+      params.has("zoom") && zoom >= 1 && zoom <= 3
+        ? { focus: simulated ? { x: Math.min(100, Number(simulated[1])), y: Math.min(100, Number(simulated[2])) } : { x: 50, y: 50 }, zoom }
+        : undefined;
+    const [{ layout, photos: ready, diagnostics }, qr] = await Promise.all([
+      composePhotos(formato, sources, { framing }),
+      qrDataUrl(url, formato === "impressao" ? 860 : 600),
+    ]);
     const { width, height } = V2_FORMATS[formato];
     // Sem o domínio oficial configurado (DEV), o link vai marcado como ambiente de teste.
     const dev = !process.env.NEXT_PUBLIC_SITE_URL;
@@ -81,7 +91,8 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
       width,
       height,
       fonts: posterFonts,
-      headers: { ...headers, "X-Robots-Tag": "noindex, nofollow" },
+      // Diagnóstico do encaixe das fotos (avaliação interna em DEV; nunca vai para a arte).
+      headers: { ...headers, "X-Robots-Tag": "noindex, nofollow", "X-Mel-Diagnostico": JSON.stringify(diagnostics) },
     });
   }
 

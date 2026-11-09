@@ -3,6 +3,7 @@
 > Atualizado em 2026-11-05. **MVP em Feature Freeze desde o commit `46f3238`**; série Launch Readiness (1, 2A–2L) concluída no código e na documentação; último CI verde em `25561fe`.
 > **Decisão de 2026-11-05:** o piloto segue nos planos gratuitos do **MapTiler** e da **Vercel (Hobby)**. **Próxima ação única:** decidir o domínio próprio (checklist 0.4).
 > **Redesign (2026-11-05, branch `redesign/etapa-1`, ainda fora da `main`):** Conceito B aprovado e implementado no app; ponto público aproximado passou para **100 m** (migration 32, aplicada só no `mel-dev`). Detalhes em "Redesign e 100 m" abaixo.
+> **Cartazes (2026-11-09, só DEV):** 65 combinações (13 seleções de fotos × 5 formatos) validadas com o alerta RCU6K4. Dimensões e QR (tamanho real e celular) passam em 65/65, e nenhuma combinação tem laterais desfocadas. Também foram feitos: os protótipos do editor (`/alerta/rcu6k4/cartaz/editor`) e da bonificação (`/dev/bonificacao`), sem migration; e a orientação da descrição pública no cadastro, na edição e no alerta. Decisões em [decisoes-pendentes.md](decisoes-pendentes.md); propostas em [propostas/editor-e-bonificacao.md](propostas/editor-e-bonificacao.md).
 > Leia isto primeiro ao retomar o projeto. Para o lançamento, a lista completa está em [12-checklist-lancamento.md](12-checklist-lancamento.md).
 
 ## 🚦 Prontidão para o piloto (diagnóstico de 2026-11-05)

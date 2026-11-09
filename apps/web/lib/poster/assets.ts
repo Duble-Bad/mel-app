@@ -39,7 +39,15 @@ export async function fetchPhoto(url: string | undefined): Promise<Buffer | null
  * possível (enquadramento escolhido pelo tutor); sem ele, o sharp escolhe a região
  * de mais interesse ("attention"), como antes.
  */
-export async function cropToDataUrl(source: Buffer, width: number, height: number, focus?: PhotoFocus, position: "attention" | "centre" = "attention"): Promise<string | null> {
+export async function cropToDataUrl(
+  source: Buffer,
+  width: number,
+  height: number,
+  focus?: PhotoFocus,
+  position: "attention" | "centre" = "attention",
+  /** Aproximação extra sobre o recorte (1 = só cobrir o espaço). Usada com `focus`. */
+  zoom = 1,
+): Promise<string | null> {
   try {
     const w = Math.round(width);
     const h = Math.round(height);
@@ -50,7 +58,7 @@ export async function cropToDataUrl(source: Buffer, width: number, height: numbe
       const meta = await sharp(upright).metadata();
       const iw = meta.width ?? w;
       const ih = meta.height ?? h;
-      const scale = Math.max(w / iw, h / ih);
+      const scale = Math.max(w / iw, h / ih) * Math.max(1, zoom);
       const rw = Math.max(w, Math.round(iw * scale));
       const rh = Math.max(h, Math.round(ih * scale));
       const left = Math.min(rw - w, Math.max(0, Math.round((focus.x / 100) * rw - w / 2)));

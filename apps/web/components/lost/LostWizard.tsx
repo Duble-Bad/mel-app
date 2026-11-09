@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { TextField } from "@/components/ui/Field";
 import { QuickPetForm } from "./QuickPetForm";
+import { PublicDescriptionField } from "@/components/pets/PublicDescriptionField";
 
 const TITLES: Record<LostStep, string> = {
   pet: "Qual pet desapareceu?",
@@ -448,20 +449,17 @@ function DetailsStep({
         onChange={setWearing}
         options={WEARING.map((w) => ({ value: w, label: WEARING_LABELS[w] }))}
       />
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="notes" className="font-semibold">
-          Algo importante? <span className="font-normal text-text-secondary">(opcional)</span>
-        </label>
-        <p className="text-sm text-text-secondary">Ex.: é medroso e foge de gente; atende pelo nome; precisa de remédio.</p>
-        <textarea
-          id="notes"
-          rows={4}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
-        />
-        {error && <p className="text-sm font-medium text-danger">{error}</p>}
-      </div>
+      {/* Observações do alerta: mesmo campo livre e público da descrição do pet (componente compartilhado). */}
+      <PublicDescriptionField
+        id="notes"
+        label="Algo importante?"
+        guidance="Conte o que ajuda quem estiver procurando: comportamento (ex.: é medroso e foge de gente, atende pelo nome), condições especiais (precisa de remédio) e referências de onde foi visto ou desapareceu."
+        placeholder="Ex.: é dócil, mas pode ficar assustado e se esconder. Foi visto pela última vez próximo à praça do bairro."
+        value={notes}
+        onChange={setNotes}
+        error={error ?? undefined}
+        className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
+      />
       <Nav busy={busy} onBack={onBack} />
     </form>
   );

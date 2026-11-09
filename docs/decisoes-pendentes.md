@@ -1,0 +1,31 @@
+# Decisões pendentes do proprietário
+
+Lista viva das decisões que dependem do proprietário (atualizada a cada rodada).
+Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md`.
+
+## Pendentes
+
+| # | Desde | Decisão | Contexto |
+|---|---|---|---|
+| 1 | 2026-11-09 | **Aprovar visualmente as propostas de cartaz** (A4, quadrado, 4:5, Stories, horizontal) | Comparação em `/alerta/rcu6k4/cartaz/propostas?fotos=2,3,4` (DEV). 65 combinações validadas tecnicamente; nenhuma aprovação técnica substitui a visual |
+| 2 | 2026-11-09 | **Substituir os cartazes atuais** pelas propostas | Só depois do item 1 |
+| 3 | 2026-11-09 | **Trocar a capa da Mel** para a foto horizontal com laço amarelo | Recomendação visual: a capa atual (no colo) é a que pior identifica a Mel. Não alterar sem autorização |
+| 4 | 2026-11-09 | **Teste manual**: ler o QR Code com câmera de celular (tela e A4 impresso) | Só o proprietário consegue |
+| 5 | 2026-11-09 | **Teste manual**: Instagram/TikTok/Facebook num celular real (compartilhamento nativo) | Nos testes automáticos o menu do sistema é simulado |
+| 6 | 2026-11-09 | **Prévia do link no Facebook** com domínio público | Exige domínio público e autorização para teste em ambiente público (checklist 3.8) |
+| 7 | 2026-11-09 | **Editor de personalização dos cartazes**: aprovar o protótipo, a persistência proposta e a migration | Protótipo em `/alerta/rcu6k4/cartaz/editor`; proposta em `docs/propostas/editor-e-bonificacao.md`. Não implementar estrutura antes da aprovação |
+| 8 | 2026-11-09 | **Bonificação opcional no alerta**: aprovar formulário, apresentação e a migration | Protótipo em `/dev/bonificacao` (caso fictício); proposta no mesmo documento |
+| 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
+| 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
+| 12 | 2026-11-09 | **Foto única vertical**: centralizada com faixas lisas nas laterais (sem desfoque) | Aceitar assim ou preferir outro arranjo (ex.: texto ao lado) |
+| 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
+| 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–46, chaves PII) e publicar | Nada em produção sem autorização expressa |
+
+## Decididas
+
+| Data | Decisão |
+|---|---|
+| 2026-11-09 | **Descrição do pet é texto livre e voluntário.** O tutor decide o que divulgar, inclusive ruas e endereços; nada de censura ou alteração automática. A proteção técnica das coordenadas privadas continua independente. (Encerra as propostas de editar a descrição da Mel e de omitir endereços automaticamente.) |
+| 2026-11-09 | Alerta da Mel (RCU6K4) publicado no `mel-dev` |
+| 2026-11-06 | Conta do proprietário com papel `admin` no `mel-dev` |
+| 2026-11-06 | Merge do redesign (etapa 1) na `main`, só código |

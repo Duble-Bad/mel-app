@@ -41,6 +41,7 @@ import { SelectField, TextField } from "@/components/ui/Field";
 import { FillCityFromLocation } from "@/components/location/FillCityFromLocation";
 import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
+import { PET_DESCRIPTION_COPY, PublicDescriptionField } from "./PublicDescriptionField";
 
 interface PetFormProps {
   ownerId: string;
@@ -252,19 +253,18 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             options={PET_COLORS.filter((c) => c.id !== colorPrimary).map((c) => ({ value: c.id, label: c.label }))}
           />
         )}
-        <div className="flex flex-col gap-1.5" id="field-uniqueMarks">
-          <label htmlFor="uniqueMarks" className="font-semibold">
-            Características marcantes <span className="font-normal text-text-secondary">(opcional)</span>
-          </label>
-          <p className="text-sm text-text-secondary">Visíveis para todos. Ex.: orelha caída, mancha no olho, rabo curto.</p>
-          <textarea
+        <div id="field-uniqueMarks">
+          <PublicDescriptionField
             id="uniqueMarks"
-            rows={3}
+            label={PET_DESCRIPTION_COPY.label}
+            guidance={PET_DESCRIPTION_COPY.guidance}
+            placeholder={PET_DESCRIPTION_COPY.placeholder}
+            rows={5}
             className={textarea}
             value={uniqueMarks}
-            onChange={(e) => setUniqueMarks(e.target.value)}
+            onChange={setUniqueMarks}
+            error={errors.uniqueMarks}
           />
-          {errors.uniqueMarks && <p className="text-sm font-medium text-danger">{errors.uniqueMarks}</p>}
         </div>
       </section>
 

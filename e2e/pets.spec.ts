@@ -41,6 +41,16 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   await expect(page.getByRole("combobox", { name: /^Raça/ })).toHaveValue("Yorkshire Terrier");
   await page.getByRole("group", { name: /Cor principal/ }).getByRole("radio", { name: "Caramelo" }).check({ force: true });
   await page.getByLabel("Peso aproximado (kg)").fill("2,8");
+  // Descrição pública: orientação completa, texto livre (inclusive rua, se o tutor quiser).
+  const descricao = page.getByTestId("descricao-uniqueMarks");
+  await expect(descricao.getByText("Descrição e características do pet")).toBeVisible();
+  await expect(descricao).toContainText("Descreva seu pet para ajudar outras pessoas a reconhecê-lo.");
+  await expect(descricao).toContainText("Esta descrição será pública. Você decide quais informações deseja compartilhar");
+  const campo = page.getByLabel(/Descrição e características do pet/);
+  await expect(campo).toHaveAttribute("placeholder", /^Ex\.: Yorkshire pequeno, pelagem marrom e cinza/);
+  await expect(campo).toHaveValue(""); // o exemplo nunca vira conteúdo
+  const texto = "Laço amarelo, orelha em pé. Sumiu perto da Rua Fictícia de Teste, 123.";
+  await campo.fill(texto);
   await page.getByLabel("Sinais que só você conhece").fill("Mancha clara na barriga (teste)");
   await page.getByLabel(/Deixar a página do pet visível/).check();
   await page.getByRole("button", { name: "Cadastrar pet" }).click();
@@ -59,6 +69,8 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   await expect(page.getByRole("heading", { name: "Mel", level: 1 })).toBeVisible();
   await expect(page.getByText("Cachorro · Yorkshire Terrier · Fêmea · Mini")).toBeVisible();
   await expect(page.getByText("2,8 kg")).toBeVisible();
+  // Publicada exatamente como o tutor escreveu (sem cortes nem censura).
+  await expect(page.getByText(texto)).toBeVisible();
   await expect(page.getByRole("img", { name: "Foto de Mel" })).toBeVisible();
   await expect(page.getByText("Mancha clara na barriga")).toHaveCount(0);
 

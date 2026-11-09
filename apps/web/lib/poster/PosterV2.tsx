@@ -23,7 +23,7 @@ type Box = { width: number; height: number };
 export interface PhotoLayout {
   main: Box;
   extras: Box[];
-  /** Complementares ao lado (coluna) ou embaixo (linha) da principal. */
+  /** Complementares (sempre ao lado da principal) empilhadas (coluna) ou lado a lado (linha). */
   extrasDirection: "column" | "row";
 }
 
@@ -46,38 +46,60 @@ const AREA: Record<PosterV2Format, { width: number; height: number; gap: number 
   impressao: { width: 1654 - 2 * 90, height: 1000, gap: 24 },
 };
 
+/** Altura que a área de fotos cede ao selo da bonificação (os demais formatos têm folga). */
+const REWARD_ROOM: Record<PosterV2Format, number> = { impressao: 0, square: 44, portrait: 52, story: 0, landscape: 0 };
+
 /**
  * Distribuição das fotos por formato, quantidade (1, 2 ou 3) e orientação da principal.
  * Principal VERTICAL com complementares: coluna alta à esquerda e as outras numa coluna
  * ao lado (sem faixas desfocadas). Principal horizontal: larga, com as outras ao lado
  * (quadrado/4:5) ou embaixo (Stories, A4, horizontal). A principal nunca fica pequena.
  */
-export function photoLayout(format: PosterV2Format, count: number, mainAspect: number | null = null): PhotoLayout {
+export function photoLayout(format: PosterV2Format, aspects: number[], { reward = false }: { reward?: boolean } = {}): PhotoLayout {
   // Horizontal (1200×630): só a foto principal — miniaturas não acrescentam nada nesse tamanho.
-  const extras = format === "landscape" ? 0 : Math.min(2, Math.max(0, count - 1));
-  const { width: W, height: H, gap } = AREA[format];
+  const extras = format === "landscape" ? 0 : Math.min(2, Math.max(0, aspects.length - 1));
+  const { width: W, gap } = AREA[format];
+  // Selo da bonificação (protótipo): no quadrado e no 4:5 o painel não tem folga, a foto cede a linha.
+  const H = AREA[format].height - (reward ? REWARD_ROOM[format] : 0);
+  const mainAspect = aspects[0] ?? null;
+  const vertical = mainAspect !== null && mainAspect < 0.9;
   const split = (total: number, n: number) => Array.from({ length: n }, () => Math.floor((total - gap * (n - 1)) / n));
-  if (!extras) return { main: { width: W, height: H }, extras: [], extrasDirection: "column" };
-  if (mainAspect !== null && mainAspect < 0.9) {
-    // Coluna da principal perto da proporção da foto (mín. 0,66), sem passar de 72% da largura.
-    const mw = Math.min(Math.round(W * 0.72), Math.round(H * Math.max(mainAspect, 0.66)));
-    return { main: { width: mw, height: H }, extras: split(H, extras).map((eh) => ({ width: W - mw - gap, height: eh })), extrasDirection: "column" };
+  if (!extras) {
+    // Foto única vertical: a área encolhe para a proporção da foto (mín. 0,66), centralizada
+    // sobre o fundo do cartaz — sem laterais desfocadas. No horizontal o texto ganha o espaço.
+    const mw = vertical ? Math.min(W, Math.round(H * Math.max(mainAspect, 0.66))) : W;
+    return { main: { width: mw, height: H }, extras: [], extrasDirection: "column" };
   }
-  switch (format) {
-    case "square":
-    case "portrait":
-      return { main: { width: 740, height: H }, extras: split(H, extras).map((eh) => ({ width: W - 740, height: eh })), extrasDirection: "column" };
-    case "story":
-      // Coluna ao lado: a principal continua alta mesmo com a faixa e as áreas seguras.
-      return { main: { width: 740, height: H }, extras: split(H, extras).map((eh) => ({ width: W - 740, height: eh })), extrasDirection: "column" };
-    case "landscape":
-      return { main: { width: W, height: 460 }, extras: split(W, extras).map((ew) => ({ width: ew, height: H - 460 })), extrasDirection: "row" };
-    case "impressao": {
-      // Coluna: a principal fica alta (larga demais viraria foto inteira com laterais desfocadas).
-      const mw = Math.round(W * 0.64);
-      return { main: { width: mw, height: H }, extras: split(H, extras).map((eh) => ({ width: W - mw - gap, height: eh })), extrasDirection: "column" };
-    }
-  }
+  // Coluna da principal: vertical → perto da proporção da foto (mín. 0,66, máx. 72% da largura);
+  // horizontal → 740 px (quadrado, 4:5, Stories) ou 64% (A4).
+  // No A4 a área é muito larga: a principal vertical ganha um pouco de largura (corte leve,
+  // ~25%) para as complementares não ficarem em faixas largas demais para fotos verticais.
+  const mw = vertical
+    ? Math.min(Math.round(W * 0.72), Math.round(H * (format === "impressao" ? mainAspect / 0.7 : Math.max(mainAspect, 0.66))))
+    : format === "impressao"
+      ? Math.round(W * 0.64)
+      : 740;
+  const ew = W - mw - gap;
+  // Complementares empilhadas (coluna) ou lado a lado (linha): a que corta menos as fotos.
+  const keptIn = (boxes: Box[]) =>
+    Math.min(...boxes.map((b, i) => {
+      const a = aspects[i + 1] ?? b.width / b.height;
+      const r = b.width / b.height;
+      return Math.min(a / r, r / a);
+    }));
+  // Cada complementar ganha espaço proporcional ao seu formato (uma vertical e uma horizontal
+  // empilhadas: a vertical fica mais alta), sem nenhuma passar de 70% do espaço.
+  const share = (total: number, weights: number[]) => {
+    const free = total - gap * (weights.length - 1);
+    const sum = weights.reduce((s, x) => s + x, 0);
+    const parts = weights.map((x) => Math.min(0.7, Math.max(0.3, x / sum)));
+    return parts.map((p, i) => (i === parts.length - 1 ? free - parts.slice(0, -1).reduce((s, q) => s + Math.floor(q * free), 0) : Math.floor(p * free)));
+  };
+  const extraAspects = Array.from({ length: extras }, (_, i) => aspects[i + 1] ?? 1);
+  const column = (extras > 1 ? share(H, extraAspects.map((a) => 1 / a)) : split(H, extras)).map((eh) => ({ width: ew, height: eh }));
+  const row = share(ew, extraAspects).map((w) => ({ width: w, height: H }));
+  const useRow = extras > 1 && keptIn(row) > keptIn(column) + 0.05;
+  return { main: { width: mw, height: H }, extras: useRow ? row : column, extrasDirection: useRow ? "row" : "column" };
 }
 
 interface Props {
@@ -92,9 +114,11 @@ interface Props {
   url: string | null;
   /** Prévia fora do domínio oficial: o link é marcado como AMBIENTE DE TESTE — DEV. */
   dev: boolean;
+  /** PROTÓTIPO: "BONIFICAÇÃO OFERECIDA: R$ …" (rewardLine); null/ausente = nenhum bloco. */
+  reward?: string | null;
 }
 
-export function PosterV2({ format, content, photos, layout, qr, url, dev }: Props) {
+export function PosterV2({ format, content, photos, layout, qr, url, dev, reward = null }: Props) {
   const { width, height } = V2_FORMATS[format];
   const accent = content.found ? "#15895e" : "#e5484d";
   const nameSize = (base: number) => (content.name.length > 16 ? Math.round(base * 0.68) : content.name.length > 11 ? Math.round(base * 0.82) : base);
@@ -115,11 +139,19 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
     );
 
   const gallery = (gap = 0, radius = 0) => (
-    <div style={{ display: "flex", flexShrink: 0, flexDirection: layout.extrasDirection === "column" ? "row" : "column", gap }}>
+    <div style={{ display: "flex", flexShrink: 0, flexDirection: "row", justifyContent: "center", gap }}>
       {photo(photos[0], layout.main, 0, radius)}
       {layout.extras.length > 0 && <div style={{ display: "flex", flexDirection: layout.extrasDirection, gap }}>{layout.extras.map((b, i) => photo(photos[i + 1], b, i + 1, radius))}</div>}
     </div>
   );
+
+  /** Bonificação do tutor (protótipo): selo dourado; sem valor, nada é desenhado. */
+  const rewardBadge = (size: number) =>
+    reward ? (
+      <div style={{ display: "flex", flexShrink: 0, alignSelf: "flex-start", background: GOLD, color: NAVY, fontSize: size, fontWeight: 800, padding: `${Math.round(size * 0.2)}px ${Math.round(size * 0.5)}px`, borderRadius: Math.round(size * 0.3) }}>
+        {reward}
+      </div>
+    ) : null;
 
   const band = (size: number, h: number) => (
     <div style={{ display: "flex", flexShrink: 0, height: h, alignItems: "center", justifyContent: "center", background: accent, color: "#fff", fontSize: size, fontWeight: 800, letterSpacing: Math.round(size * 0.08) }}>
@@ -171,12 +203,13 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
     return (
       <div style={{ width, height, display: "flex", flexDirection: "column", background: "#ffffff", fontFamily: "Figtree", color: NAVY }}>
         {band(168, BAND.impressao)}
-        <div style={{ display: "flex", flexShrink: 0, padding: "56px 90px 0" }}>{gallery(24, 28)}</div>
+        <div style={{ display: "flex", flexShrink: 0, justifyContent: "center", padding: "56px 90px 0" }}>{gallery(24, 28)}</div>
         <div style={{ display: "flex", flexDirection: "column", padding: "36px 90px 0", gap: 14, flex: 1 }}>
           <div style={{ display: "flex", flexShrink: 0, fontSize: nameSize(136), fontWeight: 800, lineHeight: 1.05 }}>{content.name}</div>
           <div style={{ display: "flex", flexShrink: 0, fontSize: 52, fontWeight: 700, color: "#475467" }}>{content.details}</div>
           {content.lastSeen && <div style={{ display: "flex", flexShrink: 0, fontSize: 48, fontWeight: 700 }}>{content.lastSeen}</div>}
           {content.when && <div style={{ display: "flex", flexShrink: 0, fontSize: 42, color: "#475467" }}>{content.when}</div>}
+          {rewardBadge(46)}
           {content.marks && (
             <div style={{ display: "flex", flexShrink: 0, fontSize: 36, lineHeight: 1.25 }}>{content.marks.length > 118 ? `${content.marks.slice(0, 117).trimEnd()}…` : content.marks}</div>
           )}
@@ -207,6 +240,7 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
             <div style={{ display: "flex", fontSize: 22, fontWeight: 700, color: MUTED }}>{content.details}</div>
             {content.lastSeen && <div style={{ display: "flex", fontSize: 24, fontWeight: 700, lineHeight: 1.2 }}>{content.lastSeen.replace(/^Visto por último: /, "")}</div>}
             {content.when && <div style={{ display: "flex", fontSize: 22, color: MUTED }}>{content.when}</div>}
+            {rewardBadge(22)}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
             {qrBlock(150, 16)}
@@ -238,6 +272,7 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
             <div style={{ display: "flex", fontSize: 36, fontWeight: 700, color: MUTED }}>{content.details}</div>
             {content.lastSeen && <div style={{ display: "flex", fontSize: 36, fontWeight: 700, lineHeight: 1.2 }}>{content.lastSeen}</div>}
             {content.when && <div style={{ display: "flex", fontSize: 32, color: MUTED }}>{content.when}</div>}
+            {rewardBadge(32)}
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 32 }}>
             <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 10 }}>
@@ -272,6 +307,7 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev }: Prop
             <div style={{ display: "flex", fontSize: T.details, fontWeight: 700, color: MUTED }}>{content.details}</div>
             {content.lastSeen && <div style={{ display: "flex", fontSize: T.line, fontWeight: 700 }}>{content.lastSeen}</div>}
             {content.when && <div style={{ display: "flex", fontSize: T.small, color: MUTED }}>{content.when}</div>}
+            {rewardBadge(T.small)}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <div style={{ display: "flex", fontSize: T.cta, fontWeight: 800, color: GOLD, lineHeight: 1 }}>{content.cta}</div>

@@ -166,3 +166,62 @@ test("comparison page (DEV only): five formats separately, previous × proposal,
   await expect(page.getByTestId("comparacao-square").getByRole("link", { name: "Baixar proposta" })).toHaveAttribute("href", /fotos=1&baixar=1$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test("editor prototype (DEV only): swap the main photo, frame one format, the final PNG follows and nothing else changes", async ({ page, request, baseURL }) => {
+  test.setTimeout(120_000);
+  const t = await createTutorWithActiveAlert("editor-proto", { petName: "Editor", photos: 3 });
+  created.push(t.email);
+  const before = await getPublicLostCase(anon(), t.code);
+  await page.goto(`/alerta/${t.code}/cartaz/editor`);
+  const frame = page.getByTestId("editor-moldura");
+  await expect(frame.locator("img")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Usar como principal" }).first().click();
+  await page.getByRole("slider").fill("2");
+  // Arrastar na moldura muda o ponto (mouse; o toque usa os mesmos eventos de ponteiro).
+  await frame.scrollIntoViewIfNeeded();
+  const box = (await frame.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const preview = page.getByTestId("editor-previa");
+  await expect(preview).toHaveAttribute("src", /\/cartaz\/square\?modelo=proposta&fotos=1%2C0%2C2&foco=\d+%2C50&zoom=2\.00$/);
+  // Só o formato editado leva enquadramento.
+  await page.getByRole("radio", { name: "Stories" }).click();
+  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&fotos=1%2C0%2C2$/);
+  // A prévia é o próprio PNG final, com QR do alerta.
+  await page.getByRole("radio", { name: /Quadrado/ }).click();
+  await expect(preview).toHaveAttribute("src", /\/cartaz\/square\?.*zoom=2\.00$/);
+  const res = await request.get((await preview.getAttribute("src"))!);
+  const png = await res.body();
+  expect((await sharp(png).metadata()).width).toBe(1080);
+  expect(await readQr(png)).toBe(`${baseURL}/alerta/${t.code}`);
+  // Nada gravado: capa, ordem e fotos do alerta continuam iguais.
+  expect((await getPublicLostCase(anon(), t.code))!.pet.photos).toEqual(before!.pet.photos);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("reward prototype (DEV only): optional, BRL mask, shown only on active alerts and never as an empty block", async ({ page, request }) => {
+  await page.goto("/dev/bonificacao");
+  await expect(page.getByTestId("bonificacao-bloco")).toHaveCount(0); // "Não" é o padrão
+  await page.getByLabel("Sim").check();
+  await page.getByLabel("Valor da bonificação (R$)").pressSequentially("50000");
+  await expect(page.getByLabel("Valor da bonificação (R$)")).toHaveValue("500,00");
+  await expect(page.getByTestId("bonificacao-bloco")).toContainText("BONIFICAÇÃO OFERECIDA: R$ 500,00");
+  await expect(page.getByTestId("bonificacao-bloco")).toContainText("A MEL não intermedeia pagamentos");
+  for (const s of ["Encerrado", "Reencontrado"]) {
+    await page.getByRole("radio", { name: s }).click();
+    await expect(page.getByTestId("bonificacao-bloco")).toHaveCount(0);
+  }
+  const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1200, 630] } as const;
+  for (const [format, [w, h]] of Object.entries(sizes)) {
+    const res = await request.get(`/dev/bonificacao/cartaz/${format}?centavos=50000`);
+    expect(res.status(), format).toBe(200);
+    const m = await sharp(await res.body()).metadata();
+    expect([m.width, m.height], format).toEqual([w, h]);
+  }
+  // Com e sem bonificação, o cartaz muda (o selo só existe com valor).
+  const withReward = await (await request.get("/dev/bonificacao/cartaz/square?centavos=50000")).body();
+  const without = await (await request.get("/dev/bonificacao/cartaz/square")).body();
+  expect(withReward.equals(without)).toBe(false);
+});

@@ -12,6 +12,7 @@ export * from "./lost/lost";
 export * from "./lost/reunion";
 export * from "./sighting/sighting";
 export * from "./poster/poster";
+export * from "./reward/reward";
 export * from "./chat/chat";
 export * from "./found/found";
 export * from "./found/match";
