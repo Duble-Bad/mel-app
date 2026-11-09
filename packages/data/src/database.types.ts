@@ -1363,6 +1363,8 @@ export type Database = {
       pet_photos: {
         Row: {
           created_at: string
+          focus_x: number | null
+          focus_y: number | null
           height: number | null
           id: string
           is_primary: boolean
@@ -1375,6 +1377,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          focus_x?: number | null
+          focus_y?: number | null
           height?: number | null
           id?: string
           is_primary?: boolean
@@ -1387,6 +1391,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          focus_x?: number | null
+          focus_y?: number | null
           height?: number | null
           id?: string
           is_primary?: boolean

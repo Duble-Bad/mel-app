@@ -253,3 +253,52 @@ export async function setPrimaryPetPhoto(client: MelClient, petId: string, photo
   const set = await client.from("pet_photos").update({ is_primary: true }).eq("id", photoId);
   if (set.error) throw new DataError(set.error.message, set.error.code);
 }
+
+/** Foto do pet para o tutor montar o cartaz (capa e enquadramento). */
+export interface PosterPhoto {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  isPrimary: boolean;
+  /** Ponto (0–100%) que o cartaz mantém visível; null = automático. */
+  focus: { x: number; y: number } | null;
+}
+
+/**
+ * Fotos do pet de um alerta, para o próprio tutor (RLS: só o dono lê o alerta e
+ * altera as fotos). Devolve null quando quem pede não é o dono.
+ */
+export async function getPosterPhotos(client: MelClient, alertCode: string): Promise<{ petId: string; photos: PosterPhoto[] } | null> {
+  const { data: lc, error } = await client.from("lost_cases").select("pet_id").eq("short_code", alertCode.toLowerCase()).maybeSingle();
+  if (error) throw new DataError(error.message, error.code);
+  if (!lc) return null;
+  const petId = (lc as { pet_id: string }).pet_id;
+  const { data, error: e2 } = await client
+    .from("pet_photos")
+    .select("id, storage_path, thumb_path, is_primary, position, focus_x, focus_y")
+    .eq("pet_id", petId)
+    .order("is_primary", { ascending: false })
+    .order("position");
+  if (e2) throw new DataError(e2.message, e2.code);
+  const url = (p: string) => client.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
+  return {
+    petId,
+    photos: ((data ?? []) as { id: string; storage_path: string; thumb_path: string; is_primary: boolean; focus_x: number | null; focus_y: number | null }[]).map((p) => ({
+      id: p.id,
+      url: url(p.storage_path),
+      thumbUrl: url(p.thumb_path),
+      isPrimary: p.is_primary,
+      focus: p.focus_x != null && p.focus_y != null ? { x: p.focus_x, y: p.focus_y } : null,
+    })),
+  };
+}
+
+/** Enquadramento da foto nos cartazes (null volta ao automático). */
+export async function setPhotoFocus(client: MelClient, photoId: string, focus: { x: number; y: number } | null): Promise<void> {
+  const clamp = (n: number) => Math.min(100, Math.max(0, Math.round(n)));
+  const { error } = await client
+    .from("pet_photos")
+    .update({ focus_x: focus ? clamp(focus.x) : null, focus_y: focus ? clamp(focus.y) : null })
+    .eq("id", photoId);
+  if (error) throw new DataError(error.message, error.code);
+}

@@ -6,6 +6,7 @@ import { DOWNLOADABLE_FORMATS, POSTER_FORMATS } from "@mel/core";
 import { getPublicLostCase } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { LoadingState } from "@/components/ui/States";
+import { PosterPhotoEditor } from "@/components/lost/PosterPhotoEditor";
 
 export const metadata: Metadata = { title: "Cartaz", robots: { index: false } };
 
@@ -26,6 +27,8 @@ async function PosterContent({ code }: { code: string }) {
   const c = await getPublicLostCase(createPublicClient(), code);
   if (!c || c.status === "CLOSED") notFound();
   const base = `/alerta/${c.code}/cartaz`;
+  // Versão das fotos (capa e enquadramento): muda o endereço da imagem quando o tutor ajusta.
+  const v = c.pet.photos.map((p) => `${p.isPrimary ? 1 : 0}${p.focus ? `${p.focus.x}.${p.focus.y}` : "a"}`).join("-").slice(0, 60) || "0";
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,6 +41,8 @@ async function PosterContent({ code }: { code: string }) {
           Baixe e poste nas redes, mande nos grupos ou imprima. O QR Code abre o alerta com as fotos e a linha do tempo.
         </p>
       </div>
+
+      <PosterPhotoEditor code={c.code} />
 
       <section aria-labelledby="imprimir" className="flex flex-col gap-2 rounded-lg bg-surface p-4 shadow-card">
         <h2 id="imprimir" className="font-bold">
@@ -65,7 +70,7 @@ async function PosterContent({ code }: { code: string }) {
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element -- imagem gerada sob demanda */}
               <img
-                src={`${base}/${f}`}
+                src={`${base}/${f}?v=${v}`}
                 alt={`Prévia do cartaz ${meta.label.toLowerCase()} de ${c.pet.name}`}
                 loading="lazy"
                 width={meta.width}
@@ -73,7 +78,7 @@ async function PosterContent({ code }: { code: string }) {
                 className={`w-full rounded-md border border-border ${f === "story" ? "mx-auto max-w-56" : ""}`}
               />
               <a
-                href={`${base}/${f}?baixar=1`}
+                href={`${base}/${f}?baixar=1&v=${v}`}
                 download
                 className="inline-flex min-h-12 items-center justify-center rounded-md border-2 border-border-strong bg-surface px-4 font-semibold hover:bg-surface-muted"
               >

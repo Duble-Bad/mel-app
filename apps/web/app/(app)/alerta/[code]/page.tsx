@@ -54,17 +54,23 @@ export async function generateMetadata({ params }: PageProps<"/alerta/[code]">):
   ]
     .filter(Boolean)
     .join(" · ");
+  const origin = await siteOrigin();
+  const canonical = `${origin}/alerta/${c.code}`;
   return {
     title,
     description,
     // Indexação só quando o tutor autorizar (padrão: não).
     robots: { index: c.indexable, follow: c.indexable },
+    alternates: { canonical },
     openGraph: {
       title: `${title} — ajude a encontrar`,
       description,
       type: "article",
-      // Prévia do link = cartaz (foto + PROCURA-SE + QR), gerado na hora.
-      images: [{ url: `${await siteOrigin()}/alerta/${c.code}/cartaz/og`, width: 1200, height: 630, alt: `${title} — cartaz MEL` }],
+      url: canonical,
+      siteName: "MEL",
+      locale: "pt_BR",
+      // Prévia do link: a FOTO do animal em destaque (1200×630), com status, nome e região.
+      images: [{ url: `${canonical}/cartaz/og`, type: "image/png", width: 1200, height: 630, alt: `Foto de ${c.pet.name} — ${title}` }],
     },
     twitter: { card: "summary_large_image" },
   };

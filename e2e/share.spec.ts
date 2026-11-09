@@ -13,7 +13,7 @@ test.afterAll(async () => {
 /** Troca window.open e o menu nativo por gravadores (sem abrir sites externos). */
 async function recordShares(page: Page, { canShareFiles }: { canShareFiles: boolean }) {
   await page.addInitScript((canShareFiles) => {
-    const w = window as unknown as { __opened: string[]; __shared: { title?: string; text?: string; url?: string; files?: { name: string; type: string; size: number }[] }[] };
+    const w = window as unknown as { __opened: string[]; __shared: { title?: string; text?: string; url?: string; files?: { name: string; type: string; size: number; width: number; height: number }[] }[] };
     w.__opened = [];
     w.__shared = [];
     window.open = (url?: string | URL) => {
@@ -23,7 +23,10 @@ async function recordShares(page: Page, { canShareFiles }: { canShareFiles: bool
     Object.defineProperty(navigator, "share", {
       configurable: true,
       value: async (d: ShareData) => {
-        w.__shared.push({ title: d.title, text: d.text, url: d.url, files: d.files?.map((f) => ({ name: f.name, type: f.type, size: f.size })) });
+        const files = d.files
+          ? await Promise.all(d.files.map(async (f) => { const b = await createImageBitmap(f); return { name: f.name, type: f.type, size: f.size, width: b.width, height: b.height }; }))
+          : undefined;
+        w.__shared.push({ title: d.title, text: d.text, url: d.url, files });
       },
     });
     Object.defineProperty(navigator, "canShare", { configurable: true, value: (d: ShareData) => !d.files || canShareFiles });
@@ -55,7 +58,7 @@ test("share section: WhatsApp and Facebook links, Instagram/TikTok poster flows,
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   const opened = () => page.evaluate(() => (window as unknown as { __opened: string[] }).__opened);
-  const shared = () => page.evaluate(() => (window as unknown as { __shared: { title?: string; text?: string; url?: string; files?: { name: string; type: string; size: number }[] }[] }).__shared);
+  const shared = () => page.evaluate(() => (window as unknown as { __shared: { title?: string; text?: string; url?: string; files?: { name: string; type: string; size: number; width: number; height: number }[] }[] }).__shared);
 
   // WhatsApp: o mesmo texto de antes, com o link do alerta.
   await section.getByRole("button", { name: "Compartilhar no WhatsApp" }).click();
@@ -70,32 +73,35 @@ test("share section: WhatsApp and Facebook links, Instagram/TikTok poster flows,
   expect(fb.origin + fb.pathname).toBe("https://www.facebook.com/sharer/sharer.php");
   expect(fb.searchParams.get("u")).toBe(alertUrl);
 
-  // Instagram: orientação, envio do cartaz pelo menu nativo, download e copiar link.
+  // Instagram: escolhe o formato; com envio de arquivos (celular), o cartaz certo vai ao menu do sistema.
   const instagram = section.getByRole("button", { name: "Publicar no Instagram" });
   await instagram.click();
   await expect(instagram).toHaveAttribute("aria-expanded", "true");
   const guide = section.getByTestId("share-image-guide");
-  await expect(guide).toContainText("Publicar no Instagram");
-  await expect(guide).toContainText("Stories");
-  await guide.getByRole("button", { name: "Enviar cartaz" }).click();
-  await expect(section.getByTestId("share-status")).toHaveText("Cartaz entregue ao app escolhido. Termine a publicação por lá.");
-  const sent = (await shared()).at(-1)!;
-  expect(sent.files?.[0]?.type).toBe("image/png");
-  expect(sent.files?.[0]?.size).toBeGreaterThan(20_000);
-  expect(sent.text).toContain(alertUrl);
-  const [download] = await Promise.all([page.waitForEvent("download"), guide.getByRole("link", { name: "Baixar cartaz" }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^MEL-procura-se-Compartilha-story\.png$/);
-  const meta = await sharp(await download.createReadStream().then(async (s) => Buffer.concat(await s.toArray()))).metadata();
-  expect([meta.width, meta.height]).toEqual([1080, 1920]);
-  await guide.getByRole("button", { name: "Copiar link" }).click();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(alertUrl);
-  await expect(section.getByTestId("share-status")).toHaveText("Link copiado: cole na legenda.");
+  await expect(guide).toContainText("Qual formato do Instagram?");
+  // Sem ações duplicadas no painel (baixar/copiar ficam nas opções gerais).
+  await expect(guide.getByRole("button", { name: /Copiar link|Baixar/ })).toHaveCount(0);
+  for (const [option, format, size] of [
+    [/^Stories \(9:16/, "story", [1080, 1920]],
+    [/^Feed \(4:5/, "portrait", [1080, 1350]],
+    [/^Feed quadrado \(1:1/, "square", [1080, 1080]],
+  ] as const) {
+    await guide.getByRole("button", { name: option }).click();
+    await expect(section.getByTestId("share-status")).toHaveText("Cartaz entregue ao app escolhido. Se o Instagram não apareceu na lista, salve a imagem e publique pelo app do Instagram.");
+    const sent = (await shared()).at(-1)!;
+    expect(sent.files?.[0]).toMatchObject({ type: "image/png", name: `MEL-Compartilha-${format}.png`, width: size[0], height: size[1] });
+    expect(sent.text).toContain(alertUrl);
+  }
 
-  // TikTok: mesma orientação, própria do TikTok; tocar de novo fecha.
+  // TikTok: só o formato que a publicação de foto usa (vertical 9:16); tocar de novo fecha.
   const tiktok = section.getByRole("button", { name: "Publicar no TikTok" });
   await tiktok.click();
-  await expect(guide).toContainText("Publicar no TikTok");
   await expect(instagram).toHaveAttribute("aria-expanded", "false");
+  await expect(guide).toContainText("Cartaz para publicar no TikTok");
+  await expect(guide.getByRole("button")).toHaveCount(1);
+  await guide.getByRole("button", { name: /^Foto vertical \(9:16/ }).click();
+  await expect(section.getByTestId("share-status")).toContainText("Se o TikTok não apareceu na lista");
+  expect((await shared()).at(-1)!.files?.[0]).toMatchObject({ width: 1080, height: 1920 });
   await tiktok.click();
   await expect(guide).toHaveCount(0);
 
@@ -114,7 +120,7 @@ test("share section: WhatsApp and Facebook links, Instagram/TikTok poster flows,
   await ctx.close();
 });
 
-test("Instagram/TikTok without file sharing in the browser: clear guidance to download instead", async ({ browser }) => {
+test("Instagram/TikTok without file sharing (desktop): the chosen format is downloaded with an honest message", async ({ browser }) => {
   const t = await createTutorWithActiveAlert("share-nofiles", { petName: "SemArquivo", withPhoto: true });
   created.push(t.email);
   const ctx = await browser.newContext({ ...test.info().project.use });
@@ -122,8 +128,16 @@ test("Instagram/TikTok without file sharing in the browser: clear guidance to do
   await recordShares(page, { canShareFiles: false });
   await page.goto(`/alerta/${t.code}`);
   const section = page.locator('section[aria-labelledby="compartilhar"]');
-  await section.getByRole("button", { name: "Publicar no TikTok" }).click();
-  await section.getByTestId("share-image-guide").getByRole("button", { name: "Enviar cartaz" }).click();
-  await expect(section.getByTestId("share-status")).toHaveText("Este navegador não envia imagens direto para os apps. Use “Baixar cartaz” e publique pelo app.");
+  await section.getByRole("button", { name: "Publicar no Instagram" }).click();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    section.getByTestId("share-image-guide").getByRole("button", { name: /^Feed \(4:5/ }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("MEL-SemArquivo-portrait.png");
+  const meta = await sharp(await download.createReadStream().then(async (st) => Buffer.concat(await st.toArray()))).metadata();
+  expect([meta.width, meta.height]).toEqual([1080, 1350]);
+  await expect(section.getByTestId("share-status")).toHaveText("Este navegador não envia imagens direto para o Instagram. Baixamos o cartaz: abra o app do Instagram e publique a partir da galeria.");
+  // Nada foi enviado ao menu do sistema (não houve compartilhamento a fingir).
+  expect(await page.evaluate(() => (window as unknown as { __shared: unknown[] }).__shared.length)).toBe(0);
   await ctx.close();
 });

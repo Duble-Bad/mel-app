@@ -6,17 +6,26 @@ import { shareText, whatsappShareUrl, type PublicLostCase } from "@mel/core";
 
 type Network = "whatsapp" | "facebook" | "instagram" | "tiktok";
 type ImageNetwork = "instagram" | "tiktok";
+type ImageFormat = "story" | "portrait" | "square";
 
-// Instagram e TikTok não aceitam publicação vinda de um site: a pessoa leva o cartaz
-// (Stories 9:16) para o app e publica lá. Nada aqui afirma que algo foi publicado.
-const IMAGE_GUIDE: Record<ImageNetwork, { title: string; steps: string }> = {
+// Instagram e TikTok não aceitam publicação vinda de um site: a MEL prepara o cartaz no
+// formato certo e o entrega ao celular (menu de compartilhamento) ou baixa a imagem.
+// A escolha do app é do sistema; nada aqui afirma que algo foi publicado.
+const IMAGE_FORMATS: Record<ImageNetwork, { app: string; options: { format: ImageFormat; label: string; hint: string }[]; note: string }> = {
   instagram: {
-    title: "Publicar no Instagram",
-    steps: "Envie o cartaz para o Instagram (ou baixe e abra no app) e publique nos Stories ou no feed. Cole o link do alerta na legenda ou num adesivo de link.",
+    app: "Instagram",
+    options: [
+      { format: "story", label: "Stories", hint: "9:16, tela cheia" },
+      { format: "portrait", label: "Feed", hint: "4:5, recomendado" },
+      { format: "square", label: "Feed quadrado", hint: "1:1" },
+    ],
+    note: "Depois, cole o link do alerta na legenda ou num adesivo de link.",
   },
   tiktok: {
-    title: "Publicar no TikTok",
-    steps: "Envie o cartaz para o TikTok (ou baixe e abra no app) e crie uma publicação de foto. Cole o link do alerta na legenda.",
+    app: "TikTok",
+    // Publicação de foto no TikTok ocupa a tela toda: vertical 9:16.
+    options: [{ format: "story", label: "Foto vertical", hint: "9:16, tela cheia" }],
+    note: "No TikTok, publique como foto e cole o link do alerta na legenda.",
   },
 };
 
@@ -29,11 +38,9 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
   const [error, setError] = useState<string | null>(null);
   const [guide, setGuide] = useState<ImageNetwork | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [sharingImage, setSharingImage] = useState(false);
+  const [preparing, setPreparing] = useState<ImageFormat | null>(null);
   const url = () => `${window.location.origin}${path}`;
   const title = lostCase.status === "FOUND" ? `Encontrado: ${lostCase.pet.name}` : `Procura-se: ${lostCase.pet.name}`;
-  // Cartaz vertical (Stories/Status 9:16): o formato que Instagram e TikTok aceitam melhor.
-  const storyPoster = `${path}/cartaz/story`;
 
   function whatsapp() {
     window.open(whatsappShareUrl(shareText(lostCase, url())), "_blank", "noopener");
@@ -74,25 +81,39 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
     setGuide((g) => (g === n ? null : n));
   }
 
-  /** Envia o cartaz pelo menu nativo (celular com suporte a arquivos); senão orienta a baixar. */
-  async function shareImage() {
+  /**
+   * Gera o cartaz no formato escolhido e o entrega ao celular (só se o navegador
+   * confirmar que aceita arquivos); senão baixa a imagem. Um toque, um resultado.
+   */
+  async function sendPoster(network: ImageNetwork, format: ImageFormat) {
+    const app = IMAGE_FORMATS[network].app;
     setError(null);
     setNotice(null);
-    setSharingImage(true);
+    setPreparing(format);
     try {
-      const res = await fetch(storyPoster);
+      const res = await fetch(`${path}/cartaz/${format}`);
       if (!res.ok) throw new Error(String(res.status));
-      const file = new File([await res.blob()], `MEL-${lostCase.pet.name}-stories.png`.normalize("NFD").replace(/[^\w.-]/g, ""), { type: "image/png" });
-      if (!navigator.canShare?.({ files: [file] })) {
-        setNotice("Este navegador não envia imagens direto para os apps. Use “Baixar cartaz” e publique pelo app.");
+      const name = `MEL-${lostCase.pet.name}-${format}.png`.normalize("NFD").replace(/[^\w.-]/g, "");
+      const file = new File([await res.blob()], name, { type: "image/png" });
+      if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title, text: shareText(lostCase, url()) });
+        setNotice(`Cartaz entregue ao app escolhido. Se o ${app} não apareceu na lista, salve a imagem e publique pelo app do ${app}.`);
         return;
       }
-      await navigator.share({ files: [file], title, text: shareText(lostCase, url()) });
-      setNotice("Cartaz entregue ao app escolhido. Termine a publicação por lá.");
+      // Sem envio de arquivos neste navegador (ex.: computador): baixa o cartaz.
+      const href = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 10_000);
+      setNotice(`Este navegador não envia imagens direto para o ${app}. Baixamos o cartaz: abra o app do ${app} e publique a partir da galeria.`);
     } catch (err) {
-      if ((err as Error).name !== "AbortError") setError("Não conseguimos preparar o cartaz agora. Use “Baixar cartaz”.");
+      if ((err as Error).name !== "AbortError") setError("Não conseguimos preparar o cartaz agora. Tente de novo ou use “Cartaz e QR Code”.");
     } finally {
-      setSharingImage(false);
+      setPreparing(null);
     }
   }
 
@@ -130,24 +151,27 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
 
       {guide && (
         <div id="compartilhar-imagem" className="flex flex-col gap-3 rounded-md border border-border bg-surface-muted p-4" data-testid="share-image-guide">
-          <p className="font-semibold">{IMAGE_GUIDE[guide].title}</p>
-          <p className="text-sm text-text-secondary">{IMAGE_GUIDE[guide].steps}</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <button type="button" onClick={shareImage} disabled={sharingImage} className={btn}>
-              <span aria-hidden="true">↗</span> {sharingImage ? "Preparando…" : "Enviar cartaz"}
-            </button>
-            <a
-              href={`${storyPoster}?baixar`}
-              download
-              onClick={() => setNotice("Baixando o cartaz (Stories 9:16). Depois, abra o app e publique.")}
-              className={btn}
-            >
-              <span aria-hidden="true">⬇</span> Baixar cartaz
-            </a>
-            <button type="button" onClick={async () => (await copy()) && setNotice("Link copiado: cole na legenda.")} className={btn}>
-              <span aria-hidden="true">🔗</span> Copiar link
-            </button>
+          <p className="font-semibold">
+            {guide === "tiktok" ? "Cartaz para publicar no TikTok" : "Qual formato do Instagram?"}
+          </p>
+          <div className={`grid gap-2 ${IMAGE_FORMATS[guide].options.length > 1 ? "grid-cols-3" : "grid-cols-1"}`}>
+            {IMAGE_FORMATS[guide].options.map((o) => (
+              <button
+                key={o.format}
+                type="button"
+                onClick={() => sendPoster(guide, o.format)}
+                disabled={preparing !== null}
+                aria-label={`${o.label} (${o.hint}): preparar o cartaz para o ${IMAGE_FORMATS[guide].app}`}
+                className="flex min-h-16 flex-col items-center justify-center rounded-md border-2 border-border-strong bg-surface px-2 py-2 text-center hover:bg-surface-muted disabled:opacity-60"
+              >
+                <span className="font-semibold">{preparing === o.format ? "Preparando…" : o.label}</span>
+                <span className="text-xs text-text-secondary">{o.hint}</span>
+              </button>
+            ))}
           </div>
+          <p className="text-sm text-text-secondary">
+            No celular, escolha o {IMAGE_FORMATS[guide].app} na lista que abrir. {IMAGE_FORMATS[guide].note}
+          </p>
         </div>
       )}
 

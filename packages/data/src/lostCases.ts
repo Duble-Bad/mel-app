@@ -255,7 +255,7 @@ interface PublicCaseJson {
     birth_date: string | null;
     age_estimate_months: number | null;
     weight_kg: number | null;
-    photos: { path: string; thumb_path: string; is_primary: boolean }[];
+    photos: { path: string; thumb_path: string; is_primary: boolean; focus_x?: number | null; focus_y?: number | null }[];
   };
 }
 
@@ -310,6 +310,7 @@ export async function getPublicLostCase(client: MelClient, code: string): Promis
         url: photoUrl(client, p.path),
         thumbUrl: photoUrl(client, p.thumb_path),
         isPrimary: p.is_primary,
+        focus: p.focus_x != null && p.focus_y != null ? { x: p.focus_x, y: p.focus_y } : null,
       })),
     },
   };

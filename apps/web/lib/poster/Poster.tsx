@@ -21,6 +21,7 @@ export function photoBox(format: PosterFormat): { width: number; height: number 
   const { width, height } = POSTER_FORMATS[format];
   if (format === "landscape" || format === "og") return { width: Math.round(width * 0.42), height };
   if (format === "story") return { width, height: Math.round(height * 0.5) };
+  if (format === "portrait") return { width, height: Math.round(height * 0.42) };
   // Quadrado: a foto cede um pouco de altura para o "VIU ESTE PET?" e o código caberem.
   return { width, height: Math.round(height * 0.34) };
 }
@@ -29,6 +30,7 @@ export function photoBox(format: PosterFormat): { width: number; height: number 
 // O quadrado não tem espaço para a assinatura da MEL: a URL já leva o domínio.
 const TYPE = {
   square: { headline: 76, name: 84, details: 34, line: 34, small: 30, marks: 28, qr: 190, cta: 46, action: 28, contact: 28, url: 24, code: 32, brand: 0, pad: 40, gap: 8 },
+  portrait: { headline: 80, name: 96, details: 36, line: 36, small: 32, marks: 28, qr: 220, cta: 52, action: 30, contact: 30, url: 26, code: 34, brand: 28, pad: 44, gap: 10 },
   story: { headline: 96, name: 120, details: 40, line: 40, small: 36, marks: 32, qr: 250, cta: 60, action: 36, contact: 36, url: 28, code: 40, brand: 30, pad: 48, gap: 14 },
   landscape: { headline: 84, name: 104, details: 40, line: 40, small: 36, marks: 32, qr: 240, cta: 56, action: 30, contact: 34, url: 26, code: 36, brand: 30, pad: 48, gap: 12 },
   og: { headline: 84, name: 104, details: 40, line: 40, small: 36, marks: 32, qr: 190, cta: 52, action: 32, contact: 32, url: 26, code: 34, brand: 0, pad: 48, gap: 12 },

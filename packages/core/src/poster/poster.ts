@@ -6,6 +6,8 @@ import { formatBrPhone, formatDateTimeBr, type PublicLostCase } from "../lost/lo
 export const POSTER_FORMATS = {
   square: { width: 1080, height: 1080, label: "Quadrado", hint: "Feed do Instagram/Facebook e WhatsApp" },
   story: { width: 1080, height: 1920, label: "Stories / Status", hint: "Stories do Instagram e Status do WhatsApp (9:16)" },
+  // Feed do Instagram (4:5): usado pelo compartilhamento no Instagram.
+  portrait: { width: 1080, height: 1350, label: "Feed 4:5", hint: "Feed do Instagram (4:5)" },
   landscape: { width: 1920, height: 1080, label: "Horizontal", hint: "Telas, grupos e Facebook (16:9)" },
   // Prévia do link (Open Graph) — não aparece na lista de downloads.
   og: { width: 1200, height: 630, label: "Prévia do link", hint: "" },

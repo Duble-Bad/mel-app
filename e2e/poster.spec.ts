@@ -27,7 +27,8 @@ test("every poster format is a PNG of the right size whose QR Code opens the ale
   });
   created.push(t.email);
 
-  const sizes = { square: [1080, 1080], story: [1080, 1920], landscape: [1920, 1080], og: [1200, 630] } as const;
+  // "og" (prévia do link) é a foto em destaque, sem QR: conferida em social-posters.spec.ts.
+  const sizes = { square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1920, 1080] } as const;
   for (const [format, [w, h]] of Object.entries(sizes)) {
     const res = await request.get(`/alerta/${t.code}/cartaz/${format}`);
     expect(res.status(), format).toBe(200);
@@ -57,7 +58,7 @@ test("the alert page shares the poster as link preview and offers the poster pag
   for (const label of ["Quadrado", "Stories / Status", "Horizontal"]) {
     await expect(page.getByRole("heading", { name: label })).toBeVisible();
   }
-  await expect(page.getByRole("link", { name: /Baixar quadrado/ })).toHaveAttribute("href", `/alerta/${t.code}/cartaz/square?baixar=1`);
+  await expect(page.getByRole("link", { name: /Baixar quadrado/ })).toHaveAttribute("href", new RegExp(`^/alerta/${t.code}/cartaz/square\\?baixar=1&v=`)); // v: versão da capa/enquadramento
 
   // A4: QR legível e sem telefone (o tutor não autorizou).
   await page.getByRole("link", { name: /versão para imprimir/ }).click();

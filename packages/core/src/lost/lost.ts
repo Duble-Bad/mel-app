@@ -83,7 +83,8 @@ export interface PublicLostCase {
     birthDate: string | null;
     ageEstimateMonths: number | null;
     weightKg: number | null;
-    photos: { url: string; thumbUrl: string; isPrimary: boolean }[];
+    /** focus: ponto (0–100%) que o cartaz mantém visível ao recortar; null = automático. */
+    photos: { url: string; thumbUrl: string; isPrimary: boolean; focus: { x: number; y: number } | null }[];
   };
 }
 

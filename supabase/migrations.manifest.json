@@ -180,6 +180,10 @@
     {
       "file": "20261106171000_partner_address_consent_grant.sql",
       "sha256": "e38eaa3ad349c19ac6acf8408be1056ee63e9012e0f8187d42c3b268afa243b5"
+    },
+    {
+      "file": "20261109120000_pet_photo_focus.sql",
+      "sha256": "f2022a6510589d99976c2d29bec305b3c78dda06bbfea65173378cf2eaf81476"
     }
   ]
 }
