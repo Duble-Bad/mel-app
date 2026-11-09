@@ -11,11 +11,13 @@ A estrutura abaixo só será feita depois da aprovação do proprietário (`deci
 
 1. **Formato:** A4 (imprimir), Quadrado (redes sociais), Feed 4:5, Stories/Status, Horizontal.
 2. **Modelo:** três prévias reais, geradas na hora com as fotos e os dados públicos do alerta. Uma leva o selo "Recomendado pela MEL", com o motivo.
-3. **Personalizar (opcional):**
-   - trocar a principal; incluir, remover e reordenar as complementares;
-   - arrastar e aproximar a principal (mouse e toque; pinça);
-   - "Restaurar o modelo original".
+3. **Personalizar (opcional; "Pular personalização" vai direto para Usar):**
+   - **1. Foto principal:** a foto maior do cartaz.
+   - **2. Fotos complementares (até 2):** fotos menores, ao lado ou abaixo da principal, para mostrar outros ângulos (rosto, corpo, marcas). Os números 1 e 2 e as setas ‹ › definem a ordem em que aparecem (a 1 vem primeiro, à esquerda ou em cima). Não existem no Modelo 1.
+   - **3. Enquadramento da principal:** arrastar e aproximar (mouse, toque, pinça, setas e + − do teclado).
+   - "Restaurar o modelo original", com "Desfazer".
    A personalização é independente por formato e por modelo.
+   **Limitação conhecida:** o modelo mostra só as fotos que cabem sem ficar estreitas demais. No Modelo 3 em A4 e em 4:5, por exemplo, cabem a principal e 1 complementar: a 2ª complementar escolhida não aparece no cartaz e a tela não avisa (o aviso "Mostra 2 de 3 fotos" só aparece na etapa Modelo). Correção proposta: decisões pendentes, item 7d.
 4. **Usar:**
    - Baixar: o PNG final, com o modelo no nome do arquivo.
    - Imprimir: página só com o cartaz; A4 sem margens e diálogo de impressão automático.
@@ -50,6 +52,7 @@ Os critérios são: quantidade de fotos, orientação, resolução da principal 
 
 ### Limitações da demonstração
 
+- Personalizar: uma complementar escolhida pode ficar de fora do cartaz sem aviso quando o modelo não comporta três fotos (item 7d de decisões pendentes).
 - A escolha fica no endereço da página. Recarregar mantém, mas outro aparelho não; nada é gravado no servidor e não há localStorage.
 - Gated por `MEL_DEV_ROUTES=1`. Liberar para os usuários depende da aprovação do proprietário.
 
