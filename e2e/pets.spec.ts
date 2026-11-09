@@ -27,7 +27,10 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   await expect(page.getByText("Nenhum pet cadastrado ainda")).toBeVisible();
   await page.getByRole("link", { name: "Cadastrar meu pet" }).click();
 
+  await expect(page.getByTestId("photo-size-tip")).toContainText("pelo menos 1200 px no lado maior");
   await page.locator('input[type="file"]').setInputFiles({ name: "mel.png", mimeType: "image/png", buffer: PNG });
+  // Foto de 64×64: aviso de que pode ficar borrada no cartaz (não bloqueia o cadastro).
+  await expect(page.getByTestId("small-photo-warning")).toContainText("64×64");
   await page.getByLabel("Nome").fill("Mel");
   await page.getByRole("radio", { name: "Cachorro" }).check({ force: true });
   await page.getByRole("radio", { name: "Fêmea" }).check({ force: true });

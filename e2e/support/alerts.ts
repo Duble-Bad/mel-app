@@ -15,6 +15,8 @@ interface AlertOptions {
   withPhoto?: boolean;
   /** Quantas fotos (cores sólidas diferentes); `withPhoto` equivale a 1. */
   photos?: number;
+  /** Página pública do pet (/pet/MEL-…); padrão: privada. */
+  publicPet?: boolean;
   /** Número FICTÍCIO publicado como WhatsApp no alerta. */
   whatsapp?: string;
   /** Chat da MEL ligado (padrão: sim). */
@@ -63,6 +65,7 @@ export async function createTutorWithActiveAlert(label: string, petNameOrOptions
       sex: "female",
       size: "mini",
       uniqueMarks: opts.uniqueMarks,
+      isPublic: opts.publicPet ?? false,
     }),
   );
   const shades: [number, number, number][] = [[176, 120, 64], [64, 120, 176], [90, 160, 90], [160, 80, 140], [200, 170, 60], [90, 90, 90]];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { MAX_PET_PHOTOS, type PetPhoto } from "@mel/core";
+import { isSmallPhoto, MAX_PET_PHOTOS, PHOTO_SIZE_TIP, type PetPhoto } from "@mel/core";
 
 // Sugestões, não exigências: nenhuma foto além da que a pessoa quiser enviar é obrigatória.
 const PHOTO_TIPS = [
@@ -37,6 +37,24 @@ export function PhotoManager({
   const [error, setError] = useState<string | null>(null);
   const previews = useMemo(() => pending.map((f) => URL.createObjectURL(f)), [pending]);
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
+  // Dimensões das fotos escolhidas (lidas no aparelho, antes do envio) para o aviso de foto pequena.
+  const [sizes, setSizes] = useState<Map<File, { width: number; height: number }>>(() => new Map());
+  useEffect(() => {
+    let cancelled = false;
+    for (const file of pending) {
+      if (sizes.has(file)) continue;
+      createImageBitmap(file)
+        .then((b) => {
+          if (!cancelled) setSizes((m) => new Map(m).set(file, { width: b.width, height: b.height }));
+          b.close();
+        })
+        .catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só mede as novas
+  }, [pending]);
 
   const total = existing.length + pending.length;
   const remaining = MAX_PET_PHOTOS - total;
@@ -61,6 +79,9 @@ export function PhotoManager({
           Fotos <span className="font-normal text-text-secondary">(até {MAX_PET_PHOTOS})</span>
         </p>
         <p className="text-sm text-text-secondary">Fotos nítidas e recentes ajudam alguém a reconhecer o pet na rua.</p>
+        <p className="mt-1 text-sm text-text-secondary" data-testid="photo-size-tip">
+          {PHOTO_SIZE_TIP}
+        </p>
         <details className="text-sm" data-testid="photo-tips">
           <summary className="min-h-10 cursor-pointer py-2 font-semibold text-link underline-offset-4 hover:underline">Quais fotos ajudam mais</summary>
           <ul className="flex list-disc flex-col gap-1 pb-1 pl-5 text-text-secondary">
@@ -84,6 +105,7 @@ export function PhotoManager({
                   </span>
                 )}
               </div>
+              {isSmallPhoto(photo.width, photo.height) && <SmallPhotoWarning width={photo.width!} height={photo.height!} />}
               {!photo.isPrimary && onMakePrimary && (
                 <button
                   type="button"
@@ -117,6 +139,7 @@ export function PhotoManager({
                   </span>
                 )}
               </div>
+              {isSmallPhoto(sizes.get(file)?.width, sizes.get(file)?.height) && <SmallPhotoWarning width={sizes.get(file)!.width} height={sizes.get(file)!.height} />}
               <button
                 type="button"
                 disabled={busy}
@@ -157,5 +180,14 @@ export function PhotoManager({
         </p>
       )}
     </div>
+  );
+}
+
+/** Aviso (não bloqueia): a foto é pequena e pode sair borrada nos cartazes. */
+function SmallPhotoWarning({ width, height }: { width: number; height: number }) {
+  return (
+    <p className="text-xs leading-snug font-semibold text-warning" data-testid="small-photo-warning">
+      Foto pequena ({width}×{height}): pode ficar borrada no cartaz. Se tiver a original, prefira ela.
+    </p>
   );
 }

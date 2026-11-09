@@ -1,10 +1,11 @@
 import { ImageResponse } from "next/og";
 import { alertPath, isPosterFormat, POSTER_FORMATS, posterContent } from "@mel/core";
 import { getPublicLostCase } from "@mel/data";
-import { cropToDataUrl, fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
+import { fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
+import { composePhotos } from "@/lib/poster/compose";
 import { OG_PHOTO, OG_SIZE, OgCard } from "@/lib/poster/OgCard";
 import { photoBox, Poster } from "@/lib/poster/Poster";
-import { isV2Format, photoLayout, PosterV2, V2_FORMATS } from "@/lib/poster/PosterV2";
+import { isV2Format, PosterV2, V2_FORMATS } from "@/lib/poster/PosterV2";
 import { siteOrigin } from "@/lib/site";
 import { createPublicClient } from "@/lib/supabase/public";
 
@@ -56,15 +57,11 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     const picked = photos.slice(0, 3);
     const fetched = await Promise.all(picked.map(async (p) => ({ source: await fetchPhoto(p.url), focus: p.focus })));
     const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"] } => f.source !== null);
-    const layout = photoLayout(formato, sources.length);
-    const boxes = [layout.main, ...layout.extras];
-    const [crops, qr] = await Promise.all([
-      Promise.all(boxes.map((b, i) => (sources[i] ? cropToDataUrl(sources[i]!.source, b.width, b.height, sources[i]!.focus) : Promise.resolve(null)))),
-      qrDataUrl(url, formato === "impressao" ? 860 : 600),
-    ]);
-    const ready = crops.filter((p): p is string => Boolean(p));
+    const [{ layout, photos: ready }, qr] = await Promise.all([composePhotos(formato, sources), qrDataUrl(url, formato === "impressao" ? 860 : 600)]);
     const { width, height } = V2_FORMATS[formato];
-    return new ImageResponse(<PosterV2 format={formato} content={content} photos={ready} qr={qr} url={url} />, { width, height, fonts: posterFonts, headers });
+    // Sem o domínio oficial configurado (DEV), o link vai marcado como ambiente de teste.
+    const dev = !process.env.NEXT_PUBLIC_SITE_URL;
+    return new ImageResponse(<PosterV2 format={formato} content={content} photos={ready} layout={layout} qr={qr} url={url} dev={dev} />, { width, height, fonts: posterFonts, headers });
   }
 
   if (!isPosterFormat(formato)) return new Response("Cartaz não encontrado.", { status: 404 });

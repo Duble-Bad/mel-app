@@ -3,7 +3,7 @@
 import { useEffect, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getPosterPhotos, setPhotoFocus, setPrimaryPetPhoto, type PosterPhoto } from "@mel/data";
-import { userErrorMessage } from "@mel/core";
+import { isSmallPhoto, userErrorMessage } from "@mel/core";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
@@ -136,6 +136,11 @@ export function PosterPhotoEditor({ code }: { code: string }) {
         </div>
       </div>
 
+      {isSmallPhoto(photo.width, photo.height) && (
+        <p className="text-sm font-semibold text-warning" data-testid="poster-small-photo">
+          Esta foto é pequena ({photo.width}×{photo.height}): nos cartazes ela é ampliada e pode ficar borrada. Se puder, envie a original da câmera e use-a como capa.
+        </p>
+      )}
       {error && <Alert tone="error">{error}</Alert>}
       <div className="flex flex-wrap gap-2">
         <Button size="md" className="w-auto" disabled={busy || saved} onClick={() => run(() => setPhotoFocus(getBrowserClient(), photo.id, focus), "Enquadramento salvo.")}>

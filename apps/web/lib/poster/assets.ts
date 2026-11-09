@@ -39,7 +39,7 @@ export async function fetchPhoto(url: string | undefined): Promise<Buffer | null
  * possível (enquadramento escolhido pelo tutor); sem ele, o sharp escolhe a região
  * de mais interesse ("attention"), como antes.
  */
-export async function cropToDataUrl(source: Buffer, width: number, height: number, focus?: PhotoFocus): Promise<string | null> {
+export async function cropToDataUrl(source: Buffer, width: number, height: number, focus?: PhotoFocus, position: "attention" | "centre" = "attention"): Promise<string | null> {
   try {
     const w = Math.round(width);
     const h = Math.round(height);
@@ -57,11 +57,50 @@ export async function cropToDataUrl(source: Buffer, width: number, height: numbe
       const top = Math.min(rh - h, Math.max(0, Math.round((focus.y / 100) * rh - h / 2)));
       img = img.resize(rw, rh).extract({ left, top, width: w, height: h });
     } else {
-      img = img.resize(w, h, { fit: "cover", position: "attention" });
+      img = img.resize(w, h, { fit: "cover", position });
     }
     return `data:image/png;base64,${(await img.png().toBuffer()).toString("base64")}`;
   } catch (err) {
     console.error("[poster] recorte falhou", err);
+    return null;
+  }
+}
+
+/**
+ * Encaixa a foto no espaço do cartaz SEM cortar o que identifica o animal:
+ * - com enquadramento do tutor: recorta em volta do ponto escolhido;
+ * - se o recorte manteria ao menos `minKept` da foto (65%): recorte normal;
+ * - senão (ex.: foto vertical num espaço largo): mostra a foto INTEIRA, sem
+ *   distorcer, sobre um fundo escurecido da própria foto. Isso também evita
+ *   ampliar demais fotos pequenas (o que deixaria a imagem borrada).
+ */
+export async function fitToDataUrl(
+  source: Buffer,
+  width: number,
+  height: number,
+  focus?: PhotoFocus,
+  { minKept = 0.65, position = "attention" }: { minKept?: number; position?: "attention" | "centre" } = {},
+): Promise<string | null> {
+  if (focus) return cropToDataUrl(source, width, height, focus);
+  try {
+    const w = Math.round(width);
+    const h = Math.round(height);
+    const upright = await sharp(source).rotate().toBuffer();
+    const meta = await sharp(upright).metadata();
+    const ir = (meta.width ?? w) / (meta.height ?? h);
+    const br = w / h;
+    const kept = Math.min(ir / br, br / ir);
+    if (kept >= minKept) return cropToDataUrl(upright, w, h, null, position);
+    const backdrop = await sharp(upright).resize(w, h, { fit: "cover" }).blur(28).modulate({ brightness: 0.45 }).toBuffer();
+    const fg = await sharp(upright).resize(w, h, { fit: "inside" }).toBuffer();
+    const fm = await sharp(fg).metadata();
+    const png = await sharp(backdrop)
+      .composite([{ input: fg, left: Math.round((w - (fm.width ?? w)) / 2), top: Math.round((h - (fm.height ?? h)) / 2) }])
+      .png()
+      .toBuffer();
+    return `data:image/png;base64,${png.toString("base64")}`;
+  } catch (err) {
+    console.error("[poster] encaixe falhou", err);
     return null;
   }
 }

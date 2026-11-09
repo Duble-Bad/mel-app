@@ -64,6 +64,9 @@ export interface PetPhoto {
   thumbUrl: string;
   isPrimary: boolean;
   position: number;
+  /** Dimensões salvas no envio (null em fotos antigas). */
+  width?: number | null;
+  height?: number | null;
 }
 
 export interface Pet {
@@ -211,3 +214,16 @@ export const primaryPhoto = (pet: Pick<Pet, "photos">): PetPhoto | undefined =>
 export const isMelId = (value: string) => /^MEL-[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/.test(value);
 
 export const MAX_PET_PHOTOS = 6;
+
+/**
+ * Tamanho de foto para cartazes nítidos. O envio reduz para no máximo 1280 px no lado
+ * maior; abaixo de PHOTO_MIN_SHORT_SIDE no lado menor, a foto fica borrada quando o
+ * cartaz a amplia (Stories, A4). É só um aviso: nenhuma foto é recusada por isso.
+ */
+export const PHOTO_MIN_SHORT_SIDE = 640;
+export const PHOTO_SIZE_TIP =
+  "Para cartazes nítidos, envie a foto original da câmera (não print de tela nem foto reenviada pelo WhatsApp), com pelo menos 1200 px no lado maior. Vertical funciona melhor nos Stories; horizontal ou quadrada, no feed e no A4.";
+
+/** A foto é pequena demais para sair nítida nos cartazes? (dimensões desconhecidas: não avisa) */
+export const isSmallPhoto = (width?: number | null, height?: number | null) =>
+  Boolean(width && height && Math.min(width, height) < PHOTO_MIN_SHORT_SIDE);

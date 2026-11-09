@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fieldErrors } from "../profile/profile";
-import { describeAge, isMelId, parseDecimal, petInputSchema, petSummary } from "./pet";
+import { describeAge, isMelId, isSmallPhoto, parseDecimal, petInputSchema, petSummary } from "./pet";
 
 describe("petInputSchema", () => {
   it("needs only name and species (quick registration)", () => {
@@ -64,5 +64,18 @@ describe("helpers", () => {
     expect(isMelId("MEL-7K3Q9H")).toBe(true);
     expect(isMelId("MEL-0O1IL2")).toBe(false);
     expect(isMelId("mel-7k3q9h")).toBe(false);
+  });
+});
+
+describe("isSmallPhoto (aviso de foto pequena para cartazes)", () => {
+  it("avisa quando o lado menor fica abaixo de 640 px", () => {
+    expect(isSmallPhoto(321, 571)).toBe(true);
+    expect(isSmallPhoto(720, 540)).toBe(true);
+    expect(isSmallPhoto(1280, 960)).toBe(false);
+    expect(isSmallPhoto(640, 1138)).toBe(false);
+  });
+  it("não avisa sem dimensões (fotos antigas)", () => {
+    expect(isSmallPhoto(null, null)).toBe(false);
+    expect(isSmallPhoto(undefined, 500)).toBe(false);
   });
 });

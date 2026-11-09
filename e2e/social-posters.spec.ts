@@ -64,7 +64,7 @@ test("poster proposals: every format has the right resolution and a QR Code that
   const one = await createTutorWithActiveAlert("prop1", { petName: "Uma", photos: 1, whatsapp: "11900000001" });
   const many = await createTutorWithActiveAlert("prop3", { petName: "Varias Fotos Grandes", photos: 3, uniqueMarks: "Mancha branca no peito e orelha esquerda dobrada, coleira vermelha com plaquinha." });
   created.push(one.email, many.email);
-  const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1920, 1080] } as const;
+  const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1200, 630] } as const;
   for (const t of [one, many]) {
     for (const [format, [w, h]] of Object.entries(sizes)) {
       const res = await request.get(`/alerta/${t.code}/cartaz/${format}?modelo=proposta`);
@@ -86,6 +86,22 @@ test("poster proposals: every format has the right resolution and a QR Code that
   expect((await request.get(`/alerta/${one.code}/cartaz/propostas`)).status()).toBe(200);
 });
 
+test("internal preview with a real pet (DEV routes only): five sizes, noindex, nothing written", async ({ request }) => {
+  const t = await createTutorWithActiveAlert("prev-pet", { petName: "Previa", photos: 2, publicPet: true });
+  created.push(t.email);
+  const mel = (await getPublicLostCase(anon(), t.code))!.pet.melId!;
+  const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1200, 630] } as const;
+  for (const [format, [w, h]] of Object.entries(sizes)) {
+    const res = await request.get(`/dev/cartaz-pet/${mel}/${format}?fotos=1,0`);
+    expect(res.status(), format).toBe(200);
+    expect(res.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+    const m = await sharp(await res.body()).metadata();
+    expect([m.width, m.height], format).toEqual([w, h]);
+  }
+  expect((await request.get(`/dev/cartaz-pet/${mel}`)).status()).toBe(200);
+  expect((await request.get(`/dev/cartaz-pet/MEL-000000/square`)).status()).toBe(404);
+});
+
 test("the owner chooses the poster cover and framing; visitors never see the control", async ({ page, browser }) => {
   test.setTimeout(120_000);
   const t = await createTutorWithActiveAlert("enquadra", { petName: "Enquadra", photos: 2 });
@@ -105,6 +121,8 @@ test("the owner chooses the poster cover and framing; visitors never see the con
   await page.getByRole("button", { name: "Entrar" }).click();
   const editor = page.getByTestId("poster-photo-editor");
   await expect(editor).toBeVisible({ timeout: 30_000 });
+  // Fotos de teste têm 400×400: o editor avisa que podem sair borradas no cartaz.
+  await expect(editor.getByTestId("poster-small-photo")).toContainText("400×400");
   const area = editor.getByTestId("poster-focus-area");
   // Mede só depois que a foto carregou (antes disso a área muda de tamanho) e repete o toque
   // se ele chegar antes da página ficar interativa.

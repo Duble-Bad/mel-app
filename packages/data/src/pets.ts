@@ -10,9 +10,9 @@ const BUCKET = "pet-photos";
 const PET_COLUMNS =
   "id, owner_id, mel_id, name, species, breed, sex, birth_date, age_estimate_months, size, weight_kg, " +
   "color_primary, colors_secondary, description, unique_marks, neutered, has_microchip, city, state, is_public, " +
-  "pet_photos (id, storage_path, thumb_path, is_primary, position)";
+  "pet_photos (id, storage_path, thumb_path, is_primary, position, width, height)";
 
-type PetWithPhotos = PetRow & { pet_photos: Pick<PhotoRow, "id" | "storage_path" | "thumb_path" | "is_primary" | "position">[] };
+type PetWithPhotos = PetRow & { pet_photos: Pick<PhotoRow, "id" | "storage_path" | "thumb_path" | "is_primary" | "position" | "width" | "height">[] };
 
 function publicUrl(client: MelClient, path: string) {
   return client.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -27,6 +27,8 @@ function toPet(client: MelClient, row: PetWithPhotos): Pet {
       thumbUrl: publicUrl(client, p.thumb_path),
       isPrimary: p.is_primary,
       position: p.position,
+      width: p.width,
+      height: p.height,
     }));
   return {
     id: row.id,
@@ -262,6 +264,8 @@ export interface PosterPhoto {
   isPrimary: boolean;
   /** Ponto (0–100%) que o cartaz mantém visível; null = automático. */
   focus: { x: number; y: number } | null;
+  width: number | null;
+  height: number | null;
 }
 
 /**
@@ -275,7 +279,7 @@ export async function getPosterPhotos(client: MelClient, alertCode: string): Pro
   const petId = (lc as { pet_id: string }).pet_id;
   const { data, error: e2 } = await client
     .from("pet_photos")
-    .select("id, storage_path, thumb_path, is_primary, position, focus_x, focus_y")
+    .select("id, storage_path, thumb_path, is_primary, position, focus_x, focus_y, width, height")
     .eq("pet_id", petId)
     .order("is_primary", { ascending: false })
     .order("position");
@@ -283,12 +287,14 @@ export async function getPosterPhotos(client: MelClient, alertCode: string): Pro
   const url = (p: string) => client.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
   return {
     petId,
-    photos: ((data ?? []) as { id: string; storage_path: string; thumb_path: string; is_primary: boolean; focus_x: number | null; focus_y: number | null }[]).map((p) => ({
+    photos: ((data ?? []) as { id: string; storage_path: string; thumb_path: string; is_primary: boolean; focus_x: number | null; focus_y: number | null; width: number | null; height: number | null }[]).map((p) => ({
       id: p.id,
       url: url(p.storage_path),
       thumbUrl: url(p.thumb_path),
       isPrimary: p.is_primary,
       focus: p.focus_x != null && p.focus_y != null ? { x: p.focus_x, y: p.focus_y } : null,
+      width: p.width,
+      height: p.height,
     })),
   };
 }
