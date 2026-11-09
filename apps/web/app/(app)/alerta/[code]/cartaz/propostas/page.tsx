@@ -108,8 +108,8 @@ async function Comparison({ code, fotos, foco }: { code: string; fotos: string |
         </nav>
         <p className="text-sm">
           Protótipos (sem gravar nada):{" "}
-          <Link href={`/alerta/${c.code}/cartaz/editor`} className="font-semibold text-link underline-offset-4 hover:underline">
-            editor de personalização
+          <Link href={`/alerta/${c.code}/cartaz/criar`} className="font-semibold text-link underline-offset-4 hover:underline">
+            criar cartaz (três modelos por formato)
           </Link>{" "}
           ·{" "}
           <Link href="/dev/bonificacao" className="font-semibold text-link underline-offset-4 hover:underline">

@@ -13,11 +13,13 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 4 | 2026-11-09 | **Teste manual**: ler o QR Code com câmera de celular (tela e A4 impresso) | Só o proprietário consegue |
 | 5 | 2026-11-09 | **Teste manual**: Instagram/TikTok/Facebook num celular real (compartilhamento nativo) | Nos testes automáticos o menu do sistema é simulado |
 | 6 | 2026-11-09 | **Prévia do link no Facebook** com domínio público | Exige domínio público e autorização para teste em ambiente público (checklist 3.8) |
-| 7 | 2026-11-09 | **Editor de personalização dos cartazes**: aprovar o protótipo, a persistência proposta e a migration | Protótipo em `/alerta/rcu6k4/cartaz/editor`; proposta em `docs/propostas/editor-e-bonificacao.md`. Não implementar estrutura antes da aprovação |
+| 7 | 2026-11-09 | **"Criar cartaz" com três modelos por formato**: aprovar a qualidade dos 15 modelos e liberar o fluxo para os tutores (hoje só em DEV) | Demonstração em `/alerta/rcu6k4/cartaz/criar`; detalhes em `docs/propostas/editor-e-bonificacao.md` |
+| 7a | 2026-11-09 | **Salvar o cartaz escolhido na conta do tutor** (tabela `poster_designs` + RPC com validação do tutor) | Exige migration. Sem ela, a escolha vale só no endereço da página |
+| 7b | 2026-11-09 | **Cenários de teste fictícios** (6 alertas em Sé, São Paulo, fotos sintéticas) usados na validação | Manter para a demonstração ou apagar (`cenarios.spec.ts` → "apagar") |
 | 8 | 2026-11-09 | **Bonificação opcional no alerta**: aprovar formulário, apresentação e a migration | Protótipo em `/dev/bonificacao` (caso fictício); proposta no mesmo documento |
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
-| 12 | 2026-11-09 | **Foto única vertical**: centralizada com faixas lisas nas laterais (sem desfoque) | Aceitar assim ou preferir outro arranjo (ex.: texto ao lado) |
+| 12 | 2026-11-09 | **Foto única vertical**: nos três modelos não há mais faixas vazias (foto alta ao lado do texto ou quadro "Como reconhecer" no espaço que sobraria) | Conferir na demonstração com o cenário "uma vertical" (`/alerta/syee89/cartaz/criar`) |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
 | 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–46, chaves PII) e publicar | Nada em produção sem autorização expressa |
 

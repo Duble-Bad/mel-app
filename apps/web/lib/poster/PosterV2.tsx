@@ -25,13 +25,15 @@ export interface PhotoLayout {
   extras: Box[];
   /** Complementares (sempre ao lado da principal) empilhadas (coluna) ou lado a lado (linha). */
   extrasDirection: "column" | "row";
+  /** Complementares embaixo da principal (horizontal com principal larga). */
+  below?: boolean;
 }
 
-const NAVY = "#0a111d";
-const PANEL = "#111c2e";
-const GOLD = "#f6b928";
-const TEXT = "#f5f2ea";
-const MUTED = "#b3bdcc";
+export const NAVY = "#0a111d";
+export const PANEL = "#111c2e";
+export const GOLD = "#f6b928";
+export const TEXT = "#f5f2ea";
+export const MUTED = "#b3bdcc";
 
 /** Faixa do status no topo (px). */
 const BAND: Record<PosterV2Format, number> = { impressao: 230, square: 92, portrait: 104, story: 300, landscape: 0 };
@@ -47,7 +49,7 @@ const AREA: Record<PosterV2Format, { width: number; height: number; gap: number 
 };
 
 /** Altura que a área de fotos cede ao selo da bonificação (os demais formatos têm folga). */
-const REWARD_ROOM: Record<PosterV2Format, number> = { impressao: 0, square: 44, portrait: 52, story: 0, landscape: 0 };
+const REWARD_ROOM: Record<PosterV2Format, number> = { impressao: 0, square: 44, portrait: 52, story: 48, landscape: 0 };
 
 /**
  * Distribuição das fotos por formato, quantidade (1, 2 ou 3) e orientação da principal.
@@ -116,9 +118,36 @@ interface Props {
   dev: boolean;
   /** PROTÓTIPO: "BONIFICAÇÃO OFERECIDA: R$ …" (rewardLine); null/ausente = nenhum bloco. */
   reward?: string | null;
+  /** Foto única vertical: o espaço ao lado vira o quadro "Como reconhecer" (sem sobras). */
+  card?: Box;
+  /** O quadro vai embaixo da complementar (uma complementar horizontal numa coluna alta). */
+  cardBelowExtras?: boolean;
 }
 
-export function PosterV2({ format, content, photos, layout, qr, url, dev, reward = null }: Props) {
+/** Corta o texto para caber num quadro (estimativa pela área; Satori não mede texto). */
+export function fitText(text: string, box: Box, fontSize: number, lineHeight = 1.3): string {
+  const perLine = Math.max(8, Math.floor(box.width / (fontSize * 0.6)) - 2);
+  const lines = Math.max(1, Math.floor(box.height / (fontSize * lineHeight)));
+  const max = perLine * lines;
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+/** Maior fonte (entre min e max) em que o texto inteiro cabe no quadro (mesma estimativa do fitText). */
+export function fitFont(text: string, box: Box, min: number, max: number, lineHeight = 1.3): number {
+  for (let f = max; f > min; f -= 2) {
+    const perLine = Math.floor(box.width / (f * 0.6)) - 2;
+    const lines = Math.floor(box.height / (f * lineHeight));
+    if (perLine * lines >= text.length * 1.15) return f;
+  }
+  return min;
+}
+
+/** Quadro "Como reconhecer": descrição do tutor (ou raça e porte) com a letra do maior tamanho que couber. */
+export function recognizeText(content: PosterContent): { lead: string; detail: string | null } {
+  return content.marks ? { lead: content.marks, detail: content.details } : { lead: content.details, detail: null };
+}
+
+export function PosterV2({ format, content, photos, layout, qr, url, dev, reward = null, card, cardBelowExtras = false }: Props) {
   const { width, height } = V2_FORMATS[format];
   const accent = content.found ? "#15895e" : "#e5484d";
   const nameSize = (base: number) => (content.name.length > 16 ? Math.round(base * 0.68) : content.name.length > 11 ? Math.round(base * 0.82) : base);
@@ -139,11 +168,34 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev, reward
     );
 
   const gallery = (gap = 0, radius = 0) => (
-    <div style={{ display: "flex", flexShrink: 0, flexDirection: "row", justifyContent: "center", gap }}>
+    <div style={{ display: "flex", flexShrink: 0, flexDirection: layout.below ? "column" : "row", justifyContent: card ? "flex-start" : "center", gap }}>
       {photo(photos[0], layout.main, 0, radius)}
-      {layout.extras.length > 0 && <div style={{ display: "flex", flexDirection: layout.extrasDirection, gap }}>{layout.extras.map((b, i) => photo(photos[i + 1], b, i + 1, radius))}</div>}
+      {layout.extras.length > 0 && (
+        <div style={{ display: "flex", flexDirection: layout.extrasDirection, gap }}>
+          {layout.extras.map((b, i) => photo(photos[i + 1], b, i + 1, radius))}
+          {card && cardBelowExtras && recognizeCard(card, radius)}
+        </div>
+      )}
+      {card && !cardBelowExtras && recognizeCard(card, radius)}
     </div>
   );
+
+  /** Quadro "Como reconhecer" ao lado de uma foto única vertical. */
+  function recognizeCard(box: Box, radius: number) {
+    const light = format === "impressao";
+    const base = format === "impressao" ? 42 : format === "landscape" ? 20 : format === "square" ? 28 : 32;
+    const pad = Math.round(base * 1.1);
+    const { lead, detail } = recognizeText(content);
+    const inner = { width: box.width - 2 * pad, height: box.height - 2 * pad - Math.round(base * 4.2) };
+    const size = fitFont(lead, inner, base, base * 2);
+    return (
+      <div style={{ display: "flex", flexDirection: "column", width: box.width, height: box.height, padding: pad, gap: Math.round(base * 0.6), background: light ? "#f3f1ec" : "#1d2b44", borderRadius: radius, overflow: "hidden" }}>
+        <div style={{ display: "flex", fontSize: Math.round(base * 0.9), fontWeight: 800, color: light ? "#9a6a10" : GOLD, letterSpacing: 1 }}>COMO RECONHECER</div>
+        <div style={{ display: "flex", flexShrink: 1, minHeight: 0, overflow: "hidden", fontSize: size, fontWeight: 700, lineHeight: 1.3, color: light ? NAVY : TEXT }}>{fitText(lead, inner, size)}</div>
+        {detail && <div style={{ display: "flex", flexShrink: 0, fontSize: base, color: light ? "#475467" : MUTED }}>{detail}</div>}
+      </div>
+    );
+  }
 
   /** Bonificação do tutor (protótipo): selo dourado; sem valor, nada é desenhado. */
   const rewardBadge = (size: number) =>
@@ -210,7 +262,7 @@ export function PosterV2({ format, content, photos, layout, qr, url, dev, reward
           {content.lastSeen && <div style={{ display: "flex", flexShrink: 0, fontSize: 48, fontWeight: 700 }}>{content.lastSeen}</div>}
           {content.when && <div style={{ display: "flex", flexShrink: 0, fontSize: 42, color: "#475467" }}>{content.when}</div>}
           {rewardBadge(46)}
-          {content.marks && (
+          {content.marks && !reward && (
             <div style={{ display: "flex", flexShrink: 0, fontSize: 36, lineHeight: 1.25 }}>{content.marks.length > 118 ? `${content.marks.slice(0, 117).trimEnd()}…` : content.marks}</div>
           )}
         </div>

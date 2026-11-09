@@ -167,38 +167,84 @@ test("comparison page (DEV only): five formats separately, previous × proposal,
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test("editor prototype (DEV only): swap the main photo, frame one format, the final PNG follows and nothing else changes", async ({ page, request, baseURL }) => {
-  test.setTimeout(120_000);
-  const t = await createTutorWithActiveAlert("editor-proto", { petName: "Editor", photos: 3 });
+test("poster models: three per format with real files, correct size and a working QR (one vertical photo and three mixed photos)", async ({ request, baseURL }) => {
+  test.setTimeout(240_000);
+  const one = await createTutorWithActiveAlert("modelos-1", { petName: "Uma", photoSizes: [[900, 1200]] });
+  const three = await createTutorWithActiveAlert("modelos-3", { petName: "Tres", photoSizes: [[1600, 1200], [900, 1600], [800, 600]], uniqueMarks: "Mancha branca no peito." });
+  created.push(one.email, three.email);
+  const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1200, 630] } as const;
+  for (const t of [one, three]) {
+    for (const [format, [w, h]] of Object.entries(sizes)) {
+      for (const estilo of [1, 2, 3]) {
+        const res = await request.get(`/alerta/${t.code}/cartaz/${format}?modelo=proposta&estilo=${estilo}`);
+        expect(res.status(), `${t.code} ${format} ${estilo}`).toBe(200);
+        const png = await res.body();
+        const m = await sharp(png).metadata();
+        expect([m.width, m.height], `${format} modelo ${estilo}`).toEqual([w, h]);
+        expect(await readQr(png), `${format} modelo ${estilo}: QR`).toBe(`${baseURL}/alerta/${t.code}`);
+        // Nenhuma foto vira "inteira com laterais desfocadas".
+        expect(res.headers()["x-mel-diagnostico"], `${format} modelo ${estilo}`).not.toContain('"inteira"');
+      }
+    }
+  }
+  // Os modelos realmente diferem entre si (não são três cópias).
+  const bodies = await Promise.all([1, 2, 3].map(async (e) => (await request.get(`/alerta/${three.code}/cartaz/square?modelo=proposta&estilo=${e}`)).body()));
+  expect(bodies[0]!.equals(bodies[1]!) || bodies[1]!.equals(bodies[2]!) || bodies[0]!.equals(bodies[2]!)).toBe(false);
+  // Baixar leva o modelo no nome do arquivo.
+  const dl = await request.get(`/alerta/${three.code}/cartaz/story?modelo=proposta&estilo=3&baixar=1`);
+  expect(dl.headers()["content-disposition"]).toContain("MEL-procura-se-Tres-story-modelo-3.png");
+});
+
+test("create poster flow (DEV): the tutor picks a format, sees three real previews (one recommended), customizes and gets download, print and share", async ({ page, request, baseURL }) => {
+  test.setTimeout(180_000);
+  const t = await createTutorWithActiveAlert("criar-cartaz", { petName: "Fluxo", photoSizes: [[1600, 1200], [900, 1600], [1200, 1200]] });
   created.push(t.email);
   const before = await getPublicLostCase(anon(), t.code);
-  await page.goto(`/alerta/${t.code}/cartaz/editor`);
-  const frame = page.getByTestId("editor-moldura");
-  await expect(frame.locator("img")).toBeVisible({ timeout: 30_000 });
+  // Só o tutor vê a entrada "Criar cartaz" no alerta.
+  await page.goto("/entrar");
+  await page.getByLabel("E-mail").fill(t.email);
+  await page.getByLabel("Senha", { exact: true }).fill(TEST_PASSWORD);
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page).toHaveURL(/\/perfil$/);
+  await page.goto(`/alerta/${t.code}`);
+  await page.getByTestId("criar-cartaz-link").click();
+  await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar$`));
+
+  // 1 — formato
+  await page.getByTestId("formato-story").click();
+  // 2 — três prévias reais, uma recomendada
+  for (const m of [1, 2, 3]) await expect(page.getByTestId(`modelo-${m}`).locator("img")).toHaveAttribute("src", new RegExp(`/cartaz/story\\?modelo=proposta&estilo=${m}$`));
+  await expect(page.getByText("Recomendado pela MEL")).toHaveCount(1);
+  await expect(page.getByText(/Por que recomendamos o Modelo/)).toBeVisible();
+  await page.getByRole("button", { name: "Usar o Modelo 3" }).click();
+  // 4 — usar
+  await expect(page.getByTestId("cartaz-final")).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3$/);
+  await expect(page.getByRole("link", { name: "Baixar" })).toHaveAttribute("href", /estilo=3&baixar=1$/);
+  await expect(page.getByRole("link", { name: "Imprimir" })).toHaveAttribute("href", /\/cartaz\/imprimir\?modelo=proposta&estilo=3&formato=story$/);
+  await expect(page.getByRole("button", { name: "Compartilhar" })).toBeVisible();
+  // 3 — personalizar: outra principal, zoom; a prévia é o PNG final
+  await page.getByRole("button", { name: "Personalizar fotos e enquadramento" }).click();
+  await expect(page.getByTestId("editor-moldura").locator("img")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Usar como principal" }).first().click();
   await page.getByRole("slider").fill("2");
-  // Arrastar na moldura muda o ponto (mouse; o toque usa os mesmos eventos de ponteiro).
-  await frame.scrollIntoViewIfNeeded();
-  const box = (await frame.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2, { steps: 5 });
-  await page.mouse.up();
   const preview = page.getByTestId("editor-previa");
-  await expect(preview).toHaveAttribute("src", /\/cartaz\/square\?modelo=proposta&fotos=1%2C0%2C2&foco=\d+%2C50&zoom=2\.00$/);
-  // Só o formato editado leva enquadramento.
-  await page.getByRole("radio", { name: "Stories" }).click();
-  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&fotos=1%2C0%2C2$/);
-  // A prévia é o próprio PNG final, com QR do alerta.
-  await page.getByRole("radio", { name: /Quadrado/ }).click();
-  await expect(preview).toHaveAttribute("src", /\/cartaz\/square\?.*zoom=2\.00$/);
-  const res = await request.get((await preview.getAttribute("src"))!);
-  const png = await res.body();
-  expect((await sharp(png).metadata()).width).toBe(1080);
+  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3&fotos=1%2C0%2C2&foco=50%2C50&zoom=2\.00$/);
+  const png = await (await request.get((await preview.getAttribute("src"))!)).body();
+  expect((await sharp(png).metadata()).height).toBe(1920);
   expect(await readQr(png)).toBe(`${baseURL}/alerta/${t.code}`);
-  // Nada gravado: capa, ordem e fotos do alerta continuam iguais.
+  // A escolha sobrevive ao recarregar (fica no endereço da página).
+  await page.reload();
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /zoom=2\.00$/);
+  await page.getByRole("button", { name: "Restaurar o modelo original" }).click();
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3$/);
+  // Imprimir: página com o cartaz, sem gravar nada.
+  expect((await request.get(`/alerta/${t.code}/cartaz/imprimir?estilo=3&formato=impressao`)).status()).toBe(200);
+  // Nada gravado: fotos, capa e ordem iguais.
   expect((await getPublicLostCase(anon(), t.code))!.pet.photos).toEqual(before!.pet.photos);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  // O editor antigo leva ao fluxo novo.
+  await page.goto(`/alerta/${t.code}/cartaz/editor`);
+  await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar$`));
 });
 
 test("reward prototype (DEV only): optional, BRL mask, shown only on active alerts and never as an empty block", async ({ page, request }) => {

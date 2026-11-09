@@ -1,7 +1,8 @@
 import "server-only";
 import sharp from "sharp";
 import { cropToDataUrl, fitToDataUrl, type PhotoFocus } from "./assets";
-import { photoLayout, type PhotoLayout, type PosterV2Format } from "./PosterV2";
+import { modelLayout, type ModelLayout, type PosterModel } from "./models";
+import type { PhotoLayout, PosterV2Format } from "./PosterV2";
 
 /** Como cada foto entrou no cartaz (avaliação interna; nunca vai para a arte). */
 export interface PhotoDiagnostic {
@@ -16,6 +17,7 @@ export interface PhotoDiagnostic {
 
 const MAIN_MIN_KEPT = 0.65;
 const EXTRA_MIN_KEPT = 0.5;
+const HERO_MIN_KEPT = 0.55;
 
 /**
  * Monta as fotos de uma proposta de cartaz: o layout segue a orientação da foto
@@ -29,23 +31,29 @@ export async function composePhotos(
   {
     framing,
     reward = false,
+    model = 2,
   }: {
-    /** PROTÓTIPO do editor: enquadramento explícito da principal (ponto + zoom) neste formato. */
+    /** Editor: enquadramento explícito da principal (ponto + zoom) neste formato. */
     framing?: { focus: { x: number; y: number }; zoom: number };
     /** Há selo de bonificação (protótipo): o quadrado e o 4:5 cedem uma linha da área de fotos. */
     reward?: boolean;
+    /** Modelo escolhido pelo tutor (1 foto em destaque, 2 várias fotos, 3 clássico). */
+    model?: PosterModel;
   } = {},
-): Promise<{ layout: PhotoLayout; photos: string[]; diagnostics: PhotoDiagnostic[] }> {
+): Promise<{ layout: PhotoLayout; model: ModelLayout; photos: string[]; diagnostics: PhotoDiagnostic[] }> {
   const metas = await Promise.all(sources.map((s) => sharp(s.source).rotate().metadata()));
   const dims = metas.map((m) => ({ w: m.width ?? 1, h: m.height ?? 1 }));
-  const layout = photoLayout(format, dims.map((d) => d.w / d.h), { reward });
-  const boxes = [layout.main, ...layout.extras];
+  const chosen = modelLayout(format, model, dims.map((d) => d.w / d.h), { reward });
+  const boxes = chosen.used ? chosen.boxes.slice(0, chosen.used) : [];
+  // Forma do PosterV2 (modelo 2): principal + complementares.
+  const layout: PhotoLayout = { main: chosen.boxes[0]!, extras: chosen.boxes.slice(1), extrasDirection: chosen.extrasDirection ?? "column", below: chosen.below };
   const diagnostics: PhotoDiagnostic[] = [];
   const photos = await Promise.all(
     boxes.map((b, i) => {
       const s = sources[i];
       if (!s) return Promise.resolve(null);
-      const minKept = i === 0 ? MAIN_MIN_KEPT : EXTRA_MIN_KEPT;
+      // Modelo 1: a foto única pode perder um pouco mais nas bordas para ficar grande.
+      const minKept = i === 0 ? (model === 1 ? HERO_MIN_KEPT : MAIN_MIN_KEPT) : EXTRA_MIN_KEPT;
       const { w, h } = dims[i]!;
       const kept = Math.min(w / h / (b.width / b.height), b.width / b.height / (w / h));
       const crop = kept >= minKept;
@@ -58,7 +66,7 @@ export async function composePhotos(
       if (i === 0) {
         // Enquadrado no editor: é a escolha do tutor, sem a troca automática por foto inteira.
         if (framing) return cropToDataUrl(s.source, b.width, b.height, framing.focus, "centre", framing.zoom);
-        return fitToDataUrl(s.source, b.width, b.height, s.focus);
+        return fitToDataUrl(s.source, b.width, b.height, s.focus, { minKept });
       }
       // Complementares: recorte pelo enquadramento do tutor ou pelo centro ("attention" escolhia
       // o pelo, cortando os olhos). Foto vertical sem enquadramento: um pouco acima do meio, onde
@@ -67,5 +75,5 @@ export async function composePhotos(
       return fitToDataUrl(s.source, b.width, b.height, focus, { minKept, position: "centre" });
     }),
   );
-  return { layout, photos: photos.filter((p): p is string => Boolean(p)), diagnostics };
+  return { layout, model: chosen, photos: photos.filter((p): p is string => Boolean(p)), diagnostics };
 }

@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { rewardLine, SIGHTING_BUTTON_LABEL, type PosterContent } from "@mel/core";
 import { posterFonts } from "@/lib/poster/assets";
+import { isPosterModel, modelLayout } from "@/lib/poster/models";
+import { PosterClassic, PosterHero } from "@/lib/poster/PosterModels";
 import { isV2Format, photoLayout, PosterV2, V2_FORMATS } from "@/lib/poster/PosterV2";
 
 /**
@@ -35,17 +37,19 @@ export async function GET(request: Request, ctx: RouteContext<"/dev/bonificacao/
   };
   const { width, height } = V2_FORMATS[formato];
   const reward = Number.isInteger(cents) ? rewardLine(status, cents) : null;
+  // ?estilo=1|2|3: o mesmo selo nos três modelos que o tutor pode escolher.
+  const estilo = Number(q.get("estilo") ?? 2);
+  const model = isPosterModel(estilo) ? estilo : 2;
+  const layout = modelLayout(formato, model, [4 / 3], { reward: Boolean(reward) });
+  const common = { format: formato, content, photos: [], qr: null, url: null, dev: true, reward };
   return new ImageResponse(
-    <PosterV2
-      format={formato}
-      content={content}
-      photos={[]}
-      layout={photoLayout(formato, [4 / 3], { reward: Boolean(reward) })}
-      qr={null}
-      url={null}
-      dev
-      reward={reward}
-    />,
+    model === 1 ? (
+      <PosterHero {...common} layout={layout} />
+    ) : model === 3 ? (
+      <PosterClassic {...common} layout={layout} />
+    ) : (
+      <PosterV2 {...common} layout={photoLayout(formato, [4 / 3], { reward: Boolean(reward) })} />
+    ),
     { width, height, fonts: posterFonts, headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } },
   );
 }

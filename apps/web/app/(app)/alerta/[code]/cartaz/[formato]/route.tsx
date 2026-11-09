@@ -3,6 +3,8 @@ import { alertPath, isPosterFormat, POSTER_FORMATS, posterContent } from "@mel/c
 import { getPublicLostCase } from "@mel/data";
 import { fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
 import { composePhotos } from "@/lib/poster/compose";
+import { isPosterModel } from "@/lib/poster/models";
+import { PosterClassic, PosterHero } from "@/lib/poster/PosterModels";
 import { OG_PHOTO, OG_SIZE, OgCard } from "@/lib/poster/OgCard";
 import { photoBox, Poster } from "@/lib/poster/Poster";
 import { isV2Format, PosterV2, V2_FORMATS } from "@/lib/poster/PosterV2";
@@ -39,7 +41,8 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
   const content = posterContent(c);
   // Capa (escolhida pelo tutor) primeiro; cada foto com o enquadramento dele.
   const photos = c.pet.photos;
-  const filename = `MEL-${c.status === "FOUND" ? "encontrado" : "procura-se"}-${c.pet.name}-${formato}${proposal ? "-proposta" : ""}.png`
+  const estiloParam = params.get("estilo");
+  const filename = `MEL-${c.status === "FOUND" ? "encontrado" : "procura-se"}-${c.pet.name}-${formato}${proposal ? (estiloParam ? `-modelo-${estiloParam}` : "-proposta") : ""}.png`
     .normalize("NFD")
     .replace(/[^\w.-]/g, "");
   const headers = {
@@ -77,8 +80,11 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
       params.has("zoom") && zoom >= 1 && zoom <= 3
         ? { focus: simulated ? { x: Math.min(100, Number(simulated[1])), y: Math.min(100, Number(simulated[2])) } : { x: 50, y: 50 }, zoom }
         : undefined;
-    const [{ layout, photos: ready, diagnostics }, qr] = await Promise.all([
-      composePhotos(formato, sources, { framing }),
+    // ?estilo=1|2|3: modelo escolhido pelo tutor (1 foto em destaque, 2 várias fotos, 3 clássico).
+    const estilo = Number(params.get("estilo") ?? 2);
+    const model = isPosterModel(estilo) ? estilo : 2;
+    const [{ layout, model: chosen, photos: ready, diagnostics }, qr] = await Promise.all([
+      composePhotos(formato, sources, { framing, model }),
       qrDataUrl(url, formato === "impressao" ? 860 : 600),
     ]);
     const { width, height } = V2_FORMATS[formato];
@@ -87,7 +93,15 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     // Horário marcado como aproximado pelo tutor: "por volta das 22:00".
     const proposalContent =
       c.lostAtUncertain && content.when ? { ...content, when: content.when.replace(/ às (\d{1,2}:\d{2})$/, ", por volta das $1") } : content;
-    return new ImageResponse(<PosterV2 format={formato} content={proposalContent} photos={ready} layout={layout} qr={qr} url={url} dev={dev} />, {
+    const art =
+      model === 1 ? (
+        <PosterHero format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} />
+      ) : model === 3 ? (
+        <PosterClassic format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} />
+      ) : (
+        <PosterV2 format={formato} content={proposalContent} photos={ready} layout={layout} qr={qr} url={url} dev={dev} card={chosen.card} cardBelowExtras={chosen.cardBelowExtras} />
+      );
+    return new ImageResponse(art, {
       width,
       height,
       fonts: posterFonts,

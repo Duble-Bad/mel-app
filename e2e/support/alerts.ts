@@ -5,7 +5,7 @@ import { activateLostCase, startLostCase, updateLostCase } from "../../packages/
 import { addPetPhoto, createPet } from "../../packages/data/src/pets";
 import { createSighting } from "../../packages/data/src/sightings";
 import type { MelClient } from "../../packages/data/src/client";
-import { solidPng } from "./png";
+import { patternPng, solidPng } from "./png";
 import { createUser, TEST_PASSWORD } from "./users";
 
 interface AlertOptions {
@@ -15,6 +15,8 @@ interface AlertOptions {
   withPhoto?: boolean;
   /** Quantas fotos (cores sólidas diferentes); `withPhoto` equivale a 1. */
   photos?: number;
+  /** Fotos sintéticas com "rosto" e bordas marcadas, nos tamanhos dados (largura × altura). Substitui `photos`. */
+  photoSizes?: [number, number][];
   /** Página pública do pet (/pet/MEL-…); padrão: privada. */
   publicPet?: boolean;
   /** Número FICTÍCIO publicado como WhatsApp no alerta. */
@@ -69,7 +71,11 @@ export async function createTutorWithActiveAlert(label: string, petNameOrOptions
     }),
   );
   const shades: [number, number, number][] = [[176, 120, 64], [64, 120, 176], [90, 160, 90], [160, 80, 140], [200, 170, 60], [90, 90, 90]];
-  for (let n = 0; n < (opts.photos ?? (opts.withPhoto ? 1 : 0)); n++) {
+  for (const [n, [w, h]] of (opts.photoSizes ?? []).entries()) {
+    const png = new Blob([new Uint8Array(patternPng(w, h, shades[n % shades.length]!))], { type: "image/png" });
+    await addPetPhoto(client, pet, { full: png, thumb: png, width: w, height: h }, n);
+  }
+  for (let n = 0; n < (opts.photoSizes ? 0 : (opts.photos ?? (opts.withPhoto ? 1 : 0))); n++) {
     const png = new Blob([new Uint8Array(solidPng(400, 400, shades[n % shades.length]!))], { type: "image/png" });
     await addPetPhoto(client, pet, { full: png, thumb: png, width: 400, height: 400 }, n);
   }

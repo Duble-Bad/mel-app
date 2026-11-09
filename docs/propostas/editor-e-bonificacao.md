@@ -1,46 +1,72 @@
-# Propostas: editor de cartazes e bonificação (aguardando aprovação)
+# Propostas: "Criar cartaz" (três modelos) e bonificação (aguardando aprovação)
 
 Protótipos internos (DEV, `MEL_DEV_ROUTES=1`). **Nada foi gravado no banco e não há migration.**
-A estrutura abaixo só será feita depois da aprovação do proprietário (`decisoes-pendentes.md`, itens 7 e 8).
+A estrutura abaixo só será feita depois da aprovação do proprietário (`decisoes-pendentes.md`, itens 7 e 8). A demonstração não grava nada.
 
-## 1. Editor de personalização dos cartazes
+## 1. "Criar cartaz": três modelos por formato, escolhidos pelo tutor
 
-**Protótipo:** `/alerta/{código}/cartaz/editor`, com o alerta real e só leitura.
+**Demonstração:** `/alerta/{código}/cartaz/criar` (o protótipo antigo `/cartaz/editor` redireciona para cá). Entrada "Criar cartaz" na página do alerta, só para o tutor, com o alerta ativo e só em DEV.
 
-### O que faz
+### Fluxo
 
-- Escolher a foto principal e as complementares (até 3), incluir, remover e reordenar.
-- Enquadrar a principal em cada formato separadamente:
-  - arrastar dentro da moldura com mouse ou dedo (eventos de ponteiro);
-  - aproximar com pinça, roda do mouse ou controle deslizante, de 1× a 3×.
-- Alternar os 5 formatos; cada um guarda o próprio enquadramento (• no botão do formato).
-- "Restaurar original deste formato" ou "Restaurar tudo".
-- Prévia fiel: a imagem da prévia é o próprio PNG final, gerado pela rota dos cartazes com `?fotos=&foco=&zoom=`. A moldura usa a mesma conta do recorte do servidor (`cropToDataUrl`).
-- Baixar e compartilhar: compartilhamento nativo com arquivo quando o aparelho permite; senão, download.
-- "Salvar para reutilizar" funciona **só neste navegador** (localStorage), como protótipo.
-- Não altera a foto original, a capa, a ordem do cadastro, a descrição nem os enquadramentos dos outros formatos.
+1. **Formato:** A4 (imprimir), Quadrado (redes sociais), Feed 4:5, Stories/Status, Horizontal.
+2. **Modelo:** três prévias reais, geradas na hora com as fotos e os dados públicos do alerta. Uma leva o selo "Recomendado pela MEL", com o motivo.
+3. **Personalizar (opcional):**
+   - trocar a principal; incluir, remover e reordenar as complementares;
+   - arrastar e aproximar a principal (mouse e toque; pinça);
+   - "Restaurar o modelo original".
+   A personalização é independente por formato e por modelo.
+4. **Usar:**
+   - Baixar: o PNG final, com o modelo no nome do arquivo.
+   - Imprimir: página só com o cartaz; A4 sem margens e diálogo de impressão automático.
+   - Compartilhar: compartilhamento nativo com arquivo; sem ele, baixa o cartaz e copia o link do alerta.
+   - Copiar link do alerta.
+   - Trocar de modelo ou de formato a qualquer momento.
 
-### Fluxo no celular (proposto)
+### Os modelos (`lib/poster/models.ts`, `PosterModels.tsx`, `PosterV2.tsx`)
 
-1. Na página do alerta, em "Compartilhar", o tutor toca em "Personalizar cartaz".
-2. Escolhe o formato (chips), as fotos (grade com "Usar como principal", "Incluir"/"Remover", ◀ ▶) e enquadra com o dedo.
-3. Confere a prévia final e toca em Salvar, Baixar ou Compartilhar.
+| Modelo | Ideia | Como se adapta às fotos |
+|---|---|---|
+| 1 — Foto em destaque | Uma foto grande, com o nome sobre ela (degradê) | Foto horizontal: larga em cima. Foto vertical: alta ao lado do texto (quadrado, 4:5, A4). Horizontal: foto à direita |
+| 2 — Várias fotos | Principal + até duas complementares | Complementares empilhadas ou lado a lado, conforme o formato de cada foto. Com 1 foto vertical, ou 1 complementar horizontal numa coluna alta, o espaço que sobraria vira o quadro "Como reconhecer" |
+| 3 — Clássico de poste | Fundo claro, fotos lado a lado, descrição e faixa vermelha com o QR | As fotos ficam na própria proporção; usa menos fotos se alguma fosse ficar estreita ou cortada demais; a sobra da linha vira o quadro "Como reconhecer" |
+
+Regras comuns:
+- nenhuma foto inteira sobre fundo desfocado;
+- corte máximo controlado;
+- texto do quadro com a letra do maior tamanho que couber;
+- selo da bonificação só quando existir;
+- a área de fotos cede espaço ao selo.
+
+### Recomendação (critérios verificáveis, sem análise do conteúdo das fotos)
+
+Os critérios são: quantidade de fotos, orientação, resolução da principal (lado menor < 640 px = pequena) e finalidade do formato. Por exemplo:
+- **A4:** foto pequena ou 2+ fotos → Modelo 3.
+- **Horizontal:** Modelo 1.
+- **Principal pequena com 2+ fotos:** Modelo 2.
+- **3+ fotos no Stories ou 4:5:** Modelo 2.
+- **Demais casos:** Modelo 1.
+- **Sem fotos:** Modelo 3.
+
+### Limitações da demonstração
+
+- A escolha fica no endereço da página. Recarregar mantém, mas outro aparelho não; nada é gravado no servidor e não há localStorage.
+- Gated por `MEL_DEV_ROUTES=1`. Liberar para os usuários depende da aprovação do proprietário.
 
 ### Persistência proposta (exige migration)
 
-- Tabela `poster_framings`, um registro por alerta e formato:
-  - colunas: `lost_case_id`, `format` (check nos 5 formatos), `photo_ids uuid[]` (1 a 3, a principal primeiro), `focus_x`/`focus_y` (0–100), `zoom` (1–3), `updated_at`;
+- Tabela `poster_designs`, um registro por alerta e formato:
+  - colunas: `lost_case_id`, `format` (check nos 5), `model` (1–3), `photo_ids uuid[]` (1–3, a principal primeiro), `focus_x`/`focus_y` (0–100), `zoom` (1–3), `updated_at`;
   - chave única `(lost_case_id, format)`;
   - RLS sem escrita direta.
-- RPC `set_poster_framing(code, format, photo_ids, focus_x, focus_y, zoom)` com `security definer`. Ela valida:
-  - que `auth.uid()` é o tutor do alerta;
+- RPC `save_poster_design(code, format, model, photo_ids, focus_x, focus_y, zoom)` com `security definer`. Ela valida:
+  - que `auth.uid()` é o tutor;
   - que o alerta está ativo;
-  - que todas as fotos pertencem ao pet.
-- RPC `reset_poster_framing(code, format)` com as mesmas validações.
-- Leitura: `get_public_lost_case` passa a devolver os enquadramentos públicos (são só recorte de fotos já públicas).
-- O que reaproveita e o que muda no código:
-  - aproveita `composePhotos` (opção `framing`, já usada pelo protótipo), `cropToDataUrl` (parâmetro `zoom`) e o `PosterPhotoEditor` atual (capa e foco), cujo controle passaria a abrir o editor;
-  - a rota dos cartazes passa a ler o enquadramento salvo em vez do `?foco/&zoom`.
+  - que as fotos são do pet.
+  - `reset_poster_design(code, format)` faz o mesmo para restaurar.
+- Leitura: `get_public_lost_case` devolve o modelo e o enquadramento salvos (só recorte de fotos já públicas).
+- O fluxo passaria a abrir com o que foi salvo, em qualquer aparelho.
+- Qualquer visitante pode gerar e baixar cartazes com os dados públicos; só o tutor salva.
 
 ## 2. Bonificação para quem encontrar o pet
 
