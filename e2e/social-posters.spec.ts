@@ -146,3 +146,23 @@ test("the owner chooses the poster cover and framing; visitors never see the con
   expect(after?.pet.photos[0]?.isPrimary).toBe(true);
   expect(after?.pet.photos[0]?.focus).toBeNull(); // a nova capa ainda está no automático
 });
+
+test("comparison page (DEV only): five formats separately, previous × proposal, full size and download", async ({ page }) => {
+  const t = await createTutorWithActiveAlert("comparacao", { petName: "Compara", photos: 3 });
+  created.push(t.email);
+  await page.goto(`/alerta/${t.code}/cartaz/propostas`);
+  await expect(page.getByRole("heading", { name: /Cartazes de Compara/ })).toBeVisible();
+  for (const f of ["impressao", "square", "portrait", "story", "landscape"]) {
+    const section = page.getByTestId(`comparacao-${f}`);
+    await expect(section.locator("figcaption").filter({ hasText: /^Versão anterior/ })).toBeVisible();
+    await expect(section.locator("figcaption").filter({ hasText: /^Proposta/ })).toBeVisible();
+    await expect(section.getByRole("link", { name: "Ver em tamanho real" })).toHaveCount(2);
+    await expect(section.getByRole("link", { name: "Baixar proposta" })).toHaveAttribute("href", new RegExp(`/cartaz/${f}\\?modelo=proposta.*&baixar=1$`));
+    await expect(section.getByRole("heading", { name: "O que mudou" })).toBeVisible();
+  }
+  // Combinação de fotos: muda só as propostas.
+  await page.getByRole("link", { name: "Só a foto 2" }).click();
+  await expect(page).toHaveURL(/\?fotos=1$/);
+  await expect(page.getByTestId("comparacao-square").getByRole("link", { name: "Baixar proposta" })).toHaveAttribute("href", /fotos=1&baixar=1$/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

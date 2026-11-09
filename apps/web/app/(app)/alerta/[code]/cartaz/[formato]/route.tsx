@@ -19,6 +19,8 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
   const { code, formato } = await ctx.params;
   const params = new URL(request.url).searchParams;
   const proposal = params.get("modelo") === "proposta";
+  // Propostas em avaliação: só no ambiente de teste (DEV), nunca no endereço público.
+  if (proposal && process.env.MEL_DEV_ROUTES !== "1") return new Response("Cartaz não encontrado.", { status: 404 });
   if (!/^[a-z2-9]{6}$/i.test(code) || !(proposal ? isV2Format(formato) : isPosterFormat(formato))) {
     return new Response("Cartaz não encontrado.", { status: 404 });
   }
@@ -54,14 +56,22 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
 
   if (proposal && isV2Format(formato)) {
     // Até 3 fotos; o layout se ajusta às que de fato chegaram (uma foto que falha não deixa buraco).
-    const picked = photos.slice(0, 3);
+    // ?fotos=índices (capa primeiro) para comparar combinações; padrão: até 3 a partir da capa.
+    const wanted = params.get("fotos");
+    const order = wanted && /^\d(,\d){0,2}$/.test(wanted) ? wanted.split(",").map(Number) : [0, 1, 2];
+    const picked = order.map((i) => photos[i]).filter((p): p is (typeof photos)[number] => Boolean(p));
     const fetched = await Promise.all(picked.map(async (p) => ({ source: await fetchPhoto(p.url), focus: p.focus })));
     const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"] } => f.source !== null);
     const [{ layout, photos: ready }, qr] = await Promise.all([composePhotos(formato, sources), qrDataUrl(url, formato === "impressao" ? 860 : 600)]);
     const { width, height } = V2_FORMATS[formato];
     // Sem o domínio oficial configurado (DEV), o link vai marcado como ambiente de teste.
     const dev = !process.env.NEXT_PUBLIC_SITE_URL;
-    return new ImageResponse(<PosterV2 format={formato} content={content} photos={ready} layout={layout} qr={qr} url={url} dev={dev} />, { width, height, fonts: posterFonts, headers });
+    return new ImageResponse(<PosterV2 format={formato} content={content} photos={ready} layout={layout} qr={qr} url={url} dev={dev} />, {
+      width,
+      height,
+      fonts: posterFonts,
+      headers: { ...headers, "X-Robots-Tag": "noindex, nofollow" },
+    });
   }
 
   if (!isPosterFormat(formato)) return new Response("Cartaz não encontrado.", { status: 404 });
