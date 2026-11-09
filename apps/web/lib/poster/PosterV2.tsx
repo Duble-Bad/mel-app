@@ -90,7 +90,11 @@ export function PosterV2({ format, content, photos, qr, url }: Props) {
       <img key={key} src={src} alt="" width={box.width} height={box.height} style={{ objectFit: "cover", borderRadius: radius }} />
     ) : (
       <div key={key} style={{ display: "flex", width: box.width, height: box.height, alignItems: "center", justifyContent: "center", background: "#1d2b44", fontSize: Math.round(box.height * 0.35), borderRadius: radius }}>
-        🐾
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: Math.round(box.height * 0.03) }}>
+          <div style={{ display: "flex" }}>🐾</div>
+          {/* Sem foto: dizer, para não parecer uma imagem quebrada. */}
+          <div style={{ display: "flex", color: MUTED, fontSize: Math.max(22, Math.round(box.height * 0.06)), fontWeight: 700 }}>Sem foto</div>
+        </div>
       </div>
     );
 
@@ -129,7 +133,7 @@ export function PosterV2({ format, content, photos, qr, url }: Props) {
   const qrBlock = ({ size, label }: { size: number; label: number }) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: Math.round(size * 0.04), background: "#fff", padding: Math.round(size * 0.06), borderRadius: Math.round(size * 0.08) }}>
       <img src={qr} alt="QR Code do alerta" width={size} height={size} />
-      <div style={{ display: "flex", color: NAVY, fontSize: label, fontWeight: 800 }}>Escaneie e avise</div>
+      <div style={{ display: "flex", color: NAVY, fontSize: label, fontWeight: 800 }}>{content.found ? "Abrir o alerta" : "Escaneie e avise"}</div>
     </div>
   );
 

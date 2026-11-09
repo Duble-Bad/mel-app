@@ -87,23 +87,23 @@ test("share section: WhatsApp and Facebook links, Instagram/TikTok poster flows,
     [/^Feed quadrado \(1:1/, "square", [1080, 1080]],
   ] as const) {
     await guide.getByRole("button", { name: option }).click();
-    await expect(section.getByTestId("share-status")).toHaveText("Cartaz entregue ao app escolhido. Se o Instagram não apareceu na lista, salve a imagem e publique pelo app do Instagram.");
+    await expect(section.getByTestId("share-status")).toHaveText(
+      "Cartaz entregue ao app escolhido. Se o Instagram não apareceu na lista, salve a imagem e publique pelo app do Instagram. Depois, cole o link do alerta na legenda ou num adesivo de link.",
+    );
     const sent = (await shared()).at(-1)!;
     expect(sent.files?.[0]).toMatchObject({ type: "image/png", name: `MEL-Compartilha-${format}.png`, width: size[0], height: size[1] });
     expect(sent.text).toContain(alertUrl);
   }
 
-  // TikTok: só o formato que a publicação de foto usa (vertical 9:16); tocar de novo fecha.
-  const tiktok = section.getByRole("button", { name: "Publicar no TikTok" });
+  // TikTok: um formato só (vertical 9:16), então o toque já envia — sem painel de escolha.
+  const tiktok = section.getByRole("button", { name: /^Publicar no TikTok/ });
+  await expect(tiktok).not.toHaveAttribute("aria-expanded");
   await tiktok.click();
-  await expect(instagram).toHaveAttribute("aria-expanded", "false");
-  await expect(guide).toContainText("Cartaz para publicar no TikTok");
-  await expect(guide.getByRole("button")).toHaveCount(1);
-  await guide.getByRole("button", { name: /^Foto vertical \(9:16/ }).click();
-  await expect(section.getByTestId("share-status")).toContainText("Se o TikTok não apareceu na lista");
-  expect((await shared()).at(-1)!.files?.[0]).toMatchObject({ width: 1080, height: 1920 });
-  await tiktok.click();
-  await expect(guide).toHaveCount(0);
+  await expect(guide).toHaveCount(0); // o painel do Instagram fecha e nenhum outro abre
+  await expect(section.getByTestId("share-status")).toHaveText(
+    "Cartaz entregue ao app escolhido. Se o TikTok não apareceu na lista, salve a imagem e publique pelo app do TikTok. No TikTok, publique como foto e cole o link do alerta na legenda.",
+  );
+  expect((await shared()).at(-1)!.files?.[0]).toMatchObject({ name: "MEL-Compartilha-story.png", width: 1080, height: 1920 });
 
   // Opções que já existiam: Mais opções (menu nativo), Copiar link e Cartaz e QR Code.
   await section.getByRole("button", { name: "Mais opções" }).click();
@@ -136,7 +136,13 @@ test("Instagram/TikTok without file sharing (desktop): the chosen format is down
   expect(download.suggestedFilename()).toBe("MEL-SemArquivo-portrait.png");
   const meta = await sharp(await download.createReadStream().then(async (st) => Buffer.concat(await st.toArray()))).metadata();
   expect([meta.width, meta.height]).toEqual([1080, 1350]);
-  await expect(section.getByTestId("share-status")).toHaveText("Este navegador não envia imagens direto para o Instagram. Baixamos o cartaz: abra o app do Instagram e publique a partir da galeria.");
+  await expect(section.getByTestId("share-status")).toHaveText(
+    "Este navegador não envia imagens direto para o Instagram. Baixamos o cartaz: abra o app do Instagram e publique a partir da galeria. Depois, cole o link do alerta na legenda ou num adesivo de link.",
+  );
+  // TikTok, sem envio de arquivos: um toque já baixa o 9:16.
+  const [tiktokDownload] = await Promise.all([page.waitForEvent("download"), section.getByRole("button", { name: /^Publicar no TikTok/ }).click()]);
+  expect(tiktokDownload.suggestedFilename()).toBe("MEL-SemArquivo-story.png");
+  await expect(section.getByTestId("share-status")).toContainText("Este navegador não envia imagens direto para o TikTok.");
   // Nada foi enviado ao menu do sistema (não houve compartilhamento a fingir).
   expect(await page.evaluate(() => (window as unknown as { __shared: unknown[] }).__shared.length)).toBe(0);
   await ctx.close();

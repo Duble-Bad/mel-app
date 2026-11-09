@@ -23,7 +23,7 @@ const IMAGE_FORMATS: Record<ImageNetwork, { app: string; options: { format: Imag
   },
   tiktok: {
     app: "TikTok",
-    // Publicação de foto no TikTok ocupa a tela toda: vertical 9:16.
+    // Publicação de foto no TikTok ocupa a tela toda: só vertical 9:16 (um toque já envia).
     options: [{ format: "story", label: "Foto vertical", hint: "9:16, tela cheia" }],
     note: "No TikTok, publique como foto e cole o link do alerta na legenda.",
   },
@@ -38,7 +38,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
   const [error, setError] = useState<string | null>(null);
   const [guide, setGuide] = useState<ImageNetwork | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [preparing, setPreparing] = useState<ImageFormat | null>(null);
+  const [preparing, setPreparing] = useState<{ network: ImageNetwork; format: ImageFormat } | null>(null);
   const url = () => `${window.location.origin}${path}`;
   const title = lostCase.status === "FOUND" ? `Encontrado: ${lostCase.pet.name}` : `Procura-se: ${lostCase.pet.name}`;
 
@@ -86,10 +86,10 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
    * confirmar que aceita arquivos); senão baixa a imagem. Um toque, um resultado.
    */
   async function sendPoster(network: ImageNetwork, format: ImageFormat) {
-    const app = IMAGE_FORMATS[network].app;
+    const { app, note } = IMAGE_FORMATS[network];
     setError(null);
     setNotice(null);
-    setPreparing(format);
+    setPreparing({ network, format });
     try {
       const res = await fetch(`${path}/cartaz/${format}`);
       if (!res.ok) throw new Error(String(res.status));
@@ -97,7 +97,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
       const file = new File([await res.blob()], name, { type: "image/png" });
       if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title, text: shareText(lostCase, url()) });
-        setNotice(`Cartaz entregue ao app escolhido. Se o ${app} não apareceu na lista, salve a imagem e publique pelo app do ${app}.`);
+        setNotice(`Cartaz entregue ao app escolhido. Se o ${app} não apareceu na lista, salve a imagem e publique pelo app do ${app}. ${note}`);
         return;
       }
       // Sem envio de arquivos neste navegador (ex.: computador): baixa o cartaz.
@@ -109,7 +109,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(href), 10_000);
-      setNotice(`Este navegador não envia imagens direto para o ${app}. Baixamos o cartaz: abra o app do ${app} e publique a partir da galeria.`);
+      setNotice(`Este navegador não envia imagens direto para o ${app}. Baixamos o cartaz: abra o app do ${app} e publique a partir da galeria. ${note}`);
     } catch (err) {
       if ((err as Error).name !== "AbortError") setError("Não conseguimos preparar o cartaz agora. Tente de novo ou use “Cartaz e QR Code”.");
     } finally {
@@ -122,11 +122,18 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
   const tile =
     "flex min-h-[84px] w-full flex-col items-center justify-center gap-1.5 rounded-md border-2 border-border bg-surface px-1 py-2 text-sm font-semibold transition-colors hover:border-border-strong hover:bg-surface-muted aria-expanded:border-primary";
 
-  const networks: { id: Network; name: string; label: string; icon: ReactNode; onClick: () => void; expands?: boolean }[] = [
-    { id: "whatsapp", name: "WhatsApp", label: "Compartilhar no WhatsApp", icon: <WhatsAppIcon />, onClick: whatsapp },
-    { id: "facebook", name: "Facebook", label: "Compartilhar no Facebook", icon: <FacebookIcon />, onClick: facebook },
-    { id: "tiktok", name: "TikTok", label: "Publicar no TikTok", icon: <TikTokIcon />, onClick: () => openGuide("tiktok"), expands: true },
-    { id: "instagram", name: "Instagram", label: "Publicar no Instagram", icon: <InstagramIcon />, onClick: () => openGuide("instagram"), expands: true },
+  /** Rede de imagem: com um formato só (TikTok), o toque já envia; com vários (Instagram), pergunta. */
+  const imageNetwork = (n: ImageNetwork) => {
+    const only = IMAGE_FORMATS[n].options.length === 1 ? IMAGE_FORMATS[n].options[0]! : null;
+    return only
+      ? { onClick: () => (setGuide(null), sendPoster(n, only.format)), expands: false }
+      : { onClick: () => openGuide(n), expands: true };
+  };
+  const networks: { id: Network; name: string; label: string; icon: ReactNode; onClick: () => void; expands: boolean }[] = [
+    { id: "whatsapp", name: "WhatsApp", label: "Compartilhar no WhatsApp", icon: <WhatsAppIcon />, onClick: whatsapp, expands: false },
+    { id: "facebook", name: "Facebook", label: "Compartilhar no Facebook", icon: <FacebookIcon />, onClick: facebook, expands: false },
+    { id: "tiktok", name: "TikTok", label: "Publicar no TikTok (cartaz vertical 9:16)", icon: <TikTokIcon />, ...imageNetwork("tiktok") },
+    { id: "instagram", name: "Instagram", label: "Publicar no Instagram", icon: <InstagramIcon />, ...imageNetwork("instagram") },
   ];
 
   return (
@@ -137,13 +144,14 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
             <button
               type="button"
               onClick={n.onClick}
+              disabled={preparing?.network === n.id}
               aria-label={n.label}
               aria-expanded={n.expands ? guide === n.id : undefined}
               aria-controls={n.expands ? "compartilhar-imagem" : undefined}
               className={tile}
             >
               {n.icon}
-              <span aria-hidden="true">{n.name}</span>
+              <span aria-hidden="true">{preparing?.network === n.id && !n.expands ? "Preparando…" : n.name}</span>
             </button>
           </li>
         ))}
@@ -152,7 +160,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
       {guide && (
         <div id="compartilhar-imagem" className="flex flex-col gap-3 rounded-md border border-border bg-surface-muted p-4" data-testid="share-image-guide">
           <p className="font-semibold">
-            {guide === "tiktok" ? "Cartaz para publicar no TikTok" : "Qual formato do Instagram?"}
+            Qual formato do {IMAGE_FORMATS[guide].app}?
           </p>
           <div className={`grid gap-2 ${IMAGE_FORMATS[guide].options.length > 1 ? "grid-cols-3" : "grid-cols-1"}`}>
             {IMAGE_FORMATS[guide].options.map((o) => (
@@ -164,7 +172,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
                 aria-label={`${o.label} (${o.hint}): preparar o cartaz para o ${IMAGE_FORMATS[guide].app}`}
                 className="flex min-h-16 flex-col items-center justify-center rounded-md border-2 border-border-strong bg-surface px-2 py-2 text-center hover:bg-surface-muted disabled:opacity-60"
               >
-                <span className="font-semibold">{preparing === o.format ? "Preparando…" : o.label}</span>
+                <span className="font-semibold">{preparing?.format === o.format ? "Preparando…" : o.label}</span>
                 <span className="text-xs text-text-secondary">{o.hint}</span>
               </button>
             ))}
