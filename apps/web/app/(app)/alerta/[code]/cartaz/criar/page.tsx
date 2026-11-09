@@ -36,7 +36,7 @@ async function Studio({ code }: { code: string }) {
           ‹ Voltar ao alerta
         </Link>
         <h1 className="text-2xl font-bold">Criar cartaz de {c.pet.name}</h1>
-        <p className="text-text-secondary">Escolha o formato e o modelo. O cartaz já sai com as fotos e as informações públicas do alerta.</p>
+        <p className="hidden text-text-secondary sm:block">Escolha o formato e o modelo. O cartaz já sai com as fotos e as informações públicas do alerta.</p>
       </div>
       <PosterStudio code={c.code} alertUrl={alertUrl} photos={c.pet.photos.map((p) => ({ url: p.url }))} />
       <p className="text-xs text-text-secondary">

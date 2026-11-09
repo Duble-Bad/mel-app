@@ -1,6 +1,34 @@
 "use client";
 
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  LayoutGrid,
+  Link2,
+  Maximize2,
+  Minus,
+  PawPrint,
+  Plus,
+  Printer,
+  Proportions,
+  RectangleHorizontal,
+  RectangleVertical,
+  RotateCcw,
+  Send,
+  Share2,
+  SkipForward,
+  SlidersHorizontal,
+  Smartphone,
+  Sparkles,
+  Square,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { StepIndicator, type StepState } from "@/components/ui/StepIndicator";
 import { FORMAT_PURPOSE, modelLayout, POSTER_MODEL_IDS, POSTER_MODELS, recommendModel, type PosterModel } from "@/lib/poster/models";
 import { V2_FORMATS, type PosterV2Format } from "@/lib/poster/PosterV2";
 
@@ -14,26 +42,73 @@ import { V2_FORMATS, type PosterV2Format } from "@/lib/poster/PosterV2";
  */
 
 const FORMATS: PosterV2Format[] = ["impressao", "square", "portrait", "story", "landscape"];
+type Step = 1 | 2 | 3 | 4;
 type Framing = { x: number; y: number; zoom: number };
 type Custom = { order: number[]; framing: Framing | null };
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
+const STEPS: { label: string; icon: LucideIcon }[] = [
+  { label: "Formato", icon: Proportions },
+  { label: "Modelo", icon: LayoutGrid },
+  { label: "Personalizar", icon: SlidersHorizontal },
+  { label: "Usar", icon: Send },
+];
+
+/** Onde cada formato é usado, em linguagem simples (o título e as medidas vêm do gerador). */
+const FORMAT_CARD: Record<PosterV2Format, { icon: LucideIcon; where: string }> = {
+  impressao: {
+    icon: Printer,
+    where: "Imprimir e colar em postes, comércios, condomínios e murais.",
+  },
+  square: {
+    icon: Square,
+    where: "Grupos de WhatsApp, Facebook e feed do Instagram.",
+  },
+  portrait: {
+    icon: RectangleVertical,
+    where: "Feed do Instagram e Facebook: ocupa mais espaço na tela.",
+  },
+  story: {
+    icon: Smartphone,
+    where: "Stories do Instagram e Status do WhatsApp, em tela cheia.",
+  },
+  landscape: {
+    icon: RectangleHorizontal,
+    where: "Links, X (Twitter) e publicações largas.",
+  },
+};
+
+// Botões do fluxo: vermelho da identidade MEL (contraste ≥ 4,5:1 com branco), 48 px de toque.
+const btn =
+  "inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-4 font-semibold transition-[background-color,filter,transform] duration-200 ease-mel active:scale-[.985]";
+const btnPrimary = `${btn} bg-status-lost-solid text-white hover:brightness-110`;
+const btnSecondary = `${btn} border border-border-strong bg-surface-elevated text-text-primary hover:bg-surface-muted`;
+const btnLink = "inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-sm font-semibold text-link underline-offset-4 hover:underline";
+
 export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUrl: string; photos: { url: string }[] }) {
   const defaultOrder = useMemo(() => photos.slice(0, 3).map((_, i) => i), [photos]);
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<Step>(1);
   const [format, setFormat] = useState<PosterV2Format | null>(null);
   const [model, setModel] = useState<PosterModel | null>(null);
   // Personalização independente por formato e modelo.
   const [custom, setCustom] = useState<Record<string, Custom>>({});
   const [sizes, setSizes] = useState<Record<number, { width: number; height: number }>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [zoomed, setZoomed] = useState<{ src: string; title: string } | null>(null);
   const restored = useRef(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const moved = useRef(false);
 
   // Tamanho real das fotos (layout e recomendação dependem da orientação e da resolução).
   useEffect(() => {
     photos.forEach((p, i) => {
       const img = new Image();
-      img.onload = () => setSizes((s) => ({ ...s, [i]: { width: img.naturalWidth, height: img.naturalHeight } }));
+      img.onload = () =>
+        setSizes((s) => ({
+          ...s,
+          [i]: { width: img.naturalWidth, height: img.naturalHeight },
+        }));
       img.src = p.url;
     });
   }, [photos]);
@@ -47,7 +122,11 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
     const m = Number(q.get("estilo"));
     if (f && f in V2_FORMATS) {
       const fmt = f as PosterV2Format;
-      const order = (q.get("fotos") ?? "").split(",").filter(Boolean).map(Number).filter((i) => photos[i]);
+      const order = (q.get("fotos") ?? "")
+        .split(",")
+        .filter(Boolean)
+        .map(Number)
+        .filter((i) => photos[i]);
       const foco = /^(\d{1,3}),(\d{1,3})$/.exec(q.get("foco") ?? "");
       const zoom = Number(q.get("zoom"));
       /* eslint-disable react-hooks/set-state-in-effect -- restaura uma única vez o estado salvo na URL */
@@ -55,7 +134,18 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
       if (m === 1 || m === 2 || m === 3) {
         setModel(m);
         if (order.length || foco)
-          setCustom({ [`${fmt}-${m}`]: { order: order.length ? order : defaultOrder, framing: foco ? { x: Number(foco[1]), y: Number(foco[2]), zoom: zoom >= 1 && zoom <= 3 ? zoom : 1 } : null } });
+          setCustom({
+            [`${fmt}-${m}`]: {
+              order: order.length ? order : defaultOrder,
+              framing: foco
+                ? {
+                    x: Number(foco[1]),
+                    y: Number(foco[2]),
+                    zoom: zoom >= 1 && zoom <= 3 ? zoom : 1,
+                  }
+                : null,
+            },
+          });
         setStep(q.get("passo") === "3" ? 3 : 4);
       } else setStep(2);
       /* eslint-enable react-hooks/set-state-in-effect */
@@ -63,8 +153,10 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
   }, [photos, defaultOrder]);
 
   const key = format && model ? `${format}-${model}` : "";
+  const isEdited = (c: Custom | undefined) => Boolean(c && (c.framing || c.order.join(",") !== defaultOrder.join(",")));
   const current: Custom = custom[key] ?? { order: defaultOrder, framing: null };
   const setCurrent = (c: Custom) => setCustom((all) => ({ ...all, [key]: c }));
+  const edited = isEdited(custom[key]);
 
   const posterUrl = (fmt: PosterV2Format, m: PosterModel, c: Custom | null, download = false) => {
     const q = new URLSearchParams({ modelo: "proposta", estilo: String(m) });
@@ -96,175 +188,350 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
     window.history.replaceState(null, "", s ? `?${s}` : window.location.pathname);
   }, [format, model, step, custom, defaultOrder]);
 
+  // Ajustes de outros formatos/modelos ficam só na memória desta aba: avisa antes de fechá-la.
+  const unsaved = Object.entries(custom).some(([k, c]) => k !== key && isEdited(c));
+  useEffect(() => {
+    if (!unsaved) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [unsaved]);
+
+  // Ao trocar de etapa, o foco vai para o título dela (teclado e leitor de tela sabem onde estão).
+  useEffect(() => {
+    if (!moved.current) return;
+    heading.current?.focus();
+    heading.current?.scrollIntoView({ block: "nearest" });
+  }, [step]);
+  const go = (s: Step) => {
+    moved.current = true;
+    setNotice(null);
+    setFailed(false);
+    setStep(s);
+  };
+
   const ordered = (order: number[]) => order.map((i) => sizes[i]).filter((s): s is { width: number; height: number } => Boolean(s));
   const allLoaded = photos.every((_, i) => sizes[i]);
   const recommended = format && allLoaded ? recommendModel(format, ordered(defaultOrder)) : null;
 
-  const steps = ["Formato", "Modelo", "Personalizar", "Usar"];
+  // A etapa 3 só aparece concluída se houve ajuste; sem ajuste, aparece como pulada.
+  const states: StepState[] = [1, 2, 3, 4].map((n) => {
+    if (n === step) return failed ? "error" : "current";
+    if (n > step) return "pending";
+    if (n === 3) return edited ? "done" : "skipped";
+    return "done";
+  });
+
+  const title = (text: string) => (
+    <h2 ref={heading} tabIndex={-1} className="text-xl font-bold sm:text-2xl">
+      {text}
+    </h2>
+  );
+
   return (
     <div className="flex flex-col gap-6" data-testid="criar-cartaz">
-      <ol className="flex flex-wrap gap-2 text-sm" aria-label="Etapas">
-        {steps.map((s, i) => (
-          <li key={s} aria-current={step === i + 1 ? "step" : undefined} className={`rounded-full px-3 py-1 font-semibold ${step === i + 1 ? "bg-[#e5484d] text-white" : "border border-border text-text-secondary"}`}>
-            {i + 1}. {s}
-          </li>
-        ))}
-      </ol>
+      <StepIndicator steps={STEPS} states={states} onSelect={(i) => go((i + 1) as Step)} label="Etapas do cartaz" />
 
       {step === 1 && (
-        <section className="flex flex-col gap-3" aria-labelledby="passo-formato">
-          <h2 id="passo-formato" className="text-xl font-bold">
-            Onde você vai usar o cartaz?
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {FORMATS.map((f) => (
-              <button
-                key={f}
-                type="button"
-                onClick={() => {
-                  setFormat(f);
-                  setModel(null);
-                  setStep(2);
-                }}
-                className="flex items-center gap-4 rounded-lg border border-border-strong bg-surface p-4 text-left shadow-card"
-                data-testid={`formato-${f}`}
-              >
-                <FormatShape format={f} />
-                <span className="flex flex-col">
-                  <span className="text-lg font-bold">{FORMAT_PURPOSE[f].title}</span>
-                  <span className="text-text-secondary">{FORMAT_PURPOSE[f].purpose}</span>
-                  <span className="text-xs text-text-secondary">
-                    {V2_FORMATS[f].width}×{V2_FORMATS[f].height}
-                  </span>
-                </span>
-              </button>
-            ))}
+        <section className="flex flex-col gap-4" aria-label="Formato">
+          <div className="flex flex-col gap-1">
+            {title("Onde você vai usar o cartaz?")}
+            <p className="text-text-secondary">Escolha um formato. Depois você pode voltar e criar outro.</p>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {FORMATS.map((f) => {
+              const selected = format === f;
+              const Icon = FORMAT_CARD[f].icon;
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => {
+                    if (f !== format) setModel(null);
+                    setFormat(f);
+                    go(2);
+                  }}
+                  className={`group relative flex items-center gap-4 rounded-lg border-2 bg-surface p-4 text-left shadow-card transition-colors duration-200 ease-mel hover:border-status-lost-solid ${selected ? "border-status-lost-solid bg-status-lost-soft" : "border-border"}`}
+                  data-testid={`formato-${f}`}
+                >
+                  <FormatThumb format={f} />
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="flex items-center gap-2 text-lg font-bold">
+                      <Icon aria-hidden="true" className="size-5 shrink-0 text-status-lost" />
+                      {FORMAT_PURPOSE[f].title}
+                    </span>
+                    <span className="text-sm text-text-secondary">{FORMAT_CARD[f].where}</span>
+                    <span className="text-xs text-text-secondary tabular-nums">
+                      {V2_FORMATS[f].width} × {V2_FORMATS[f].height} px
+                    </span>
+                  </span>
+                  {selected && <span className="absolute top-2 right-2 rounded-full bg-status-lost-solid px-2 py-0.5 text-xs font-bold text-white">Selecionado</span>}
+                </button>
+              );
+            })}
+          </div>
+          {format && (
+            <StepNav>
+              <span />
+              <button type="button" className={btnPrimary} onClick={() => go(2)}>
+                Continuar com {FORMAT_PURPOSE[format].title} <ArrowRight aria-hidden="true" className="size-5" />
+              </button>
+            </StepNav>
+          )}
         </section>
       )}
 
       {step === 2 && format && (
-        <section className="flex flex-col gap-3" aria-labelledby="passo-modelo">
-          <h2 id="passo-modelo" className="text-xl font-bold">
-            Escolha o modelo — {FORMAT_PURPOSE[format].title}
-          </h2>
-          <p className="text-text-secondary">As prévias já usam as fotos e os dados do seu alerta. Você pode trocar de modelo quando quiser.</p>
-          <div className="grid gap-4 md:grid-cols-3">
-            {POSTER_MODEL_IDS.map((m) => (
-              <figure key={m} className={`flex flex-col gap-2 rounded-lg bg-surface p-3 shadow-card ${recommended?.model === m ? "ring-2 ring-[#f6b928]" : ""}`} data-testid={`modelo-${m}`}>
-                <figcaption className="flex flex-col gap-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold">
-                      Modelo {m} — {POSTER_MODELS[m].name}
-                    </span>
-                    {recommended?.model === m && <span className="rounded-md bg-[#f6b928] px-2 py-0.5 text-xs font-bold text-[#0a111d]">Recomendado pela MEL</span>}
-                  </span>
-                  <span className="text-sm text-text-secondary">{POSTER_MODELS[m].summary}</span>
-                  {adaptedNote(format, m, ordered(defaultOrder).map((s) => s.width / s.height)) && (
-                    <span className="text-xs text-text-secondary">{adaptedNote(format, m, ordered(defaultOrder).map((s) => s.width / s.height))}</span>
-                  )}
-                </figcaption>
-                <PosterImage src={posterUrl(format, m, null)} alt={`Prévia do modelo ${m}`} />
-                <button type="button" className="min-h-11 rounded-md bg-[#e5484d] px-4 font-semibold text-white" onClick={() => { setModel(m); setStep(4); }}>
-                  Usar o Modelo {m}
-                </button>
-              </figure>
-            ))}
+        <section className="flex flex-col gap-4" aria-label="Modelo">
+          <div className="flex flex-col gap-1">
+            {title(`Escolha o modelo — ${FORMAT_PURPOSE[format].title}`)}
+            <p className="text-text-secondary">As prévias já usam as fotos e os dados do seu alerta. Toque em “Ampliar” para ver o cartaz inteiro.</p>
           </div>
-          {recommended && <p className="text-sm text-text-secondary">Por que recomendamos o Modelo {recommended.model}: {recommended.reason}</p>}
-          <button type="button" className="self-start text-sm font-semibold text-link" onClick={() => setStep(1)}>
-            ‹ Escolher outro formato
-          </button>
+          <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+            {POSTER_MODEL_IDS.map((m) => {
+              const isRec = recommended?.model === m;
+              const note = adaptedNote(
+                format,
+                m,
+                ordered(defaultOrder).map((s) => s.width / s.height),
+              );
+              const src = posterUrl(format, m, custom[`${format}-${m}`] ?? null);
+              const wide = format === "landscape";
+              return (
+                <article
+                  key={m}
+                  className={`flex flex-col gap-3 rounded-lg border-2 bg-surface p-3 shadow-card ${isRec ? "border-[#f6b928]" : model === m ? "border-status-lost-solid" : "border-transparent"}`}
+                  data-testid={`modelo-${m}`}
+                  aria-labelledby={`modelo-${m}-nome`}
+                >
+                  <div className={`flex flex-1 gap-3 md:flex-col ${wide ? "flex-col" : "flex-row"}`}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setZoomed({
+                          src,
+                          title: `Modelo ${m} — ${POSTER_MODELS[m].name}`,
+                        })
+                      }
+                      className={`flex shrink-0 items-center justify-center rounded-md bg-surface-muted p-1.5 md:h-64 md:w-full ${wide ? "w-full" : "w-[42%] self-start"}`}
+                      aria-label={`Ampliar o Modelo ${m}`}
+                    >
+                      <PosterImage src={src} alt={`Prévia do Modelo ${m}`} onError={() => setFailed(true)} className="md:max-h-[15rem]" />
+                    </button>
+                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                      <div className="flex flex-col gap-1">
+                        <h3 id={`modelo-${m}-nome`} className="leading-tight font-bold">
+                          Modelo {m} — {POSTER_MODELS[m].name}
+                        </h3>
+                        {isRec && (
+                          <span className="inline-flex items-center gap-1 self-start rounded-md bg-[#f6b928] px-2 py-0.5 text-xs font-bold text-[#0a111d]">
+                            <Sparkles aria-hidden="true" className="size-3.5" /> Recomendado pela MEL
+                          </span>
+                        )}
+                        <p className="text-sm text-text-secondary">{POSTER_MODELS[m].summary}</p>
+                        {isRec && recommended && <p className="text-sm">Por quê: {recommended.reason}</p>}
+                        {note && <p className="text-xs text-text-secondary">{note}</p>}
+                        {isEdited(custom[`${format}-${m}`]) && <p className="text-xs font-semibold text-status-lost">Com os seus ajustes (guardados nesta página).</p>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[1fr_auto] gap-2 md:grid-cols-1">
+                    <button
+                      type="button"
+                      className={`${btnPrimary} px-3 whitespace-nowrap`}
+                      onClick={() => {
+                        setModel(m);
+                        go(3);
+                      }}
+                    >
+                      Escolher este modelo
+                    </button>
+                    <button
+                      type="button"
+                      className={`${btnSecondary} px-3 text-sm`}
+                      onClick={() =>
+                        setZoomed({
+                          src,
+                          title: `Modelo ${m} — ${POSTER_MODELS[m].name}`,
+                        })
+                      }
+                    >
+                      <Maximize2 aria-hidden="true" className="size-4" /> Ampliar
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          {failed && <RetryNote />}
+          <StepNav>
+            <button type="button" className={btnSecondary} onClick={() => go(1)}>
+              <ArrowLeft aria-hidden="true" className="size-5" /> Voltar
+            </button>
+            <span className="text-sm text-text-secondary">Você pode trocar de modelo quando quiser.</span>
+          </StepNav>
         </section>
       )}
 
       {step === 3 && format && model && (
         <Customize
+          title={title}
           format={format}
           model={model}
           photos={photos}
           sizes={sizes}
           value={current}
           defaultOrder={defaultOrder}
+          edited={edited}
           onChange={setCurrent}
           previewUrl={posterUrl(format, model, current)}
-          onDone={() => setStep(4)}
-          onBack={() => setStep(2)}
+          onZoom={(src) => setZoomed({ src, title: `Modelo ${model} — prévia personalizada` })}
+          onError={() => setFailed(true)}
+          onDone={() => go(4)}
+          onBack={() => go(2)}
         />
       )}
 
       {step === 4 && format && model && (
-        <section className="flex flex-col gap-3" aria-labelledby="passo-usar">
-          <h2 id="passo-usar" className="text-xl font-bold">
-            Seu cartaz — {FORMAT_PURPOSE[format].title}, Modelo {model}
-          </h2>
-          <div className="mx-auto w-full max-w-md">
-            <PosterImage src={posterUrl(format, model, custom[key] ?? null)} alt="Cartaz pronto" testId="cartaz-final" />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <a href={posterUrl(format, model, custom[key] ?? null, true)} className="flex min-h-12 items-center justify-center rounded-md bg-[#e5484d] px-4 font-semibold text-white">
-              Baixar
-            </a>
-            <a
-              href={`/alerta/${code}/cartaz/imprimir?${new URL(posterUrl(format, model, custom[key] ?? null), "http://x").searchParams.toString()}&formato=${format}`}
-              target="_blank"
-              rel="noopener"
-              className="flex min-h-12 items-center justify-center rounded-md border border-border-strong px-4 font-semibold"
-            >
-              Imprimir
-            </a>
-            <button
-              type="button"
-              className="min-h-12 rounded-md border border-border-strong px-4 font-semibold"
-              onClick={async () => {
-                setNotice(null);
-                try {
-                  const blob = await (await fetch(posterUrl(format, model, custom[key] ?? null))).blob();
-                  const file = new File([blob], `MEL-cartaz-${format}-modelo-${model}.png`, { type: "image/png" });
-                  if (navigator.canShare?.({ files: [file] })) {
-                    await navigator.share({ files: [file], text: `Ajude a encontrar: ${alertUrl}` });
-                    return;
-                  }
-                  window.location.href = posterUrl(format, model, custom[key] ?? null, true);
-                  await navigator.clipboard?.writeText(alertUrl).catch(() => undefined);
-                  setNotice("Este navegador não compartilha imagens: baixamos o cartaz e copiamos o link do alerta.");
-                } catch (err) {
-                  if ((err as Error).name !== "AbortError") setNotice("Não deu para compartilhar agora. Use Baixar ou copie o link do alerta.");
-                }
-              }}
-            >
-              Compartilhar
-            </button>
-          </div>
-          <button
-            type="button"
-            className="self-start text-sm font-semibold text-link"
-            onClick={async () => {
-              await navigator.clipboard?.writeText(alertUrl).catch(() => undefined);
-              setNotice("Link do alerta copiado.");
-            }}
-          >
-            Copiar link do alerta
-          </button>
-          {notice && (
-            <p role="status" className="text-sm font-medium">
-              {notice}
+        <section className="flex flex-col gap-4" aria-label="Usar">
+          <div className="flex flex-col gap-1">
+            {title("Seu cartaz está pronto")}
+            <p className="text-text-secondary">
+              {FORMAT_PURPOSE[format].title} · Modelo {model} — {POSTER_MODELS[model].name}
+              {edited ? " · com os seus ajustes" : ""}
             </p>
-          )}
-          <div className="flex flex-wrap gap-3 text-sm font-semibold">
-            <button type="button" className="text-link" onClick={() => setStep(3)}>
-              Personalizar fotos e enquadramento
-            </button>
-            <button type="button" className="text-link" onClick={() => setStep(2)}>
-              Trocar de modelo
-            </button>
-            <button type="button" className="text-link" onClick={() => setStep(1)}>
-              Outro formato
-            </button>
+          </div>
+          {/* No celular as ações vêm antes do cartaz (sem rolar); no desktop, cartaz à esquerda e ações à direita. */}
+          <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,320px)] md:grid-rows-[auto_1fr] md:gap-x-6">
+            <div className="order-2 flex flex-col items-center gap-2 rounded-lg bg-surface-muted p-3 md:order-none md:col-start-1 md:row-span-2 md:row-start-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setZoomed({
+                    src: posterUrl(format, model, custom[key] ?? null),
+                    title: "Cartaz pronto",
+                  })
+                }
+                aria-label="Ampliar o cartaz"
+                className="flex max-w-full justify-center"
+              >
+                <PosterImage
+                  src={posterUrl(format, model, custom[key] ?? null)}
+                  alt="Cartaz pronto"
+                  testId="cartaz-final"
+                  onError={() => setFailed(true)}
+                  className="max-h-[42vh] max-w-full md:max-h-[68vh]"
+                />
+              </button>
+              <button
+                type="button"
+                className={btnLink}
+                onClick={() =>
+                  setZoomed({
+                    src: posterUrl(format, model, custom[key] ?? null),
+                    title: "Cartaz pronto",
+                  })
+                }
+              >
+                <Maximize2 aria-hidden="true" className="size-4" /> Ampliar para conferir os detalhes
+              </button>
+            </div>
+            <div className="order-1 flex flex-col gap-3 md:order-none md:col-start-2 md:row-start-1">
+              <div className="grid grid-cols-3 gap-2 md:grid-cols-1" data-testid="acoes-principais">
+                <a href={posterUrl(format, model, custom[key] ?? null, true)} className={`${btnPrimary} flex-col gap-1 px-1 text-sm sm:text-[15px] md:flex-row md:gap-2`}>
+                  <Download aria-hidden="true" className="size-5" /> Baixar
+                </a>
+                <a
+                  href={`/alerta/${code}/cartaz/imprimir?${new URL(posterUrl(format, model, custom[key] ?? null), "http://x").searchParams.toString()}&formato=${format}`}
+                  target="_blank"
+                  rel="noopener"
+                  className={`${btnSecondary} flex-col gap-1 px-1 text-sm sm:text-[15px] md:flex-row md:gap-2`}
+                >
+                  <Printer aria-hidden="true" className="size-5" /> Imprimir
+                </a>
+                <button
+                  type="button"
+                  className={`${btnSecondary} flex-col gap-1 px-1 text-sm sm:text-[15px] md:flex-row md:gap-2`}
+                  onClick={async () => {
+                    setNotice(null);
+                    try {
+                      const blob = await (await fetch(posterUrl(format, model, custom[key] ?? null))).blob();
+                      const file = new File([blob], `MEL-cartaz-${format}-modelo-${model}.png`, { type: "image/png" });
+                      if (navigator.canShare?.({ files: [file] })) {
+                        await navigator.share({
+                          files: [file],
+                          text: `Ajude a encontrar: ${alertUrl}`,
+                        });
+                        return;
+                      }
+                      window.location.href = posterUrl(format, model, custom[key] ?? null, true);
+                      await navigator.clipboard?.writeText(alertUrl).catch(() => undefined);
+                      setNotice("Este navegador não compartilha imagens: baixamos o cartaz e copiamos o link do alerta.");
+                    } catch (err) {
+                      if ((err as Error).name !== "AbortError") setNotice("Não deu para compartilhar agora. Use Baixar ou copie o link do alerta.");
+                    }
+                  }}
+                >
+                  <Share2 aria-hidden="true" className="size-5" /> Compartilhar
+                </button>
+              </div>
+              {format === "impressao" && <p className="text-sm text-text-secondary">Imprimir abre o A4 em tamanho real, sem margens, numa nova aba.</p>}
+              {notice && (
+                <p role="status" className="rounded-md bg-surface-muted p-3 text-sm font-medium">
+                  {notice}
+                </p>
+              )}
+              {failed && <RetryNote />}
+            </div>
+            <div className="order-3 flex flex-col border-t border-border pt-3 md:order-none md:col-start-2 md:row-start-2">
+              <p className="text-sm font-semibold text-text-secondary">Mais opções</p>
+              <button type="button" className={btnLink} onClick={() => go(3)}>
+                <SlidersHorizontal aria-hidden="true" className="size-4" /> Personalizar novamente
+              </button>
+              <button type="button" className={btnLink} onClick={() => go(2)}>
+                <LayoutGrid aria-hidden="true" className="size-4" /> Trocar modelo
+              </button>
+              <button type="button" className={btnLink} onClick={() => go(1)}>
+                <Proportions aria-hidden="true" className="size-4" /> Escolher outro formato
+              </button>
+              <button
+                type="button"
+                className={btnLink}
+                onClick={async () => {
+                  await navigator.clipboard?.writeText(alertUrl).catch(() => undefined);
+                  setNotice("Link do alerta copiado.");
+                }}
+              >
+                <Link2 aria-hidden="true" className="size-4" /> Copiar link do alerta
+              </button>
+            </div>
           </div>
         </section>
       )}
+
+      {zoomed && <PosterZoom src={zoomed.src} title={zoomed.title} onClose={() => setZoomed(null)} />}
     </div>
+  );
+}
+
+/** Barra de navegação da etapa: fica presa ao rodapé da tela enquanto se rola a etapa. */
+function StepNav({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-10 -mx-4 sm:static flex items-center justify-between gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:mx-0 sm:rounded-lg sm:border sm:px-3">
+      {children}
+    </div>
+  );
+}
+
+function RetryNote() {
+  return (
+    <p role="alert" className="flex flex-wrap items-center gap-2 rounded-md border border-danger bg-status-lost-soft p-3 text-sm font-medium text-danger">
+      Não foi possível gerar uma das prévias.
+      <button type="button" className="min-h-11 font-bold underline" onClick={() => window.location.reload()}>
+        Tentar de novo
+      </button>
+    </p>
   );
 }
 
@@ -278,46 +545,141 @@ function adaptedNote(format: PosterV2Format, m: PosterModel, aspects: number[]):
   return null;
 }
 
-/** Imagem gerada na hora: mostra "gerando…" até carregar, sem pular o layout. */
-function PosterImage({ src, alt, testId }: { src: string; alt: string; testId?: string }) {
-  const [loaded, setLoaded] = useState<string | null>(null);
+/** Imagem gerada na hora: inteira (sem recorte), mostra "Gerando…" até carregar e avisa se falhar. */
+function PosterImage({ src, alt, testId, className = "", onError }: { src: string; alt: string; testId?: string; className?: string; onError?: () => void }) {
+  const [state, setState] = useState<{ src: string; ok: boolean } | null>(null);
   return (
-    <div className="relative">
+    <span className="relative flex w-full justify-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={alt} onLoad={() => setLoaded(src)} className="w-full rounded-md border border-border" data-testid={testId} />
-      {loaded !== src && <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/30 text-sm font-semibold text-white">Gerando…</div>}
-    </div>
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setState({ src, ok: true })}
+        onError={() => {
+          setState({ src, ok: false });
+          onError?.();
+        }}
+        className={`block h-auto w-auto max-w-full rounded-sm border border-border object-contain ${className}`}
+        data-testid={testId}
+      />
+      {state?.src !== src && <span className="absolute inset-0 flex items-center justify-center rounded-sm bg-black/35 text-sm font-semibold text-white">Gerando…</span>}
+    </span>
   );
 }
 
-/** Desenho do formato (proporção real) no passo 1. */
-function FormatShape({ format }: { format: PosterV2Format }) {
-  const { width, height } = V2_FORMATS[format];
-  const s = 56 / Math.max(width, height);
-  return <span aria-hidden="true" className="shrink-0 rounded-sm border-2 border-[#e5484d] bg-[#e5484d]/15" style={{ width: Math.round(width * s), height: Math.round(height * s) }} />;
+/** Cartaz ampliado: cabe na tela ou em tamanho real (rolando dentro da janela). Esc fecha. */
+function PosterZoom({ src, title, onClose }: { src: string; title: string; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [actual, setActual] = useState(false);
+  // Sem close() na limpeza: o evento "close" desmontaria a janela recém-aberta (StrictMode).
+  useEffect(() => {
+    if (!ref.current?.open) ref.current?.showModal();
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => e.target === ref.current && onClose()}
+      aria-label={title}
+      className="fixed inset-0 m-0 h-[100dvh] max-h-none w-screen max-w-none bg-black/90 p-0 backdrop:bg-black/80"
+      data-testid="cartaz-ampliado"
+    >
+      <div className="flex h-full flex-col gap-2 p-2 sm:p-3">
+        <div className="flex items-center justify-between gap-2 rounded-md bg-surface px-3 py-2">
+          <p className="truncate text-sm font-bold">{title}</p>
+          <div className="flex shrink-0 items-center gap-1">
+            <button type="button" className={`${btn} min-h-11 px-3 text-sm`} onClick={() => setActual((a) => !a)} aria-pressed={actual}>
+              {actual ? "Caber na tela" : "Tamanho real"}
+            </button>
+            <button type="button" className={`${btn} min-h-11 px-3`} onClick={onClose} aria-label="Fechar" autoFocus>
+              <X aria-hidden="true" className="size-5" />
+            </button>
+          </div>
+        </div>
+        <div
+          className={`min-h-0 flex-1 rounded-md ${actual ? "overflow-auto" : "flex items-center justify-center overflow-hidden"}`}
+          onClick={(e) => e.target === e.currentTarget && onClose()}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt={title} className={actual ? "max-w-none" : "max-h-full max-w-full object-contain"} />
+        </div>
+      </div>
+    </dialog>
+  );
 }
 
-/** Passo 3: trocar fotos, reordenar, arrastar e aproximar a principal; prévia fiel ao arquivo final. */
+/** Miniatura do formato na proporção real, com o esboço de um cartaz (faixa, foto e texto). */
+function FormatThumb({ format }: { format: PosterV2Format }) {
+  const { width, height } = V2_FORMATS[format];
+  const s = 76 / Math.max(width, height);
+  const wide = width > height;
+  return (
+    <span className="flex size-20 shrink-0 items-center justify-center" aria-hidden="true">
+      <span
+        className="flex overflow-hidden rounded-[3px] border border-border-strong bg-white shadow-xs"
+        style={{
+          width: Math.round(width * s),
+          height: Math.round(height * s),
+          flexDirection: wide ? "row" : "column",
+        }}
+      >
+        {wide ? (
+          <>
+            <span className="flex w-[45%] flex-col justify-center gap-1 p-1">
+              <span className="h-1.5 rounded-[1px] bg-[#c22a31]" />
+              <span className="h-1 w-4/5 rounded-[1px] bg-[#1d2b44]" />
+              <span className="h-1 w-3/5 rounded-[1px] bg-[#9aa3b2]" />
+            </span>
+            <span className="flex flex-1 items-center justify-center bg-[#d9c3a0]">
+              <PawPrint className="size-4 text-[#7a5a2e]" />
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="h-[14%] shrink-0 bg-[#c22a31]" />
+            <span className="flex flex-1 items-center justify-center bg-[#d9c3a0]">
+              <PawPrint className="size-4 text-[#7a5a2e]" />
+            </span>
+            <span className="flex h-[24%] shrink-0 flex-col justify-center gap-0.5 bg-[#1d2b44] px-1">
+              <span className="h-1 w-3/5 rounded-[1px] bg-white" />
+              <span className="h-0.5 w-4/5 rounded-[1px] bg-[#9aa3b2]" />
+            </span>
+          </>
+        )}
+      </span>
+    </span>
+  );
+}
+
+/** Passo 3 (opcional): trocar fotos, reordenar, arrastar e aproximar a principal; prévia fiel ao arquivo final. */
 function Customize({
+  title,
   format,
   model,
   photos,
   sizes,
   value,
   defaultOrder,
+  edited,
   onChange,
   previewUrl,
+  onZoom,
+  onError,
   onDone,
   onBack,
 }: {
+  title: (text: string) => React.ReactNode;
   format: PosterV2Format;
   model: PosterModel;
   photos: { url: string }[];
   sizes: Record<number, { width: number; height: number }>;
   value: Custom;
   defaultOrder: number[];
+  edited: boolean;
   onChange: (c: Custom) => void;
   previewUrl: string;
+  onZoom: (src: string) => void;
+  onError: () => void;
   onDone: () => void;
   onBack: () => void;
 }) {
@@ -326,7 +688,16 @@ function Customize({
   const main = order[0];
   const aspects = order.map((i) => (sizes[i] ? sizes[i].width / sizes[i].height : undefined));
   const box = aspects.every((a) => a !== undefined) && order.length ? modelLayout(format, model, aspects as number[]).boxes[0]! : null;
-  const setFraming = (f: Framing) => onChange({ order, framing: { x: clamp(f.x, 0, 100), y: clamp(f.y, 0, 100), zoom: clamp(f.zoom, 1, 3) } });
+  const setFraming = (f: Framing) =>
+    onChange({
+      order,
+      framing: {
+        x: clamp(f.x, 0, 100),
+        y: clamp(f.y, 0, 100),
+        zoom: clamp(f.zoom, 1, 3),
+      },
+    });
+  const [undo, setUndo] = useState<Custom | null>(null);
 
   const [preview, setPreview] = useState(previewUrl);
   useEffect(() => {
@@ -334,7 +705,7 @@ function Customize({
     return () => clearTimeout(t);
   }, [previewUrl]);
 
-  // Arrastar (mouse e toque), pinça e roda do mouse.
+  // Arrastar (mouse e toque), pinça, roda do mouse e setas do teclado.
   const frameRef = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; zoom: number } | null>(null);
@@ -351,7 +722,10 @@ function Customize({
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2) {
       const [p, q] = [...pointers.current.values()];
-      pinch.current = { dist: Math.hypot(p!.x - q!.x, p!.y - q!.y), zoom: framing.zoom };
+      pinch.current = {
+        dist: Math.hypot(p!.x - q!.x, p!.y - q!.y),
+        zoom: framing.zoom,
+      };
     }
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -360,17 +734,37 @@ function Customize({
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pointers.current.size === 2 && pinch.current) {
       const [p, q] = [...pointers.current.values()];
-      setFraming({ ...framing, zoom: pinch.current.zoom * (Math.hypot(p!.x - q!.x, p!.y - q!.y) / pinch.current.dist) });
+      setFraming({
+        ...framing,
+        zoom: pinch.current.zoom * (Math.hypot(p!.x - q!.x, p!.y - q!.y) / pinch.current.dist),
+      });
       return;
     }
     const g = geometry();
     if (!g || !box || !frameRef.current) return;
     const k = frameRef.current.clientWidth / box.width;
-    setFraming({ ...framing, x: framing.x - ((e.clientX - prev.x) / (g.rw * k)) * 100, y: framing.y - ((e.clientY - prev.y) / (g.rh * k)) * 100 });
+    setFraming({
+      ...framing,
+      x: framing.x - ((e.clientX - prev.x) / (g.rw * k)) * 100,
+      y: framing.y - ((e.clientY - prev.y) / (g.rh * k)) * 100,
+    });
   };
   const onPointerUp = (e: React.PointerEvent) => {
     pointers.current.delete(e.pointerId);
     if (pointers.current.size < 2) pinch.current = null;
+  };
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const d = {
+      ArrowLeft: [-3, 0],
+      ArrowRight: [3, 0],
+      ArrowUp: [0, -3],
+      ArrowDown: [0, 3],
+    }[e.key];
+    if (d) setFraming({ ...framing, x: framing.x + d[0]!, y: framing.y + d[1]! });
+    else if (e.key === "+" || e.key === "=") setFraming({ ...framing, zoom: framing.zoom + 0.1 });
+    else if (e.key === "-") setFraming({ ...framing, zoom: framing.zoom - 0.1 });
+    else return;
+    e.preventDefault();
   };
   const g = geometry();
   const imgStyle: React.CSSProperties | undefined =
@@ -386,9 +780,17 @@ function Customize({
       : undefined;
 
   const max = model === 1 ? 1 : 3;
+  const extras = order.slice(1);
   const toggle = (i: number) =>
-    onChange({ order: order.includes(i) ? (order.length > 1 ? order.filter((x) => x !== i) : order) : order.length < max ? [...order, i] : order, framing: value.framing });
-  const makeMain = (i: number) => onChange({ order: [i, ...order.filter((x) => x !== i)].slice(0, max), framing: null });
+    onChange({
+      order: order.includes(i) ? order.filter((x) => x !== i) : order.length < max ? [...order, i] : order,
+      framing: value.framing,
+    });
+  const makeMain = (i: number) =>
+    onChange({
+      order: [i, ...order.filter((x) => x !== i)].slice(0, max),
+      framing: null,
+    });
   const move = (pos: number, dir: -1 | 1) => {
     const n = [...order];
     const j = pos + dir;
@@ -396,90 +798,223 @@ function Customize({
     [n[pos], n[j]] = [n[j]!, n[pos]!];
     onChange({ order: n, framing: value.framing });
   };
+  const restore = () => {
+    setUndo(value);
+    onChange({ order: defaultOrder, framing: null });
+  };
+  const thumb = "aspect-square w-full rounded object-cover";
 
   return (
-    <section className="flex flex-col gap-4" aria-labelledby="passo-personalizar">
-      <h2 id="passo-personalizar" className="text-xl font-bold">
-        Personalizar — {FORMAT_PURPOSE[format].title}, Modelo {model}
-      </h2>
-      <p className="text-sm text-text-secondary">Só muda este cartaz. As fotos originais, a capa e a ordem do cadastro continuam iguais.</p>
-
-      <div className="flex flex-col gap-2">
-        <h3 className="font-bold">Fotos {model === 1 ? "(este modelo usa 1)" : "(até 3)"}</h3>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {photos.map((p, i) => {
-            const pos = order.indexOf(i);
-            return (
-              <div key={i} className={`flex flex-col gap-1 rounded-md border p-1 ${pos === 0 ? "border-[#e5484d] ring-2 ring-[#e5484d]" : pos > 0 ? "border-[#f6b928]" : "border-border"}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.url} alt={`Foto ${i + 1}`} className="aspect-square w-full rounded object-cover" />
-                <span className="text-center text-xs font-semibold">{pos === 0 ? "Principal" : pos > 0 ? `Complementar ${pos}` : `Foto ${i + 1}`}</span>
-                {pos !== 0 && (
-                  <button type="button" className="min-h-8 text-xs font-semibold text-link" onClick={() => makeMain(i)}>
-                    Usar como principal
-                  </button>
-                )}
-                {pos !== 0 && max > 1 && (
-                  <button type="button" className="min-h-8 text-xs text-text-secondary" onClick={() => toggle(i)}>
-                    {pos > 0 ? "Remover" : order.length < max ? "Incluir" : "Limite: 3"}
-                  </button>
-                )}
-                {pos > 0 && (
-                  <div className="flex justify-center gap-3 text-sm">
-                    <button type="button" aria-label="Mover para antes" onClick={() => move(pos, -1)} disabled={pos === 1}>
-                      ◀
-                    </button>
-                    <button type="button" aria-label="Mover para depois" onClick={() => move(pos, 1)} disabled={pos === order.length - 1}>
-                      ▶
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+    <section className="flex flex-col gap-4" aria-label="Personalizar">
+      <div className="flex flex-col gap-1">
+        {title(`Personalizar — Modelo ${model}`)}
+        <p className="text-text-secondary">
+          Opcional: se o cartaz já está bom, toque em “Pular personalização”. Os ajustes valem só para {FORMAT_PURPOSE[format].title}, Modelo {model}; as fotos originais, a capa, a
+          descrição e a ordem do cadastro não mudam.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold">Enquadrar a foto principal</h3>
-          <p className="text-sm text-text-secondary">Arraste para reposicionar. Aproxime com dois dedos, com a roda do mouse ou com o controle.</p>
-          <div
-            ref={frameRef}
-            className="relative w-full touch-none overflow-hidden rounded-md bg-[#1d2b44] select-none"
-            style={{ aspectRatio: box ? `${box.width} / ${box.height}` : "4 / 3", cursor: "grab", maxHeight: 420 }}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onWheel={(e) => setFraming({ ...framing, zoom: framing.zoom - e.deltaY * 0.002 })}
-            data-testid="editor-moldura"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            {imgStyle && main !== undefined && <img src={photos[main]!.url} alt="Foto principal no enquadramento" style={imgStyle} draggable={false} />}
+      <div className="grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,340px)] md:gap-6">
+        <div className="flex min-w-0 flex-col gap-5">
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 font-bold">1. Foto principal</legend>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+              {photos.map((p, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-pressed={main === i}
+                  aria-label={`Usar a foto ${i + 1} como principal`}
+                  onClick={() => main !== i && makeMain(i)}
+                  className={`relative rounded-md border-2 p-0.5 ${main === i ? "border-status-lost-solid" : "border-transparent hover:border-border-strong"}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt="" className={thumb} />
+                  {main === i && (
+                    <span className="absolute inset-x-0.5 bottom-0.5 rounded-b bg-status-lost-solid py-0.5 text-center text-[11px] font-bold text-white">Principal</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          {max > 1 ? (
+            <fieldset className="flex flex-col gap-2">
+              <legend className="mb-1 font-bold">2. Fotos complementares (até 2)</legend>
+              <p className="text-sm text-text-secondary">Toque para incluir ou tirar. A ordem define a posição no cartaz.</p>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+                {photos.map((p, i) => {
+                  if (i === main) return null;
+                  const pos = extras.indexOf(i);
+                  const full = pos < 0 && extras.length >= 2;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-pressed={pos >= 0}
+                      aria-label={pos >= 0 ? `Tirar a foto ${i + 1} (complementar ${pos + 1})` : `Incluir a foto ${i + 1}`}
+                      disabled={full}
+                      onClick={() => toggle(i)}
+                      className={`relative rounded-md border-2 p-0.5 disabled:opacity-45 ${pos >= 0 ? "border-[#f6b928]" : "border-transparent hover:border-border-strong"}`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p.url} alt="" className={thumb} />
+                      <span
+                        className={`absolute top-1 right-1 flex size-6 items-center justify-center rounded-full text-xs font-bold ${pos >= 0 ? "bg-[#f6b928] text-[#0a111d]" : "border-2 border-white bg-black/40"}`}
+                      >
+                        {pos >= 0 ? pos + 1 : ""}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {extras.length > 1 && (
+                <ol className="flex flex-col gap-1">
+                  {extras.map((i, k) => (
+                    <li key={i} className="flex items-center gap-2 text-sm">
+                      <span className="w-36 font-medium">
+                        Complementar {k + 1}: foto {i + 1}
+                      </span>
+                      <button
+                        type="button"
+                        className={`${btnSecondary} min-h-11 px-3`}
+                        aria-label={`Mover a foto ${i + 1} para antes`}
+                        disabled={k === 0}
+                        onClick={() => move(k + 1, -1)}
+                      >
+                        <ChevronLeft aria-hidden="true" className="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${btnSecondary} min-h-11 px-3`}
+                        aria-label={`Mover a foto ${i + 1} para depois`}
+                        disabled={k === extras.length - 1}
+                        onClick={() => move(k + 1, 1)}
+                      >
+                        <ChevronRight aria-hidden="true" className="size-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </fieldset>
+          ) : (
+            <p className="text-sm text-text-secondary">O Modelo 1 usa só a foto principal, em destaque.</p>
+          )}
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 font-bold">{max > 1 ? "3" : "2"}. Enquadrar a foto principal</legend>
+            <p className="text-sm text-text-secondary">Arraste a foto (ou use as setas do teclado) e aproxime com o controle, com dois dedos ou com a roda do mouse.</p>
+            <div
+              ref={frameRef}
+              role="group"
+              tabIndex={0}
+              aria-label="Enquadramento da foto principal: setas movem, + e − aproximam"
+              className="relative mx-auto w-full touch-none overflow-hidden rounded-md bg-[#1d2b44] select-none"
+              style={{
+                aspectRatio: box ? `${box.width} / ${box.height}` : "4 / 3",
+                cursor: "grab",
+                maxHeight: 360,
+                maxWidth: box ? `${(360 * box.width) / box.height}px` : undefined,
+              }}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              onWheel={(e) =>
+                setFraming({
+                  ...framing,
+                  zoom: framing.zoom - e.deltaY * 0.002,
+                })
+              }
+              onKeyDown={onKeyDown}
+              data-testid="editor-moldura"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {imgStyle && main !== undefined && <img src={photos[main]!.url} alt="Foto principal no enquadramento" style={imgStyle} draggable={false} />}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className={`${btnSecondary} min-h-11 px-3`}
+                aria-label="Afastar"
+                onClick={() => setFraming({ ...framing, zoom: framing.zoom - 0.25 })}
+                disabled={framing.zoom <= 1}
+              >
+                <Minus aria-hidden="true" className="size-4" />
+              </button>
+              <label className="flex flex-1 items-center gap-2 text-sm font-semibold">
+                <span className="sr-only">Aproximar</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={framing.zoom}
+                  onChange={(e) => setFraming({ ...framing, zoom: Number(e.target.value) })}
+                  className="min-w-0 flex-1 accent-[#c22a31]"
+                />
+                <span className="w-10 text-right tabular-nums">{framing.zoom.toFixed(1)}×</span>
+              </label>
+              <button
+                type="button"
+                className={`${btnSecondary} min-h-11 px-3`}
+                aria-label="Aproximar mais"
+                onClick={() => setFraming({ ...framing, zoom: framing.zoom + 0.25 })}
+                disabled={framing.zoom >= 3}
+              >
+                <Plus aria-hidden="true" className="size-4" />
+              </button>
+            </div>
+          </fieldset>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" className={`${btnSecondary} min-h-11 text-sm`} onClick={restore} disabled={!edited}>
+              <RotateCcw aria-hidden="true" className="size-4" /> Restaurar o modelo original
+            </button>
+            {undo && (
+              <p role="status" className="flex items-center gap-2 text-sm">
+                Ajustes desfeitos.
+                <button
+                  type="button"
+                  className="min-h-11 font-bold text-link underline"
+                  onClick={() => {
+                    onChange(undo);
+                    setUndo(null);
+                  }}
+                >
+                  Desfazer
+                </button>
+              </p>
+            )}
           </div>
-          <label className="flex items-center gap-3 text-sm font-semibold">
-            Aproximar
-            <input type="range" min={1} max={3} step={0.05} value={framing.zoom} onChange={(e) => setFraming({ ...framing, zoom: Number(e.target.value) })} className="flex-1" />
-            <span className="w-10 text-right tabular-nums">{framing.zoom.toFixed(1)}×</span>
-          </label>
-          <button type="button" className="self-start rounded-md border border-border-strong px-3 py-2 text-sm font-semibold" onClick={() => onChange({ order: defaultOrder, framing: null })}>
-            Restaurar o modelo original
+        </div>
+
+        <div className="flex flex-col items-center gap-2 rounded-lg bg-surface-muted p-3 md:sticky md:top-4">
+          <h3 className="self-start font-bold">Resultado</h3>
+          <button type="button" onClick={() => onZoom(preview)} aria-label="Ampliar a prévia" className="flex max-w-full justify-center">
+            <PosterImage src={preview} alt="Prévia do cartaz personalizado" testId="editor-previa" onError={onError} className="max-h-[50vh] max-w-full md:max-h-[62vh]" />
+          </button>
+          <button type="button" className={btnLink} onClick={() => onZoom(preview)}>
+            <Maximize2 aria-hidden="true" className="size-4" /> Ampliar
           </button>
         </div>
-        <div className="flex flex-col gap-2">
-          <h3 className="font-bold">Resultado</h3>
-          <PosterImage src={preview} alt="Prévia do cartaz personalizado" testId="editor-previa" />
-        </div>
       </div>
-      <div className="flex flex-wrap gap-3">
-        <button type="button" className="min-h-12 rounded-md bg-[#e5484d] px-5 font-semibold text-white" onClick={onDone}>
-          Continuar
+
+      <StepNav>
+        <button type="button" className={btnSecondary} onClick={onBack}>
+          <ArrowLeft aria-hidden="true" className="size-5" /> Voltar
         </button>
-        <button type="button" className="min-h-12 rounded-md border border-border-strong px-5 font-semibold" onClick={onBack}>
-          Voltar aos modelos
-        </button>
-      </div>
+        {edited ? (
+          <button type="button" className={btnPrimary} onClick={onDone}>
+            Continuar <ArrowRight aria-hidden="true" className="size-5" />
+          </button>
+        ) : (
+          <button type="button" className={`${btnPrimary} whitespace-nowrap`} onClick={onDone}>
+            Pular personalização <SkipForward aria-hidden="true" className="hidden size-5 sm:block" />
+          </button>
+        )}
+      </StepNav>
     </section>
   );
 }

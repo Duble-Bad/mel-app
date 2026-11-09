@@ -210,22 +210,33 @@ test("create poster flow (DEV): the tutor picks a format, sees three real previe
   await page.getByTestId("criar-cartaz-link").click();
   await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar$`));
 
+  // O indicador mostra a etapa atual, as concluídas e as pendentes (a personalização pulada não aparece como concluída).
+  const states = () => page.locator("[data-testid^=etapa-]").evaluateAll((els) => els.map((e) => e.getAttribute("data-state")));
+  await expect.poll(states).toEqual(["current", "pending", "pending", "pending"]);
   // 1 — formato
   await page.getByTestId("formato-story").click();
-  // 2 — três prévias reais, uma recomendada
+  // 2 — três prévias reais, uma recomendada (com o motivo), ampliáveis
+  await expect.poll(states).toEqual(["done", "current", "pending", "pending"]);
   for (const m of [1, 2, 3]) await expect(page.getByTestId(`modelo-${m}`).locator("img")).toHaveAttribute("src", new RegExp(`/cartaz/story\\?modelo=proposta&estilo=${m}$`));
   await expect(page.getByText("Recomendado pela MEL")).toHaveCount(1);
-  await expect(page.getByText(/Por que recomendamos o Modelo/)).toBeVisible();
-  await page.getByRole("button", { name: "Usar o Modelo 3" }).click();
+  await expect(page.getByText(/^Por quê:/)).toBeVisible();
+  await page.getByTestId("modelo-3").getByRole("button", { name: "Ampliar", exact: true }).click();
+  await expect(page.getByTestId("cartaz-ampliado").locator("img")).toHaveAttribute("src", /estilo=3$/);
+  await page.keyboard.press("Escape");
+  await page.getByTestId("modelo-3").getByRole("button", { name: "Escolher este modelo" }).click();
+  // 3 — personalizar é opcional
+  await expect.poll(states).toEqual(["done", "done", "current", "pending"]);
+  await page.getByRole("button", { name: "Pular personalização" }).click();
   // 4 — usar
+  await expect.poll(states).toEqual(["done", "done", "skipped", "current"]);
   await expect(page.getByTestId("cartaz-final")).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3$/);
   await expect(page.getByRole("link", { name: "Baixar" })).toHaveAttribute("href", /estilo=3&baixar=1$/);
   await expect(page.getByRole("link", { name: "Imprimir" })).toHaveAttribute("href", /\/cartaz\/imprimir\?modelo=proposta&estilo=3&formato=story$/);
   await expect(page.getByRole("button", { name: "Compartilhar" })).toBeVisible();
-  // 3 — personalizar: outra principal, zoom; a prévia é o PNG final
-  await page.getByRole("button", { name: "Personalizar fotos e enquadramento" }).click();
+  // 3 de novo — outra principal, zoom; a prévia é o PNG final
+  await page.getByRole("button", { name: "Personalizar novamente" }).click();
   await expect(page.getByTestId("editor-moldura").locator("img")).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("button", { name: "Usar como principal" }).first().click();
+  await page.getByRole("button", { name: "Usar a foto 2 como principal" }).click();
   await page.getByRole("slider").fill("2");
   const preview = page.getByTestId("editor-previa");
   await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3&fotos=1%2C0%2C2&foco=50%2C50&zoom=2\.00$/);
@@ -235,8 +246,18 @@ test("create poster flow (DEV): the tutor picks a format, sees three real previe
   // A escolha sobrevive ao recarregar (fica no endereço da página).
   await page.reload();
   await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /zoom=2\.00$/);
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect.poll(states).toEqual(["done", "done", "done", "current"]);
+  // Restaurar avisa e permite desfazer.
+  await page.getByTestId("etapa-3").getByRole("button").click();
   await page.getByRole("button", { name: "Restaurar o modelo original" }).click();
   await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3$/);
+  await page.getByRole("button", { name: "Desfazer" }).click();
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /zoom=2\.00$/);
+  // Trocar de formato mostra os três modelos do novo formato.
+  await page.getByTestId("etapa-1").getByRole("button").click();
+  await page.getByTestId("formato-square").click();
+  for (const m of [1, 2, 3]) await expect(page.getByTestId(`modelo-${m}`).locator("img")).toHaveAttribute("src", new RegExp(`/cartaz/square\\?modelo=proposta&estilo=${m}$`));
   // Imprimir: página com o cartaz, sem gravar nada.
   expect((await request.get(`/alerta/${t.code}/cartaz/imprimir?estilo=3&formato=impressao`)).status()).toBe(200);
   // Nada gravado: fotos, capa e ordem iguais.
