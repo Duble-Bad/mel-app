@@ -18,13 +18,13 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
-| 14 | 2026-11-10 | **Aplicar a Opção B nos fluxos reais** ("Criar cartaz" e "Perdi meu pet") | Escolhida pelo proprietário (Decididas). A aplicação depende de autorização expressa; sem mudar regras, campos ou banco |
 | 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–46, chaves PII) e publicar | Nada em produção sem autorização expressa |
 
 ## Decididas
 
 | Data | Decisão |
 |---|---|
+| 2026-11-10 | **Opção B aplicada aos fluxos reais** (encerra o item 14), autorizada pelo proprietário: "Criar cartaz" (indicador, troca de etapas, cartões, "Compartilhar" com "Preparando…") e "Perdi meu pet"/edição do alerta (indicador com ícones e estado de erro, troca de passos, mensagem de validação e balanço do campo). Sem mudar regras, campos, validação, rascunho, publicação ou banco. Só código na branch `prototipo/microinteracoes` (sem merge na `main`, sem deploy) |
 | 2026-11-10 | **Microinterações: Opção B (Progressão dinâmica)** escolhida pelo proprietário (encerra o item 13), a partir do protótipo `/dev/microinteracoes`. Ainda não aplicada aos fluxos reais (item 14) |
 | 2026-11-10 | **6 alertas sintéticos removidos do `mel-dev`** (encerra o item 7b): SYEE89, UEBTTQ, SFUY49, 7WN595, ZBMPFS e H2X673, das contas `e2e+r11-…@exemplo.com` (64 linhas em cascata: contas, perfis, pets, fotos, alertas, avisos e push), com backup e ensaio de restauração 8/8 antes (`~/.mel-dev-backups/limpeza-testes-52e81f77e6017d05.json`). Eles deixavam o CI vermelho (o teste do Radar via 7 correspondências em vez de 1). Alerta RCU6K4 da Mel conferido depois: intacto. Os arquivos das 10 fotos podem ter ficado no Storage (só as linhas do banco saíram) |
 | 2026-11-10 | **20 modelos de cartaz aprovados e "Criar cartaz" liberado aos tutores** (encerra os itens 1, 7, 7e e 12). Entrada "Criar cartaz" na página do alerta para o tutor; qualquer pessoa pode gerar e baixar; protótipos (`/propostas`, `/dev/bonificacao`) continuam só em DEV. Os cartazes antigos do alerta continuam disponíveis (item 2) |

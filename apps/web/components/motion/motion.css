@@ -588,10 +588,12 @@
 
 /* ---------- Botão com processamento real ---------- */
 
+/* O rótulo segue a direção e o espaçamento do botão (ícone em cima no celular, ao lado no desktop). */
 .mm-actionLabel {
   display: inline-flex;
+  flex-direction: inherit;
   align-items: center;
-  gap: 0.5rem;
+  gap: inherit;
   animation: mm-fade-in var(--dur-fast) var(--ease);
 }
 .mm-root[data-variant="b"] .mm-actionLabel {

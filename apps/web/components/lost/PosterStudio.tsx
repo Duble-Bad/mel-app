@@ -30,7 +30,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resetPosterDesign, savePosterDesign, type PosterDesign } from "@mel/data";
-import { StepIndicator, type StepState } from "@/components/ui/StepIndicator";
+import { ActionButton, motionBadge, motionCard, MotionRoot, StepStage, type Direction } from "@/components/motion/Motion";
+import { MotionSteps } from "@/components/motion/MotionSteps";
+import type { StepState } from "@/components/ui/StepIndicator";
 import { FORMAT_PURPOSE, isPosterModel, modelCapacity, modelLayout, POSTER_MODEL_IDS, POSTER_MODELS, recommendModel, type PosterModel } from "@/lib/poster/models";
 import { V2_FORMATS, type PosterV2Format } from "@/lib/poster/PosterV2";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -127,8 +129,10 @@ export function PosterStudio({
   const [failed, setFailed] = useState(false);
   const [zoomed, setZoomed] = useState<{ src: string; title: string } | null>(null);
   const restored = useRef(false);
-  const heading = useRef<HTMLHeadingElement>(null);
-  const moved = useRef(false);
+  // Sentido da última troca de etapa e se o tutor já navegou (o foco só muda depois disso).
+  const [direction, setDirection] = useState<Direction>("forward");
+  const [moved, setMoved] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   /** Fotos que o modelo de fato mostra nesta ordem: as que deixariam alguma estreita demais saem. */
   function fit(fmt: PosterV2Format, m: PosterModel, order: number[]): number[] {
@@ -259,14 +263,11 @@ export function PosterStudio({
     return () => window.removeEventListener("beforeunload", warn);
   }, [unsaved]);
 
-  // Ao trocar de etapa, o foco vai para o título dela (teclado e leitor de tela sabem onde estão).
-  useEffect(() => {
-    if (!moved.current) return;
-    heading.current?.focus();
-    heading.current?.scrollIntoView({ block: "nearest" });
-  }, [step]);
+  // Ao trocar de etapa, o foco vai para o título dela (teclado e leitor de tela sabem onde
+  // estão): quem faz isso é o StepStage, só depois que o tutor navegou.
   const go = (s: Step) => {
-    moved.current = true;
+    setMoved(true);
+    setDirection(s < step ? "back" : "forward");
     setNotice(null);
     setFailed(false);
     setStep(s);
@@ -285,15 +286,16 @@ export function PosterStudio({
   });
 
   const title = (text: string) => (
-    <h2 ref={heading} tabIndex={-1} className="text-xl font-bold sm:text-2xl">
+    <h2 data-step-heading tabIndex={-1} className="text-xl font-bold sm:text-2xl">
       {text}
     </h2>
   );
 
   return (
-    <div className="flex flex-col gap-6" data-testid="criar-cartaz">
-      <StepIndicator steps={STEPS} states={states} onSelect={(i) => go((i + 1) as Step)} label="Etapas do cartaz" />
+    <MotionRoot variant="b" className="flex scroll-mt-20 flex-col gap-6" data-step-flow data-testid="criar-cartaz">
+      <MotionSteps steps={STEPS} states={states} onSelect={(i) => go((i + 1) as Step)} label="Etapas do cartaz" variant="b" direction={direction} />
 
+      <StepStage stepKey={`etapa-${step}`} direction={direction} focus={moved}>
       {step === 1 && (
         <section className="flex flex-col gap-4" aria-label="Formato">
           <div className="flex flex-col gap-1">
@@ -314,7 +316,7 @@ export function PosterStudio({
                     setFormat(f);
                     go(2);
                   }}
-                  className={`group relative flex items-center gap-4 rounded-lg border-2 bg-surface p-4 text-left shadow-card transition-colors duration-200 ease-mel hover:border-status-lost-solid ${selected ? "border-status-lost-solid bg-status-lost-soft" : "border-border"}`}
+                  className={`${motionCard} group flex items-center gap-4 rounded-lg border-2 bg-surface p-4 text-left shadow-card hover:border-status-lost-solid ${selected ? "border-status-lost-solid bg-status-lost-soft" : "border-border"}`}
                   data-testid={`formato-${f}`}
                 >
                   <FormatThumb format={f} />
@@ -328,7 +330,7 @@ export function PosterStudio({
                       {V2_FORMATS[f].width} × {V2_FORMATS[f].height} px
                     </span>
                   </span>
-                  {selected && <span className="absolute top-2 right-2 rounded-full bg-status-lost-solid px-2 py-0.5 text-xs font-bold text-white">Selecionado</span>}
+                  {selected && <span className={`${motionBadge} absolute top-2 right-2 rounded-full bg-status-lost-solid px-2 py-0.5 text-xs font-bold text-white`}>Selecionado</span>}
                 </button>
               );
             })}
@@ -363,7 +365,7 @@ export function PosterStudio({
               return (
                 <article
                   key={m}
-                  className={`flex flex-col gap-3 rounded-lg border-2 bg-surface p-3 shadow-card ${isRec ? "border-[#f6b928]" : model === m ? "border-status-lost-solid" : "border-transparent"}`}
+                  className={`${motionCard} flex flex-col gap-3 rounded-lg border-2 bg-surface p-3 shadow-card ${isRec ? "border-[#f6b928]" : model === m ? "border-status-lost-solid" : "border-transparent"}`}
                   data-testid={`modelo-${m}`}
                   aria-labelledby={`modelo-${m}-nome`}
                 >
@@ -518,11 +520,15 @@ export function PosterStudio({
                 >
                   <Printer aria-hidden="true" className="size-5" /> Imprimir
                 </a>
-                <button
-                  type="button"
+                <ActionButton
+                  state={sharing ? "busy" : "idle"}
+                  busyText="Preparando…"
+                  doneText=""
                   className={`${btnSecondary} flex-col gap-1 px-1 text-sm sm:text-[15px] md:flex-row md:gap-2`}
                   onClick={async () => {
                     setNotice(null);
+                    // Processamento real: o PNG final é buscado antes de abrir o compartilhamento.
+                    setSharing(true);
                     try {
                       const blob = await (await fetch(posterUrl(format, model, custom[key] ?? null))).blob();
                       const file = new File([blob], `MEL-cartaz-${format}-modelo-${model}.png`, { type: "image/png" });
@@ -538,11 +544,13 @@ export function PosterStudio({
                       setNotice("Este navegador não compartilha imagens: baixamos o cartaz e copiamos o link do alerta.");
                     } catch (err) {
                       if ((err as Error).name !== "AbortError") setNotice("Não deu para compartilhar agora. Use Baixar ou copie o link do alerta.");
+                    } finally {
+                      setSharing(false);
                     }
                   }}
                 >
                   <Share2 aria-hidden="true" className="size-5" /> Compartilhar
-                </button>
+                </ActionButton>
               </div>
               {format === "impressao" && <p className="text-sm text-text-secondary">Imprimir abre o A4 em tamanho real, sem margens, numa nova aba.</p>}
               {notice && (
@@ -616,9 +624,10 @@ export function PosterStudio({
           </div>
         </section>
       )}
+      </StepStage>
 
       {zoomed && <PosterZoom src={zoomed.src} title={zoomed.title} onClose={() => setZoomed(null)} />}
-    </div>
+    </MotionRoot>
   );
 }
 
@@ -973,12 +982,12 @@ function Customize({
                   aria-pressed={main === i}
                   aria-label={`Usar a foto ${i + 1} como principal`}
                   onClick={() => main !== i && makeMain(i)}
-                  className={`relative rounded-md border-2 p-0.5 ${main === i ? "border-status-lost-solid" : "border-transparent hover:border-border-strong"}`}
+                  className={`${motionCard} rounded-md border-2 p-0.5 ${main === i ? "border-status-lost-solid" : "border-transparent hover:border-border-strong"}`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.url} alt="" className={thumb} />
                   {main === i && (
-                    <span className="absolute inset-x-0.5 bottom-0.5 rounded-b bg-status-lost-solid py-0.5 text-center text-[11px] font-bold text-white">Principal</span>
+                    <span className={`${motionBadge} absolute inset-x-0.5 bottom-0.5 rounded-b bg-status-lost-solid py-0.5 text-center text-[11px] font-bold text-white`}>Principal</span>
                   )}
                 </button>
               ))}
@@ -1019,12 +1028,13 @@ function Customize({
                       }
                       disabled={full || noRoom}
                       onClick={() => toggle(i)}
-                      className={`group relative rounded-md border-2 p-0.5 disabled:cursor-not-allowed ${pos >= 0 ? "border-[#f6b928]" : "border-transparent hover:border-border-strong"}`}
+                      className={`${motionCard} group rounded-md border-2 p-0.5 disabled:cursor-not-allowed ${pos >= 0 ? "border-[#f6b928]" : "border-transparent hover:border-border-strong"}`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={p.url} alt="" className={`${thumb} group-disabled:opacity-35`} />
                       <span
-                        className={`absolute top-1 right-1 flex size-6 items-center justify-center rounded-full text-xs font-bold ${pos >= 0 ? "bg-[#f6b928] text-[#0a111d]" : "border-2 border-white bg-black/40"}`}
+                        key={pos >= 0 ? `on-${pos}` : "off"}
+                        className={`absolute top-1 right-1 flex size-6 items-center justify-center rounded-full text-xs font-bold ${pos >= 0 ? `${motionBadge} bg-[#f6b928] text-[#0a111d]` : "border-2 border-white bg-black/40"}`}
                       >
                         {pos >= 0 ? pos + 1 : ""}
                       </span>

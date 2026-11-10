@@ -1,14 +1,14 @@
 "use client";
 
 import { Check, LoaderCircle } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import type { MotionVariant } from "./MotionSteps";
 import { s } from "./classes";
 
 /** Escolhe a linguagem de movimento ("a" ou "b") para tudo o que estiver dentro. */
-export function MotionRoot({ variant, children, className = "" }: { variant: MotionVariant; children: ReactNode; className?: string }) {
+export function MotionRoot({ variant, children, className = "", ...rest }: { variant: MotionVariant; children: ReactNode; className?: string } & Omit<ComponentProps<"div">, "children" | "className">) {
   return (
-    <div className={`${s.root} ${className}`} data-variant={variant}>
+    <div {...rest} className={`${s.root} ${className}`} data-variant={variant}>
       {children}
     </div>
   );
