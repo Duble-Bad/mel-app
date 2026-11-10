@@ -1606,6 +1606,7 @@ export type Database = {
           focus_x: number | null
           focus_y: number | null
           format: string
+          framings: Json | null
           lost_case_id: string
           model: number
           photo_ids: string[]
@@ -1616,6 +1617,7 @@ export type Database = {
           focus_x?: number | null
           focus_y?: number | null
           format: string
+          framings?: Json | null
           lost_case_id: string
           model: number
           photo_ids?: string[]
@@ -1626,6 +1628,7 @@ export type Database = {
           focus_x?: number | null
           focus_y?: number | null
           format?: string
+          framings?: Json | null
           lost_case_id?: string
           model?: number
           photo_ids?: string[]
@@ -2017,6 +2020,7 @@ export type Database = {
           focus_x: number
           focus_y: number
           format: string
+          framings: Json
           model: number
           photo_ids: string[]
           updated_at: string
@@ -2164,6 +2168,7 @@ export type Database = {
           p_focus_x?: number
           p_focus_y?: number
           p_format: string
+          p_framings?: Json
           p_model: number
           p_photo_ids: string[]
           p_zoom?: number

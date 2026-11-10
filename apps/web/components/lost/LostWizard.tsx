@@ -15,7 +15,7 @@ import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { TextField } from "@/components/ui/Field";
 import { QuickPetForm } from "./QuickPetForm";
 import { PublicDescriptionField } from "@/components/pets/PublicDescriptionField";
-import { FieldMessage, motionCard, MotionRoot, Shake, StepStage, type Direction } from "@/components/motion/Motion";
+import { FieldMessage, motionCard, MotionRoot, Shake, SideArrows, StepStage, type Direction } from "@/components/motion/Motion";
 import { MotionSteps } from "@/components/motion/MotionSteps";
 import type { StepState } from "@/components/ui/StepIndicator";
 
@@ -166,6 +166,21 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
           prefix={editing ? "Editar alerta · " : undefined}
         />
       </header>
+      {/* Telas largas: setas laterais. Continuar envia o formulário do passo (valida, salva e avança, como o botão);
+          na revisão não há seta: o alerta só é ativado pelo botão "Ativar alerta MEL". */}
+      <SideArrows
+        onBack={back && !busy ? back : undefined}
+        onNext={
+          busy || step === "review"
+            ? undefined
+            : step === "pet"
+              ? lostCase
+                ? () => setStep(firstIncompleteStep(lostCase) === "pet" ? "where" : firstIncompleteStep(lostCase))
+                : undefined
+              : () => document.querySelector<HTMLFormElement>("[data-step-flow] [data-phase=\"in\"] form[data-step-form]")?.requestSubmit()
+        }
+        nextLabel={editing && step === "contact" ? "Salvar alterações" : "Continuar"}
+      />
 
       {notice && <Alert tone="info">{notice}</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
@@ -330,6 +345,7 @@ function WhereStep({
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
@@ -422,6 +438,7 @@ function WhenStep({
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
@@ -492,6 +509,7 @@ function DetailsStep({
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
@@ -558,6 +576,7 @@ function ContactStep({
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();

@@ -5,7 +5,7 @@ import "./motion.css";
 const NAMES = [
   "root", "steps", "stepList", "step", "stepButton", "circle", "circleRow", "glyph", "check", "halo", "seg", "segFill",
   "label", "name", "status", "rail", "railFill", "bead", "spot", "pop", "compact", "compactSwap", "stage", "layer",
-  "card", "badge", "msg", "msgInner", "msgText", "shake", "actionLabel",
+  "card", "badge", "msg", "msgInner", "msgText", "shake", "actionLabel", "sideArrow", "sideTip",
 ] as const;
 
 export const s = Object.fromEntries(NAMES.map((n) => [n, `mm-${n}`])) as Record<(typeof NAMES)[number], string>;

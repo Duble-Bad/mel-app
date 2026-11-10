@@ -3,8 +3,6 @@
 import {
   ArrowLeft,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
   Download,
   LayoutGrid,
   Link2,
@@ -30,9 +28,10 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { resetPosterDesign, savePosterDesign, type PosterDesign } from "@mel/data";
-import { ActionButton, motionBadge, motionCard, MotionRoot, StepStage, type Direction } from "@/components/motion/Motion";
+import { ActionButton, motionBadge, motionCard, MotionRoot, SideArrows, StepStage, type Direction } from "@/components/motion/Motion";
 import { MotionSteps } from "@/components/motion/MotionSteps";
 import type { StepState } from "@/components/ui/StepIndicator";
+import { clampFraming, containZoom, formatFramings, type Framing, parseFramings, ZOOM_MAX } from "@/lib/poster/framing";
 import { FORMAT_PURPOSE, isPosterModel, modelCapacity, modelLayout, POSTER_MODEL_IDS, POSTER_MODELS, recommendModel, type PosterModel } from "@/lib/poster/models";
 import { V2_FORMATS, type PosterV2Format } from "@/lib/poster/PosterV2";
 import { getBrowserClient } from "@/lib/supabase/browser";
@@ -49,9 +48,13 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 
 const FORMATS: PosterV2Format[] = ["impressao", "square", "portrait", "story", "landscape"];
 type Step = 1 | 2 | 3 | 4;
-type Framing = { x: number; y: number; zoom: number };
-type Custom = { order: number[]; framing: Framing | null };
+/** Ajustes do tutor: ordem das fotos (a principal primeiro) e o enquadramento de cada foto (pelo número dela). */
+type Custom = { order: number[]; framings: Record<number, Framing> };
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+/** Só os enquadramentos das fotos que estão no cartaz contam. */
+const usedFramings = (c: Custom, order: number[]) => order.map((i) => c.framings[i] ?? null);
+const sameFraming = (a: Framing | null, b: Framing | null) =>
+  a === b || Boolean(a && b && Math.round(a.x) === Math.round(b.x) && Math.round(a.y) === Math.round(b.y) && a.zoom.toFixed(2) === b.zoom.toFixed(2));
 
 const STEPS: { label: string; icon: LucideIcon }[] = [
   { label: "Formato", icon: Proportions },
@@ -91,7 +94,7 @@ const btnPrimary = `${btn} bg-status-lost-solid text-white hover:brightness-110`
 const btnSecondary = `${btn} border border-border-strong bg-surface-elevated text-text-primary hover:bg-surface-muted`;
 const btnLink = "inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-sm font-semibold text-link underline-offset-4 hover:underline";
 
-type Saved = { model: PosterModel; order: number[]; framing: Framing | null };
+type Saved = { model: PosterModel; order: number[]; framings: Record<number, Framing> };
 
 export function PosterStudio({
   code,
@@ -110,10 +113,14 @@ export function PosterStudio({
   // Cartazes salvos, por formato, com as fotos convertidas de id para a posição atual.
   const [saved, setSaved] = useState<Partial<Record<PosterV2Format, Saved>>>(() =>
     Object.fromEntries(
-      savedDesigns.map((d) => [
-        d.format,
-        { model: d.model, order: d.photoIds.map((id) => photos.findIndex((p) => p.id === id)).filter((i) => i >= 0), framing: d.framing },
-      ]),
+      savedDesigns.map((d) => {
+        const indexes = d.photoIds.map((id) => photos.findIndex((p) => p.id === id));
+        const framings: Record<number, Framing> = {};
+        indexes.forEach((i, k) => {
+          if (i >= 0 && d.framings[k]) framings[i] = d.framings[k]!;
+        });
+        return [d.format, { model: d.model, order: indexes.filter((i) => i >= 0), framings }];
+      }),
     ),
   );
   const [saving, setSaving] = useState(false);
@@ -147,10 +154,9 @@ export function PosterStudio({
   }  /** O cartaz em tela é exatamente o salvo deste formato? */
   function sameAsSaved(fmt: PosterV2Format, m: PosterModel, c: Custom): boolean {
     const d = saved[fmt];
-    if (!d || d.model !== m || fit(fmt, m, d.order).join(",") !== c.order.join(",")) return false;
-    const a = d.framing;
-    const b = c.framing;
-    return a === b || Boolean(a && b && Math.round(a.x) === Math.round(b.x) && Math.round(a.y) === Math.round(b.y) && a.zoom.toFixed(2) === b.zoom.toFixed(2));
+    const order = fit(fmt, m, c.order);
+    if (!d || d.model !== m || fit(fmt, m, d.order).join(",") !== order.join(",")) return false;
+    return order.every((i) => sameFraming(d.framings[i] ?? null, c.framings[i] ?? null));
   }
 
 
@@ -181,52 +187,55 @@ export function PosterStudio({
         .filter(Boolean)
         .map(Number)
         .filter((i) => photos[i]);
+      // Enquadramentos na ordem do cartaz (?quadros); endereços antigos: ?foco + ?zoom da principal.
+      const list = parseFramings(q.get("quadros"));
       const foco = /^(\d{1,3}),(\d{1,3})$/.exec(q.get("foco") ?? "");
       const zoom = Number(q.get("zoom"));
+      if (!list.length && foco) list[0] = clampFraming({ x: Number(foco[1]), y: Number(foco[2]), zoom: zoom || 1 });
       /* eslint-disable react-hooks/set-state-in-effect -- restaura uma única vez o estado salvo na URL */
       setFormat(fmt);
       if (isPosterModel(m)) {
         setModel(m);
-        if (order.length || foco)
-          setCustom({
-            [`${fmt}-${m}`]: {
-              order: order.length ? order : defaultFor(fmt, m),
-              framing: foco
-                ? {
-                    x: Number(foco[1]),
-                    y: Number(foco[2]),
-                    zoom: zoom >= 1 && zoom <= 3 ? zoom : 1,
-                  }
-                : null,
-            },
+        if (order.length || list.some(Boolean)) {
+          const finalOrder = order.length ? order : defaultFor(fmt, m);
+          const framings: Record<number, Framing> = {};
+          finalOrder.forEach((i, k) => {
+            if (list[k]) framings[i] = list[k]!;
           });
+          setCustom({ [`${fmt}-${m}`]: { order: finalOrder, framings } });
+        }
         setStep(q.get("passo") === "3" ? 3 : 4);
       } else setStep(2);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
     // Abre com os cartazes salvos na conta (a URL, se tiver um ajuste em andamento, prevalece).
     const fromSaved = Object.fromEntries(
-      Object.entries(saved).map(([fmt, d]) => [`${fmt}-${d!.model}`, { order: d!.order.length ? d!.order : defaultFor(fmt as PosterV2Format, d!.model), framing: d!.framing }]),
+      Object.entries(saved).map(([fmt, d]) => [`${fmt}-${d!.model}`, { order: d!.order.length ? d!.order : defaultFor(fmt as PosterV2Format, d!.model), framings: d!.framings }]),
     );
     if (Object.keys(fromSaved).length) setCustom((c) => ({ ...fromSaved, ...c }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só na primeira montagem
   }, [photos]);
 
   const key = format && model ? `${format}-${model}` : "";
-  const isEdited = (c: Custom | undefined, fmt = format, m = model) => Boolean(c && fmt && m && (c.framing || c.order.join(",") !== defaultFor(fmt, m).join(",")));
+  const isEdited = (c: Custom | undefined, fmt = format, m = model) =>
+    Boolean(c && fmt && m && (usedFramings(c, fit(fmt, m, c.order)).some(Boolean) || fit(fmt, m, c.order).join(",") !== defaultFor(fmt, m).join(",")));
   const inProgress = custom[key];
   const current: Custom =
-    format && model ? (inProgress ? { ...inProgress, order: fit(format, model, inProgress.order) } : { order: defaultFor(format, model), framing: null }) : { order: [], framing: null };
+    format && model ? (inProgress ? { ...inProgress, order: fit(format, model, inProgress.order) } : { order: defaultFor(format, model), framings: {} }) : { order: [], framings: {} };
+  /** Parâmetros dos ajustes no endereço (página e gerador): fotos e enquadramento de cada uma. */
+  const customParams = (q: URLSearchParams, fmt: PosterV2Format, m: PosterModel, c: Custom | null | undefined) => {
+    if (!c) return;
+    const order = fit(fmt, m, c.order);
+    if (order.join(",") !== defaultFor(fmt, m).join(",")) q.set("fotos", order.join(","));
+    const quadros = formatFramings(usedFramings(c, order));
+    if (quadros) q.set("quadros", quadros);
+  };
   const setCurrent = (c: Custom) => setCustom((all) => ({ ...all, [key]: c }));
   const edited = isEdited(custom[key]);
 
   const posterUrl = (fmt: PosterV2Format, m: PosterModel, c: Custom | null, download = false) => {
     const q = new URLSearchParams({ modelo: "proposta", estilo: String(m) });
-    if (c && c.order.join(",") !== defaultFor(fmt, m).join(",")) q.set("fotos", fit(fmt, m, c.order).join(","));
-    if (c?.framing) {
-      q.set("foco", `${Math.round(c.framing.x)},${Math.round(c.framing.y)}`);
-      q.set("zoom", c.framing.zoom.toFixed(2));
-    }
+    customParams(q, fmt, m, c);
     if (download) q.set("baixar", "1");
     return `/alerta/${code}/cartaz/${fmt}?${q.toString()}`;
   };
@@ -239,12 +248,7 @@ export function PosterStudio({
     if (format && model && step >= 3) {
       q.set("estilo", String(model));
       if (step === 3) q.set("passo", "3");
-      const c = custom[`${format}-${model}`];
-      if (c && c.order.join(",") !== defaultFor(format, model).join(",")) q.set("fotos", fit(format, model, c.order).join(","));
-      if (c?.framing) {
-        q.set("foco", `${Math.round(c.framing.x)},${Math.round(c.framing.y)}`);
-        q.set("zoom", c.framing.zoom.toFixed(2));
-      }
+      customParams(q, format, model, custom[`${format}-${model}`]);
     }
     const s = q.toString();
     window.history.replaceState(null, "", s ? `?${s}` : window.location.pathname);
@@ -294,6 +298,11 @@ export function PosterStudio({
   return (
     <MotionRoot variant="b" className="flex scroll-mt-20 flex-col gap-6" data-step-flow data-testid="criar-cartaz">
       <MotionSteps steps={STEPS} states={states} onSelect={(i) => go((i + 1) as Step)} label="Etapas do cartaz" variant="b" direction={direction} />
+      {/* Telas largas: setas laterais. Continuar só quando a etapa já tem o que precisa (formato, modelo). */}
+      <SideArrows
+        onBack={step > 1 ? () => go((step - 1) as Step) : undefined}
+        onNext={step === 1 && format ? () => go(2) : step === 2 && model ? () => go(3) : step === 3 && format && model ? () => go(4) : undefined}
+      />
 
       <StepStage stepKey={`etapa-${step}`} direction={direction} focus={moved}>
       {step === 1 && (
@@ -570,8 +579,9 @@ export function PosterStudio({
                     setSaving(true);
                     setNotice(null);
                     try {
-                      await savePosterDesign(getBrowserClient(), code, { format, model, photoIds: ids as string[], framing: current.framing });
-                      setSaved((all) => ({ ...all, [format]: { model, order: current.order, framing: current.framing } }));
+                      await savePosterDesign(getBrowserClient(), code, { format, model, photoIds: ids as string[], framings: usedFramings(current, current.order) });
+                      const kept = Object.fromEntries(current.order.filter((i) => current.framings[i]).map((i) => [i, current.framings[i]!]));
+                      setSaved((all) => ({ ...all, [format]: { model, order: current.order, framings: kept } }));
                       setNotice("Cartaz salvo na sua conta. Ele abre assim em qualquer aparelho.");
                     } catch (err) {
                       setNotice((err as Error).message || "Não deu para salvar agora. Tente de novo.");
@@ -622,6 +632,12 @@ export function PosterStudio({
               </button>
             </div>
           </div>
+          <StepNav>
+            <button type="button" className={btnSecondary} onClick={() => go(3)}>
+              <ArrowLeft aria-hidden="true" className="size-5" /> Voltar
+            </button>
+            <span />
+          </StepNav>
         </section>
       )}
       </StepStage>
@@ -830,19 +846,31 @@ function Customize({
   onBack: () => void;
 }) {
   const { order } = value;
-  const framing = value.framing ?? { x: 50, y: 50, zoom: 1 };
   const main = order[0];
   const aspects = order.map((i) => (sizes[i] ? sizes[i].width / sizes[i].height : undefined));
-  const box = aspects.every((a) => a !== undefined) && order.length ? modelLayout(format, model, aspects as number[]).boxes[0]! : null;
-  const setFraming = (f: Framing) =>
-    onChange({
-      order,
-      framing: {
-        x: clamp(f.x, 0, 100),
-        y: clamp(f.y, 0, 100),
-        zoom: clamp(f.zoom, 1, 3),
-      },
-    });
+  // Espaço de cada foto no cartaz (o mesmo cálculo do gerador), na ordem escolhida.
+  const boxes = aspects.every((a) => a !== undefined) && order.length ? modelLayout(format, model, aspects as number[]).boxes : [];
+  // Foto em ajuste, pela posição no cartaz (0 = principal). Se ela sair, volta para a última que existe.
+  const [slot, setSlot] = useState(0);
+  const active = Math.max(0, Math.min(slot, order.length - 1));
+  const photo = order[active];
+  const box = boxes[active] ?? null;
+  const a = photo !== undefined && sizes[photo] ? sizes[photo].width / sizes[photo].height : null;
+  // Tamanho mínimo: a foto inteira cabendo no espaço.
+  const minZoom = box && a ? containZoom(a, box.width / box.height) : 1;
+  const own = photo !== undefined ? value.framings[photo] : undefined;
+  const framing = own ?? { x: 50, y: 50, zoom: 1 };
+  const setFraming = (f: Framing) => {
+    if (photo === undefined) return;
+    onChange({ order, framings: { ...value.framings, [photo]: clampFraming(f, minZoom) } });
+  };
+  /** Volta esta foto ao enquadramento padrão do modelo. */
+  const resetFraming = () => {
+    if (photo === undefined) return;
+    const rest = { ...value.framings };
+    delete rest[photo];
+    onChange({ order, framings: rest });
+  };
   const [undo, setUndo] = useState<Custom | null>(null);
 
   const [preview, setPreview] = useState(previewUrl);
@@ -855,7 +883,6 @@ function Customize({
   const frameRef = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const pinch = useRef<{ dist: number; zoom: number } | null>(null);
-  const a = main !== undefined && sizes[main] ? sizes[main].width / sizes[main].height : null;
   const geometry = () => {
     if (!box || !a) return null;
     const iw = a >= 1 ? 1000 : 1000 * a;
@@ -889,10 +916,15 @@ function Customize({
     const g = geometry();
     if (!g || !box || !frameRef.current) return;
     const k = frameRef.current.clientWidth / box.width;
+    // Foto maior que o espaço: arrastar troca o trecho visível. Menor: arrastar move a foto
+    // dentro do espaço (o mesmo cálculo do gerador, em assets.ts).
+    const span = (size: number, room: number) => (size > room ? size : room - size);
+    const sx = span(g.rw, box.width);
+    const sy = span(g.rh, box.height);
     setFraming({
       ...framing,
-      x: framing.x - ((e.clientX - prev.x) / (g.rw * k)) * 100,
-      y: framing.y - ((e.clientY - prev.y) / (g.rh * k)) * 100,
+      x: sx > 0.5 ? framing.x - ((e.clientX - prev.x) / (sx * k)) * 100 : framing.x,
+      y: sy > 0.5 ? framing.y - ((e.clientY - prev.y) / (sy * k)) * 100 : framing.y,
     });
   };
   const onPointerUp = (e: React.PointerEvent) => {
@@ -913,6 +945,8 @@ function Customize({
     e.preventDefault();
   };
   const g = geometry();
+  // Posição da foto no espaço, num eixo: recortada em volta do ponto (maior) ou deslocada (menor).
+  const offset = (pct: number, size: number, room: number) => (size > room ? -clamp((pct / 100) * size - room / 2, 0, size - room) : (room - size) * (1 - pct / 100));
   const imgStyle: React.CSSProperties | undefined =
     g && box
       ? {
@@ -920,8 +954,8 @@ function Customize({
           width: `${(g.rw / box.width) * 100}%`,
           height: `${(g.rh / box.height) * 100}%`,
           maxWidth: "none",
-          left: `${(-clamp((framing.x / 100) * g.rw - box.width / 2, 0, g.rw - box.width) / box.width) * 100}%`,
-          top: `${(-clamp((framing.y / 100) * g.rh - box.height / 2, 0, g.rh - box.height) / box.height) * 100}%`,
+          left: `${(offset(framing.x, g.rw, box.width) / box.width) * 100}%`,
+          top: `${(offset(framing.y, g.rh, box.height) / box.height) * 100}%`,
         }
       : undefined;
 
@@ -932,8 +966,8 @@ function Customize({
   const canAdd = (i: number) => order.length < max && fit([...order, i]).length === order.length + 1;
   const toggle = (i: number) => {
     setDropped(null);
-    if (order.includes(i)) onChange({ order: order.filter((x) => x !== i), framing: value.framing });
-    else if (canAdd(i)) onChange({ order: [...order, i], framing: value.framing });
+    if (order.includes(i)) onChange({ order: order.filter((x) => x !== i), framings: value.framings });
+    else if (canAdd(i)) onChange({ order: [...order, i], framings: value.framings });
   };
   const makeMain = (i: number) => {
     const next = [i, ...order.filter((x) => x !== i)].slice(0, max);
@@ -945,18 +979,11 @@ function Customize({
         ? `${many ? "As fotos" : "A foto"} ${out.map((x) => x + 1).join(" e ")} ${many ? "saíram" : "saiu"} das complementares: com a nova principal, não ${many ? "cabem" : "cabe"} neste modelo.`
         : null,
     );
-    onChange({ order: fitted, framing: null });
-  };
-  const move = (pos: number, dir: -1 | 1) => {
-    const n = [...order];
-    const j = pos + dir;
-    if (j < 1 || j >= n.length) return;
-    [n[pos], n[j]] = [n[j]!, n[pos]!];
-    onChange({ order: n, framing: value.framing });
+    onChange({ order: fitted, framings: value.framings });
   };
   const restore = () => {
     setUndo(value);
-    onChange({ order: defaultOrder, framing: null });
+    onChange({ order: defaultOrder, framings: {} });
   };
   const thumb = "aspect-square w-full rounded object-cover";
 
@@ -998,8 +1025,8 @@ function Customize({
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-1 font-bold">2. Fotos complementares (até {max - 1})</legend>
               <p className="text-sm text-text-secondary" data-testid="capacidade">
-                Neste formato, o Modelo {model} mostra até {max} fotos: a principal e até {max - 1} complementares. Toque para incluir ou tirar; a ordem define a posição no
-                cartaz. “Não cabe” quer dizer que, com as fotos já escolhidas, essa ficaria estreita demais.
+                Neste formato, o Modelo {model} mostra até {max} fotos: a principal e até {max - 1} complementares. Toque para incluir ou tirar: a primeira que você marcar vai no primeiro espaço do
+                cartaz e a seguinte, no segundo. Para trocar a ordem, desmarque a primeira (a outra passa a ser a primeira) e marque-a de novo. “Não cabe” quer dizer que, com as fotos já escolhidas, essa ficaria estreita demais.
               </p>
               {dropped && (
                 <p role="status" className="text-sm font-semibold text-status-lost">
@@ -1045,54 +1072,52 @@ function Customize({
                   );
                 })}
               </div>
-              {extras.length > 1 && (
-                <ol className="flex flex-col gap-1">
-                  {extras.map((i, k) => (
-                    <li key={i} className="flex items-center gap-2 text-sm">
-                      <span className="w-36 font-medium">
-                        Complementar {k + 1}: foto {i + 1}
-                      </span>
-                      <button
-                        type="button"
-                        className={`${btnSecondary} min-h-11 px-3`}
-                        aria-label={`Mover a foto ${i + 1} para antes`}
-                        disabled={k === 0}
-                        onClick={() => move(k + 1, -1)}
-                      >
-                        <ChevronLeft aria-hidden="true" className="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${btnSecondary} min-h-11 px-3`}
-                        aria-label={`Mover a foto ${i + 1} para depois`}
-                        disabled={k === extras.length - 1}
-                        onClick={() => move(k + 1, 1)}
-                      >
-                        <ChevronRight aria-hidden="true" className="size-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              )}
             </fieldset>
           ) : (
             <p className="text-sm text-text-secondary">O Modelo 1 usa só a foto principal, em destaque.</p>
           )}
 
           <fieldset className="flex flex-col gap-2">
-            <legend className="mb-1 font-bold">{max > 1 ? "3" : "2"}. Enquadrar a foto principal</legend>
-            <p className="text-sm text-text-secondary">Arraste a foto (ou use as setas do teclado) e aproxime com o controle, com dois dedos ou com a roda do mouse.</p>
+            <legend className="mb-1 font-bold">{max > 1 ? "3" : "2"}. {order.length > 1 ? "Enquadrar as fotos" : "Enquadrar a foto principal"}</legend>
+            <p className="text-sm text-text-secondary">
+              {order.length > 1 ? "Escolha a foto e ajuste no espaço dela no cartaz: arraste" : "Arraste a foto"} (ou use as setas do teclado) e mude o tamanho com o controle, com dois
+              dedos ou com a roda do mouse. Afaste até a foto caber inteira, se quiser: a sobra fica com o fundo do cartaz.
+            </p>
+            {order.length > 1 && (
+              <div role="radiogroup" aria-label="Foto a enquadrar" className="flex flex-wrap gap-2" data-testid="editor-fotos">
+                {order.map((i, k) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="radio"
+                    aria-checked={k === active}
+                    onClick={() => setSlot(k)}
+                    className={`${motionCard} flex min-h-12 items-center gap-2 rounded-md border-2 p-1 pr-3 text-left text-sm font-semibold ${k === active ? "border-status-lost-solid bg-status-lost-soft" : "border-border hover:border-border-strong"}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photos[i]!.url} alt="" className="size-10 rounded object-cover" />
+                    <span className="flex flex-col leading-tight">
+                      {k === 0 ? "Principal" : `Complementar ${k}`}
+                      <span className="text-xs font-normal text-text-secondary">{value.framings[i] ? "ajustada" : "padrão do modelo"}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div
               ref={frameRef}
               role="group"
               tabIndex={0}
-              aria-label="Enquadramento da foto principal: setas movem, + e − aproximam"
+              aria-label={`Enquadramento da foto ${active === 0 ? "principal" : `complementar ${active}`}: setas movem, + e − mudam o tamanho`}
               className="relative mx-auto w-full touch-none overflow-hidden rounded-md bg-[#1d2b44] select-none"
               style={{
                 aspectRatio: box ? `${box.width} / ${box.height}` : "4 / 3",
                 cursor: "grab",
                 maxHeight: 360,
                 maxWidth: box ? `${(360 * box.width) / box.height}px` : undefined,
+                // Espaço vazio (foto menor que o espaço) aparece quadriculado: é onde fica o fundo do cartaz.
+                backgroundImage: "repeating-conic-gradient(#24344f 0 25%, #1d2b44 0 50%)",
+                backgroundSize: "16px 16px",
               }}
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
@@ -1108,7 +1133,7 @@ function Customize({
               data-testid="editor-moldura"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {imgStyle && main !== undefined && <img src={photos[main]!.url} alt="Foto principal no enquadramento" style={imgStyle} draggable={false} />}
+              {imgStyle && photo !== undefined && <img src={photos[photo]!.url} alt={`Foto ${active === 0 ? "principal" : `complementar ${active}`} no enquadramento`} style={imgStyle} draggable={false} />}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1116,32 +1141,45 @@ function Customize({
                 className={`${btnSecondary} min-h-11 px-3`}
                 aria-label="Afastar"
                 onClick={() => setFraming({ ...framing, zoom: framing.zoom - 0.25 })}
-                disabled={framing.zoom <= 1}
+                disabled={framing.zoom <= minZoom + 0.001}
               >
                 <Minus aria-hidden="true" className="size-4" />
               </button>
               <label className="flex flex-1 items-center gap-2 text-sm font-semibold">
-                <span className="sr-only">Aproximar</span>
+                <span className="sr-only">Tamanho da foto</span>
                 <input
                   type="range"
-                  min={1}
-                  max={3}
-                  step={0.05}
+                  min={Number(minZoom.toFixed(2))}
+                  max={ZOOM_MAX}
+                  step={0.01}
                   value={framing.zoom}
                   onChange={(e) => setFraming({ ...framing, zoom: Number(e.target.value) })}
                   className="min-w-0 flex-1 accent-[#c22a31]"
                 />
-                <span className="w-10 text-right tabular-nums">{framing.zoom.toFixed(1)}×</span>
+                <span className="w-12 text-right tabular-nums">{Math.round(framing.zoom * 100)}%</span>
               </label>
               <button
                 type="button"
                 className={`${btnSecondary} min-h-11 px-3`}
                 aria-label="Aproximar mais"
                 onClick={() => setFraming({ ...framing, zoom: framing.zoom + 0.25 })}
-                disabled={framing.zoom >= 3}
+                disabled={framing.zoom >= ZOOM_MAX}
               >
                 <Plus aria-hidden="true" className="size-4" />
               </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" className={`${btnSecondary} min-h-11 px-3 text-sm`} onClick={() => setFraming({ x: 50, y: 50, zoom: minZoom })} disabled={!box || !a}>
+                Caber inteira
+              </button>
+              <button type="button" className={`${btnSecondary} min-h-11 px-3 text-sm`} onClick={() => setFraming({ ...framing, zoom: 1 })} disabled={!box || !a}>
+                Preencher o espaço
+              </button>
+              {own && (
+                <button type="button" className={`${btnLink} px-2`} onClick={resetFraming}>
+                  Voltar ao padrão desta foto
+                </button>
+              )}
             </div>
           </fieldset>
 

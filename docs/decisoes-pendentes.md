@@ -18,12 +18,13 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
-| 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–46, chaves PII) e publicar | Nada em produção sem autorização expressa |
+| 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–48, chaves PII) e publicar | Nada em produção sem autorização expressa |
 
 ## Decididas
 
 | Data | Decisão |
 |---|---|
+| 2026-11-10 | **Cartaz, etapa Personalizar: enquadrar cada foto** (principal e complementares), com tamanho de "caber inteira" (a sobra fica com o fundo do cartaz) até 3×; a lista "Complementar 1/2 ‹ ›" saiu (a ordem segue a ordem em que o tutor marca as fotos). **Migration 48 autorizada** e aplicada **só no `mel-dev`** (salva o enquadramento de cada foto); em produção, junto com as demais (item 10). Também: halo da etapa atual redondo, setas laterais Voltar/Continuar em telas largas nos dois fluxos (no "Perdi meu pet" a seta Continuar valida e salva como o botão; na revisão não há seta), "Voltar" na etapa 4 e filtros do Mural alinhados aos botões do topo |
 | 2026-11-10 | **Opção B aplicada aos fluxos reais** (encerra o item 14), autorizada pelo proprietário: "Criar cartaz" (indicador, troca de etapas, cartões, "Compartilhar" com "Preparando…") e "Perdi meu pet"/edição do alerta (indicador com ícones e estado de erro, troca de passos, mensagem de validação e balanço do campo). Sem mudar regras, campos, validação, rascunho, publicação ou banco. Só código na branch `prototipo/microinteracoes` (sem merge na `main`, sem deploy) |
 | 2026-11-10 | **Microinterações: Opção B (Progressão dinâmica)** escolhida pelo proprietário (encerra o item 13), a partir do protótipo `/dev/microinteracoes`. Ainda não aplicada aos fluxos reais (item 14) |
 | 2026-11-10 | **6 alertas sintéticos removidos do `mel-dev`** (encerra o item 7b): SYEE89, UEBTTQ, SFUY49, 7WN595, ZBMPFS e H2X673, das contas `e2e+r11-…@exemplo.com` (64 linhas em cascata: contas, perfis, pets, fotos, alertas, avisos e push), com backup e ensaio de restauração 8/8 antes (`~/.mel-dev-backups/limpeza-testes-52e81f77e6017d05.json`). Eles deixavam o CI vermelho (o teste do Radar via 7 correspondências em vez de 1). Alerta RCU6K4 da Mel conferido depois: intacto. Os arquivos das 10 fotos podem ter ficado no Storage (só as linhas do banco saíram) |

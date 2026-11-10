@@ -3,6 +3,7 @@ import { alertPath, collageExtras, isPosterFormat, POSTER_FORMATS, posterContent
 import { getPublicLostCase } from "@mel/data";
 import { fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
 import { composePhotos } from "@/lib/poster/compose";
+import { clampFraming, type Framing, parseFramings, ZOOM_FLOOR } from "@/lib/poster/framing";
 import { isPosterModel, modelCapacity } from "@/lib/poster/models";
 import { PosterCollage } from "@/lib/poster/PosterCollage";
 import { PosterClassic, PosterHero } from "@/lib/poster/PosterModels";
@@ -73,22 +74,23 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     // ?foco=x,y (só nesta avaliação em DEV): simula o enquadramento do tutor na foto principal,
     // sem gravar nada, para conferir se um ponto único serve aos cinco formatos.
     const simulated = /^(\d{1,3}),(\d{1,3})$/.exec(params.get("foco") ?? "");
+    // ?quadros=x,y,zoom_x,y,zoom…: enquadramento do editor para cada foto, na ordem do cartaz
+    // ("-" = padrão do modelo). Endereços antigos: ?foco + ?zoom valem para a principal.
+    const framings = parseFramings(params.get("quadros"));
+    const zoom = Number(params.get("zoom"));
+    if (!framings.length && params.has("zoom") && zoom >= ZOOM_FLOOR && zoom <= 3)
+      framings[0] = clampFraming({ x: simulated ? Number(simulated[1]) : 50, y: simulated ? Number(simulated[2]) : 50, zoom });
     const fetched = await Promise.all(
       picked.map(async (p, i) => ({
         source: await fetchPhoto(p.url),
         focus: i === 0 && simulated ? { x: Math.min(100, Number(simulated[1])), y: Math.min(100, Number(simulated[2])) } : p.focus,
+        framing: framings[i] ?? null,
       })),
     );
-    const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"] } => f.source !== null);
-    // ?zoom=1..3 (protótipo do editor, DEV): enquadramento explícito da principal neste formato
-    // (ponto do ?foco + aproximação), aplicado só nesta imagem — nada é gravado.
-    const zoom = Number(params.get("zoom"));
-    const framing =
-      params.has("zoom") && zoom >= 1 && zoom <= 3
-        ? { focus: simulated ? { x: Math.min(100, Number(simulated[1])), y: Math.min(100, Number(simulated[2])) } : { x: 50, y: 50 }, zoom }
-        : undefined;
+    // Uma foto que não chega sai junto com o seu enquadramento (as outras não mudam de lugar).
+    const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"]; framing: Framing | null } => f.source !== null);
     const [{ layout, model: chosen, photos: ready, diagnostics }, qr] = await Promise.all([
-      composePhotos(formato, sources, { framing, model }),
+      composePhotos(formato, sources, { model }),
       qrDataUrl(url, formato === "impressao" ? 860 : 600),
     ]);
     const { width, height } = V2_FORMATS[formato];

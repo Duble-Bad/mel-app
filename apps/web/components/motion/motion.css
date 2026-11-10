@@ -346,24 +346,24 @@
   width: calc(100% / var(--n));
   height: 2.75rem;
   display: flex;
+  align-items: center;
   justify-content: center;
   pointer-events: none;
   transform: translateX(calc(var(--i) * 100%));
   transition: transform var(--dur-slow) var(--ease-spring);
 }
+/* Disco perfeito em volta do círculo: mesmo tamanho nos dois eixos (raio do círculo + 7 px). */
 .mm-spot::before {
   content: "";
-  width: 3.5rem;
-  height: 100%;
+  flex-shrink: 0;
+  width: calc(var(--r) * 2 + 14px);
+  height: calc(var(--r) * 2 + 14px);
   border-radius: 9999px;
   background: color-mix(in srgb, var(--accent) 22%, transparent);
   transition: background-color var(--dur) var(--ease);
 }
 .mm-spot[data-error]::before {
   background: color-mix(in srgb, var(--color-danger-solid) 24%, transparent);
-}
-.mm-steps[data-dense] .mm-spot::before {
-  width: 3rem;
 }
 
 /* Etapa alcançada: um pop curto (só ao chegar; a classe é trocada pela chave do elemento). */
@@ -598,6 +598,83 @@
 }
 .mm-root[data-variant="b"] .mm-actionLabel {
   animation: mm-roll-in var(--dur) var(--ease);
+}
+
+/* ---------- Setas flutuantes (telas largas) ---------- */
+
+.mm-sideArrow {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .mm-sideArrow {
+    position: fixed;
+    top: 50%;
+    z-index: 30;
+    display: flex;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-top: -1.625rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border-strong);
+    background: color-mix(in srgb, var(--color-surface-elevated) 92%, transparent);
+    color: var(--color-text-primary);
+    box-shadow: var(--mel-shadow-md);
+    backdrop-filter: blur(6px);
+    transition:
+      transform var(--dur-fast) var(--ease),
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+  .mm-sideArrow[data-side="left"] {
+    left: 1.25rem;
+  }
+  .mm-sideArrow[data-side="right"] {
+    right: 1.25rem;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+  .mm-sideArrow:hover {
+    transform: scale(1.06);
+  }
+  .mm-sideArrow:active {
+    transform: scale(0.95);
+    transition-duration: 60ms;
+  }
+}
+/* Dica com o nome: aparece ao passar o mouse ou focar pelo teclado. */
+.mm-sideTip {
+  position: absolute;
+  top: 50%;
+  white-space: nowrap;
+  border-radius: var(--mel-radius-md);
+  background: var(--color-text-primary);
+  color: var(--color-background, #0a111d);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(var(--tip-shift, 0)) scale(0.96);
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.mm-sideArrow[data-side="left"] .mm-sideTip {
+  left: calc(100% + 0.625rem);
+  --tip-shift: -4px;
+}
+.mm-sideArrow[data-side="right"] .mm-sideTip {
+  right: calc(100% + 0.625rem);
+  --tip-shift: 4px;
+}
+.mm-sideArrow:hover .mm-sideTip,
+.mm-sideArrow:focus-visible .mm-sideTip {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
 }
 
 @media (prefers-reduced-motion: reduce) {

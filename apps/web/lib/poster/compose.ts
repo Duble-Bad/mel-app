@@ -1,6 +1,7 @@
 import "server-only";
 import sharp from "sharp";
 import { cropToDataUrl, fitToDataUrl, type PhotoFocus } from "./assets";
+import type { Framing } from "./framing";
 import { modelLayout, type ModelLayout, type PosterModel } from "./models";
 import type { PhotoLayout, PosterV2Format } from "./PosterV2";
 
@@ -29,14 +30,12 @@ const COLLAGE_MIN_KEPT = 0.5;
  */
 export async function composePhotos(
   format: PosterV2Format,
-  sources: { source: Buffer; focus: PhotoFocus }[],
+  /** `framing`: enquadramento do tutor no editor (ponto + tamanho) para esta foto, neste formato. */
+  sources: { source: Buffer; focus: PhotoFocus; framing?: Framing | null }[],
   {
-    framing,
     reward = false,
     model = 2,
   }: {
-    /** Editor: enquadramento explícito da principal (ponto + zoom) neste formato. */
-    framing?: { focus: { x: number; y: number }; zoom: number };
     /** Há selo de bonificação (protótipo): o quadrado e o 4:5 cedem uma linha da área de fotos. */
     reward?: boolean;
     /** Modelo escolhido pelo tutor (1 foto em destaque, 2 várias fotos, 3 clássico). */
@@ -65,11 +64,10 @@ export async function composePhotos(
         kept: crop ? Math.round(kept * 100) / 100 : 1,
         scale: Math.round((crop ? Math.max(b.width / w, b.height / h) : Math.min(b.width / w, b.height / h)) * 100) / 100,
       };
-      if (i === 0) {
-        // Enquadrado no editor: é a escolha do tutor, sem a troca automática por foto inteira.
-        if (framing) return cropToDataUrl(s.source, b.width, b.height, framing.focus, "centre", framing.zoom);
-        return fitToDataUrl(s.source, b.width, b.height, s.focus, { minKept });
-      }
+      // Enquadrada no editor (principal ou complementar): é a escolha do tutor, sem a troca
+      // automática por foto inteira; com zoom < 1 a foto fica menor que o espaço.
+      if (s.framing) return cropToDataUrl(s.source, b.width, b.height, { x: s.framing.x, y: s.framing.y }, "centre", s.framing.zoom);
+      if (i === 0) return fitToDataUrl(s.source, b.width, b.height, s.focus, { minKept });
       // Complementares: recorte pelo enquadramento do tutor ou pelo centro ("attention" escolhia
       // o pelo, cortando os olhos). Foto vertical sem enquadramento: um pouco acima do meio, onde
       // costuma estar a cabeça. Só se o corte passar de metade da foto ela entra inteira.

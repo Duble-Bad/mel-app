@@ -35,11 +35,12 @@ export function MuralFeed({ searchParams }: { searchParams: Promise<Params> }) {
           <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.05] font-black tracking-[-0.03em]">Mural da MEL</h1>
           <p className="max-w-[60ch] text-lg text-text-secondary">Acompanhe os pets perdidos, encontrados e disponíveis para adoção na sua região.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <ButtonLink href="/adocao" variant="secondary" size="md" className="w-auto">
+        {/* No celular, duas colunas iguais: os mesmos lados dos filtros "Cães e gatos" e "Qualquer porte". */}
+        <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:flex-wrap sm:gap-2">
+          <ButtonLink href="/adocao" variant="secondary" size="md" className="gap-1.5 px-2 text-sm whitespace-nowrap sm:w-auto sm:gap-2 sm:px-5 sm:text-[15px]">
             <Heart aria-hidden="true" className="size-4" strokeWidth={2} /> Para adoção
           </ButtonLink>
-          <ButtonLink href="/mapa" variant="secondary" size="md" className="w-auto">
+          <ButtonLink href="/mapa" variant="secondary" size="md" className="gap-1.5 px-2 text-sm whitespace-nowrap sm:w-auto sm:gap-2 sm:px-5 sm:text-[15px]">
             <MapIcon aria-hidden="true" className="size-4" strokeWidth={2} /> Ver no mapa
           </ButtonLink>
         </div>

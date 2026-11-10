@@ -58,12 +58,23 @@ export async function cropToDataUrl(
       const meta = await sharp(upright).metadata();
       const iw = meta.width ?? w;
       const ih = meta.height ?? h;
-      const scale = Math.max(w / iw, h / ih) * Math.max(1, zoom);
-      const rw = Math.max(w, Math.round(iw * scale));
-      const rh = Math.max(h, Math.round(ih * scale));
-      const left = Math.min(rw - w, Math.max(0, Math.round((focus.x / 100) * rw - w / 2)));
-      const top = Math.min(rh - h, Math.max(0, Math.round((focus.y / 100) * rh - h / 2)));
-      img = img.resize(rw, rh).extract({ left, top, width: w, height: h });
+      // zoom < 1: a foto fica menor que o espaço (no máximo até caber inteira).
+      const scale = Math.max(w / iw, h / ih) * Math.max(0.2, zoom);
+      const rw = Math.max(1, Math.round(iw * scale));
+      const rh = Math.max(1, Math.round(ih * scale));
+      // Em cada eixo: maior que o espaço → recorta em volta do ponto; menor → posiciona pelo
+      // ponto e a sobra fica transparente (aparece o fundo do cartaz).
+      const cw = Math.min(w, rw);
+      const ch = Math.min(h, rh);
+      const left = rw > w ? Math.min(rw - w, Math.max(0, Math.round((focus.x / 100) * rw - w / 2))) : 0;
+      const top = rh > h ? Math.min(rh - h, Math.max(0, Math.round((focus.y / 100) * rh - h / 2))) : 0;
+      const padX = w - cw;
+      const padY = h - ch;
+      const padLeft = Math.round(padX * (1 - focus.x / 100));
+      const padTop = Math.round(padY * (1 - focus.y / 100));
+      img = sharp(await sharp(upright).resize(rw, rh).extract({ left, top, width: cw, height: ch }).png().toBuffer());
+      if (padX || padY)
+        img = img.ensureAlpha().extend({ left: padLeft, right: padX - padLeft, top: padTop, bottom: padY - padTop, background: { r: 0, g: 0, b: 0, alpha: 0 } });
     } else {
       img = img.resize(w, h, { fit: "cover", position });
     }

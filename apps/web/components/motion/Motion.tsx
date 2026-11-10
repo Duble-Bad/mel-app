@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, LoaderCircle } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import type { MotionVariant } from "./MotionSteps";
 import { s } from "./classes";
@@ -136,6 +136,28 @@ export function Shake({ attempt, children, className = "" }: { attempt: number; 
     <div ref={el} className={className}>
       {children}
     </div>
+  );
+}
+
+/**
+ * Setas flutuantes nas laterais da tela (só em telas largas): voltar e continuar, sem texto;
+ * o nome aparece como dica ao passar o mouse ou focar pelo teclado. Sem a ação, a seta some.
+ */
+export function SideArrows({ onBack, onNext, backLabel = "Voltar", nextLabel = "Continuar" }: { onBack?: () => void; onNext?: () => void; backLabel?: string; nextLabel?: string }) {
+  const arrow = (side: "left" | "right", label: string, onClick?: () => void) =>
+    onClick && (
+      <button type="button" className={s.sideArrow} data-side={side} aria-label={label} onClick={onClick}>
+        {side === "left" ? <ChevronLeft aria-hidden="true" className="size-7" /> : <ChevronRight aria-hidden="true" className="size-7" />}
+        <span className={s.sideTip} aria-hidden="true">
+          {label}
+        </span>
+      </button>
+    );
+  return (
+    <>
+      {arrow("left", backLabel, onBack)}
+      {arrow("right", nextLabel, onNext)}
+    </>
   );
 }
 
