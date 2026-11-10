@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- Satori (next/og) só desenha <img>, não <Image> */
 import type { PosterContent } from "@mel/core";
-import { CLASSIC_ROW, type ModelLayout } from "./models";
+import { CLASSIC_ROW, HERO_SIDE_GAP, type ModelLayout } from "./models";
 import { fitFont, fitText, GOLD, MUTED, NAVY, PANEL, recognizeText, TEXT, V2_FORMATS, type PosterV2Format } from "./PosterV2";
 
 // Modelos 1 (foto em destaque) e 3 (clássico de poste) — o modelo 2 é o PosterV2.
@@ -125,25 +125,53 @@ export function PosterHero({ format, content, photos, layout, qr, url, dev, rewa
   );
 
   // ---------- A4: fundo branco, foto grande, nome grande embaixo ----------
+  const second = layout.boxes[1] && photos[1] ? layout.boxes[1] : null;
+  /** Descrição na coluna ao lado da foto: o espaço que sobra entre os dados e a 2ª foto (ou o pé da coluna). */
+  // Com 2ª foto, os dados ficam um pouco menores para sobrar espaço para a descrição.
+  const SIDE = second ? { det: 40, seen: 38, when: 34 } : { det: 46, seen: 44, when: 40 };
+  const sideMarks = (marks: string) => {
+    const colW = 1474 - box.width - HERO_SIDE_GAP;
+    // Figtree: ~0,5 da letra por caractere (média de texto corrido).
+    const perLine = (size: number) => Math.max(8, Math.floor(colW / (size * 0.5)));
+    const lines = (text: string | null, size: number) => (text ? Math.ceil(text.length / perLine(size)) : 0);
+    const items = [content.details, lastSeen, content.when].filter(Boolean).length + (reward ? 1 : 0) + (second ? 2 : 1);
+    const used =
+      nameSize(content.name, 132) +
+      lines(content.details, SIDE.det) * SIDE.det * 1.2 +
+      lines(lastSeen, SIDE.seen) * SIDE.seen * 1.25 +
+      lines(content.when, SIDE.when) * SIDE.when * 1.25 +
+      (reward ? 64 : 0) +
+      18 * items +
+      12 + 20 + 3;
+    const room = box.height - used - (second ? second.height : 0) - 8;
+    // Maior letra (26–38) em que a descrição inteira cabe; se não couber, a 26 e corta numa palavra com "…".
+    for (let size = 38; size >= 26; size -= 2) {
+      const max = perLine(size) * Math.floor(room / (size * 1.3));
+      if (marks.length <= max || size === 26) {
+        if (max < perLine(size) * 2) return null;
+        const text = marks.length <= max ? marks : `${marks.slice(0, max - 1).replace(/\s+\S*$/, "")}…`;
+        return <div style={{ display: "flex", fontSize: size, lineHeight: 1.3, marginTop: 12, paddingTop: 20, borderTop: "3px solid #e4e0d8" }}>{text}</div>;
+      }
+    }
+    return null;
+  };
   if (format === "impressao") {
     return (
       <div style={{ width, height, display: "flex", flexDirection: "column", background: "#fff", fontFamily: "Figtree", color: NAVY }}>
         {band(168, 230)}
         {layout.arrangement === "side" ? (
-          // Foto vertical: alta à esquerda, nome e dados ao lado.
-          <div style={{ display: "flex", flex: 1, padding: "56px 90px 0", gap: 48 }}>
+          // Foto vertical: alta à esquerda; ao lado, nome, dados, a descrição inteira do tutor
+          // (letra ajustada ao espaço) e, se houver, uma 2ª foto no pé da coluna.
+          <div style={{ display: "flex", flex: 1, padding: "56px 90px 0", gap: HERO_SIDE_GAP }}>
             {photoEl(photos[0], box, 28)}
-            <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", width: 1474 - box.width - HERO_SIDE_GAP, height: box.height, gap: 18 }}>
               <div style={{ display: "flex", fontSize: nameSize(content.name, 132), fontWeight: 800, lineHeight: 1 }}>{content.name}</div>
-              <div style={{ display: "flex", fontSize: 46, fontWeight: 700, color: INK_MUTED, lineHeight: 1.2 }}>{content.details}</div>
-              {lastSeen && <div style={{ display: "flex", fontSize: 44, fontWeight: 700, lineHeight: 1.25 }}>{lastSeen}</div>}
-              {content.when && <div style={{ display: "flex", fontSize: 40, color: INK_MUTED, lineHeight: 1.25 }}>{content.when}</div>}
+              <div style={{ display: "flex", fontSize: SIDE.det, fontWeight: 700, color: INK_MUTED, lineHeight: 1.2 }}>{content.details}</div>
+              {lastSeen && <div style={{ display: "flex", fontSize: SIDE.seen, fontWeight: 700, lineHeight: 1.25 }}>{lastSeen}</div>}
+              {content.when && <div style={{ display: "flex", fontSize: SIDE.when, color: INK_MUTED, lineHeight: 1.25 }}>{content.when}</div>}
               {rewardBadge(reward, 40)}
-              {content.marks && (
-                <div style={{ display: "flex", fontSize: 36, lineHeight: 1.3, marginTop: 12, paddingTop: 20, borderTop: "3px solid #e4e0d8" }}>
-                  {fitText(content.marks, { width: 1474 - box.width - 48, height: 36 * 1.3 * 9 }, 36)}
-                </div>
-              )}
+              {content.marks && sideMarks(content.marks)}
+              {second && <div style={{ display: "flex", marginTop: "auto" }}>{photoEl(photos[1], second, 24)}</div>}
             </div>
           </div>
         ) : (
@@ -212,7 +240,7 @@ export function PosterHero({ format, content, photos, layout, qr, url, dev, rewa
           <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: S.pad, justifyContent: "space-between", borderLeft: `8px solid ${accent}`, background: PANEL }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", fontSize: nameSize(content.name, S.name), fontWeight: 800, lineHeight: 1 }}>{content.name}</div>
-              <div style={{ display: "flex", fontSize: S.det, fontWeight: 700, color: MUTED }}>{content.details}</div>
+              <div style={{ display: "flex", fontSize: SIDE.det, fontWeight: 700, color: MUTED }}>{content.details}</div>
               {lastSeen && <div style={{ display: "flex", fontSize: S.line, fontWeight: 700, lineHeight: 1.25 }}>{lastSeen}</div>}
               {content.when && <div style={{ display: "flex", fontSize: S.small, color: MUTED }}>{content.when}</div>}
               {rewardBadge(reward, S.small)}

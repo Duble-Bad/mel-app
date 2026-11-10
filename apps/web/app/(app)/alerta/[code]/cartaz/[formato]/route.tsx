@@ -94,8 +94,14 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     // Sem o domínio oficial configurado (DEV), o link vai marcado como ambiente de teste.
     const dev = !process.env.NEXT_PUBLIC_SITE_URL;
     // Horário marcado como aproximado pelo tutor: "por volta das 22:00".
-    const proposalContent =
-      c.lostAtUncertain && content.when ? { ...content, when: content.when.replace(/ às (\d{1,2}:\d{2})$/, ", por volta das $1") } : content;
+    // Nos modelos novos vai a descrição INTEIRA do tutor (os cartazes atuais cortam em 140
+    // caracteres); cada modelo ajusta a letra e só corta com "…" se não couber no espaço dele.
+    const fullMarks = [c.pet.uniqueMarks, c.notes].filter(Boolean).join(" ") || null;
+    const proposalContent = {
+      ...content,
+      marks: fullMarks,
+      ...(c.lostAtUncertain && content.when ? { when: content.when.replace(/ às (\d{1,2}:\d{2})$/, ", por volta das $1") } : {}),
+    };
     const art =
       model === 4 ? (
         <PosterCollage format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} extras={collageExtras(c)} />

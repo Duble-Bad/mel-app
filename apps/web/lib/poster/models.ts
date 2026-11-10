@@ -20,7 +20,8 @@ export const POSTER_MODELS: Record<PosterModel, { name: string; summary: string 
 
 /** Máximo de fotos de cada modelo no formato (o layout pode usar menos se alguma ficar estreita demais). */
 export function modelCapacity(format: PosterV2Format, model: PosterModel): number {
-  if (model === 1) return 1;
+  // Modelo 1 no A4 com foto vertical: uma 2ª foto embaixo dos dados, na coluna ao lado.
+  if (model === 1) return format === "impressao" ? 2 : 1;
   if (model === 4) return format === "impressao" ? 6 : format === "landscape" ? 3 : 5;
   return 3;
 }
@@ -88,6 +89,22 @@ function heroLayout(format: PosterV2Format, a: number): ModelLayout {
       return { model: 1, arrangement: "side", boxes: [{ width: w, height: 630 }], used: 1 };
     }
   }
+}
+
+/** Largura da coluna de texto do Modelo 1 no A4 com foto vertical (página 1474 úteis, vão de 48). */
+export const HERO_SIDE_GAP = 48;
+
+/**
+ * Modelo 1, A4 com foto vertical: a coluna ao lado da foto sobrava em branco embaixo dos dados.
+ * Com uma 2ª foto, ela entra no pé dessa coluna, na largura da coluna e com altura pela
+ * proporção dela (entre 360 e 620), sem cortar demais (senão fica só a principal).
+ */
+function heroSecond(format: PosterV2Format, l: ModelLayout, second: number | undefined): ModelLayout {
+  if (format !== "impressao" || l.arrangement !== "side" || second === undefined) return l;
+  const width = 1474 - l.boxes[0]!.width - HERO_SIDE_GAP;
+  const box = { width, height: Math.min(620, Math.max(360, Math.round(width / second))) };
+  const kept = Math.min(second / (box.width / box.height), box.width / box.height / second);
+  return kept < 0.55 ? l : { ...l, boxes: [l.boxes[0]!, box], used: 2 };
 }
 
 /** Modelo 3: área da linha de fotos por formato (largura útil × altura). */
@@ -266,7 +283,7 @@ const MODEL2_AREA_WIDTH: Record<PosterV2Format, number> = { square: 1080, portra
 export function modelLayout(format: PosterV2Format, model: PosterModel, aspects: number[], opts: { reward?: boolean } = {}): ModelLayout {
   const main = aspects[0] ?? 4 / 3;
   const room = opts.reward ? MODEL_REWARD_ROOM[format] : 0;
-  if (model === 1) return shrink(heroLayout(format, main), room);
+  if (model === 1) return heroSecond(format, shrink(heroLayout(format, main), room), aspects[1]);
   if (model === 3) return classicLayout(format, aspects, room);
   if (model === 4) return collageLayout(format, aspects, Boolean(opts.reward));
   return singleExtraFits(manyPhotosLayout(format, main, aspects, opts), aspects[1], format === "impressao" ? 24 : 0);

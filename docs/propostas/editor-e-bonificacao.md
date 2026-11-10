@@ -34,6 +34,24 @@ A estrutura abaixo só será feita depois da aprovação do proprietário (`deci
 | 3 — Clássico de poste | Fundo claro, fotos lado a lado, descrição e faixa vermelha com o QR | As fotos ficam na própria proporção; usa menos fotos se alguma fosse ficar estreita ou cortada demais; a sobra da linha vira o quadro "Como reconhecer" |
 | 4 — Cartaz completo (2026-11-10, a partir do modelo enviado pelo proprietário) | Faixa vermelha com PROCURA-SE e o NOME do pet; faixa amarela com raça, sexo, idade, porte e o que usava; mosaico de fotos sobre vermelho; quadros "Características" (texto do tutor, dividido em frases) e "Desapareceu em cidade/UF" (região pública e data); rodapé preto "VIU A/O NOME?" com o telefone e o QR | Até 6 fotos no A4 (a 6ª ao lado das características), 5 nos formatos verticais e 3 no horizontal. A disposição das colunas (1 ou 2 fotos por coluna) é a que menos corta; se uma foto ficaria estreita demais, entra uma a menos. Com 1 foto, o espaço ao lado mostra as características |
 
+**Descrição do tutor nos cartazes (2026-11-10).** Os cartazes atuais cortam o texto (marcas + observações) em 140 caracteres. Os modelos novos recebem o texto inteiro e cada um ajusta a letra ao espaço; se não couber, cortam numa palavra com "…". Modelo 1 no A4 com foto vertical: a coluna ao lado da foto leva a descrição e, havendo 2ª foto, ela entra no pé da coluna.
+
+Quanto cabe inteiro (caracteres, estimativa pelas mesmas regras do gerador; `.playwright-mcp/r14/limite.tsx`). "—" = o modelo não tem espaço de descrição nesse formato:
+
+| Formato | Fotos | M1 | M2 | M3 | M4 |
+|---|---|---|---|---|---|
+| A4 | 6 fotos (Mel) | 327 | 120 | 251 | 158 |
+| A4 | 1 foto vertical | 1000+ | 120 | 334 | 449 |
+| Quadrado | 6 fotos (Mel) | — | — | 80 | 193 |
+| Quadrado | 1 foto vertical | — | 341 | 388 | 358 |
+| 4:5 | 6 fotos (Mel) | — | — | 142 | 170 |
+| 4:5 | 1 foto vertical | — | 270 | 299 | 379 |
+| Stories | 6 fotos (Mel) | — | — | — | 170 |
+| Stories | 1 foto vertical | — | 262 | 242 | 449 |
+| Horizontal | qualquer | — | — | — | — |
+
+Leitura: com várias fotos, cerca de **150 caracteres** aparecem inteiros em quase todos os cartazes que têm descrição; até **~250** nos de A4. O cadastro hoje aceita até 500 (marcas) + 500 (observações do alerta). O texto completo sempre aparece na página do alerta (QR).
+
 **Modelo 4: dados e privacidade.**
 - Nome, faixa e quadros vêm do cadastro público do alerta; nada é inventado ("sem coleira" não é deduzido de um campo vazio, só aparece se estiver no texto do tutor).
 - **Telefone só quando autorizado:** o número só existe nos dados públicos quando o tutor marcou WhatsApp ou telefone como públicos no alerta (`get_public_lost_case` devolve `null` caso contrário). Sem autorização, o rodapé diz "VIU A MEL? AVISE A FAMÍLIA:" e mostra o QR.
