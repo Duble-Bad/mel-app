@@ -24,3 +24,6 @@ apps/web/public/vendor/
 schema-audit-report.md
 vitest-db.json
 schema-fingerprint.generated.json
+
+# Estado local de ferramentas do assistente
+.omc/
