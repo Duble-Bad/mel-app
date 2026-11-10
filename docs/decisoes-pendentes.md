@@ -18,6 +18,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
+| 13 | 2026-11-10 | **Microinterações: escolher a Opção A (Progressão elegante) ou a B (Progressão dinâmica)** para "Criar cartaz" e "Perdi meu pet" | Protótipo interativo em `/dev/microinteracoes` (só com `MEL_DEV_ROUTES=1`, dados fictícios, nada é gravado). Os fluxos reais **não mudaram**. Depois da escolha, aplicar a opção nos dois fluxos reais exige a sua autorização expressa. Vídeos e capturas em `.playwright-mcp/microinteracoes/` (local, fora do Git) |
 | 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–46, chaves PII) e publicar | Nada em produção sem autorização expressa |
 
 ## Decididas
