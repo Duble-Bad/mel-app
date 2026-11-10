@@ -1,27 +1,27 @@
 {
   "columns": {
-    "count": 390,
-    "sha256": "cf6a4d52c7935977afa7cc4e94a4b7a2bf9b155665677b06e5bbef6dc4ea537c"
+    "count": 398,
+    "sha256": "66dbc253d38ac3e538cf885c8554a816b02fc448323ba9a6252cb847af218213"
   },
   "constraints": {
-    "count": 250,
-    "sha256": "60aa3254976277f9e72c25cda27e0935eefe4488d3b785ef0d045e0d4eb1f4e4"
+    "count": 259,
+    "sha256": "848f58608017e3871eeff7b82eb18c9cb4ef3661b3a3ab5313a2795e17a8e82c"
   },
   "indexes": {
-    "count": 115,
-    "sha256": "c0fdf895a4c7e2df825cae925d02ad367556e37ea2f65f1df81da12bd2dcea66"
+    "count": 116,
+    "sha256": "07b06bea70f9b6375388a08083be32cf0480dc889de5097b62625ab4ffa6f3c5"
   },
   "enums": {
     "count": 18,
     "sha256": "56a8aabc42963c93cf8ba555f271fee9b097ce5ad95c22b3cbb66011f8484c27"
   },
   "functions": {
-    "count": 138,
-    "sha256": "421956c1c01fbf9349ce3f418eb21611d9dd4afc31ee51f4cb8415f0c434fa12"
+    "count": 141,
+    "sha256": "ac2ff10ccaf10fce67b7937030f9773a8efd389e0a2d2d12f103b687547ba210"
   },
   "function_grants": {
-    "count": 414,
-    "sha256": "e3a1b49ffac2d26884f7ce2250283a197fc8053efd53d87c6674427fae8c085e"
+    "count": 423,
+    "sha256": "b22893f321e026aff5c74f3578fb0118481c9b727878ab9689b2c21eeb363486"
   },
   "triggers": {
     "count": 40,
@@ -32,12 +32,12 @@
     "sha256": "ef49a59d068bd99c5258ddb3f5ed425c024e8bb8e2d9a7d7e9ae409b8acbb60d"
   },
   "rls": {
-    "count": 32,
-    "sha256": "1a4e7cff8c625835a39b11fdcc60bc7d2e3f441c627a6da68a4718375bb0a587"
+    "count": 33,
+    "sha256": "d8bba474fbacbca3fcc5649d793326ce978198e81c15a070b5ecbc50291e47a2"
   },
   "table_grants": {
-    "count": 272,
-    "sha256": "0401ce768618fb75d1ef92579547c80a4767eae65cac96976c4e8462c553c24c"
+    "count": 279,
+    "sha256": "316a166ed0d5d6deacaae2c70679f4c2425e36058930a9f428fd50257c867384"
   },
   "schema_grants": {
     "count": 6,

@@ -211,7 +211,8 @@ export async function audit(q, files, { exposedSchemas, ignoreFunctions = [] }) 
   const noPolicy = (await q(`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and not exists (select 1 from pg_policies p where p.schemaname='public' and p.tablename=c.relname) order by 1`)).map((r) => r[0]);
   // partner_documents e pii_access_grants: CPF cifrado e quem pode vê-lo — só a chave secreta (servidor).
   // app_settings: configurações do app — leitura e escrita só pelas funções (escrita só de administrador).
-  const NO_POLICY = ["app_settings", "case_matches", "partner_documents", "pii_access_grants", "push_outbox"];
+  // poster_designs: cartaz salvo pelo tutor — só pelas funções save/reset/get_poster_design(s).
+  const NO_POLICY = ["app_settings", "case_matches", "partner_documents", "pii_access_grants", "poster_designs", "push_outbox"];
   JSON.stringify(noPolicy) === JSON.stringify(NO_POLICY)
     ? pass(`tabelas sem política (acesso só por funções/servidor): ${NO_POLICY.join(", ")} — como previsto`)
     : fail(`tabelas sem política diferentes do previsto: ${noPolicy.join(", ") || "nenhuma"}`);
