@@ -80,9 +80,17 @@ select u.id, coalesce(u.email, '(anônimo)') as email, u.created_at::date as cri
             when u.grupo_email = 'B' and u.rotulo = any (array[${dbTestLabels().map(lit).join(",")}]::text[]) then 'B'
             when u.id in (select id from anon) then 'C' end as grupo
   from u
- where (u.grupo_email = 'A' and u.senha_e2e)
+ where ((u.grupo_email = 'A' and u.senha_e2e)
     or (u.grupo_email = 'B' and u.rotulo = any (array[${dbTestLabels().map(lit).join(",")}]::text[]))
-    or u.id in (select id from anon)`;
+    or u.id in (select id from anon))${onlyOwnersOf()}`;
+}
+
+/** MEL_LIMPEZA_CODIGOS=abc123,def456: restringe aos donos desses alertas (o critério acima continua obrigatório). */
+function onlyOwnersOf() {
+  const codes = (process.env.MEL_LIMPEZA_CODIGOS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (!codes.length) return "";
+  if (codes.some((c) => !/^[a-z2-9]{6}$/.test(c))) throw new Error("MEL_LIMPEZA_CODIGOS: código de alerta inválido.");
+  return `\n   and u.id in (select owner_id from public.lost_cases where short_code = any (array[${codes.map(lit).join(",")}]::text[]))`;
 }
 
 /** Tabelas e colunas restauráveis (sem colunas geradas) de public + auth.users/identities. */
