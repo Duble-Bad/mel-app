@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 /** Editar um alerta ATIVO (só o tutor): onde, quando, detalhes e contato. */
 export default function EditLostCasePage({ params }: PageProps<"/alerta/[code]/editar">) {
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
+    <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10 md:max-w-2xl lg:max-w-3xl">
       <Suspense fallback={<LoadingState label="Carregando o alerta…" />}>
         {params.then(({ code }) => (
           <EditContent code={code} />

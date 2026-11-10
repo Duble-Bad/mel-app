@@ -1,5 +1,6 @@
 "use client";
 
+import { FileImage, Globe } from "lucide-react";
 import { useId } from "react";
 
 /** Textos do proprietário (2026-11-09) para a descrição pública do pet. */
@@ -20,6 +21,49 @@ export const PET_DESCRIPTION_COPY = {
 export const POSTER_TEXT_FITS = 150;
 
 /**
+ * Divide o texto pelo que cabe nos cartazes: a descrição do pet (`prefix`) vem antes e usa o
+ * mesmo espaço; o corte é numa palavra, como no gerador. Estimativa (o A4 costuma caber mais).
+ */
+export function splitForPoster(text: string, prefix: string | null, fits = POSTER_TEXT_FITS): { poster: string; online: string } {
+  const t = text.trim();
+  const room = fits - (prefix?.trim() ? prefix.trim().length + 1 : 0);
+  if (t.length <= room) return { poster: t, online: "" };
+  if (room <= 0) return { poster: "", online: t };
+  const cut = t.slice(0, room + 1).lastIndexOf(" ");
+  const at = cut > room * 0.6 ? cut : room;
+  return { poster: t.slice(0, at).trimEnd(), online: t.slice(at).trimStart() };
+}
+
+function PosterSplit({ text, prefix }: { text: string; prefix: string | null }) {
+  const { poster, online } = splitForPoster(text, prefix);
+  const box = "flex flex-col gap-1.5 rounded-md border-2 p-3";
+  return (
+    <div className="grid gap-2 sm:grid-cols-2" data-testid="divisao-cartaz">
+      <div className={`${box} border-status-lost-solid/60 bg-status-lost-soft`}>
+        <p className="flex items-center gap-1.5 text-sm font-bold text-status-lost">
+          <FileImage aria-hidden="true" className="size-4" /> Aparece no cartaz
+        </p>
+        <p className="text-sm break-words" data-testid="vai-no-cartaz">
+          {prefix?.trim() && <span className="text-text-secondary">{prefix.trim()} </span>}
+          {poster || <span className="text-text-secondary">{text.trim() ? "Nada deste texto: a descrição do pet já ocupa o espaço." : "O que você escrever aqui aparece neste trecho."}</span>}
+          {online && "…"}
+        </p>
+        <p className="text-xs text-text-secondary">Cerca de {POSTER_TEXT_FITS} caracteres{prefix?.trim() ? ", junto com a descrição do pet (em cinza)" : ""}. No A4 pode caber um pouco mais.</p>
+      </div>
+      <div className={`${box} ${online ? "border-border-strong bg-surface" : "border-dashed border-border bg-surface"}`}>
+        <p className="flex items-center gap-1.5 text-sm font-bold">
+          <Globe aria-hidden="true" className="size-4" /> Só na página online do alerta
+        </p>
+        <p className="text-sm break-words" data-testid="so-online">
+          {online || <span className="text-text-secondary">Nada fica de fora: o texto inteiro cabe no cartaz.</span>}
+        </p>
+        <p className="text-xs text-text-secondary">A página do alerta (QR Code do cartaz) sempre mostra o texto completo.</p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Campo de texto LIVRE e público (descrição do pet, observações do alerta): orienta o
  * que escrever, mas não bloqueia, não corta e não altera nada do que o tutor digita —
  * inclusive ruas e endereços, que são decisão dele. Opcional.
@@ -36,7 +80,13 @@ export function PublicDescriptionField({
   rows = 4,
   className,
   max = 500,
+  posterSplit,
 }: {
+  /**
+   * Mostra, ao vivo, o trecho que vai no cartaz e o que fica só na página online. `prefix`:
+   * texto que vem antes deste no cartaz (a descrição do pet, no caso das observações do alerta).
+   */
+  posterSplit?: { prefix?: string | null };
   id: string;
   label: string;
   guidance: string;
@@ -71,6 +121,7 @@ export function PublicDescriptionField({
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={`${guidanceId} ${counterId} ${noticeId}`}
       />
+      {posterSplit && <PosterSplit text={value} prefix={posterSplit.prefix ?? null} />}
       {/* Só orienta: não bloqueia nem corta (o limite do cadastro é validado ao salvar). */}
       <p id={counterId} className="flex flex-wrap justify-between gap-x-3 text-sm" data-testid={`contador-${id}`}>
         <span className={n > max ? "font-semibold text-danger" : n > POSTER_TEXT_FITS ? "font-medium text-text-primary" : "text-text-secondary"}>

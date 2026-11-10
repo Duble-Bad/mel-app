@@ -44,6 +44,7 @@ Documentado também em `GeocodeResult` (`packages/core/src/ports`).
   - `search` recebe o ponto marcado como proximidade, ou nenhum (viés por IP);
   - nunca recebe coordenadas de terceiros (alertas e avistamentos de outros);
   - os tiles revelam só a área visível do mapa.
+- **CEP (2026-11-10):** quando a pessoa digita um CEP na busca, ele vai para o **ViaCEP** (público e gratuito, sem chave; `createViaCepLookup`), que devolve rua, bairro e cidade; esse endereço é localizado pelo geocoder de sempre (`withCepSearch`). Só o CEP digitado é enviado, nunca coordenadas. O CEP **não** entra no `label` (ele seria quase tão preciso quanto a rua).
 
 ## 3. Migração MapTiler → OpenFreeMap + Geoapify
 

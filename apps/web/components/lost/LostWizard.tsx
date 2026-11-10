@@ -11,7 +11,8 @@ import { LocationPicker, type PickedLocation } from "@/components/location/Locat
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
+import { MultiChoiceGroup } from "@/components/ui/Choice";
+import { DateCalendar } from "@/components/ui/DateCalendar";
 import { TextField } from "@/components/ui/Field";
 import { QuickPetForm } from "./QuickPetForm";
 import { PublicDescriptionField } from "@/components/pets/PublicDescriptionField";
@@ -219,7 +220,7 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
         <WhenStep lostCase={lostCase} busy={busy} onBack={back} onInvalid={setInvalid} onNext={(patch) => save(patch, "details")} />
       )}
       {step === "details" && lostCase && (
-        <DetailsStep lostCase={lostCase} busy={busy} onBack={back} onInvalid={setInvalid} onNext={(patch) => save(patch, "contact")} />
+        <DetailsStep lostCase={lostCase} busy={busy} onBack={back} onInvalid={setInvalid} posterPrefix={pet?.uniqueMarks ?? null} onNext={(patch) => save(patch, "contact")} />
       )}
       {step === "contact" && lostCase && (
         <ContactStep
@@ -393,11 +394,14 @@ function WhereStep({
   );
 }
 
-type WhenChoice = "now" | "today" | "yesterday" | "other";
-
 const pad = (n: number) => String(n).padStart(2, "0");
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const localTime = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+/** Hora sugerida: uma hora atrás (logo depois da meia-noite, 00:00, para não cair no dia anterior). */
+const suggestedTime = () => {
+  const now = new Date();
+  return now.getHours() >= 1 ? localTime(new Date(now.getTime() - 60 * 60_000)) : "00:00";
+};
 
 function WhenStep({
   lostCase,
@@ -413,26 +417,16 @@ function WhenStep({
   onInvalid?: OnInvalid;
 }) {
   const saved = lostCase.lostAt ? new Date(lostCase.lostAt) : null;
-  const [choice, setChoice] = useState<WhenChoice | null>(saved ? "other" : null);
-  const [time, setTime] = useState(() => localTime(new Date(Date.now() - 60 * 60_000)));
-  const [other, setOther] = useState(saved ? `${localDate(saved)}T${localTime(saved)}` : "");
+  // Dia no calendário (digitável) + hora aproximada. As regras são as mesmas: obrigatório e nunca no futuro.
+  const [date, setDate] = useState(saved ? localDate(saved) : "");
+  const [time, setTime] = useState(() => (saved ? localTime(saved) : suggestedTime()));
   const [uncertain, setUncertain] = useState(lostCase.lostAtUncertain);
   const { error, attempt, setError } = useStepError(onInvalid);
 
   function computeLostAt(): string | null {
-    const now = new Date();
-    if (choice === "now") return now.toISOString();
-    if (choice === "today" || choice === "yesterday") {
-      const day = new Date(now);
-      if (choice === "yesterday") day.setDate(day.getDate() - 1);
-      const d = new Date(`${localDate(day)}T${time || "12:00"}`);
-      return Number.isNaN(d.getTime()) ? null : d.toISOString();
-    }
-    if (choice === "other" && other) {
-      const d = new Date(other);
-      return Number.isNaN(d.getTime()) ? null : d.toISOString();
-    }
-    return null;
+    if (!date) return null;
+    const d = new Date(`${date}T${time || "12:00"}`);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
 
   return (
@@ -450,40 +444,36 @@ function WhenStep({
         onNext(parsed.data);
       }}
     >
-      <Shake attempt={attempt}>
-        <ChoiceGroup
-          name="when"
-          legend="Quando foi?"
-          columns={2}
-          value={choice}
-          onChange={(v) => {
-            setChoice(v);
-            if (error) setError(null);
-          }}
-          options={[
-            { value: "now", label: "Agora há pouco" },
-            { value: "today", label: "Hoje" },
-            { value: "yesterday", label: "Ontem" },
-            { value: "other", label: "Outro dia" },
-          ]}
-        />
-      </Shake>
-      {(choice === "today" || choice === "yesterday") && (
-        <TextField label="Mais ou menos que horas?" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-      )}
-      {choice === "other" && (
-        <TextField
-          label="Dia e hora aproximados"
-          type="datetime-local"
-          max={`${localDate(new Date())}T${localTime(new Date())}`}
-          value={other}
-          onChange={(e) => setOther(e.target.value)}
-        />
-      )}
-      <label className="flex min-h-12 items-center gap-3">
-        <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-primary" />
-        <span className="font-semibold">Não sei exatamente o horário</span>
-      </label>
+      <div className="grid gap-5 md:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] md:items-start">
+        <Shake attempt={attempt}>
+          <DateCalendar
+            label="Em que dia ele sumiu?"
+            value={date}
+            max={localDate(new Date())}
+            invalid={Boolean(error)}
+            describedBy="erro-quando"
+            onChange={(v) => {
+              setDate(v);
+              if (error) setError(null);
+            }}
+          />
+        </Shake>
+        <div className="flex flex-col gap-4">
+          <TextField
+            label="Mais ou menos que horas?"
+            type="time"
+            value={time}
+            onChange={(e) => {
+              setTime(e.target.value);
+              if (error) setError(null);
+            }}
+          />
+          <label className="flex min-h-12 items-center gap-3">
+            <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-primary" />
+            <span className="font-semibold">Não sei exatamente o horário</span>
+          </label>
+        </div>
+      </div>
       <FieldMessage id="erro-quando" message={error} />
       <Nav busy={busy} onBack={onBack} />
     </form>
@@ -496,12 +486,15 @@ function DetailsStep({
   onBack,
   onNext,
   onInvalid,
+  posterPrefix,
 }: {
   lostCase: LostCase;
   busy: boolean;
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
   onInvalid?: OnInvalid;
+  /** Descrição pública do pet: no cartaz ela vem antes das observações e divide o mesmo espaço. */
+  posterPrefix?: string | null;
 }) {
   const [wearing, setWearing] = useState<Wearing[]>(lostCase.wearing);
   const [notes, setNotes] = useState(lostCase.notes ?? "");
@@ -543,6 +536,7 @@ function DetailsStep({
             if (error) setError(null);
           }}
           error={error ?? undefined}
+          posterSplit={{ prefix: posterPrefix }}
           className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
         />
       </Shake>

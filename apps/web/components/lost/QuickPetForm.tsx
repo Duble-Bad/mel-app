@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Check, Crop, ImagePlus, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   fieldErrors,
   PET_COLORS,
@@ -20,6 +21,7 @@ import { preparePhotoSet } from "@/lib/images";
 import { Button } from "@/components/ui/Button";
 import { ChoiceGroup } from "@/components/ui/Choice";
 import { TextField } from "@/components/ui/Field";
+import { PhotoCropDialog } from "@/components/pets/PhotoCropDialog";
 
 /**
  * Cadastro relâmpago dentro do "Perdi meu pet": só foto, nome, espécie, porte
@@ -37,7 +39,24 @@ export function QuickPetForm({
   /** `warning`: algo não impediu o cadastro, mas a pessoa precisa saber. */
   onCreated: (pet: Pet, warning?: string) => void;
 }) {
+  // `original`: o arquivo escolhido (para ajustar de novo); `photo`: o que será enviado (recortado ou não).
+  const [original, setOriginal] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [cropping, setCropping] = useState<File | null>(null);
+  const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
+  useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
+  const setPhotos = (orig: File | null, final: File | null) => {
+    setOriginal(orig);
+    setPhoto(final);
+  };
+  /** Arquivo escolhido: abre o recorte (a foto só entra depois de "Usar"; cancelar mantém a anterior). */
+  const pick = (input: HTMLInputElement) => {
+    const f = input.files?.[0];
+    input.value = "";
+    if (f) setCropping(f);
+  };
+  const small =
+    "inline-flex min-h-11 items-center gap-1.5 rounded-md border border-border-strong bg-surface-elevated px-3 text-sm font-semibold transition-colors duration-200 ease-mel hover:bg-surface-muted";
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<Species | null>(null);
   const [size, setSize] = useState<PetSize | null>(null);
@@ -85,17 +104,48 @@ export function QuickPetForm({
         <span className="font-semibold">
           Foto <span className="font-normal text-text-secondary">(ajuda muito)</span>
         </span>
-        <label className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-border-strong font-semibold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus">
-          <span aria-hidden="true">📷</span> {photo ? `Foto escolhida: ${photo.name}` : "Tirar ou escolher foto"}
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            aria-label="Foto do pet"
-            onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
-          />
-        </label>
+        {photo && preview ? (
+          // Miniatura: confirma que a foto foi carregada (já com o recorte escolhido).
+          <div className="flex items-center gap-3 rounded-md border-2 border-border bg-surface p-2" data-testid="foto-escolhida">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview} alt="Foto escolhida do pet" className="size-24 shrink-0 rounded-md object-cover" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <p role="status" className="flex items-center gap-1.5 text-sm font-semibold text-status-found">
+                <Check aria-hidden="true" className="size-4" /> Foto carregada
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className={small} onClick={() => setCropping(original ?? photo)}>
+                  <Crop aria-hidden="true" className="size-4" /> Ajustar
+                </button>
+                <label className={`${small} cursor-pointer has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus`}>
+                  <ImagePlus aria-hidden="true" className="size-4" /> Trocar
+                  <input type="file" accept="image/*" className="sr-only" aria-label="Trocar a foto do pet" onChange={(e) => pick(e.target)} />
+                </label>
+                <button type="button" className={small} onClick={() => setPhotos(null, null)}>
+                  <Trash2 aria-hidden="true" className="size-4" /> Remover
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Sem "tirar": o próprio celular oferece câmera ou galeria ao escolher.
+          <label className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-border-strong px-3 text-center font-semibold has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus">
+            <ImagePlus aria-hidden="true" className="size-5 shrink-0" /> Escolher foto do pet
+            <input type="file" accept="image/*" className="sr-only" aria-label="Foto do pet" onChange={(e) => pick(e.target)} />
+          </label>
+        )}
+        <p className="text-sm text-text-secondary">Uma foto nítida, de preferência mostrando o rosto. Depois de escolher, você pode recortar e ajustar.</p>
       </div>
+      {cropping && (
+        <PhotoCropDialog
+          file={cropping}
+          onApply={(f) => {
+            setPhotos(cropping, f);
+            setCropping(null);
+          }}
+          onCancel={() => setCropping(null)}
+        />
+      )}
       <TextField label="Nome do pet" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
       <ChoiceGroup
         name="quick-species"

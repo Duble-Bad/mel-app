@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function LostPetPage() {
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
+    <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10 md:max-w-2xl lg:max-w-3xl">
       <Suspense fallback={<LoadingState label="Preparando o alerta…" />}>
         <LostPetContent />
       </Suspense>
