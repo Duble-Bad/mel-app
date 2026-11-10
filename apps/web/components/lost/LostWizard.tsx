@@ -243,14 +243,15 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
 
 // ---------------------------------------------------------------------------
 
+/** Celular: Continuar em cima, ocupando a largura (polegar), e Voltar embaixo. Telas maiores: lado a lado, no tamanho normal. */
 function Nav({ busy, onBack, children = "Continuar" }: { busy: boolean; onBack?: () => void; children?: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 pt-2">
-      <Button type="submit" loading={busy} loadingText="Salvando…">
+    <div className="flex flex-col gap-3 pt-2 sm:flex-row-reverse sm:items-center sm:justify-between">
+      <Button type="submit" loading={busy} loadingText="Salvando…" className="sm:w-auto sm:min-w-44">
         {children}
       </Button>
       {onBack && (
-        <Button variant="ghost" size="md" onClick={onBack} disabled={busy}>
+        <Button variant="ghost" size="md" onClick={onBack} disabled={busy} className="sm:w-auto">
           Voltar
         </Button>
       )}
@@ -444,7 +445,8 @@ function WhenStep({
         onNext(parsed.data);
       }}
     >
-      <div className="grid gap-5 md:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] md:items-start">
+      {/* Data e hora lado a lado, com o mesmo rótulo e a mesma altura; o calendário abre pelo botão do campo. */}
+      <div className="grid items-start gap-5 sm:grid-cols-2">
         <Shake attempt={attempt}>
           <DateCalendar
             label="Em que dia ele sumiu?"
@@ -458,22 +460,20 @@ function WhenStep({
             }}
           />
         </Shake>
-        <div className="flex flex-col gap-4">
-          <TextField
-            label="Mais ou menos que horas?"
-            type="time"
-            value={time}
-            onChange={(e) => {
-              setTime(e.target.value);
-              if (error) setError(null);
-            }}
-          />
-          <label className="flex min-h-12 items-center gap-3">
-            <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-primary" />
-            <span className="font-semibold">Não sei exatamente o horário</span>
-          </label>
-        </div>
+        <TextField
+          label="Mais ou menos que horas?"
+          type="time"
+          value={time}
+          onChange={(e) => {
+            setTime(e.target.value);
+            if (error) setError(null);
+          }}
+        />
       </div>
+      <label className="-mt-1 flex min-h-12 items-center gap-3">
+        <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-primary" />
+        <span className="font-semibold">Não sei exatamente o horário</span>
+      </label>
       <FieldMessage id="erro-quando" message={error} />
       <Nav busy={busy} onBack={onBack} />
     </form>
@@ -597,14 +597,17 @@ function ContactStep({
       <p className="text-text-secondary">
         Seu número <strong className="text-text-primary">só aparece no alerta se você marcar</strong> uma das opções abaixo.
       </p>
-      <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
-        <span className="font-semibold">Mostrar botão de WhatsApp no alerta</span>
-      </label>
-      <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
-        <span className="font-semibold">Mostrar botão para ligar</span>
-      </label>
+      {/* As duas opções do número ficam juntas: cada uma mantém 44 px de toque, sem espaço sobrando entre elas. */}
+      <div className="-mt-2 flex flex-col">
+        <label className="flex min-h-11 items-center gap-3">
+          <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="size-5 shrink-0 accent-primary" />
+          <span className="font-semibold">Mostrar botão de WhatsApp no alerta</span>
+        </label>
+        <label className="flex min-h-11 items-center gap-3">
+          <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="size-5 shrink-0 accent-primary" />
+          <span className="font-semibold">Mostrar botão para ligar</span>
+        </label>
+      </div>
       {wantsPhone && (
         <Shake attempt={attempt}>
           <TextField

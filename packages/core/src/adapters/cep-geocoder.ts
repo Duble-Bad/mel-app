@@ -30,11 +30,22 @@ export function createViaCepLookup({ fetch: doFetch = fetch }: { fetch?: typeof 
   };
 }
 
+const norm = (s?: string) =>
+  (s ?? "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
 /**
- * Busca de endereço que também entende CEP: o CEP vira rua, bairro e cidade (pelo `lookup`) e
- * esse endereço é localizado pelo geocodificador de sempre. Qualquer outro texto (nome de rua,
- * lugar) vai direto para o geocodificador. O CEP NÃO entra no rótulo: partes do rótulo podem virar
- * texto público (docs/13-mapas-fornecedores.md, §2) e o CEP é quase tão preciso quanto a rua.
+ * Busca de endereço que também entende CEP. Com um CEP, o endereço vem dos **Correios** (pelo
+ * `lookup`): rua, bairro e cidade são exatamente os do CEP. Do geocodificador (mapa) só se usa a
+ * POSIÇÃO, e só de um resultado que seja a mesma rua, na mesma cidade — ele responde por
+ * semelhança de texto (traria "Rua D" para "Rua Dona Leopolda") e usa os bairros do mapa aberto,
+ * que às vezes divergem dos Correios. Sem a rua no mapa, o ponto fica no bairro (e, sem ele, na
+ * cidade), para a pessoa ajustar o pino. Qualquer outro texto vai direto para o geocodificador.
+ * O CEP NÃO entra no rótulo: partes do rótulo podem virar texto público (docs/13, §2).
  */
 export function withCepSearch(geocoder: Geocoder, lookup: CepLookup): Geocoder {
   return {
@@ -44,23 +55,28 @@ export function withCepSearch(geocoder: Geocoder, lookup: CepLookup): Geocoder {
       if (!cep) return geocoder.search(query, near);
       const address = await lookup(cep);
       if (!address) return [];
-      const place = `${address.city} - ${address.state}`;
-      const tries = [
-        [address.street, address.neighborhood, place],
-        [address.neighborhood, place],
-        [place],
-      ].map((parts) => parts.filter(Boolean).join(", "));
-      // O CEP já diz a cidade e o estado: resultados de outros lugares saem (se sobrar algum).
-      const norm = (s?: string) => (s ?? "").normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-      const sameState = (r: GeocodeResult) => !r.state || r.state === address.state;
-      const sameCity = (r: GeocodeResult) => !r.city || norm(r.city) === norm(address.city);
-      for (const text of [...new Set(tries)]) {
-        const found = await geocoder.search(text, near);
-        const local = found.filter((r) => sameState(r) && sameCity(r));
-        const list = local.length ? local : found.filter(sameState);
-        if (list.length) return list;
+      const { street, neighborhood, city, state } = address;
+      const uf = state as GeocodeResult["state"];
+      const inCity = (r: GeocodeResult) => (!r.state || r.state === uf) && (!r.city || norm(r.city) === norm(city));
+      const firstPart = (r: GeocodeResult) => norm(r.label.split(",")[0]);
+      const tail = `${city} – ${state}`;
+      const result = (label: string, position: LatLng): GeocodeResult => ({ label, position, neighborhood, city, state: uf });
+
+      // 1) A rua do CEP, no mapa: mesmo nome e mesma cidade.
+      if (street) {
+        const found = await geocoder.search([street, neighborhood, `${city} - ${state}`].filter(Boolean).join(", "), near);
+        const match = found.find((r) => inCity(r) && firstPart(r) === norm(street));
+        if (match) return [result([street, neighborhood, tail].filter(Boolean).join(", "), match.position)];
       }
-      return [];
+      // 2) O bairro do CEP (centro do bairro); 3) a cidade.
+      if (neighborhood) {
+        const found = await geocoder.search(`${neighborhood}, ${city} - ${state}`, near);
+        const match = found.find((r) => inCity(r) && firstPart(r) === norm(neighborhood));
+        if (match) return [result(`${neighborhood}, ${tail}`, match.position)];
+      }
+      const found = await geocoder.search(`${city} - ${state}`, near);
+      const match = found.find(inCity);
+      return match ? [result(tail, match.position)] : [];
     },
   };
 }

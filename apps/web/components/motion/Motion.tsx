@@ -42,20 +42,21 @@ export function useStepFlow(total: number, initial = 0) {
  * tela. O foco vai para o elemento `[data-step-heading]` da etapa nova.
  */
 export function StepStage({ stepKey, direction, children, focus = true }: { stepKey: string; direction: Direction; children: ReactNode; focus?: boolean }) {
-  const [layers, setLayers] = useState<{ key: string; node: ReactNode; dir: Direction }[]>([{ key: stepKey, node: children, dir: direction }]);
-  const [shownKey, setShownKey] = useState(stepKey);
+  // A etapa atual é SEMPRE desenhada a partir de `children` (nunca sai da tela por engano). Só a
+  // etapa que saiu fica guardada, durante a animação de saída, e é ela que as limpezas removem.
+  const [shown, setShown] = useState<{ key: string; node: ReactNode }>({ key: stepKey, node: children });
+  const [leaving, setLeaving] = useState<{ key: string; node: ReactNode; dir: Direction } | null>(null);
   const live = useRef<HTMLDivElement>(null);
   const first = useRef(true);
 
-  // Guarda a etapa que saiu durante a animação de saída ("estado derivado da prop", sem efeito).
-  if (stepKey !== shownKey) {
-    // Com "reduzir movimento" a troca é direta: nada sai animado.
+  // Troca de etapa ("estado derivado da prop", sem efeito). Com "reduzir movimento" a troca é direta.
+  if (stepKey !== shown.key) {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const leaving = reduced ? undefined : layers.find((l) => l.key === shownKey);
-    setShownKey(stepKey);
-    setLayers([...(leaving ? [{ ...leaving, dir: direction }] : []), { key: stepKey, node: children, dir: direction }]);
+    setLeaving(reduced ? null : { key: shown.key, node: shown.node, dir: direction });
+    setShown({ key: stepKey, node: children });
   }
-  const current = layers.map((l) => (l.key === stepKey ? { ...l, node: children } : l));
+  const current = [...(leaving && leaving.key !== stepKey ? [leaving] : []), { key: stepKey, node: children, dir: direction }];
+  const drop = (key: string) => setLeaving((l) => (l?.key === key ? null : l));
 
   useEffect(() => {
     if (first.current) {
@@ -73,8 +74,8 @@ export function StepStage({ stepKey, direction, children, focus = true }: { step
         wrap.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" });
       }
     }
-    // Segurança: se o navegador não disparar o fim da animação, a camada antiga sai mesmo assim.
-    const t = window.setTimeout(() => setLayers((ls) => ls.filter((l) => l.key === stepKey)), 450);
+    // Segurança: se o navegador não disparar o fim da animação, a etapa que saiu some mesmo assim.
+    const t = window.setTimeout(() => setLeaving(null), 450);
     return () => window.clearTimeout(t);
   }, [stepKey, focus]);
 
@@ -92,7 +93,7 @@ export function StepStage({ stepKey, direction, children, focus = true }: { step
             aria-hidden={out || undefined}
             inert={out || undefined}
             onAnimationEnd={(e) => {
-              if (out && e.target === e.currentTarget) setLayers((ls) => ls.filter((x) => x.key !== l.key));
+              if (out && e.target === e.currentTarget) drop(l.key);
             }}
           >
             {l.node}

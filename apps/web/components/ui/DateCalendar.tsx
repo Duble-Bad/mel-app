@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { controlClasses } from "./Field";
 
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 const WEEKDAYS = [
@@ -30,11 +31,13 @@ const maskBr = (raw: string) => {
   const d = raw.replace(/\D/g, "").slice(0, 8);
   return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join("/");
 };
+const monthTitle = (m: Date) => `${MONTHS[m.getMonth()]!.charAt(0).toUpperCase()}${MONTHS[m.getMonth()]!.slice(1)} de ${m.getFullYear()}`;
 
 /**
- * Calendário visual com a data também digitável (dd/mm/aaaa). Não aceita datas depois de
- * `max` (ex.: hoje). Teclado: setas andam pelos dias, PageUp/PageDown trocam o mês, Enter
- * escolhe. Valor no formato AAAA-MM-DD ("" = nenhuma data).
+ * Campo de data com o mesmo visual dos outros campos: digita-se dd/mm/aaaa ou abre-se o
+ * calendário pelo botão do próprio campo (o painel aparece logo abaixo e fecha ao escolher, com
+ * Esc ou clicando fora). Não aceita datas depois de `max`. No calendário, as setas andam pelos
+ * dias e PageUp/PageDown trocam o mês. Valor AAAA-MM-DD ("" = nenhuma data).
  */
 export function DateCalendar({
   label,
@@ -61,23 +64,55 @@ export function DateCalendar({
     setShownValue(value);
     setText(toBr(value));
   }
+  const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(() => {
     const d = selected ?? maxDate;
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [focusDay, setFocusDay] = useState<string>(value || max);
-  const grid = useRef<HTMLDivElement>(null);
   const [typedError, setTypedError] = useState<string | null>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const grid = useRef<HTMLDivElement>(null);
+
+  // Fecha ao clicar fora ou com Esc (o foco volta ao botão do calendário).
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        toggle.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
 
   const first = month.getDay();
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const canNext = new Date(month.getFullYear(), month.getMonth() + 1, 1) <= maxDate;
   const shift = (n: number) => setMonth((m) => new Date(m.getFullYear(), m.getMonth() + n, 1));
 
+  const openCalendar = () => {
+    const d = selected ?? maxDate;
+    setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+    setFocusDay(value || max);
+    setOpen(true);
+    requestAnimationFrame(() => grid.current?.querySelector<HTMLButtonElement>(`[data-day="${value || max}"]`)?.focus());
+  };
   const choose = (iso: string) => {
     setTypedError(null);
     setFocusDay(iso);
     onChange(iso);
+    setOpen(false);
+    toggle.current?.focus();
   };
   const moveFocus = (iso: string) => {
     const d = fromIso(iso)!;
@@ -95,27 +130,28 @@ export function DateCalendar({
     else return;
     e.preventDefault();
   };
-  // Dia que recebe o Tab dentro do mês mostrado: o focado, o escolhido, hoje ou o dia 1.
   const inMonth = (iso: string) => {
     const d = fromIso(iso);
     return d && d.getFullYear() === month.getFullYear() && d.getMonth() === month.getMonth();
   };
+  // Dia que recebe o Tab dentro do mês mostrado: o focado, o escolhido, hoje ou o dia 1.
   const tabDay = [focusDay, value, max].find((s) => s && inMonth(s)) ?? isoDate(month);
+  const bad = Boolean(invalid || typedError);
 
   return (
-    <fieldset className="flex flex-col gap-2" aria-describedby={describedBy}>
-      <legend className="mb-1.5 font-semibold">{label}</legend>
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={`${id}-texto`} className="text-sm text-text-secondary">
-          Digite a data ou escolha no calendário
-        </label>
+    <div ref={root} className="relative flex flex-col gap-2">
+      <label htmlFor={`${id}-data`} className="text-sm font-semibold text-text-primary">
+        {label}
+      </label>
+      <div className="relative">
         <input
-          id={`${id}-texto`}
+          id={`${id}-data`}
           inputMode="numeric"
           autoComplete="off"
           placeholder="dd/mm/aaaa"
           value={text}
-          aria-invalid={invalid || typedError ? true : undefined}
+          aria-invalid={bad || undefined}
+          aria-describedby={[describedBy, typedError ? `${id}-erro` : null].filter(Boolean).join(" ") || undefined}
           onChange={(e) => {
             const t = maskBr(e.target.value);
             setText(t);
@@ -132,70 +168,90 @@ export function DateCalendar({
             const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
             if (d.getDate() !== Number(m[1]) || d.getMonth() !== Number(m[2]) - 1) return setTypedError("Essa data não existe.");
             if (d > maxDate) return setTypedError("A data não pode estar no futuro.");
+            setTypedError(null);
             setMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-            choose(isoDate(d));
+            setShownValue(isoDate(d));
+            onChange(isoDate(d));
           }}
-          className={`block min-h-12 w-full max-w-60 rounded-md border-2 bg-surface px-4 text-base tabular-nums focus:border-focus focus:outline-none ${invalid || typedError ? "border-danger-solid" : "border-border-strong"}`}
+          className={controlClasses(bad, "pr-14 tabular-nums")}
           data-testid="data-digitada"
         />
-        {typedError && (
-          <p role="alert" className="text-sm font-semibold text-danger">
-            {typedError}
-          </p>
-        )}
+        <button
+          ref={toggle}
+          type="button"
+          onClick={() => (open ? setOpen(false) : openCalendar())}
+          aria-expanded={open}
+          aria-controls={`${id}-calendario`}
+          aria-label={open ? "Fechar o calendário" : "Abrir o calendário"}
+          className="absolute inset-y-0 right-1 my-auto inline-flex size-11 items-center justify-center rounded-md text-text-secondary transition-colors duration-200 ease-mel hover:bg-surface-muted hover:text-text-primary"
+        >
+          <CalendarDays aria-hidden="true" className="size-5" strokeWidth={1.9} />
+        </button>
       </div>
-      <div className={`w-full max-w-sm rounded-lg border-2 bg-surface p-3 ${invalid ? "border-danger-solid" : "border-border"}`} data-testid="calendario">
-        <div className="mb-2 flex items-center justify-between">
-          <button type="button" onClick={() => shift(-1)} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-surface-muted" aria-label="Mês anterior">
-            <ChevronLeft aria-hidden="true" className="size-5" />
-          </button>
-          <p className="font-bold" aria-live="polite">
-            {MONTHS[month.getMonth()]!.charAt(0).toUpperCase() + MONTHS[month.getMonth()]!.slice(1)} de {month.getFullYear()}
-          </p>
-          <button type="button" onClick={() => shift(1)} disabled={!canNext} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-surface-muted disabled:opacity-35" aria-label="Próximo mês">
-            <ChevronRight aria-hidden="true" className="size-5" />
-          </button>
+      {typedError && (
+        <p id={`${id}-erro`} role="alert" className="text-sm font-semibold text-danger">
+          {typedError}
+        </p>
+      )}
+      {open && (
+        <div
+          id={`${id}-calendario`}
+          role="dialog"
+          aria-label={`Calendário: ${label}`}
+          className="absolute top-full animate-pop left-0 z-30 mt-2 w-full min-w-72 max-w-sm rounded-lg border border-border-strong bg-surface-elevated p-3 shadow-lg"
+          data-testid="calendario"
+        >
+          <div className="mb-2 flex items-center justify-between">
+            <button type="button" onClick={() => shift(-1)} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-surface-muted" aria-label="Mês anterior">
+              <ChevronLeft aria-hidden="true" className="size-5" />
+            </button>
+            <p className="font-bold" aria-live="polite">
+              {monthTitle(month)}
+            </p>
+            <button type="button" onClick={() => shift(1)} disabled={!canNext} className="inline-flex size-11 items-center justify-center rounded-md hover:bg-surface-muted disabled:opacity-35" aria-label="Próximo mês">
+              <ChevronRight aria-hidden="true" className="size-5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-7 text-center text-xs font-semibold text-text-secondary" aria-hidden="true">
+            {WEEKDAYS.map(([s, full]) => (
+              <span key={full} className="py-1">
+                {s}
+              </span>
+            ))}
+          </div>
+          <div ref={grid} className="grid grid-cols-7 gap-1" role="group" aria-label={`Dias de ${monthTitle(month)}`}>
+            {Array.from({ length: first }, (_, i) => (
+              <span key={`v${i}`} />
+            ))}
+            {Array.from({ length: days }, (_, i) => {
+              const d = new Date(month.getFullYear(), month.getMonth(), i + 1);
+              const iso = isoDate(d);
+              const future = d > maxDate;
+              const isSel = value === iso;
+              const isToday = iso === max;
+              return (
+                <button
+                  key={iso}
+                  type="button"
+                  data-day={iso}
+                  disabled={future}
+                  tabIndex={iso === tabDay ? 0 : -1}
+                  aria-pressed={isSel}
+                  aria-label={`${i + 1} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}, ${WEEKDAYS[d.getDay()]![1]}${isToday ? " (hoje)" : ""}`}
+                  onClick={() => choose(iso)}
+                  onKeyDown={(e) => onKeyDown(e, iso)}
+                  onFocus={() => setFocusDay(iso)}
+                  className={`relative flex h-10 items-center justify-center rounded-md text-sm font-semibold tabular-nums transition-colors duration-150 ease-mel disabled:cursor-not-allowed disabled:opacity-30 ${
+                    isSel ? "bg-primary text-primary-foreground" : isToday ? "ring-2 ring-primary ring-inset hover:bg-primary-soft" : "hover:bg-surface-muted"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="grid grid-cols-7 text-center text-xs font-semibold text-text-secondary" aria-hidden="true">
-          {WEEKDAYS.map(([s, full]) => (
-            <span key={full} className="py-1">
-              {s}
-            </span>
-          ))}
-        </div>
-        <div ref={grid} className="grid grid-cols-7 gap-1" role="group" aria-label={`Dias de ${MONTHS[month.getMonth()]} de ${month.getFullYear()}`}>
-          {Array.from({ length: first }, (_, i) => (
-            <span key={`v${i}`} />
-          ))}
-          {Array.from({ length: days }, (_, i) => {
-            const d = new Date(month.getFullYear(), month.getMonth(), i + 1);
-            const iso = isoDate(d);
-            const future = d > maxDate;
-            const isSel = value === iso;
-            const isToday = iso === max;
-            return (
-              <button
-                key={iso}
-                type="button"
-                data-day={iso}
-                disabled={future}
-                tabIndex={iso === tabDay ? 0 : -1}
-                aria-pressed={isSel}
-                aria-label={`${i + 1} de ${MONTHS[d.getMonth()]} de ${d.getFullYear()}, ${WEEKDAYS[d.getDay()]![1]}${isToday ? " (hoje)" : ""}`}
-                onClick={() => choose(iso)}
-                onKeyDown={(e) => onKeyDown(e, iso)}
-                onFocus={() => setFocusDay(iso)}
-                className={`relative flex aspect-square min-h-10 items-center justify-center rounded-md text-sm font-semibold tabular-nums transition-colors duration-150 ease-mel disabled:cursor-not-allowed disabled:opacity-30 ${
-                  isSel ? "bg-primary text-primary-foreground" : isToday ? "ring-2 ring-primary ring-inset hover:bg-primary-soft" : "hover:bg-surface-muted"
-                }`}
-              >
-                {i + 1}
-                {isToday && !isSel && <span className="absolute bottom-0.5 text-[9px] leading-none font-bold text-primary">hoje</span>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </fieldset>
+      )}
+    </div>
   );
 }

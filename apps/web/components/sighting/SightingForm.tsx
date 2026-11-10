@@ -10,6 +10,7 @@ import { LocationPicker, type PickedLocation } from "@/components/location/Locat
 import { Alert } from "@/components/ui/Alert";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { TextField } from "@/components/ui/Field";
+import { limitedTextarea } from "@/components/ui/limitedText";
 import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 // Rosa dos ventos: Norte em cima, Oeste à esquerda… "Não sei" no centro.
@@ -204,14 +205,13 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
         <textarea
           id="sighting-notes"
           rows={3}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          {...limitedTextarea(notes, setNotes, 500)}
           placeholder="Ex.: entrou num terreno; estava perto do ponto de ônibus."
           aria-describedby="sighting-notes-hint"
           className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
         />
         <p id="sighting-notes-hint" className="text-sm text-text-secondary">
-          Não escreva seu endereço, número da casa, apartamento ou outros dados pessoais.
+          Não escreva seu endereço, número da casa, apartamento ou outros dados pessoais. <span className="tabular-nums">{notes.length}/500</span>
         </p>
       </div>
 

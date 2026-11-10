@@ -47,6 +47,7 @@ test("'Minha cachorrinha sumiu há 15 minutos': alert → anonymous sighting →
   await tutor.getByRole("button", { name: /Usar minha localização atual/ }).click();
   await expect(tutor.getByTestId("picked-label")).toContainText("perto de");
   await cont(tutor).click();
+  await tutor.getByRole("button", { name: "Abrir o calendário" }).click();
   await tutor.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(tutor).click();
   await cont(tutor).click(); // detalhes opcionais

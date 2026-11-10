@@ -1,7 +1,8 @@
 "use client";
 
 import { FileImage, Globe } from "lucide-react";
-import { useId } from "react";
+import { useId, useState } from "react";
+import { limitedTextarea } from "@/components/ui/limitedText";
 
 /** Textos do proprietário (2026-11-09) para a descrição pública do pet. */
 export const PET_DESCRIPTION_COPY = {
@@ -31,7 +32,8 @@ export function splitForPoster(text: string, prefix: string | null, fits = POSTE
   if (room <= 0) return { poster: "", online: t };
   const cut = t.slice(0, room + 1).lastIndexOf(" ");
   const at = cut > room * 0.6 ? cut : room;
-  return { poster: t.slice(0, at).trimEnd(), online: t.slice(at).trimStart() };
+  // Só o que entra: sem pontuação solta no ponto de corte (vírgula, ponto e vírgula, dois-pontos, travessão).
+  return { poster: t.slice(0, at).trimEnd().replace(/[\s,;:–—-]+$/, ""), online: t.slice(at).trimStart() };
 }
 
 function PosterSplit({ text, prefix }: { text: string; prefix: string | null }) {
@@ -46,7 +48,6 @@ function PosterSplit({ text, prefix }: { text: string; prefix: string | null }) 
         <p className="text-sm break-words" data-testid="vai-no-cartaz">
           {prefix?.trim() && <span className="text-text-secondary">{prefix.trim()} </span>}
           {poster || <span className="text-text-secondary">{text.trim() ? "Nada deste texto: a descrição do pet já ocupa o espaço." : "O que você escrever aqui aparece neste trecho."}</span>}
-          {online && "…"}
         </p>
         <p className="text-xs text-text-secondary">Cerca de {POSTER_TEXT_FITS} caracteres{prefix?.trim() ? ", junto com a descrição do pet (em cinza)" : ""}. No A4 pode caber um pouco mais.</p>
       </div>
@@ -65,8 +66,9 @@ function PosterSplit({ text, prefix }: { text: string; prefix: string | null }) 
 
 /**
  * Campo de texto LIVRE e público (descrição do pet, observações do alerta): orienta o
- * que escrever, mas não bloqueia, não corta e não altera nada do que o tutor digita —
- * inclusive ruas e endereços, que são decisão dele. Opcional.
+ * que escrever e não altera o conteúdo — inclusive ruas e endereços, que são decisão do
+ * tutor. Só aplica o limite do cadastro (não passa de `max`) e tira espaços do começo e do fim.
+ * Opcional.
  */
 export function PublicDescriptionField({
   id,
@@ -103,7 +105,9 @@ export function PublicDescriptionField({
   const guidanceId = useId();
   const noticeId = useId();
   const counterId = useId();
-  const n = value.trim().length;
+  const n = value.length;
+  const [cut, setCut] = useState(false);
+  const full = n >= max;
   return (
     <div className="flex flex-col gap-1.5" data-testid={`descricao-${id}`}>
       <label htmlFor={id} className="font-semibold">
@@ -117,19 +121,32 @@ export function PublicDescriptionField({
         rows={rows}
         className={className}
         placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
         aria-describedby={`${guidanceId} ${counterId} ${noticeId}`}
+        {...limitedTextarea(
+          value,
+          (v) => {
+            if (v.length < max) setCut(false);
+            onChange(v);
+          },
+          max,
+          () => setCut(true),
+        )}
       />
       {posterSplit && <PosterSplit text={value} prefix={posterSplit.prefix ?? null} />}
-      {/* Só orienta: não bloqueia nem corta (o limite do cadastro é validado ao salvar). */}
+      {/* Limite de verdade (decisão de 2026-11-10): não passa de `max`, nem colando; sem espaço no começo e no fim. */}
       <p id={counterId} className="flex flex-wrap justify-between gap-x-3 text-sm" data-testid={`contador-${id}`}>
-        <span className={n > max ? "font-semibold text-danger" : n > POSTER_TEXT_FITS ? "font-medium text-text-primary" : "text-text-secondary"}>
-          {n > POSTER_TEXT_FITS
-            ? `Nos cartazes, os primeiros ${POSTER_TEXT_FITS} caracteres costumam aparecer inteiros; o resto pode ser cortado com “…”. O texto completo fica na página do alerta.`
-            : `Até ${POSTER_TEXT_FITS} caracteres aparecem inteiros nos cartazes.`}
+        <span className={full ? "font-semibold text-status-lost" : n > POSTER_TEXT_FITS ? "font-medium text-text-primary" : "text-text-secondary"} aria-live="polite">
+          {full
+            ? cut
+              ? `O texto colado passava de ${max} caracteres e foi cortado no limite. Confira o final.`
+              : `Limite de ${max} caracteres atingido.`
+            : posterSplit
+              ? "" // os quadros acima já mostram o que entra no cartaz e o que fica de fora
+              : n > POSTER_TEXT_FITS
+              ? `Nos cartazes, os primeiros ${POSTER_TEXT_FITS} caracteres costumam aparecer inteiros; o resto pode ser cortado com “…”. O texto completo fica na página do alerta.`
+              : `Até ${POSTER_TEXT_FITS} caracteres aparecem inteiros nos cartazes.`}
         </span>
-        <span className={`tabular-nums ${n > max ? "font-semibold text-danger" : "text-text-secondary"}`}>
+        <span className={`tabular-nums ${full ? "font-semibold text-status-lost" : "text-text-secondary"}`}>
           {n}/{max}
         </span>
       </p>

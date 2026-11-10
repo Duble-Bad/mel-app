@@ -59,6 +59,7 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
 
   // 3 — Quando.
   await expect(page.getByRole("heading", { name: "Quando ele sumiu?" })).toBeVisible();
+  await page.getByRole("button", { name: "Abrir o calendário" }).click();
   await page.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(page).click();
 
@@ -152,8 +153,20 @@ test("each step explains what is missing", async ({ page }) => {
 
   await cont(page).click();
   await expect(page.getByText("Diga quando ele sumiu (mesmo que aproximado).")).toBeVisible();
+  await page.getByRole("button", { name: "Abrir o calendário" }).click();
   await page.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(page).click();
+  // Limite de verdade: não passa de 500 (nem colando), não começa com espaço e perde o do fim ao sair.
+  const notes = page.getByLabel(/Algo importante/);
+  await notes.fill(`   ${"a".repeat(600)}`);
+  await expect(notes).toHaveValue("a".repeat(500));
+  await expect(page.getByTestId("contador-notes")).toContainText("500/500");
+  await notes.fill("Medroso, atende pelo nome.   ");
+  await notes.blur();
+  await expect(notes).toHaveValue("Medroso, atende pelo nome.");
+  // O quadro do cartaz mostra só o que entra (sem "…").
+  await notes.fill(`É dócil, ${"muito ".repeat(30)}fim.`);
+  await expect(page.getByTestId("vai-no-cartaz")).not.toContainText("…");
   await cont(page).click(); // detalhes são opcionais
 
   await page.getByRole("checkbox", { name: /botão para ligar/ }).check();

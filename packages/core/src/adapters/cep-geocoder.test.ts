@@ -1,8 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Geocoder } from "../ports";
+import type { GeocodeResult, Geocoder } from "../ports";
 import { createViaCepLookup, parseCep, withCepSearch } from "./cep-geocoder";
 
-const result = (label: string) => ({ label, position: { lat: -23.55, lng: -46.63 } });
+const at = (lat: number, lng: number) => ({ lat, lng });
+const r = (label: string, city: string, state: GeocodeResult["state"], lat = -23.55, lng = -46.36): GeocodeResult => ({ label, position: at(lat, lng), city, state });
+const geocoder = (search: (q: string) => Promise<GeocodeResult[]>) => ({ search: vi.fn(search) }) as unknown as Geocoder & { search: ReturnType<typeof vi.fn> };
+
+// CEP 08506-010 (caso real visto pelo proprietário): os Correios dizem Rua Dona Leopolda, Vila São
+// Paulo; o mapa devolvia "Rua D" primeiro e a Rua Dona Leopolda no bairro "Sítio do Paiolzinho".
+const LEOPOLDA = { street: "Rua Dona Leopolda", neighborhood: "Vila São Paulo", city: "Ferraz de Vasconcelos", state: "SP" };
+const mapForLeopolda = async () => [
+  r("Rua D, Vila São Paulo, Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP", -23.5542, -46.3651),
+  r("Rua Dona Leopolda, Sítio do Paiolzinho, Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP", -23.558, -46.3635),
+  r("Vila São Paulo, Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP", -23.5615, -46.3687),
+  r("SPS veículos, Vila Andeyara, Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP"),
+];
 
 describe("CEP na busca de endereço", () => {
   it("reconhece CEP com ou sem hífen e ignora outros textos", () => {
@@ -13,38 +25,49 @@ describe("CEP na busca de endereço", () => {
     expect(parseCep("0100-1000")).toBeNull();
   });
 
-  it("CEP vira rua, bairro e cidade e é localizado pelo geocodificador; o CEP não entra no rótulo (privacidade)", async () => {
-    const search = vi.fn(async () => [result("Praça da Sé, Sé, São Paulo – SP")]);
-    const geo = withCepSearch({ search } as unknown as Geocoder, async () => ({ street: "Praça da Sé", neighborhood: "Sé", city: "São Paulo", state: "SP" }));
-    const [r] = await geo.search("01001-000");
-    expect(search).toHaveBeenCalledWith("Praça da Sé, Sé, São Paulo - SP", undefined);
-    expect(r!.label).toBe("Praça da Sé, Sé, São Paulo – SP");
-  });
-
-  it("resultados de outra cidade ou estado saem: o CEP já diz onde é", async () => {
-    const search = vi.fn(async () => [
-      { ...result("Praça da Fé, Sorocaba – SP"), city: "Sorocaba", state: "SP" as const },
-      { ...result("Praça da Sé, Crato – CE"), city: "Crato", state: "CE" as const },
-      { ...result("Praça da Sé, São Paulo – SP"), city: "São Paulo", state: "SP" as const },
+  it("o endereço é o dos Correios (rua e bairro do CEP); do mapa vem só a posição da mesma rua", async () => {
+    const geo = withCepSearch(geocoder(mapForLeopolda), async () => LEOPOLDA);
+    const results = await geo.search("08506010");
+    expect(results).toEqual([
+      {
+        label: "Rua Dona Leopolda, Vila São Paulo, Ferraz de Vasconcelos – SP",
+        position: at(-23.558, -46.3635),
+        neighborhood: "Vila São Paulo",
+        city: "Ferraz de Vasconcelos",
+        state: "SP",
+      },
     ]);
-    const geo = withCepSearch({ search } as unknown as Geocoder, async () => ({ street: "Praça da Sé", neighborhood: "Sé", city: "Sao Paulo", state: "SP" }));
-    expect((await geo.search("01001000")).map((r) => r.city)).toEqual(["São Paulo"]);
   });
 
-  it("sem resultado para a rua, tenta o bairro e depois a cidade; CEP inexistente não devolve nada", async () => {
-    const search = vi.fn(async (q: string) => (q === "Centro, Cidade - MG" ? [result("Centro, Cidade – MG")] : []));
-    const geo = withCepSearch({ search } as unknown as Geocoder, async () => ({ street: "Rua Sem Mapa", neighborhood: "Centro", city: "Cidade", state: "MG" }));
-    expect(await geo.search("35000000")).toHaveLength(1);
-    expect(search).toHaveBeenCalledTimes(2);
-    expect(await withCepSearch({ search } as unknown as Geocoder, async () => null).search("99999-999")).toEqual([]);
+  it("sem a rua no mapa, o ponto fica no centro do bairro do CEP; sem o bairro, na cidade", async () => {
+    const onlyOthers = geocoder(async (q) =>
+      q.startsWith("Rua") ? [r("Rua D, Vila São Paulo, Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP")] : q.startsWith("Vila") ? [r("Vila São Paulo, Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP", -23.5615, -46.3687)] : [],
+    );
+    const [bairro] = await withCepSearch(onlyOthers, async () => LEOPOLDA).search("08506-010");
+    expect(bairro).toMatchObject({ label: "Vila São Paulo, Ferraz de Vasconcelos – SP", position: at(-23.5615, -46.3687) });
+
+    const cityOnly = geocoder(async (q) => (q === "Ferraz de Vasconcelos - SP" ? [r("Ferraz de Vasconcelos – SP", "Ferraz de Vasconcelos", "SP")] : []));
+    const [cidade] = await withCepSearch(cityOnly, async () => LEOPOLDA).search("08506010");
+    expect(cidade!.label).toBe("Ferraz de Vasconcelos – SP");
+  });
+
+  it("a mesma rua em outra cidade não serve; CEP inexistente não devolve nada", async () => {
+    const elsewhere = geocoder(async () => [r("Rua Dona Leopolda, Centro, São Paulo – SP", "São Paulo", "SP")]);
+    expect(await withCepSearch(elsewhere, async () => LEOPOLDA).search("08506010")).toEqual([]);
+    expect(await withCepSearch(elsewhere, async () => null).search("99999-999")).toEqual([]);
   });
 
   it("nome de rua vai direto para o geocodificador, sem consultar CEP", async () => {
-    const search = vi.fn(async () => []);
+    const plain = geocoder(async () => []);
     const lookup = vi.fn();
-    await withCepSearch({ search } as unknown as Geocoder, lookup).search("Rua das Flores, 100");
+    await withCepSearch(plain, lookup).search("Rua das Flores, 100");
     expect(lookup).not.toHaveBeenCalled();
-    expect(search).toHaveBeenCalledWith("Rua das Flores, 100", undefined);
+    expect(plain.search).toHaveBeenCalledWith("Rua das Flores, 100", undefined);
+  });
+
+  it("o CEP não entra no rótulo (privacidade: partes do rótulo podem ficar públicas)", async () => {
+    const [res] = await withCepSearch(geocoder(mapForLeopolda), async () => LEOPOLDA).search("08506-010");
+    expect(res!.label).not.toMatch(/\d{5}-?\d{3}/);
   });
 
   it("ViaCEP: endereço do CEP e { erro: true } como não encontrado", async () => {
