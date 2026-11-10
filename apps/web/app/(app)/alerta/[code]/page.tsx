@@ -198,8 +198,8 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
           <h2 id="compartilhar" className="font-bold">
             {c.status === "FOUND" ? "Compartilhe a boa notícia" : c.isOwner ? "Compartilhe para alcançar mais pessoas" : "Ajude compartilhando"}
           </h2>
-          {/* DEMONSTRAÇÃO (DEV): escolher entre três modelos por formato. Liberação depende do proprietário. */}
-          {c.isOwner && c.status === "ACTIVE" && process.env.MEL_DEV_ROUTES === "1" && (
+          {/* "Criar cartaz": quatro modelos por formato (liberado pelo proprietário em 2026-11-10). */}
+          {c.isOwner && c.status === "ACTIVE" && (
             <ButtonLink href={`/alerta/${c.code}/cartaz/criar`} variant="secondary" size="md" data-testid="criar-cartaz-link">
               🖼️ Criar cartaz (escolha o modelo)
             </ButtonLink>

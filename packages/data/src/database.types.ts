@@ -1601,6 +1601,47 @@ export type Database = {
         }
         Relationships: []
       }
+      poster_designs: {
+        Row: {
+          focus_x: number | null
+          focus_y: number | null
+          format: string
+          lost_case_id: string
+          model: number
+          photo_ids: string[]
+          updated_at: string
+          zoom: number | null
+        }
+        Insert: {
+          focus_x?: number | null
+          focus_y?: number | null
+          format: string
+          lost_case_id: string
+          model: number
+          photo_ids?: string[]
+          updated_at?: string
+          zoom?: number | null
+        }
+        Update: {
+          focus_x?: number | null
+          focus_y?: number | null
+          format?: string
+          lost_case_id?: string
+          model?: number
+          photo_ids?: string[]
+          updated_at?: string
+          zoom?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "poster_designs_lost_case_id_fkey"
+            columns: ["lost_case_id"]
+            isOneToOne: false
+            referencedRelation: "lost_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1970,6 +2011,18 @@ export type Database = {
       get_my_adoption_seeker: { Args: never; Returns: Json }
       get_my_conversations: { Args: never; Returns: Json }
       get_my_matches: { Args: { p_found_code?: string }; Returns: Json }
+      get_poster_designs: {
+        Args: { p_code: string }
+        Returns: {
+          focus_x: number
+          focus_y: number
+          format: string
+          model: number
+          photo_ids: string[]
+          updated_at: string
+          zoom: number
+        }[]
+      }
       get_public_adoption: { Args: { p_code: string }; Returns: Json }
       get_public_found_case: { Args: { p_code: string }; Returns: Json }
       get_public_lost_case: { Args: { p_code: string }; Returns: Json }
@@ -2067,6 +2120,10 @@ export type Database = {
         }
         Returns: string
       }
+      reset_poster_design: {
+        Args: { p_code: string; p_format: string }
+        Returns: undefined
+      }
       run_adoption_retention: { Args: { p_limit?: number }; Returns: Json }
       save_my_adoption_seeker: {
         Args: {
@@ -2100,6 +2157,18 @@ export type Database = {
           p_mode: string
         }
         Returns: string
+      }
+      save_poster_design: {
+        Args: {
+          p_code: string
+          p_focus_x?: number
+          p_focus_y?: number
+          p_format: string
+          p_model: number
+          p_photo_ids: string[]
+          p_zoom?: number
+        }
+        Returns: undefined
       }
       save_push_subscription: {
         Args: {

@@ -1,7 +1,7 @@
 # MEL — Migrations do banco
 
 Fonte única do schema: `supabase/migrations/*.sql`, aplicadas em ordem de nome (timestamp).
-Estado: **31 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev` e no `mel-prod` (2026-10-29); a 24ª (Radar v2), a 25ª (ciclo de vida do alerta) a 26ª (moderação de adoção e parceiros) a 27ª (anti-abuso), a 28ª (limpeza de fotos órfãs), a 29ª (privacidade dos avistamentos) a 30ª (push do tutor e rótulo público do avistamento) e a 31ª (recuperação de push preso) só no `mel-dev` — **pendentes para produção** (fase de lançamento).
+Estado (2026-11-10): **47 migrations** no repositório e no `mel-dev`; o `mel-prod` segue nas 23 primeiras (ver abaixo). Histórico: **31 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev` e no `mel-prod` (2026-10-29); a 24ª (Radar v2), a 25ª (ciclo de vida do alerta) a 26ª (moderação de adoção e parceiros) a 27ª (anti-abuso), a 28ª (limpeza de fotos órfãs), a 29ª (privacidade dos avistamentos) a 30ª (push do tutor e rótulo público do avistamento) e a 31ª (recuperação de push preso) só no `mel-dev` — **pendentes para produção** (fase de lançamento).
 
 ## Regras
 
@@ -58,6 +58,10 @@ Estado: **31 migrations**, validadas do zero. As 23 primeiras estão no `mel-dev
 | 41 | `20261106150000_adoption_seeker_chat.sql` | Decisão do proprietário (chat de adoção) | Anunciante com anúncio disponível inicia conversa privada com interessado aprovado que aceitou contato (`contact_ok`, desligado por padrão; `contact_ref` aleatória e renovável); reusa `conversations` (`adoption_seeker_id`); limites diários; push pelo gatilho existente. **Pendente no `mel-prod`.** |
 | 42 | `20261106160000_pii_admin_reveal_and_document_state.sql` | Decisão do proprietário + requisitos de CPF | CPF completo só para titular e admin com autorização explícita (moderador vê só o estado); `read_state` (ok/ilegível/chave indisponível); guarda/troca/recifra do CPF só pelo servidor, duplicidade entre versões de HMAC; `personal_data_changes` (auditoria sem valores); troca de CPF volta para revisão. **Pendente no `mel-prod`.** |
 | 43 | `20261106161000_contact_validation_and_holder_corrections.sql` | Requisitos de dados | Regra de telefone (DDD válido, celular/fixo) só para valores novos ou alterados; auditoria de troca de CNPJ e telefones; `my_personal_data()` e correção do WhatsApp da fila pelo titular. **Pendente no `mel-prod`.** |
+| 44 | `20261106170000_map_adoption_setting_and_public_address.sql` | Decisões do proprietário | Configuração de adoção no mapa e endereço público de parceiros (ver migration) |
+| 45 | `20261106171000_partner_address_consent_grant.sql` | Decisões do proprietário | Consentimento de divulgação do endereço do parceiro (ver migration) |
+| 46 | `20261109120000_pet_photo_focus.sql` | Cartazes | `pet_photos.focus_x/focus_y`: ponto da foto que o cartaz mantém visível ao recortar |
+| 47 | `20261110120000_poster_designs.sql` | Cartazes (decisão do proprietário, 2026-11-10) | `poster_designs` (um por alerta e formato: modelo 1–4, fotos por id, foco e zoom), RLS sem acesso direto; `save_poster_design`/`reset_poster_design` (só o tutor do alerta ativo, fotos do próprio pet) e `get_poster_designs` (leitura pública); ids das fotos no JSON público do pet. **Aplicada só no `mel-dev`.** |
 
 Inventário resultante das 43 migrations (banco reconstruído, 2026-11-06; o `mel-prod` ainda está nas 23 primeiras): 30 tabelas, 376 colunas, 18 enums, 59 funções `public` + 71 `private`, 40 triggers (incl. `on_auth_user_created` e `on_auth_user_converted` em `auth.users`), 65 políticas `public` + 9 de Storage, 45 índices declarados, 3 buckets (`avatars` 2 MB, `pet-photos` 5 MB, `sighting-media` 5 MB), Realtime em `messages` e `notifications`.
 

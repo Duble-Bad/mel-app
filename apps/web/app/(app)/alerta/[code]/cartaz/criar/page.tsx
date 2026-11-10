@@ -3,15 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { alertPath } from "@mel/core";
-import { getPublicLostCase } from "@mel/data";
+import { getPosterDesigns, getPublicLostCase } from "@mel/data";
 import { PosterStudio } from "@/components/lost/PosterStudio";
 import { LoadingState } from "@/components/ui/States";
 import { siteOrigin } from "@/lib/site";
-import { createPublicClient } from "@/lib/supabase/public";
+import { createSessionClient } from "@/lib/supabase/server";
 
-// "Criar cartaz" (DEMONSTRAÇÃO em DEV, aguarda liberação do proprietário): formato → três
-// modelos → personalizar → usar. Só com MEL_DEV_ROUTES=1 (conferido na requisição) e sem
-// indexação. Usa apenas os dados públicos do alerta; nada é gravado.
+// "Criar cartaz" (liberado pelo proprietário em 2026-11-10): formato → quatro modelos →
+// personalizar → usar. Usa só os dados públicos do alerta; qualquer pessoa pode gerar e baixar,
+// só o tutor salva na conta (o banco confere). Sem indexação.
 export const metadata: Metadata = { title: "Criar cartaz", robots: { index: false, follow: false } };
 
 export default function CreatePosterPage({ params }: PageProps<"/alerta/[code]/cartaz/criar">) {
@@ -23,25 +23,33 @@ export default function CreatePosterPage({ params }: PageProps<"/alerta/[code]/c
 }
 
 async function Studio({ code }: { code: string }) {
-  if (process.env.MEL_DEV_ROUTES !== "1") notFound();
   if (!/^[a-z2-9]{6}$/i.test(code)) notFound();
-  const c = await getPublicLostCase(createPublicClient(), code);
+  // Cliente com a sessão: diz se quem abre é o tutor (para mostrar "Salvar na minha conta").
+  const supabase = await createSessionClient();
+  const c = await getPublicLostCase(supabase, code);
   if (!c || c.status === "CLOSED") notFound();
-  const alertUrl = `${await siteOrigin()}${alertPath(c.code)}`;
+  const isOwner = c.isOwner && c.status === "ACTIVE";
+  const [origin, saved] = await Promise.all([siteOrigin(), isOwner ? getPosterDesigns(supabase, c.code).catch(() => []) : Promise.resolve([])]);
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <p className="self-start rounded-md bg-[#f6b928] px-2 py-0.5 text-sm font-bold text-[#0a111d]">DEMONSTRAÇÃO — AMBIENTE DE TESTE</p>
         <Link href={alertPath(c.code)} className="text-sm font-semibold text-link underline-offset-4 hover:underline">
           ‹ Voltar ao alerta
         </Link>
         <h1 className="text-2xl font-bold">Criar cartaz de {c.pet.name}</h1>
         <p className="hidden text-text-secondary sm:block">Escolha o formato e o modelo. O cartaz já sai com as fotos e as informações públicas do alerta.</p>
       </div>
-      <PosterStudio code={c.code} alertUrl={alertUrl} photos={c.pet.photos.map((p) => ({ url: p.url }))} />
+      <PosterStudio
+        code={c.code}
+        alertUrl={`${origin}${alertPath(c.code)}`}
+        photos={c.pet.photos.map((p) => ({ id: p.id, url: p.url }))}
+        isOwner={isOwner}
+        savedDesigns={saved}
+      />
       <p className="text-xs text-text-secondary">
-        Demonstração: sua escolha fica no endereço desta página (recarregar mantém, outro aparelho não). Salvar a personalização na sua conta depende de uma mudança no
-        banco ainda não aprovada.
+        {isOwner
+          ? "Enquanto você edita, os ajustes ficam no endereço desta página. Use “Salvar na minha conta” para encontrar o cartaz pronto em qualquer aparelho."
+          : "Qualquer pessoa pode criar e baixar os cartazes deste alerta. Só o tutor pode salvar um cartaz na conta."}
       </p>
     </div>
   );

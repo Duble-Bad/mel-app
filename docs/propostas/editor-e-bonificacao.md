@@ -1,11 +1,11 @@
-# Propostas: "Criar cartaz" (três modelos) e bonificação (aguardando aprovação)
+# "Criar cartaz" (quatro modelos, liberado) e bonificação (aguardando aprovação)
 
-Protótipos internos (DEV, `MEL_DEV_ROUTES=1`). **Nada foi gravado no banco e não há migration.**
-A estrutura abaixo só será feita depois da aprovação do proprietário (`decisoes-pendentes.md`, itens 7 e 8). A demonstração não grava nada.
+**"Criar cartaz": aprovado e liberado pelo proprietário em 2026-11-10** (20 modelos; salvar na conta com a migration 47, aplicada só no `mel-dev`).
+**Bonificação:** protótipo interno (DEV, `MEL_DEV_ROUTES=1`), sem migration; depende de aprovação (`decisoes-pendentes.md`, itens 8 e 8a).
 
-## 1. "Criar cartaz": três modelos por formato, escolhidos pelo tutor
+## 1. "Criar cartaz": quatro modelos por formato, escolhidos pelo tutor
 
-**Demonstração:** `/alerta/{código}/cartaz/criar` (o protótipo antigo `/cartaz/editor` redireciona para cá). Entrada "Criar cartaz" na página do alerta, só para o tutor, com o alerta ativo e só em DEV.
+**Endereço:** `/alerta/{código}/cartaz/criar` (o antigo `/cartaz/editor` redireciona para cá). Entrada "Criar cartaz" na página do alerta, só para o tutor e com o alerta ativo. Qualquer pessoa que abrir o endereço pode gerar e baixar; só o tutor salva.
 
 ### Fluxo
 
@@ -75,12 +75,17 @@ Os critérios são: quantidade de fotos, orientação, resolução da principal 
 - **Demais casos:** Modelo 1.
 - **Sem fotos:** Modelo 3.
 
-### Limitações da demonstração
+### Onde a escolha fica guardada
 
-- A escolha fica no endereço da página. Recarregar mantém, mas outro aparelho não; nada é gravado no servidor e não há localStorage.
-- Gated por `MEL_DEV_ROUTES=1`. Liberar para os usuários depende da aprovação do proprietário.
+- Enquanto o tutor edita, no endereço da página (recarregar mantém); sem localStorage.
+- "Salvar na minha conta" grava no banco (por formato) e a página reabre com o salvo em qualquer aparelho.
+- Em produção, depende do deploy e da migration 47 (item 10 de decisões pendentes).
 
-### Persistência proposta (exige migration)
+### Persistência (implementada em 2026-11-10, migration 47, só no `mel-dev`)
+
+Aprovada pelo proprietário e implementada como abaixo, com duas diferenças: `model` vai de 1 a 4 e `photo_ids` aceita até 6 fotos (modelo 4); a leitura é a função `get_poster_designs(code)` (não mudou o `get_public_lost_case`). Na tela, só o tutor vê "Salvar na minha conta" e "Remover o cartaz salvo deste formato".
+
+Proposta original:
 
 - Tabela `poster_designs`, um registro por alerta e formato:
   - colunas: `lost_case_id`, `format` (check nos 5), `model` (1–3), `photo_ids uuid[]` (1–3, a principal primeiro), `focus_x`/`focus_y` (0–100), `zoom` (1–3), `updated_at`;

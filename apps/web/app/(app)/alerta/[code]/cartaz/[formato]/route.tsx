@@ -22,8 +22,9 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
   const { code, formato } = await ctx.params;
   const params = new URL(request.url).searchParams;
   const proposal = params.get("modelo") === "proposta";
-  // Propostas em avaliação: só no ambiente de teste (DEV), nunca no endereço público.
-  if (proposal && process.env.MEL_DEV_ROUTES !== "1") return new Response("Cartaz não encontrado.", { status: 404 });
+  // Os quatro modelos do "Criar cartaz" (?estilo=1–4) são públicos desde 2026-11-10; as demais
+  // propostas em avaliação (sem estilo) seguem só no ambiente de teste (DEV).
+  if (proposal && !isPosterModel(Number(params.get("estilo"))) && process.env.MEL_DEV_ROUTES !== "1") return new Response("Cartaz não encontrado.", { status: 404 });
   if (!/^[a-z2-9]{6}$/i.test(code) || !(proposal ? isV2Format(formato) : isPosterFormat(formato))) {
     return new Response("Cartaz não encontrado.", { status: 404 });
   }
@@ -117,7 +118,11 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
       height,
       fonts: posterFonts,
       // Diagnóstico do encaixe das fotos (avaliação interna em DEV; nunca vai para a arte).
-      headers: { ...headers, "X-Robots-Tag": "noindex, nofollow", "X-Mel-Diagnostico": JSON.stringify(diagnostics) },
+      headers: {
+        ...headers,
+        "X-Robots-Tag": "noindex, nofollow",
+        ...(process.env.MEL_DEV_ROUTES === "1" ? { "X-Mel-Diagnostico": JSON.stringify(diagnostics) } : {}),
+      },
     });
   }
 

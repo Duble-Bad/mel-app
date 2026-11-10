@@ -115,4 +115,10 @@ export const SERVER_MESSAGES: readonly string[] = [
   "Só administradores mudam esta configuração.",
   "Só administradores validam endereços públicos.",
   "Só empresa ou ONG aprovada que autorizou a divulgação do endereço.",
+  "Entre na sua conta para salvar o cartaz.",
+  "Só o tutor do alerta pode salvar o cartaz.",
+  "O cartaz só pode ser salvo com o alerta ativo.",
+  "Foto repetida no cartaz.",
+  "Use só fotos deste pet.",
+  "Só o tutor do alerta pode alterar o cartaz salvo.",
 ];

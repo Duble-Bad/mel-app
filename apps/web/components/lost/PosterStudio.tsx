@@ -17,6 +17,7 @@ import {
   RectangleHorizontal,
   RectangleVertical,
   RotateCcw,
+  Save,
   Send,
   Share2,
   SkipForward,
@@ -28,17 +29,20 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { resetPosterDesign, savePosterDesign, type PosterDesign } from "@mel/data";
 import { StepIndicator, type StepState } from "@/components/ui/StepIndicator";
 import { FORMAT_PURPOSE, isPosterModel, modelCapacity, modelLayout, POSTER_MODEL_IDS, POSTER_MODELS, recommendModel, type PosterModel } from "@/lib/poster/models";
 import { V2_FORMATS, type PosterV2Format } from "@/lib/poster/PosterV2";
+import { getBrowserClient } from "@/lib/supabase/browser";
 
 /**
  * "Criar cartaz" do tutor: 1) formato → 2) quatro modelos com prévias reais do próprio alerta →
  * 3) personalizar (opcional) → 4) baixar, imprimir ou compartilhar. Cada prévia é o próprio
  * PNG final (o gerador dos cartazes), então o que se vê é o que se baixa.
  *
- * DEMONSTRAÇÃO (DEV): a escolha fica na URL desta página (recarregar mantém; outro aparelho
- * não). Nada é gravado no servidor; a foto original, a capa e a ordem do cadastro não mudam.
+ * A escolha em andamento fica na URL desta página (recarregar mantém). O TUTOR pode salvar o
+ * cartaz de cada formato na conta (o banco confere que é ele); a página abre com o que foi salvo,
+ * em qualquer aparelho. A foto original, a capa e a ordem do cadastro nunca mudam.
  */
 
 const FORMATS: PosterV2Format[] = ["impressao", "square", "portrait", "story", "landscape"];
@@ -85,7 +89,32 @@ const btnPrimary = `${btn} bg-status-lost-solid text-white hover:brightness-110`
 const btnSecondary = `${btn} border border-border-strong bg-surface-elevated text-text-primary hover:bg-surface-muted`;
 const btnLink = "inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-sm font-semibold text-link underline-offset-4 hover:underline";
 
-export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUrl: string; photos: { url: string }[] }) {
+type Saved = { model: PosterModel; order: number[]; framing: Framing | null };
+
+export function PosterStudio({
+  code,
+  alertUrl,
+  photos,
+  isOwner = false,
+  savedDesigns = [],
+}: {
+  code: string;
+  alertUrl: string;
+  photos: { id?: string; url: string }[];
+  /** Só o tutor salva (o banco confere de novo). */
+  isOwner?: boolean;
+  savedDesigns?: PosterDesign[];
+}) {
+  // Cartazes salvos, por formato, com as fotos convertidas de id para a posição atual.
+  const [saved, setSaved] = useState<Partial<Record<PosterV2Format, Saved>>>(() =>
+    Object.fromEntries(
+      savedDesigns.map((d) => [
+        d.format,
+        { model: d.model, order: d.photoIds.map((id) => photos.findIndex((p) => p.id === id)).filter((i) => i >= 0), framing: d.framing },
+      ]),
+    ),
+  );
+  const [saving, setSaving] = useState(false);
   // Recomendação olha as 3 primeiras fotos (capa primeiro), como antes do modelo 4.
   const firstThree = useMemo(() => photos.slice(0, 3).map((_, i) => i), [photos]);
   const [step, setStep] = useState<Step>(1);
@@ -111,7 +140,15 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
   /** O que o gerador mostra sem ajuste (capa primeiro, até a capacidade do modelo). */
   function defaultFor(fmt: PosterV2Format, m: PosterModel): number[] {
     return fit(fmt, m, photos.slice(0, modelCapacity(fmt, m)).map((_, i) => i));
+  }  /** O cartaz em tela é exatamente o salvo deste formato? */
+  function sameAsSaved(fmt: PosterV2Format, m: PosterModel, c: Custom): boolean {
+    const d = saved[fmt];
+    if (!d || d.model !== m || fit(fmt, m, d.order).join(",") !== c.order.join(",")) return false;
+    const a = d.framing;
+    const b = c.framing;
+    return a === b || Boolean(a && b && Math.round(a.x) === Math.round(b.x) && Math.round(a.y) === Math.round(b.y) && a.zoom.toFixed(2) === b.zoom.toFixed(2));
   }
+
 
   // Tamanho real das fotos (layout e recomendação dependem da orientação e da resolução).
   useEffect(() => {
@@ -163,14 +200,19 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
       } else setStep(2);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
+    // Abre com os cartazes salvos na conta (a URL, se tiver um ajuste em andamento, prevalece).
+    const fromSaved = Object.fromEntries(
+      Object.entries(saved).map(([fmt, d]) => [`${fmt}-${d!.model}`, { order: d!.order.length ? d!.order : defaultFor(fmt as PosterV2Format, d!.model), framing: d!.framing }]),
+    );
+    if (Object.keys(fromSaved).length) setCustom((c) => ({ ...fromSaved, ...c }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- só na primeira montagem
   }, [photos]);
 
   const key = format && model ? `${format}-${model}` : "";
   const isEdited = (c: Custom | undefined, fmt = format, m = model) => Boolean(c && fmt && m && (c.framing || c.order.join(",") !== defaultFor(fmt, m).join(",")));
-  const saved = custom[key];
+  const inProgress = custom[key];
   const current: Custom =
-    format && model ? (saved ? { ...saved, order: fit(format, model, saved.order) } : { order: defaultFor(format, model), framing: null }) : { order: [], framing: null };
+    format && model ? (inProgress ? { ...inProgress, order: fit(format, model, inProgress.order) } : { order: defaultFor(format, model), framing: null }) : { order: [], framing: null };
   const setCurrent = (c: Custom) => setCustom((all) => ({ ...all, [key]: c }));
   const edited = isEdited(custom[key]);
 
@@ -208,7 +250,7 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
   // Ajustes de outros formatos/modelos ficam só na memória desta aba: avisa antes de fechá-la.
   const unsaved = Object.entries(custom).some(([k, c]) => {
     const [f, m] = k.split("-");
-    return k !== key && isEdited(c, f as PosterV2Format, Number(m) as PosterModel);
+    return k !== key && isEdited(c, f as PosterV2Format, Number(m) as PosterModel) && !sameAsSaved(f as PosterV2Format, Number(m) as PosterModel, c);
   });
   useEffect(() => {
     if (!unsaved) return;
@@ -352,7 +394,12 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
                         <p className="text-sm text-text-secondary">{POSTER_MODELS[m].summary}</p>
                         {isRec && recommended && <p className="text-sm">Por quê: {recommended.reason}</p>}
                         {note && <p className="text-xs text-text-secondary">{note}</p>}
-                        {isEdited(custom[`${format}-${m}`], format, m) && <p className="text-xs font-semibold text-status-lost">Com os seus ajustes (guardados nesta página).</p>}
+                        {saved[format]?.model === m && (
+                        <p className="text-xs font-semibold text-status-found" data-testid={`salvo-${m}`}>
+                          ✓ Salvo na sua conta
+                        </p>
+                      )}
+                      {isEdited(custom[`${format}-${m}`], format, m) && saved[format]?.model !== m && <p className="text-xs font-semibold text-status-lost">Com os seus ajustes (guardados nesta página).</p>}
                       </div>
                     </div>
                   </div>
@@ -504,6 +551,45 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
                 </p>
               )}
               {failed && <RetryNote />}
+              {isOwner && (
+                <SaveBox
+                  saved={Boolean(saved[format])}
+                  current={sameAsSaved(format, model, current)}
+                  saving={saving}
+                  onSave={async () => {
+                    const ids = current.order.map((i) => photos[i]?.id);
+                    if (ids.some((id) => !id)) return setNotice("Não deu para salvar agora: recarregue a página e tente de novo.");
+                    setSaving(true);
+                    setNotice(null);
+                    try {
+                      await savePosterDesign(getBrowserClient(), code, { format, model, photoIds: ids as string[], framing: current.framing });
+                      setSaved((all) => ({ ...all, [format]: { model, order: current.order, framing: current.framing } }));
+                      setNotice("Cartaz salvo na sua conta. Ele abre assim em qualquer aparelho.");
+                    } catch (err) {
+                      setNotice((err as Error).message || "Não deu para salvar agora. Tente de novo.");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  onRemove={async () => {
+                    setSaving(true);
+                    setNotice(null);
+                    try {
+                      await resetPosterDesign(getBrowserClient(), code, format);
+                      setSaved((all) => {
+                        const next = { ...all };
+                        delete next[format];
+                        return next;
+                      });
+                      setNotice("O cartaz salvo deste formato foi removido. Os outros formatos continuam salvos.");
+                    } catch (err) {
+                      setNotice((err as Error).message || "Não deu para remover agora. Tente de novo.");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                />
+              )}
             </div>
             <div className="order-3 flex flex-col border-t border-border pt-3 md:order-none md:col-start-2 md:row-start-2">
               <p className="text-sm font-semibold text-text-secondary">Mais opções</p>
@@ -532,6 +618,29 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
       )}
 
       {zoomed && <PosterZoom src={zoomed.src} title={zoomed.title} onClose={() => setZoomed(null)} />}
+    </div>
+  );
+}
+
+/** Salvar na conta (só o tutor): estado claro do que está salvo e do que mudou. */
+function SaveBox({ saved, current, saving, onSave, onRemove }: { saved: boolean; current: boolean; saving: boolean; onSave: () => void; onRemove: () => void }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-border p-3" data-testid="salvar-cartaz">
+      <p className={`text-sm ${current ? "font-semibold text-status-found" : "text-text-secondary"}`} data-testid="salvar-estado">
+        {current
+          ? "✓ Este é o cartaz salvo na sua conta para este formato."
+          : saved
+            ? "Você mudou o cartaz salvo deste formato. Salve para guardar a nova versão."
+            : "Salve para encontrar este cartaz pronto em qualquer aparelho."}
+      </p>
+      <button type="button" className={btnSecondary} onClick={onSave} disabled={current || saving} aria-busy={saving || undefined}>
+        <Save aria-hidden="true" className="size-5" /> {saving ? "Salvando…" : current ? "Salvo" : "Salvar na minha conta"}
+      </button>
+      {saved && (
+        <button type="button" className={`${btnLink} self-start`} onClick={onRemove} disabled={saving}>
+          Remover o cartaz salvo deste formato
+        </button>
+      )}
     </div>
   );
 }

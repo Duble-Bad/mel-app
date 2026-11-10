@@ -3,9 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import jsQR from "jsqr";
 import sharp from "sharp";
 import { getPublicLostCase } from "../packages/data/src/lostCases";
+import { getPosterDesigns, savePosterDesign } from "../packages/data/src/posterDesigns";
 import type { MelClient } from "../packages/data/src/client";
 import { createTutorWithActiveAlert } from "./support/alerts";
-import { deleteUserByEmail, TEST_PASSWORD } from "./support/users";
+import { createUser, deleteUserByEmail, TEST_PASSWORD } from "./support/users";
 
 // Prévia do link (Facebook/WhatsApp), propostas de cartaz e enquadramento da foto.
 const created: string[] = [];
@@ -283,6 +284,56 @@ test("create poster flow (DEV): the tutor picks a format, sees three real previe
   // O editor antigo leva ao fluxo novo.
   await page.goto(`/alerta/${t.code}/cartaz/editor`);
   await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar$`));
+});
+
+test("saved poster (tutor account): the tutor saves a format and it reopens in a clean session; only the tutor can save", async ({ page, browser }) => {
+  test.setTimeout(180_000);
+  const t = await createTutorWithActiveAlert("cartaz-salvo", { petName: "Salvo", photoSizes: [[1200, 1600], [1600, 1200], [1200, 1200]] });
+  created.push(t.email);
+  const before = await getPublicLostCase(anon(), t.code);
+  await page.goto("/entrar");
+  await page.getByLabel("E-mail").fill(t.email);
+  await page.getByLabel("Senha", { exact: true }).fill(TEST_PASSWORD);
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page).toHaveURL(/\/perfil$/);
+  await page.goto(`/alerta/${t.code}/cartaz/criar`);
+  await page.getByTestId("formato-square").click();
+  await page.getByTestId("modelo-3").getByRole("button", { name: "Escolher este modelo" }).click();
+  await expect(page.getByTestId("editor-moldura").locator("img")).toBeVisible({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Usar a foto 2 como principal" }).click();
+  await page.getByRole("slider").fill("1.5");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  // Salvar na conta: o estado muda para "salvo" e o botão fica indisponível até mudar algo.
+  await expect(page.getByTestId("salvar-estado")).toHaveText("Salve para encontrar este cartaz pronto em qualquer aparelho.");
+  await page.getByRole("button", { name: "Salvar na minha conta" }).click();
+  await expect(page.getByTestId("salvar-estado")).toHaveText("✓ Este é o cartaz salvo na sua conta para este formato.", { timeout: 15_000 });
+  const saved = await getPosterDesigns(anon(), t.code);
+  expect(saved).toHaveLength(1);
+  expect(saved[0]).toMatchObject({ format: "square", model: 3, framing: { x: 50, y: 50, zoom: 1.5 } });
+  expect(saved[0]!.photoIds[0]).toBe(before!.pet.photos[1]!.id);
+  // Outra sessão do tutor (endereço limpo, sem ajustes na URL): abre com o salvo.
+  await page.goto(`/alerta/${t.code}/cartaz/criar`);
+  await page.getByTestId("formato-square").click();
+  await expect(page.getByTestId("salvo-3")).toBeVisible();
+  await page.getByTestId("modelo-3").getByRole("button", { name: "Escolher este modelo" }).click();
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /estilo=3&fotos=1%2C0.*&foco=50%2C50&zoom=1\.50$/);
+  // Visitante: cria e baixa, mas não vê "Salvar".
+  const visitor = await browser.newPage();
+  await visitor.goto(`/alerta/${t.code}/cartaz/criar?formato=square&estilo=3`);
+  await expect(visitor.getByTestId("cartaz-final")).toBeVisible({ timeout: 30_000 });
+  await expect(visitor.getByTestId("salvar-cartaz")).toHaveCount(0);
+  await expect(visitor.getByText("Só o tutor pode salvar um cartaz na conta.")).toBeVisible();
+  await visitor.close();
+  // O banco recusa quem não é o tutor (outra conta) e quem não entrou.
+  const other = await createUser("cartaz-outro", { onboarded: true });
+  created.push(other.email);
+  const otherClient = anon();
+  await (otherClient as unknown as ReturnType<typeof createClient>).auth.signInWithPassword({ email: other.email, password: TEST_PASSWORD });
+  await expect(savePosterDesign(otherClient, t.code, { format: "story", model: 1, photoIds: [], framing: null })).rejects.toThrow(/Só o tutor/);
+  await expect(savePosterDesign(anon(), t.code, { format: "story", model: 1, photoIds: [], framing: null })).rejects.toThrow();
+  expect(await getPosterDesigns(anon(), t.code)).toHaveLength(1);
+  // Fotos, capa e ordem do cadastro continuam iguais.
+  expect((await getPublicLostCase(anon(), t.code))!.pet.photos).toEqual(before!.pet.photos);
 });
 
 test("reward prototype (DEV only): optional, BRL mask, shown only on active alerts and never as an empty block", async ({ page, request }) => {

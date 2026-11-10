@@ -5,7 +5,7 @@ import { PrintOnLoad } from "@/components/lost/PrintOnLoad";
 import { LoadingState } from "@/components/ui/States";
 import { isV2Format } from "@/lib/poster/PosterV2";
 
-// Versão para IMPRIMIR do cartaz escolhido (DEV): só o PNG, em página inteira (A4 sem margens).
+// Versão para IMPRIMIR do cartaz escolhido no "Criar cartaz": só o PNG, em página inteira (A4 sem margens).
 // Repassa apenas os parâmetros conhecidos do gerador; nada é gravado.
 export const metadata: Metadata = { title: "Imprimir cartaz", robots: { index: false, follow: false } };
 
@@ -22,7 +22,6 @@ export default function PrintPosterPage({ params, searchParams }: PageProps<"/al
 }
 
 function Print({ code, q }: { code: string; q: Record<string, string | string[] | undefined> }) {
-  if (process.env.MEL_DEV_ROUTES !== "1") notFound();
   const formato = typeof q.formato === "string" ? q.formato : "impressao";
   if (!/^[a-z2-9]{6}$/i.test(code) || !isV2Format(formato)) notFound();
   const pass = new URLSearchParams({ modelo: "proposta" });

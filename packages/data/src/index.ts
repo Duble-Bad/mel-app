@@ -19,3 +19,4 @@ export * from "./settings";
 export * from "./partnerDocuments";
 export * from "./personalData";
 export * from "./privacy";
+export * from "./posterDesigns";

@@ -176,3 +176,6 @@ Formato: data — decisão — motivo.
 - **2026-11-10 — Personalizar limita a seleção às fotos que cabem** no modelo e formato ("Não cabe"), para o tutor nunca escolher uma foto que não apareceria.
 - **2026-11-10 — Contador nos campos de descrição (proprietário):** "até 150 caracteres aparecem inteiros nos cartazes"; só orienta, sem bloquear nem cortar; o limite do cadastro continua 500.
 - **2026-11-10 — Merge da `redesign/etapa-1` na `main` (proprietário):** pedido explícito do proprietário. Só código: sem deploy, produção sem as migrations 24–46; demonstrações de cartaz seguem atrás de `MEL_DEV_ROUTES=1`.
+- **2026-11-10 — Cartazes aprovados e liberados (proprietário):** os 20 modelos (4 por formato) estão aprovados e o "Criar cartaz" foi liberado aos tutores (fora da trava `MEL_DEV_ROUTES`). Os protótipos internos seguem só em DEV.
+- **2026-11-10 — Cartaz salvo na conta do tutor (proprietário):** migration 47 (`poster_designs`), um registro por alerta e formato; só o tutor do alerta ativo grava, com fotos do próprio pet (conferido no banco); leitura pública (escolhas de layout sobre fotos públicas). Aplicada só no `mel-dev`.
+- **2026-11-10 — Capa da Mel e produção ficam pendentes** para o proprietário entender melhor antes de decidir.

@@ -184,6 +184,10 @@
     {
       "file": "20261109120000_pet_photo_focus.sql",
       "sha256": "f2022a6510589d99976c2d29bec305b3c78dda06bbfea65173378cf2eaf81476"
+    },
+    {
+      "file": "20261110120000_poster_designs.sql",
+      "sha256": "2d04808b04b41ee80a53469fd22c4149e4f7ea893366385d9532bea5710cbe21"
     }
   ]
 }

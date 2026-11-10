@@ -84,7 +84,8 @@ export interface PublicLostCase {
     ageEstimateMonths: number | null;
     weightKg: number | null;
     /** focus: ponto (0–100%) que o cartaz mantém visível ao recortar; null = automático. */
-    photos: { url: string; thumbUrl: string; isPrimary: boolean; focus: { x: number; y: number } | null }[];
+    /** id: identifica a foto no cartaz salvo pelo tutor (ausente em dados antigos). */
+    photos: { id?: string; url: string; thumbUrl: string; isPrimary: boolean; focus: { x: number; y: number } | null }[];
   };
 }
 
