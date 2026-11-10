@@ -14,6 +14,12 @@ export const PET_DESCRIPTION_COPY = {
 } as const;
 
 /**
+ * Quanto da descrição aparece INTEIRO nos cartazes com várias fotos (a maioria dos modelos e
+ * formatos; no A4, cerca de 250). Cálculo em docs/propostas/editor-e-bonificacao.md (item 7f).
+ */
+export const POSTER_TEXT_FITS = 150;
+
+/**
  * Campo de texto LIVRE e público (descrição do pet, observações do alerta): orienta o
  * que escrever, mas não bloqueia, não corta e não altera nada do que o tutor digita —
  * inclusive ruas e endereços, que são decisão dele. Opcional.
@@ -29,6 +35,7 @@ export function PublicDescriptionField({
   error,
   rows = 4,
   className,
+  max = 500,
 }: {
   id: string;
   label: string;
@@ -40,9 +47,13 @@ export function PublicDescriptionField({
   error?: string;
   rows?: number;
   className: string;
+  /** Limite do cadastro (o mesmo da validação). */
+  max?: number;
 }) {
   const guidanceId = useId();
   const noticeId = useId();
+  const counterId = useId();
+  const n = value.trim().length;
   return (
     <div className="flex flex-col gap-1.5" data-testid={`descricao-${id}`}>
       <label htmlFor={id} className="font-semibold">
@@ -58,8 +69,19 @@ export function PublicDescriptionField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        aria-describedby={`${guidanceId} ${noticeId}`}
+        aria-describedby={`${guidanceId} ${counterId} ${noticeId}`}
       />
+      {/* Só orienta: não bloqueia nem corta (o limite do cadastro é validado ao salvar). */}
+      <p id={counterId} className="flex flex-wrap justify-between gap-x-3 text-sm" data-testid={`contador-${id}`}>
+        <span className={n > max ? "font-semibold text-danger" : n > POSTER_TEXT_FITS ? "font-medium text-text-primary" : "text-text-secondary"}>
+          {n > POSTER_TEXT_FITS
+            ? `Nos cartazes, os primeiros ${POSTER_TEXT_FITS} caracteres costumam aparecer inteiros; o resto pode ser cortado com “…”. O texto completo fica na página do alerta.`
+            : `Até ${POSTER_TEXT_FITS} caracteres aparecem inteiros nos cartazes.`}
+        </span>
+        <span className={`tabular-nums ${n > max ? "font-semibold text-danger" : "text-text-secondary"}`}>
+          {n}/{max}
+        </span>
+      </p>
       <p id={noticeId} className="text-sm leading-relaxed text-text-secondary">
         <span aria-hidden="true">🌐 </span>
         {notice}

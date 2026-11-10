@@ -49,8 +49,18 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   const campo = page.getByLabel(/Descrição e características do pet/);
   await expect(campo).toHaveAttribute("placeholder", /^Ex\.: Yorkshire pequeno, pelagem marrom e cinza/);
   await expect(campo).toHaveValue(""); // o exemplo nunca vira conteúdo
+  // Contador: orienta quanto aparece inteiro nos cartazes, sem bloquear nem cortar o texto.
+  const contador = page.getByTestId("contador-uniqueMarks");
+  await expect(contador).toContainText("0/500");
+  await expect(contador).toContainText("Até 150 caracteres aparecem inteiros nos cartazes.");
+  const longo = "Pelagem caramelo. ".repeat(10).trim();
+  await campo.fill(longo);
+  await expect(contador).toContainText(`${longo.length}/500`);
+  await expect(contador).toContainText("o resto pode ser cortado com “…”. O texto completo fica na página do alerta.");
+  await expect(campo).toHaveValue(longo);
   const texto = "Laço amarelo, orelha em pé. Sumiu perto da Rua Fictícia de Teste, 123.";
   await campo.fill(texto);
+  await expect(contador).toContainText(`${texto.length}/500`);
   await page.getByLabel("Sinais que só você conhece").fill("Mancha clara na barriga (teste)");
   await page.getByLabel(/Deixar a página do pet visível/).check();
   await page.getByRole("button", { name: "Cadastrar pet" }).click();
