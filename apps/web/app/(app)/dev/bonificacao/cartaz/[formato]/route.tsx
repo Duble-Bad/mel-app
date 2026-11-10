@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { rewardLine, SIGHTING_BUTTON_LABEL, type PosterContent } from "@mel/core";
 import { posterFonts } from "@/lib/poster/assets";
 import { isPosterModel, modelLayout } from "@/lib/poster/models";
+import { PosterCollage } from "@/lib/poster/PosterCollage";
 import { PosterClassic, PosterHero } from "@/lib/poster/PosterModels";
 import { isV2Format, photoLayout, PosterV2, V2_FORMATS } from "@/lib/poster/PosterV2";
 
@@ -37,13 +38,26 @@ export async function GET(request: Request, ctx: RouteContext<"/dev/bonificacao/
   };
   const { width, height } = V2_FORMATS[formato];
   const reward = Number.isInteger(cents) ? rewardLine(status, cents) : null;
-  // ?estilo=1|2|3: o mesmo selo nos três modelos que o tutor pode escolher.
+  // ?estilo=1|2|3|4: o mesmo selo nos quatro modelos que o tutor pode escolher.
   const estilo = Number(q.get("estilo") ?? 2);
   const model = isPosterModel(estilo) ? estilo : 2;
   const layout = modelLayout(formato, model, [4 / 3], { reward: Boolean(reward) });
   const common = { format: formato, content, photos: [], qr: null, url: null, dev: true, reward };
   return new ImageResponse(
-    model === 1 ? (
+    model === 4 ? (
+      <PosterCollage
+        {...common}
+        layout={layout}
+        extras={{
+          strip: ["SRD", "Porte médio", "Caso fictício"],
+          features: ["Caso fictício para avaliar a bonificação.", "Nenhum dado real."],
+          placeTitle: "DESAPARECEU EM CIDADE FICTÍCIA/SP",
+          placeLine: "Jardim de Exemplo (DEMONSTRAÇÃO)",
+          phone: null,
+          article: "o",
+        }}
+      />
+    ) : model === 1 ? (
       <PosterHero {...common} layout={layout} />
     ) : model === 3 ? (
       <PosterClassic {...common} layout={layout} />

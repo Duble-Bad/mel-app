@@ -167,15 +167,22 @@ test("comparison page (DEV only): five formats separately, previous × proposal,
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-test("poster models: three per format with real files, correct size and a working QR (one vertical photo and three mixed photos)", async ({ request, baseURL }) => {
+test("poster models: four per format with real files, correct size and a working QR (one vertical photo and three mixed photos)", async ({ request, baseURL }) => {
   test.setTimeout(240_000);
   const one = await createTutorWithActiveAlert("modelos-1", { petName: "Uma", photoSizes: [[900, 1200]] });
   const three = await createTutorWithActiveAlert("modelos-3", { petName: "Tres", photoSizes: [[1600, 1200], [900, 1600], [800, 600]], uniqueMarks: "Mancha branca no peito." });
-  created.push(one.email, three.email);
+  // Seis fotos e telefone FICTÍCIO publicado pelo tutor: o cartaz completo (modelo 4) mostra o número.
+  const six = await createTutorWithActiveAlert("modelos-6", {
+    petName: "Seis",
+    photoSizes: [[900, 1200], [1200, 1600], [1600, 1200], [1200, 1200], [900, 1600], [1600, 900]],
+    uniqueMarks: "Orelha em pé. Pelo branco no peito.",
+    whatsapp: "11987650000",
+  });
+  created.push(one.email, three.email, six.email);
   const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1200, 630] } as const;
-  for (const t of [one, three]) {
+  for (const t of [one, three, six]) {
     for (const [format, [w, h]] of Object.entries(sizes)) {
-      for (const estilo of [1, 2, 3]) {
+      for (const estilo of t === six ? [4] : [1, 2, 3, 4]) {
         const res = await request.get(`/alerta/${t.code}/cartaz/${format}?modelo=proposta&estilo=${estilo}`);
         expect(res.status(), `${t.code} ${format} ${estilo}`).toBe(200);
         const png = await res.body();
@@ -188,8 +195,14 @@ test("poster models: three per format with real files, correct size and a workin
     }
   }
   // Os modelos realmente diferem entre si (não são três cópias).
-  const bodies = await Promise.all([1, 2, 3].map(async (e) => (await request.get(`/alerta/${three.code}/cartaz/square?modelo=proposta&estilo=${e}`)).body()));
-  expect(bodies[0]!.equals(bodies[1]!) || bodies[1]!.equals(bodies[2]!) || bodies[0]!.equals(bodies[2]!)).toBe(false);
+  const bodies = await Promise.all([1, 2, 3, 4].map(async (e) => (await request.get(`/alerta/${three.code}/cartaz/square?modelo=proposta&estilo=${e}`)).body()));
+  for (let i = 0; i < bodies.length; i++) for (let j = i + 1; j < bodies.length; j++) expect(bodies[i]!.equals(bodies[j]!), `modelos ${i + 1} e ${j + 1}`).toBe(false);
+  // Modelo 4 no A4 com 6 fotos usa até as 6 (o mosaico pode deixar uma de fora para nenhuma ficar estreita).
+  const a4 = await request.get(`/alerta/${six.code}/cartaz/impressao?modelo=proposta&estilo=4`);
+  expect(JSON.parse(a4.headers()["x-mel-diagnostico"]!).length).toBeGreaterThanOrEqual(5);
+  // Com telefone autorizado o cartaz muda (o número entra no rodapé); sem ele, não há número.
+  const withPhone = await (await request.get(`/alerta/${six.code}/cartaz/square?modelo=proposta&estilo=4&fotos=0,1,2`)).body();
+  await sharp(withPhone).toFile(test.info().outputPath("modelo4-com-telefone.png"));
   // Baixar leva o modelo no nome do arquivo.
   const dl = await request.get(`/alerta/${three.code}/cartaz/story?modelo=proposta&estilo=3&baixar=1`);
   expect(dl.headers()["content-disposition"]).toContain("MEL-procura-se-Tres-story-modelo-3.png");
@@ -237,9 +250,13 @@ test("create poster flow (DEV): the tutor picks a format, sees three real previe
   await page.getByRole("button", { name: "Personalizar novamente" }).click();
   await expect(page.getByTestId("editor-moldura").locator("img")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Usar a foto 2 como principal" }).click();
+  // Seleção limitada ao que cabe: neste formato o Modelo 3 mostra 2 destas fotos; a 3ª fica
+  // marcada "Não cabe" (não dá para escolher uma foto que não apareceria no cartaz).
+  await expect(page.getByTestId("capacidade")).toContainText("mostra até 3 fotos");
+  await expect(page.getByRole("button", { name: "Foto 3: não cabe neste modelo" })).toBeDisabled();
   await page.getByRole("slider").fill("2");
   const preview = page.getByTestId("editor-previa");
-  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3&fotos=1%2C0%2C2&foco=50%2C50&zoom=2\.00$/);
+  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3&fotos=1%2C0&foco=50%2C50&zoom=2\.00$/);
   const png = await (await request.get((await preview.getAttribute("src"))!)).body();
   expect((await sharp(png).metadata()).height).toBe(1920);
   expect(await readQr(png)).toBe(`${baseURL}/alerta/${t.code}`);

@@ -29,11 +29,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StepIndicator, type StepState } from "@/components/ui/StepIndicator";
-import { FORMAT_PURPOSE, modelLayout, POSTER_MODEL_IDS, POSTER_MODELS, recommendModel, type PosterModel } from "@/lib/poster/models";
+import { FORMAT_PURPOSE, isPosterModel, modelCapacity, modelLayout, POSTER_MODEL_IDS, POSTER_MODELS, recommendModel, type PosterModel } from "@/lib/poster/models";
 import { V2_FORMATS, type PosterV2Format } from "@/lib/poster/PosterV2";
 
 /**
- * "Criar cartaz" do tutor: 1) formato → 2) três modelos com prévias reais do próprio alerta →
+ * "Criar cartaz" do tutor: 1) formato → 2) quatro modelos com prévias reais do próprio alerta →
  * 3) personalizar (opcional) → 4) baixar, imprimir ou compartilhar. Cada prévia é o próprio
  * PNG final (o gerador dos cartazes), então o que se vê é o que se baixa.
  *
@@ -86,7 +86,8 @@ const btnSecondary = `${btn} border border-border-strong bg-surface-elevated tex
 const btnLink = "inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-sm font-semibold text-link underline-offset-4 hover:underline";
 
 export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUrl: string; photos: { url: string }[] }) {
-  const defaultOrder = useMemo(() => photos.slice(0, 3).map((_, i) => i), [photos]);
+  // Recomendação olha as 3 primeiras fotos (capa primeiro), como antes do modelo 4.
+  const firstThree = useMemo(() => photos.slice(0, 3).map((_, i) => i), [photos]);
   const [step, setStep] = useState<Step>(1);
   const [format, setFormat] = useState<PosterV2Format | null>(null);
   const [model, setModel] = useState<PosterModel | null>(null);
@@ -99,6 +100,18 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
   const restored = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const moved = useRef(false);
+
+  /** Fotos que o modelo de fato mostra nesta ordem: as que deixariam alguma estreita demais saem. */
+  function fit(fmt: PosterV2Format, m: PosterModel, order: number[]): number[] {
+    const capped = order.slice(0, modelCapacity(fmt, m));
+    const aspects = capped.map((i) => (sizes[i] ? sizes[i].width / sizes[i].height : undefined));
+    if (aspects.some((a) => a === undefined)) return capped;
+    return capped.slice(0, Math.max(Math.min(1, capped.length), modelLayout(fmt, m, aspects as number[]).used));
+  }
+  /** O que o gerador mostra sem ajuste (capa primeiro, até a capacidade do modelo). */
+  function defaultFor(fmt: PosterV2Format, m: PosterModel): number[] {
+    return fit(fmt, m, photos.slice(0, modelCapacity(fmt, m)).map((_, i) => i));
+  }
 
   // Tamanho real das fotos (layout e recomendação dependem da orientação e da resolução).
   useEffect(() => {
@@ -131,12 +144,12 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
       const zoom = Number(q.get("zoom"));
       /* eslint-disable react-hooks/set-state-in-effect -- restaura uma única vez o estado salvo na URL */
       setFormat(fmt);
-      if (m === 1 || m === 2 || m === 3) {
+      if (isPosterModel(m)) {
         setModel(m);
         if (order.length || foco)
           setCustom({
             [`${fmt}-${m}`]: {
-              order: order.length ? order : defaultOrder,
+              order: order.length ? order : defaultFor(fmt, m),
               framing: foco
                 ? {
                     x: Number(foco[1]),
@@ -150,17 +163,20 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
       } else setStep(2);
       /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [photos, defaultOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só na primeira montagem
+  }, [photos]);
 
   const key = format && model ? `${format}-${model}` : "";
-  const isEdited = (c: Custom | undefined) => Boolean(c && (c.framing || c.order.join(",") !== defaultOrder.join(",")));
-  const current: Custom = custom[key] ?? { order: defaultOrder, framing: null };
+  const isEdited = (c: Custom | undefined, fmt = format, m = model) => Boolean(c && fmt && m && (c.framing || c.order.join(",") !== defaultFor(fmt, m).join(",")));
+  const saved = custom[key];
+  const current: Custom =
+    format && model ? (saved ? { ...saved, order: fit(format, model, saved.order) } : { order: defaultFor(format, model), framing: null }) : { order: [], framing: null };
   const setCurrent = (c: Custom) => setCustom((all) => ({ ...all, [key]: c }));
   const edited = isEdited(custom[key]);
 
   const posterUrl = (fmt: PosterV2Format, m: PosterModel, c: Custom | null, download = false) => {
     const q = new URLSearchParams({ modelo: "proposta", estilo: String(m) });
-    if (c && c.order.join(",") !== defaultOrder.join(",")) q.set("fotos", c.order.join(","));
+    if (c && c.order.join(",") !== defaultFor(fmt, m).join(",")) q.set("fotos", fit(fmt, m, c.order).join(","));
     if (c?.framing) {
       q.set("foco", `${Math.round(c.framing.x)},${Math.round(c.framing.y)}`);
       q.set("zoom", c.framing.zoom.toFixed(2));
@@ -178,7 +194,7 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
       q.set("estilo", String(model));
       if (step === 3) q.set("passo", "3");
       const c = custom[`${format}-${model}`];
-      if (c && c.order.join(",") !== defaultOrder.join(",")) q.set("fotos", c.order.join(","));
+      if (c && c.order.join(",") !== defaultFor(format, model).join(",")) q.set("fotos", fit(format, model, c.order).join(","));
       if (c?.framing) {
         q.set("foco", `${Math.round(c.framing.x)},${Math.round(c.framing.y)}`);
         q.set("zoom", c.framing.zoom.toFixed(2));
@@ -186,10 +202,14 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
     }
     const s = q.toString();
     window.history.replaceState(null, "", s ? `?${s}` : window.location.pathname);
-  }, [format, model, step, custom, defaultOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fit/defaultFor dependem só das fotos e dos tamanhos
+  }, [format, model, step, custom, sizes]);
 
   // Ajustes de outros formatos/modelos ficam só na memória desta aba: avisa antes de fechá-la.
-  const unsaved = Object.entries(custom).some(([k, c]) => k !== key && isEdited(c));
+  const unsaved = Object.entries(custom).some(([k, c]) => {
+    const [f, m] = k.split("-");
+    return k !== key && isEdited(c, f as PosterV2Format, Number(m) as PosterModel);
+  });
   useEffect(() => {
     if (!unsaved) return;
     const warn = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -212,7 +232,7 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
 
   const ordered = (order: number[]) => order.map((i) => sizes[i]).filter((s): s is { width: number; height: number } => Boolean(s));
   const allLoaded = photos.every((_, i) => sizes[i]);
-  const recommended = format && allLoaded ? recommendModel(format, ordered(defaultOrder)) : null;
+  const recommended = format && allLoaded ? recommendModel(format, ordered(firstThree)) : null;
 
   // A etapa 3 só aparece concluída se houve ajuste; sem ajuste, aparece como pulada.
   const states: StepState[] = [1, 2, 3, 4].map((n) => {
@@ -288,13 +308,13 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
             {title(`Escolha o modelo — ${FORMAT_PURPOSE[format].title}`)}
             <p className="text-text-secondary">As prévias já usam as fotos e os dados do seu alerta. Toque em “Ampliar” para ver o cartaz inteiro.</p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3 md:gap-4">
+          <div className="grid gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-4">
             {POSTER_MODEL_IDS.map((m) => {
               const isRec = recommended?.model === m;
               const note = adaptedNote(
                 format,
                 m,
-                ordered(defaultOrder).map((s) => s.width / s.height),
+                ordered(photos.map((_, i) => i)).map((s) => s.width / s.height),
               );
               const src = posterUrl(format, m, custom[`${format}-${m}`] ?? null);
               const wide = format === "landscape";
@@ -332,7 +352,7 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
                         <p className="text-sm text-text-secondary">{POSTER_MODELS[m].summary}</p>
                         {isRec && recommended && <p className="text-sm">Por quê: {recommended.reason}</p>}
                         {note && <p className="text-xs text-text-secondary">{note}</p>}
-                        {isEdited(custom[`${format}-${m}`]) && <p className="text-xs font-semibold text-status-lost">Com os seus ajustes (guardados nesta página).</p>}
+                        {isEdited(custom[`${format}-${m}`], format, m) && <p className="text-xs font-semibold text-status-lost">Com os seus ajustes (guardados nesta página).</p>}
                       </div>
                     </div>
                   </div>
@@ -382,7 +402,8 @@ export function PosterStudio({ code, alertUrl, photos }: { code: string; alertUr
           photos={photos}
           sizes={sizes}
           value={current}
-          defaultOrder={defaultOrder}
+          defaultOrder={defaultFor(format, model)}
+          fit={(order) => fit(format, model, order)}
           edited={edited}
           onChange={setCurrent}
           previewUrl={posterUrl(format, model, current)}
@@ -538,10 +559,14 @@ function RetryNote() {
 /** Quando o modelo se adapta às fotos que existem (para o tutor não estranhar a prévia). */
 function adaptedNote(format: PosterV2Format, m: PosterModel, aspects: number[]): string | null {
   if (!aspects.length) return "Sem fotos: aparece o espaço “Sem foto”. Cadastre fotos para um cartaz melhor.";
-  const l = modelLayout(format, m, aspects);
+  const cap = modelCapacity(format, m);
+  const l = modelLayout(format, m, aspects.slice(0, cap));
+  const wanted = Math.min(cap, aspects.length);
+  if (m === 4 && l.card) return "Com 1 foto, o espaço ao lado dela mostra as características.";
   if (m === 2 && aspects.length === 1) return "Seu pet tem 1 foto: o espaço das complementares mostra “Como reconhecer”.";
   if (l.card) return "O espaço que sobraria mostra “Como reconhecer”.";
-  if (m !== 1 && l.used < Math.min(3, aspects.length)) return `Mostra ${l.used} de ${Math.min(3, aspects.length)} fotos para nenhuma ficar pequena demais.`;
+  if (m !== 1 && l.used < wanted) return `Mostra ${l.used} de ${wanted} fotos para nenhuma ficar pequena demais.`;
+  if (m === 4) return "O telefone só aparece se você autorizou publicá-lo no alerta.";
   return null;
 }
 
@@ -660,6 +685,7 @@ function Customize({
   sizes,
   value,
   defaultOrder,
+  fit,
   edited,
   onChange,
   previewUrl,
@@ -675,6 +701,8 @@ function Customize({
   sizes: Record<number, { width: number; height: number }>;
   value: Custom;
   defaultOrder: number[];
+  /** Corta a ordem para as fotos que o modelo consegue mostrar. */
+  fit: (order: number[]) => number[];
   edited: boolean;
   onChange: (c: Custom) => void;
   previewUrl: string;
@@ -779,18 +807,28 @@ function Customize({
         }
       : undefined;
 
-  const max = model === 1 ? 1 : 3;
+  // A seleção fica limitada ao que o modelo mostra: uma foto que não caberia não pode ser marcada.
+  const max = modelCapacity(format, model);
   const extras = order.slice(1);
-  const toggle = (i: number) =>
-    onChange({
-      order: order.includes(i) ? order.filter((x) => x !== i) : order.length < max ? [...order, i] : order,
-      framing: value.framing,
-    });
-  const makeMain = (i: number) =>
-    onChange({
-      order: [i, ...order.filter((x) => x !== i)].slice(0, max),
-      framing: null,
-    });
+  const [dropped, setDropped] = useState<string | null>(null);
+  const canAdd = (i: number) => order.length < max && fit([...order, i]).length === order.length + 1;
+  const toggle = (i: number) => {
+    setDropped(null);
+    if (order.includes(i)) onChange({ order: order.filter((x) => x !== i), framing: value.framing });
+    else if (canAdd(i)) onChange({ order: [...order, i], framing: value.framing });
+  };
+  const makeMain = (i: number) => {
+    const next = [i, ...order.filter((x) => x !== i)].slice(0, max);
+    const fitted = fit(next);
+    const out = next.filter((x) => !fitted.includes(x));
+    const many = out.length > 1;
+    setDropped(
+      out.length
+        ? `${many ? "As fotos" : "A foto"} ${out.map((x) => x + 1).join(" e ")} ${many ? "saíram" : "saiu"} das complementares: com a nova principal, não ${many ? "cabem" : "cabe"} neste modelo.`
+        : null,
+    );
+    onChange({ order: fitted, framing: null });
+  };
   const move = (pos: number, dir: -1 | 1) => {
     const n = [...order];
     const j = pos + dir;
@@ -840,30 +878,50 @@ function Customize({
 
           {max > 1 ? (
             <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 font-bold">2. Fotos complementares (até 2)</legend>
-              <p className="text-sm text-text-secondary">Toque para incluir ou tirar. A ordem define a posição no cartaz.</p>
+              <legend className="mb-1 font-bold">2. Fotos complementares (até {max - 1})</legend>
+              <p className="text-sm text-text-secondary" data-testid="capacidade">
+                Neste formato, o Modelo {model} mostra até {max} fotos: a principal e até {max - 1} complementares. Toque para incluir ou tirar; a ordem define a posição no
+                cartaz. “Não cabe” quer dizer que, com as fotos já escolhidas, essa ficaria estreita demais.
+              </p>
+              {dropped && (
+                <p role="status" className="text-sm font-semibold text-status-lost">
+                  {dropped}
+                </p>
+              )}
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
                 {photos.map((p, i) => {
                   if (i === main) return null;
                   const pos = extras.indexOf(i);
-                  const full = pos < 0 && extras.length >= 2;
+                  const full = pos < 0 && order.length >= max;
+                  const noRoom = pos < 0 && !full && !canAdd(i);
                   return (
                     <button
                       key={i}
                       type="button"
                       aria-pressed={pos >= 0}
-                      aria-label={pos >= 0 ? `Tirar a foto ${i + 1} (complementar ${pos + 1})` : `Incluir a foto ${i + 1}`}
-                      disabled={full}
+                      aria-label={
+                        pos >= 0
+                          ? `Tirar a foto ${i + 1} (complementar ${pos + 1})`
+                          : noRoom
+                            ? `Foto ${i + 1}: não cabe neste modelo`
+                            : full
+                              ? `Foto ${i + 1}: limite de fotos`
+                              : `Incluir a foto ${i + 1}`
+                      }
+                      disabled={full || noRoom}
                       onClick={() => toggle(i)}
-                      className={`relative rounded-md border-2 p-0.5 disabled:opacity-45 ${pos >= 0 ? "border-[#f6b928]" : "border-transparent hover:border-border-strong"}`}
+                      className={`group relative rounded-md border-2 p-0.5 disabled:cursor-not-allowed ${pos >= 0 ? "border-[#f6b928]" : "border-transparent hover:border-border-strong"}`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.url} alt="" className={thumb} />
+                      <img src={p.url} alt="" className={`${thumb} group-disabled:opacity-35`} />
                       <span
                         className={`absolute top-1 right-1 flex size-6 items-center justify-center rounded-full text-xs font-bold ${pos >= 0 ? "bg-[#f6b928] text-[#0a111d]" : "border-2 border-white bg-black/40"}`}
                       >
                         {pos >= 0 ? pos + 1 : ""}
                       </span>
+                      {(noRoom || full) && (
+                        <span className="absolute inset-x-0.5 bottom-0.5 rounded-b bg-black/75 py-0.5 text-center text-[11px] font-bold text-white">{noRoom ? "Não cabe" : "Limite"}</span>
+                      )}
                     </button>
                   );
                 })}

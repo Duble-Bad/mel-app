@@ -1,9 +1,10 @@
 import { ImageResponse } from "next/og";
-import { alertPath, isPosterFormat, POSTER_FORMATS, posterContent } from "@mel/core";
+import { alertPath, collageExtras, isPosterFormat, POSTER_FORMATS, posterContent } from "@mel/core";
 import { getPublicLostCase } from "@mel/data";
 import { fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
 import { composePhotos } from "@/lib/poster/compose";
-import { isPosterModel } from "@/lib/poster/models";
+import { isPosterModel, modelCapacity } from "@/lib/poster/models";
+import { PosterCollage } from "@/lib/poster/PosterCollage";
 import { PosterClassic, PosterHero } from "@/lib/poster/PosterModels";
 import { OG_PHOTO, OG_SIZE, OgCard } from "@/lib/poster/OgCard";
 import { photoBox, Poster } from "@/lib/poster/Poster";
@@ -58,10 +59,15 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
   }
 
   if (proposal && isV2Format(formato)) {
-    // Até 3 fotos; o layout se ajusta às que de fato chegaram (uma foto que falha não deixa buraco).
-    // ?fotos=índices (capa primeiro) para comparar combinações; padrão: até 3 a partir da capa.
+    // ?estilo=1|2|3|4: modelo escolhido pelo tutor (1 foto em destaque, 2 várias fotos, 3 clássico, 4 cartaz completo).
+    const estilo = Number(params.get("estilo") ?? 2);
+    const model = isPosterModel(estilo) ? estilo : 2;
+    // Até a capacidade do modelo (3, ou até 6 no cartaz completo); o layout se ajusta às que de
+    // fato chegaram (uma foto que falha não deixa buraco).
+    // ?fotos=índices (capa primeiro) para comparar combinações; padrão: a partir da capa.
+    const cap = modelCapacity(formato, model);
     const wanted = params.get("fotos");
-    const order = wanted && /^\d(,\d){0,2}$/.test(wanted) ? wanted.split(",").map(Number) : [0, 1, 2];
+    const order = (wanted && /^\d(,\d){0,5}$/.test(wanted) ? wanted.split(",").map(Number) : Array.from({ length: cap }, (_, i) => i)).slice(0, cap);
     const picked = order.map((i) => photos[i]).filter((p): p is (typeof photos)[number] => Boolean(p));
     // ?foco=x,y (só nesta avaliação em DEV): simula o enquadramento do tutor na foto principal,
     // sem gravar nada, para conferir se um ponto único serve aos cinco formatos.
@@ -80,9 +86,6 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
       params.has("zoom") && zoom >= 1 && zoom <= 3
         ? { focus: simulated ? { x: Math.min(100, Number(simulated[1])), y: Math.min(100, Number(simulated[2])) } : { x: 50, y: 50 }, zoom }
         : undefined;
-    // ?estilo=1|2|3: modelo escolhido pelo tutor (1 foto em destaque, 2 várias fotos, 3 clássico).
-    const estilo = Number(params.get("estilo") ?? 2);
-    const model = isPosterModel(estilo) ? estilo : 2;
     const [{ layout, model: chosen, photos: ready, diagnostics }, qr] = await Promise.all([
       composePhotos(formato, sources, { framing, model }),
       qrDataUrl(url, formato === "impressao" ? 860 : 600),
@@ -94,7 +97,9 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     const proposalContent =
       c.lostAtUncertain && content.when ? { ...content, when: content.when.replace(/ às (\d{1,2}:\d{2})$/, ", por volta das $1") } : content;
     const art =
-      model === 1 ? (
+      model === 4 ? (
+        <PosterCollage format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} extras={collageExtras(c)} />
+      ) : model === 1 ? (
         <PosterHero format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} />
       ) : model === 3 ? (
         <PosterClassic format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} />

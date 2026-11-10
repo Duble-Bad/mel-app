@@ -18,6 +18,8 @@ export interface PhotoDiagnostic {
 const MAIN_MIN_KEPT = 0.65;
 const EXTRA_MIN_KEPT = 0.5;
 const HERO_MIN_KEPT = 0.55;
+/** Modelo 4: o mosaico já escolhe caixas perto da proporção de cada foto; aceita um pouco mais de corte. */
+const COLLAGE_MIN_KEPT = 0.5;
 
 /**
  * Monta as fotos de uma proposta de cartaz: o layout segue a orientação da foto
@@ -53,7 +55,7 @@ export async function composePhotos(
       const s = sources[i];
       if (!s) return Promise.resolve(null);
       // Modelo 1: a foto única pode perder um pouco mais nas bordas para ficar grande.
-      const minKept = i === 0 ? (model === 1 ? HERO_MIN_KEPT : MAIN_MIN_KEPT) : EXTRA_MIN_KEPT;
+      const minKept = model === 4 ? COLLAGE_MIN_KEPT : i === 0 ? (model === 1 ? HERO_MIN_KEPT : MAIN_MIN_KEPT) : EXTRA_MIN_KEPT;
       const { w, h } = dims[i]!;
       const kept = Math.min(w / h / (b.width / b.height), b.width / b.height / (w / h));
       const crop = kept >= minKept;

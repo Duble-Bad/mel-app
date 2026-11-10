@@ -17,7 +17,7 @@ A estrutura abaixo só será feita depois da aprovação do proprietário (`deci
    - **3. Enquadramento da principal:** arrastar e aproximar (mouse, toque, pinça, setas e + − do teclado).
    - "Restaurar o modelo original", com "Desfazer".
    A personalização é independente por formato e por modelo.
-   **Limitação conhecida:** o modelo mostra só as fotos que cabem sem ficar estreitas demais. No Modelo 3 em A4 e em 4:5, por exemplo, cabem a principal e 1 complementar: a 2ª complementar escolhida não aparece no cartaz e a tela não avisa (o aviso "Mostra 2 de 3 fotos" só aparece na etapa Modelo). Correção proposta: decisões pendentes, item 7d.
+   **Seleção limitada ao que cabe (2026-11-10):** a tela diz quantas fotos o modelo mostra no formato ("mostra até N fotos"), e uma foto que, com as já escolhidas, ficaria estreita demais aparece como "Não cabe" e não pode ser marcada. Ao trocar a principal, se alguma complementar deixar de caber, ela sai com aviso.
 4. **Usar:**
    - Baixar: o PNG final, com o modelo no nome do arquivo.
    - Imprimir: página só com o cartaz; A4 sem margens e diálogo de impressão automático.
@@ -25,13 +25,20 @@ A estrutura abaixo só será feita depois da aprovação do proprietário (`deci
    - Copiar link do alerta.
    - Trocar de modelo ou de formato a qualquer momento.
 
-### Os modelos (`lib/poster/models.ts`, `PosterModels.tsx`, `PosterV2.tsx`)
+### Os modelos (`lib/poster/models.ts`, `PosterModels.tsx`, `PosterV2.tsx`, `PosterCollage.tsx`)
 
 | Modelo | Ideia | Como se adapta às fotos |
 |---|---|---|
 | 1 — Foto em destaque | Uma foto grande, com o nome sobre ela (degradê) | Foto horizontal: larga em cima. Foto vertical: alta ao lado do texto (quadrado, 4:5, A4). Horizontal: foto à direita |
 | 2 — Várias fotos | Principal + até duas complementares | Complementares empilhadas ou lado a lado, conforme o formato de cada foto. Com 1 foto vertical, ou 1 complementar horizontal numa coluna alta, o espaço que sobraria vira o quadro "Como reconhecer" |
 | 3 — Clássico de poste | Fundo claro, fotos lado a lado, descrição e faixa vermelha com o QR | As fotos ficam na própria proporção; usa menos fotos se alguma fosse ficar estreita ou cortada demais; a sobra da linha vira o quadro "Como reconhecer" |
+| 4 — Cartaz completo (2026-11-10, a partir do modelo enviado pelo proprietário) | Faixa vermelha com PROCURA-SE e o NOME do pet; faixa amarela com raça, sexo, idade, porte e o que usava; mosaico de fotos sobre vermelho; quadros "Características" (texto do tutor, dividido em frases) e "Desapareceu em cidade/UF" (região pública e data); rodapé preto "VIU A/O NOME?" com o telefone e o QR | Até 6 fotos no A4 (a 6ª ao lado das características), 5 nos formatos verticais e 3 no horizontal. A disposição das colunas (1 ou 2 fotos por coluna) é a que menos corta; se uma foto ficaria estreita demais, entra uma a menos. Com 1 foto, o espaço ao lado mostra as características |
+
+**Modelo 4: dados e privacidade.**
+- Nome, faixa e quadros vêm do cadastro público do alerta; nada é inventado ("sem coleira" não é deduzido de um campo vazio, só aparece se estiver no texto do tutor).
+- **Telefone só quando autorizado:** o número só existe nos dados públicos quando o tutor marcou WhatsApp ou telefone como públicos no alerta (`get_public_lost_case` devolve `null` caso contrário). Sem autorização, o rodapé diz "VIU A MEL? AVISE A FAMÍLIA:" e mostra o QR.
+- Itens do modelo enviado que não existem no cadastro ficaram de fora: legendas nas fotos ("PEITO BRANCO"), negrito em partes do texto e a rua exata (a localização exata é privada; só a região pública aparece, além do que o próprio tutor escrever).
+- A faixa preta de recompensa só aparece no protótipo da bonificação (`/dev/bonificacao`), nunca em alerta real.
 
 Regras comuns:
 - nenhuma foto inteira sobre fundo desfocado;
@@ -52,7 +59,6 @@ Os critérios são: quantidade de fotos, orientação, resolução da principal 
 
 ### Limitações da demonstração
 
-- Personalizar: uma complementar escolhida pode ficar de fora do cartaz sem aviso quando o modelo não comporta três fotos (item 7d de decisões pendentes).
 - A escolha fica no endereço da página. Recarregar mantém, mas outro aparelho não; nada é gravado no servidor e não há localStorage.
 - Gated por `MEL_DEV_ROUTES=1`. Liberar para os usuários depende da aprovação do proprietário.
 

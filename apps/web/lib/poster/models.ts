@@ -1,21 +1,29 @@
 import { photoLayout, type PosterV2Format } from "./PosterV2";
 
 /**
- * Os três modelos de cartaz que o TUTOR escolhe em cada formato (código puro: roda no
+ * Os quatro modelos de cartaz que o TUTOR escolhe em cada formato (código puro: roda no
  * servidor, que gera o PNG, e no celular, que desenha a moldura do editor com as mesmas
  * caixas). Nenhum modelo depende das fotos de um pet específico: o layout se adapta à
  * quantidade e à orientação das fotos que existirem.
  */
 
-export type PosterModel = 1 | 2 | 3;
-export const POSTER_MODEL_IDS: PosterModel[] = [1, 2, 3];
-export const isPosterModel = (v: unknown): v is PosterModel => v === 1 || v === 2 || v === 3;
+export type PosterModel = 1 | 2 | 3 | 4;
+export const POSTER_MODEL_IDS: PosterModel[] = [1, 2, 3, 4];
+export const isPosterModel = (v: unknown): v is PosterModel => v === 1 || v === 2 || v === 3 || v === 4;
 
 export const POSTER_MODELS: Record<PosterModel, { name: string; summary: string }> = {
   1: { name: "Foto em destaque", summary: "Uma foto grande, com o nome sobre ela." },
   2: { name: "Várias fotos", summary: "A foto principal e até duas complementares." },
   3: { name: "Clássico de poste", summary: "Fundo claro, fotos lado a lado, descrição e chamada em destaque." },
+  4: { name: "Cartaz completo", summary: "PROCURA-SE com o nome, mosaico de até 6 fotos, características, local e contato." },
 };
+
+/** Máximo de fotos de cada modelo no formato (o layout pode usar menos se alguma ficar estreita demais). */
+export function modelCapacity(format: PosterV2Format, model: PosterModel): number {
+  if (model === 1) return 1;
+  if (model === 4) return format === "impressao" ? 6 : format === "landscape" ? 3 : 5;
+  return 3;
+}
 
 /** Para que serve cada formato (passo 1 do fluxo). */
 export const FORMAT_PURPOSE: Record<PosterV2Format, { title: string; purpose: string }> = {
@@ -37,7 +45,7 @@ export interface ModelLayout {
    * Modelo 2: layout das propostas (principal + complementares).
    * Modelo 3: "row" = fotos lado a lado; `card` = espaço que sobra na linha vira o quadro da descrição.
    */
-  arrangement: "stack" | "side" | "classic" | "row";
+  arrangement: "stack" | "side" | "classic" | "row" | "collage";
   /** Modelo 2: complementares empilhadas ou lado a lado. */
   extrasDirection?: "column" | "row";
   /** Modelo 2 (horizontal): complementares embaixo da principal, não ao lado. */
@@ -46,6 +54,12 @@ export interface ModelLayout {
   card?: Box;
   /** Modelo 2: o quadro vai embaixo da complementar, na mesma coluna. */
   cardBelowExtras?: boolean;
+  /**
+   * Modelo 4: as complementares ficam em colunas à direita da principal (`columns` = quantas
+   * fotos em cada coluna) e, no A4, a última foto vai ao lado das características (`bottom`).
+   */
+  columns?: number[];
+  bottom?: boolean;
   /** Fotos consideradas pelo modelo (as demais ficam de fora). */
   used: number;
 }
@@ -139,6 +153,103 @@ function rowWidths(W: number, H: number, aspects: number[]): number[] | null {
   return null;
 }
 
+/** Modelo 4: área do mosaico (dentro da moldura vermelha) e a foto ao lado das características (A4). */
+export const COLLAGE_AREA: Record<PosterV2Format, { width: number; height: number; gap: number; bottom?: Box }> = {
+  impressao: { width: 1582, height: 900, gap: 22, bottom: { width: 420, height: 560 } },
+  portrait: { width: 1040, height: 520, gap: 12 },
+  story: { width: 1040, height: 700, gap: 12 },
+  square: { width: 1040, height: 400, gap: 10 },
+  landscape: { width: 640, height: 590, gap: 10 },
+};
+/** Sobra ao lado de uma foto única: abaixo disso não vira o quadro do QR. */
+const COLLAGE_CARD_MIN = 300;
+
+/**
+ * Modelo 4 — "Cartaz completo": principal grande à esquerda e as complementares em colunas
+ * (1 → uma alta; 2 → empilhadas; 3 → 2 + 1 alta; 4 → 2 × 2). Com uma foto só, ela fica na
+ * própria proporção e o resto vira o quadro do QR (nada vazio, nada desfocado).
+ */
+function collageLayout(format: PosterV2Format, aspects: number[], reward: boolean): ModelLayout {
+  const { width: W, gap, bottom } = COLLAGE_AREA[format];
+  // Com a faixa da bonificação, o mosaico cede a altura dela.
+  const H = COLLAGE_AREA[format].height - (reward ? COLLAGE_REWARD_ROOM[format] : 0);
+  const n = Math.min(aspects.length, modelCapacity(format, 4));
+  if (n === 0) return { model: 4, arrangement: "collage", boxes: [{ width: W, height: H }], columns: [], used: 0 };
+  const main = aspects[0]!;
+  if (n === 1) {
+    const w = Math.min(W, Math.max(Math.round(W * 0.42), Math.round(H * main)));
+    const card = W - w - gap;
+    return card >= COLLAGE_CARD_MIN
+      ? { model: 4, arrangement: "collage", boxes: [{ width: w, height: H }], card: { width: card, height: H }, columns: [], used: 1 }
+      : { model: 4, arrangement: "collage", boxes: [{ width: W, height: H }], columns: [], used: 1 };
+  }
+  // A foto ao lado das características (A4) só entra com 6 fotos; o mosaico leva até 4 complementares.
+  const withBottom = Boolean(bottom) && n >= 6;
+  let mainW = Math.min(Math.round(W * 0.52), Math.max(Math.round(W * 0.36), Math.round(H * main)));
+  // Principal horizontal numa área baixa (paisagem): alarga até onde as complementares ainda cabem.
+  if (keptRatio(main, { width: mainW, height: H }) < COLLAGE_MIN_KEPT) mainW = Math.min(W - gap - 140, Math.round(H * main));
+  // Nem assim: fica só a principal, na proporção dela (o resto vira o quadro ao lado).
+  if (keptRatio(main, { width: mainW, height: H }) < COLLAGE_MIN_KEPT) return collageLayout(format, aspects.slice(0, 1), reward);
+  const EW = W - mainW - gap;
+  // Entre as disposições possíveis (colunas de 1 ou 2 fotos), fica a que corta menos a foto mais
+  // cortada; se nem assim todas aparecem bem, usa uma complementar a menos (nada desfocado).
+  for (let k = Math.min(4, n - 1 - (withBottom ? 1 : 0), format === "landscape" ? 2 : 4); k >= 1; k--) {
+    const extras = aspects.slice(1, 1 + k);
+    let best: { columns: number[]; boxes: Box[]; kept: number } | null = null;
+    for (const columns of COLLAGE_COLUMNS[k]!) {
+      const boxes = collageColumns(columns, extras, EW, H, gap);
+      if (!boxes) continue;
+      const kept = Math.min(...boxes.map((b, i) => keptRatio(extras[i]!, b)));
+      if (!best || kept > best.kept + 0.02) best = { columns, boxes, kept };
+    }
+    if (best && best.kept >= COLLAGE_MIN_KEPT) {
+      // A 6ª foto (ao lado das características, no A4) na largura que a orientação dela pede.
+      const last = withBottom ? { width: Math.min(700, Math.max(320, Math.round(bottom!.height * aspects[1 + k]!))), height: bottom!.height } : null;
+      if (last && keptRatio(aspects[1 + k]!, last) < COLLAGE_MIN_KEPT) return collageLayout(format, aspects.slice(0, 5), reward);
+      const boxes = [{ width: mainW, height: H }, ...best.boxes, ...(last ? [last] : [])];
+      return { model: 4, arrangement: "collage", boxes, columns: best.columns, bottom: withBottom, used: boxes.length };
+    }
+  }
+  // Nenhuma complementar cabe bem ao lado: só a principal (o resto vira o quadro ao lado dela).
+  return collageLayout(format, aspects.slice(0, 1), reward);
+}
+
+/** Disposições das complementares: quantas fotos em cada coluna (da esquerda para a direita). */
+const COLLAGE_COLUMNS: Record<number, number[][]> = {
+  1: [[1]],
+  2: [[2], [1, 1]],
+  3: [[2, 1], [1, 2], [1, 1, 1]],
+  4: [[2, 2], [1, 1, 1, 1]],
+};
+/** Fração mínima de cada complementar que continua visível no recorte. */
+const COLLAGE_MIN_KEPT = 0.55;
+const keptRatio = (a: number, b: Box) => Math.min(a / (b.width / b.height), b.width / b.height / a);
+
+/** Caixas das colunas: largura de cada coluna proporcional à largura natural das fotos dela. */
+function collageColumns(columns: number[], aspects: number[], W: number, H: number, gap: number): Box[] | null {
+  let i = 0;
+  const cols = columns.map((count) => {
+    const h = (H - gap * (count - 1)) / count;
+    const items = aspects.slice(i, (i += count));
+    return { count, h, natural: h * (items.reduce((s, a) => s + a, 0) / items.length) };
+  });
+  const free = W - gap * (columns.length - 1);
+  const total = cols.reduce((s, c) => s + c.natural, 0);
+  const widths = cols.map((c) => Math.floor((c.natural / total) * free));
+  widths[widths.length - 1]! += free - widths.reduce((s, w) => s + w, 0);
+  // Coluna estreita demais não ajuda a reconhecer.
+  if (Math.min(...widths) < 120) return null;
+  const boxes: Box[] = [];
+  cols.forEach((c, k) => {
+    const first = Math.floor(c.h);
+    for (let r = 0; r < c.count; r++) boxes.push({ width: widths[k]!, height: r === c.count - 1 ? H - (first + gap) * (c.count - 1) : first });
+  });
+  return boxes;
+}
+
+/** Altura que o mosaico do modelo 4 cede à faixa da bonificação (protótipo). */
+const COLLAGE_REWARD_ROOM: Record<PosterV2Format, number> = { impressao: 116, square: 56, portrait: 66, story: 70, landscape: 0 };
+
 /** Altura que as fotos cedem ao selo da bonificação (modelos 1 e 3; o 2 usa a do PosterV2). */
 const MODEL_REWARD_ROOM: Record<PosterV2Format, number> = { impressao: 0, square: 44, portrait: 48, story: 60, landscape: 0 };
 
@@ -157,6 +268,7 @@ export function modelLayout(format: PosterV2Format, model: PosterModel, aspects:
   const room = opts.reward ? MODEL_REWARD_ROOM[format] : 0;
   if (model === 1) return shrink(heroLayout(format, main), room);
   if (model === 3) return classicLayout(format, aspects, room);
+  if (model === 4) return collageLayout(format, aspects, Boolean(opts.reward));
   return singleExtraFits(manyPhotosLayout(format, main, aspects, opts), aspects[1], format === "impressao" ? 24 : 0);
 }
 
