@@ -13,6 +13,7 @@
 | Geocoding | Adapter `Geocoder` → Nominatim/MapTiler no MVP | Mesma lógica de abstração |
 | Imagens | Supabase Storage + transformação (resize/webp) + compressão no cliente antes do upload | Conexões móveis |
 | Cartaz / OG | `next/og` (Satori) → PNG 1:1, 9:16, 16:9; A4 via página `print` CSS (salvar como PDF) | Zero dependência pesada |
+| Modelos de cartaz (DEV) | `lib/poster/models.ts` (caixas das fotos, código puro usado no servidor e no editor), `compose.ts` (recorte com `sharp`, sem laterais desfocadas), `PosterModels.tsx` / `PosterV2.tsx` / `PosterCollage.tsx` (modelos 1–4), `@mel/core` `collageExtras` (dados do modelo 4) | Mesmo cálculo de layout na prévia e no PNG final |
 | QR Code | `qrcode` (lib pequena, gera SVG) | — |
 | Push | Web Push (VAPID) via Edge Function | Grátis, padrão |
 | Antiabuso | Cloudflare Turnstile + rate limit em Postgres (tabela de buckets) | Sem Redis no MVP |

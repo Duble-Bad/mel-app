@@ -1,6 +1,6 @@
 # Decisões pendentes do proprietário
 
-Lista viva das decisões que dependem do proprietário (atualizada a cada rodada).
+Lista viva das decisões que dependem do proprietário (atualizada em 2026-11-10).
 Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md`.
 
 ## Pendentes
@@ -30,6 +30,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 
 | Data | Decisão |
 |---|---|
+| 2026-11-10 | **Merge da `redesign/etapa-1` na `main`** (redesign + cartazes), só código: sem deploy e sem migrations em produção (item 10 continua pendente) |
 | 2026-11-10 | **Contador nos campos de descrição** (pet e observações do alerta): "Até 150 caracteres aparecem inteiros nos cartazes" e, acima disso, aviso de que o resto pode sair com "…" e que o texto completo fica na página do alerta. Só orienta: não bloqueia nem corta; o limite do cadastro continua 500 |
 | 2026-11-10 | **Personalizar limita a seleção às fotos que cabem** no modelo e formato (item 7d): "Não cabe" nas que ficariam estreitas demais; aviso quando uma sai ao trocar a principal |
 | 2026-11-09 | **Descrição do pet é texto livre e voluntário.** O tutor decide o que divulgar, inclusive ruas e endereços; nada de censura ou alteração automática. A proteção técnica das coordenadas privadas continua independente. (Encerra as propostas de editar a descrição da Mel e de omitir endereços automaticamente.) |

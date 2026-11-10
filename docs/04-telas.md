@@ -11,6 +11,10 @@ Legenda: 🌐 pública/indexável · 👤 requer login · 👻 permite sessão a
 | `/encontrados` | Lista de animais encontrados | 🌐 |
 | `/alerta/[code]` | **Página do Alerta MEL** (OG, QR, timeline, mapa, ações) | 🌐 (`noindex` se tutor não autorizar) |
 | `/alerta/[code]/cartaz` | Gerador de cartaz (formatos, prévia, baixar/imprimir) | 🌐 |
+| `/alerta/[code]/cartaz/criar` | **"Criar cartaz"** (DEMONSTRAÇÃO, só com `MEL_DEV_ROUTES=1`): formato → 4 modelos → personalizar → baixar/imprimir/compartilhar | 🔒 DEV, `noindex` |
+| `/alerta/[code]/cartaz/imprimir` | Página de impressão do cartaz escolhido (A4 sem margens) | 🔒 DEV, `noindex` |
+| `/alerta/[code]/cartaz/propostas` | Comparação interna das propostas de cartaz | 🔒 DEV, `noindex` |
+| `/dev/bonificacao` | Protótipo da bonificação (caso fictício) | 🔒 DEV, `noindex` |
 | `/encontrado/[code]` | Página do animal encontrado | 🌐 |
 | `/pet/[melId]` | Página pública do pet (MEL ID) | 🌐 se `is_public` |
 | `/adocao` | MEL Adota — lista com filtros | 🌐 |
