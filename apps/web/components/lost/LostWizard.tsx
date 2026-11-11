@@ -194,9 +194,10 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
           {TITLES[step]}
         </h1>
         {pet && step !== "pet" && (
-          <p className="flex items-center gap-2 text-text-secondary">
+          // <div>, não <p>: o PetAvatar é um <div> (dentro de <p> o HTML é inválido e quebra a hidratação).
+          <div className="flex items-center gap-2 text-text-secondary">
             <PetAvatar pet={pet} size="sm" /> {pet.name}
-          </p>
+          </div>
         )}
       </div>
 
