@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Crop, ImagePlus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   fieldErrors,
   PET_COLORS,
@@ -43,11 +43,17 @@ export function QuickPetForm({
   const [original, setOriginal] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [cropping, setCropping] = useState<File | null>(null);
-  const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
-  useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
+  // Miniatura: o endereço é criado e o anterior revogado no mesmo ponto em que a foto muda (com
+  // useMemo + limpeza de efeito, o StrictMode revogava o endereço e a miniatura ficava quebrada).
+  const [preview, setPreview] = useState<string | null>(null);
+  const previewRef = useRef<string | null>(null);
+  useEffect(() => () => void (previewRef.current && URL.revokeObjectURL(previewRef.current)), []);
   const setPhotos = (orig: File | null, final: File | null) => {
     setOriginal(orig);
     setPhoto(final);
+    if (previewRef.current) URL.revokeObjectURL(previewRef.current);
+    previewRef.current = final ? URL.createObjectURL(final) : null;
+    setPreview(previewRef.current);
   };
   /** Arquivo escolhido: abre o recorte (a foto só entra depois de "Usar"; cancelar mantém a anterior). */
   const pick = (input: HTMLInputElement) => {
