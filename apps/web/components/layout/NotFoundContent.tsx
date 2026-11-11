@@ -1,14 +1,14 @@
 import { ArrowLeft, Map } from "lucide-react";
 import Link from "next/link";
 import { Big404 } from "./Big404";
-import { LostYorkie } from "./LostYorkie";
+import { YorkieVideo } from "./YorkieVideo";
 import "./not-found.css";
 
 /**
  * Página "não encontrado" (com ou sem cabeçalho, conforme quem usa). Tela cheia abaixo do
- * cabeçalho: "404" gigante ao fundo, esmaecendo para baixo; no centro, uma yorkshire (como a Mel)
- * farejando, curiosa, com um "?" no ar; embaixo, a mensagem e o caminho de volta. Inspirada num
- * modelo de 404 com raposa em vídeo, refeita com desenho próprio e as cores da MEL.
+ * cabeçalho: "404" gigante ao fundo, esmaecendo para baixo; no centro, uma yorkshire de verdade
+ * (vídeo, fundo recortado) inclinando a cabeça, curiosa; embaixo, a mensagem e o caminho de volta.
+ * Inspirada num modelo de 404 com raposa em vídeo, nas cores da MEL.
  */
 export function NotFoundContent() {
   return (
@@ -17,8 +17,8 @@ export function NotFoundContent() {
 
       {/* Yorkshire no fluxo da página: ocupa o espaço que sobra acima do texto, sem nunca cobri-lo. */}
       <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center px-4 pt-4">
-        <div className="aspect-[400/420] h-[clamp(150px,44dvh,440px)] max-w-full">
-          <LostYorkie />
+        <div className="nf-dog aspect-[3/4] h-[clamp(170px,48dvh,480px)] max-w-full">
+          <YorkieVideo />
         </div>
       </div>
 
