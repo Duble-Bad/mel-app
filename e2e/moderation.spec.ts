@@ -54,7 +54,7 @@ test("a visitor reports a scam alert; a moderator hides it and the action is aud
   // 3. O alerta saiu do ar para o público.
   const pub = await browser.newPage({ baseURL: "http://localhost:3100" });
   await pub.goto(`/alerta/${scam.code}`);
-  await expect(pub.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(pub.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
   await pub.close();
 });
 
@@ -62,5 +62,5 @@ test("the moderation panel does not exist for regular accounts", async ({ page }
   const user = await createUser("mod-regular", { onboarded: true });
   created.push(user.email);
   await signIn(page, user.email, "/admin");
-  await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
 });

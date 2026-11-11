@@ -23,9 +23,8 @@ export function NotFoundContent() {
       </div>
 
       <div className="relative z-30 flex flex-col items-center px-4 pt-2 pb-10 text-center sm:pb-16">
-        {/* O título fica igual ao de antes: os testes E2E e os leitores de tela o reconhecem. */}
-        <p className="text-[13px] font-extrabold tracking-[.12em] text-primary uppercase">Ops! Erro 404</p>
-        <h1 className="mt-1.5 text-[clamp(22px,3.4vw,32px)] leading-tight font-extrabold tracking-[-0.02em] text-balance">Não encontramos esta página</h1>
+        <p className="text-[13px] font-extrabold tracking-[.12em] text-primary uppercase">Erro 404</p>
+        <h1 className="mt-1.5 text-[clamp(22px,3.4vw,32px)] leading-tight font-extrabold tracking-[-0.02em] text-balance">Ops, esta página se perdeu!</h1>
         <p className="mt-2 max-w-[46ch] text-text-secondary sm:text-lg">
           Farejamos por toda parte e ela se perdeu. O link pode estar incompleto, ou o conteúdo foi removido ou deixou de ser público.
         </p>

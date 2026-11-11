@@ -71,7 +71,7 @@ test("adoption on the network map: off by default, only admins switch it, gold m
   const userPage = await browser.newPage({ baseURL: test.info().project.use.baseURL });
   await signIn(userPage, user.email, "/");
   await userPage.goto("/admin");
-  await expect(userPage.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(userPage.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
   await userPage.close();
   // Moderador (não administrador) não vê a configuração.
   const modPage = await browser.newPage({ baseURL: test.info().project.use.baseURL });

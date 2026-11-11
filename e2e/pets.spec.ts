@@ -117,7 +117,7 @@ test("required fields are explained and private pets are hidden from visitors", 
 
   const visitor = await browser.newPage();
   await visitor.goto(`http://localhost:3100/pet/${melId}`);
-  await expect(visitor.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(visitor.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
   await visitor.close();
 });
 
@@ -151,7 +151,7 @@ test("tutor edits a pet and then deletes it after confirming", async ({ page }) 
 test("unknown or malformed MEL IDs show a friendly not-found page", async ({ page }) => {
   for (const id of ["MEL-ZZZZZZ", "qualquer-coisa"]) {
     await page.goto(`/pet/${id}`);
-    await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
     await expect(page.getByRole("banner")).toHaveCount(1);
   }
 });

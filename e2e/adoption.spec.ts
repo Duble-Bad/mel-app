@@ -50,7 +50,7 @@ test("adoption: listing → moderation → interest opens a chat with the donor 
   // Ainda não é público.
   const visitor = await browser.newPage({ baseURL: "http://localhost:3100" });
   await visitor.goto(path);
-  await expect(visitor.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(visitor.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
 
   // 2. Moderação aprova (recusar exige motivo).
   const modCtx = await browser.newContext({ ...test.info().project.use, baseURL: "http://localhost:3100" });
