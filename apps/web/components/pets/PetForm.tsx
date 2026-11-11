@@ -43,6 +43,7 @@ import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
 import { PET_DESCRIPTION_COPY, PublicDescriptionField } from "./PublicDescriptionField";
 import { limitedTextarea } from "@/components/ui/limitedText";
+import { DateCalendar, isoDate } from "@/components/ui/DateCalendar";
 
 interface PetFormProps {
   ownerId: string;
@@ -274,14 +275,13 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
           Mais detalhes <span className="text-base font-normal text-text-secondary">(pode completar depois)</span>
         </h2>
         <div id="field-birthDate">
-          <TextField
+          <DateCalendar
             label="Data de nascimento"
             name="birthDate"
-            type="date"
             optional
-            max={new Date().toISOString().slice(0, 10)}
+            max={isoDate(new Date())}
             value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
+            onChange={setBirthDate}
             error={errors.birthDate}
           />
         </div>

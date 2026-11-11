@@ -12,6 +12,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@ark-ui/react": "5.39.3",
     "@mel/core": "*",
     "@mel/data": "*",
     "@mel/ui-tokens": "*",

@@ -11,6 +11,7 @@ import { BreedField } from "@/components/pets/BreedField";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ChoiceGroup } from "@/components/ui/Choice";
+import { DateTimeFields, isoDate } from "@/components/ui/DateCalendar";
 import { TextareaField, TextField } from "@/components/ui/Field";
 import { ProgressSteps } from "@/components/ui/ProgressSteps";
 import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
@@ -204,7 +205,7 @@ export function FoundWizard({ sawOnly }: { sawOnly: boolean }) {
             options={SEEN_WHEN.map((w) => ({ value: w, label: SEEN_WHEN_LABELS[w] }))}
           />
           {when === "other" && (
-            <TextField label="Data e hora" type="datetime-local" value={other} max={new Date().toISOString().slice(0, 16)} onChange={(e) => setOther(e.target.value)} />
+            <DateTimeFields dateLabel="Em que dia?" value={other} max={isoDate(new Date())} onChange={setOther} />
           )}
           <Nav onBack={() => go("where")} onNext={() => next(["foundAt"])} />
         </section>

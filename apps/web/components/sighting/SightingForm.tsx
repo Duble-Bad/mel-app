@@ -9,7 +9,7 @@ import { prepareImage } from "@/lib/images";
 import { LocationPicker, type PickedLocation } from "@/components/location/LocationPicker";
 import { Alert } from "@/components/ui/Alert";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
-import { TextField } from "@/components/ui/Field";
+import { DateTimeFields, isoDate } from "@/components/ui/DateCalendar";
 import { limitedTextarea } from "@/components/ui/limitedText";
 import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
@@ -150,7 +150,7 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
           options={SEEN_WHEN.map((w) => ({ value: w, label: SEEN_WHEN_LABELS[w] }))}
         />
         {when === "other" && (
-          <TextField label="Dia e hora aproximados" type="datetime-local" value={other} onChange={(e) => setOther(e.target.value)} />
+          <DateTimeFields dateLabel="Em que dia?" value={other} max={isoDate(new Date())} onChange={setOther} />
         )}
       </section>
 
