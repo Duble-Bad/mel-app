@@ -128,7 +128,9 @@
 .mh-glow__border {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  /* Acima do conteúdo (só a linha da borda, sem cliques): nos cards com foto, a foto encostada
+     na borda esconderia o feixe. */
+  z-index: 3;
   overflow: hidden;
   padding: 1.5px;
   border-radius: inherit;
