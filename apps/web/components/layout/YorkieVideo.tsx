@@ -13,7 +13,7 @@ function subscribe(cb: () => void) {
 
 /**
  * Yorkshire de verdade inclinando a cabeça, curiosa (vídeo enviado pelo proprietário), **sem recorte**:
- * aparece com o próprio fundo claro de estúdio, dentro da moldura em arco (not-found.css: .nf-arch).
+ * aparece com o próprio fundo claro de estúdio, dentro da moldura em forma de osso (BoneFrame).
  * Recortar o fundo deixava franjas nos pelos finos; com o fundo original não há borda de recorte.
  * Vídeo comum (WebM e MP4), então toca igual em todos os navegadores, inclusive no iPhone.
  * Com "reduzir movimento" (e no servidor), mostra a foto parada.

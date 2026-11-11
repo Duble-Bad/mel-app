@@ -25,26 +25,29 @@
   position: relative;
   animation: nf-in 0.7s var(--mel-easing) both;
 }
-/* Moldura em arco (janela de retrato): o vídeo aparece inteiro, com o próprio fundo claro de
-   estúdio, sem recorte. Topo arredondado, base reta levemente arredondada, borda na cor da marca e
-   sombra para destacar do fundo. */
-.nf-arch {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: 999px 999px 28px 28px;
-  border: 3px solid var(--mel-primary);
-  box-shadow:
-    0 0 0 6px color-mix(in srgb, var(--mel-primary) 22%, transparent),
-    0 24px 48px -16px rgb(0 0 0 / 0.55);
+/* Moldura em forma de osso (BoneFrame): o vídeo aparece com o próprio fundo claro de estúdio,
+   sem recorte, no formato de um osso, com borda na cor da marca (desenhada no SVG) e sombra que
+   acompanha o contorno. */
+.nf-bone {
+  filter: drop-shadow(0 22px 26px rgb(0 0 0 / 0.45));
 }
-/* Luz suave por dentro da moldura (de cima), para o fundo de estúdio não parecer chapado. */
-.nf-arch::after {
+/* Cor do fundo de estúdio do vídeo (amostrada do próprio vídeo; não é cor da marca): preenche a
+   folga no alto das bolinhas, já que o vídeo é reduzido 5% pela base para a ponta da orelha não
+   encostar na "cintura" do osso quando ela inclina a cabeça. */
+.nf-bone-fill {
+  background: rgb(224 230 238);
+}
+.nf-bone-fill > * {
+  transform: scale(0.95);
+  transform-origin: 50% 100%;
+}
+/* Luz suave de cima, por dentro do osso, para o fundo não parecer chapado. */
+.nf-bone-fill::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, white 18%, transparent), transparent 60%);
+  background: radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, white 22%, transparent), transparent 60%);
 }
 @keyframes nf-in {
   from {

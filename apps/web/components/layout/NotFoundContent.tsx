@@ -1,14 +1,15 @@
 import { ArrowLeft, Map } from "lucide-react";
 import Link from "next/link";
 import { Big404 } from "./Big404";
+import { BoneFrame } from "./BoneFrame";
 import { YorkieVideo } from "./YorkieVideo";
 import "./not-found.css";
 
 /**
  * Página "não encontrado" (com ou sem cabeçalho, conforme quem usa). Tela cheia abaixo do
  * cabeçalho: "404" gigante ao fundo, esmaecendo para baixo; no miolo do "0", uma yorkshire de
- * verdade (vídeo com o fundo de estúdio original) numa moldura em arco, inclinando a cabeça,
- * curiosa; embaixo, a mensagem e o caminho de volta.
+ * verdade (vídeo com o fundo de estúdio original) numa moldura em forma de osso, inclinando a
+ * cabeça, curiosa; embaixo, a mensagem e o caminho de volta.
  * Inspirada num modelo de 404 com raposa em vídeo, nas cores da MEL.
  */
 export function NotFoundContent() {
@@ -18,9 +19,9 @@ export function NotFoundContent() {
       <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center overflow-hidden px-4 pt-4 pb-3">
         <Big404 />
         <div className="nf-dog aspect-[3/4] h-[clamp(170px,44dvh,440px)] max-w-full">
-          <div className="nf-arch">
+          <BoneFrame>
             <YorkieVideo />
-          </div>
+          </BoneFrame>
           <DogExtras />
         </div>
       </div>
@@ -52,7 +53,7 @@ export function NotFoundContent() {
   );
 }
 
-// Fora da moldura: no chão, dos dois lados (coordenadas do quadro 300×400 da moldura).
+// Fora do osso: no chão, dos dois lados (coordenadas do quadro 300×400 da moldura).
 const PAWS: [number, number, number][] = [
   [-62, 396, -18],
   [-26, 380, -10],
