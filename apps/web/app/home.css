@@ -30,6 +30,27 @@
   z-index: 1;
 }
 
+/* Indicador de tempo de cada cena do topo (HeroSlides): enche da esquerda para a direita; pausa
+   com o mouse em cima; com "reduzir movimento" fica cheio e não troca sozinho. */
+.mh-slide-progress {
+  transform: scaleX(0);
+  animation-name: mh-slide-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.mh-slide-progress.is-paused {
+  animation-play-state: paused;
+}
+.mh-slide-progress.is-static {
+  animation: none;
+  transform: none;
+}
+@keyframes mh-slide-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* Brilho que segue o ponteiro nos cartões de ação (como no protótipo). */
 .mel-action::before {
   content: "";

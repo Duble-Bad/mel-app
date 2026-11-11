@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -18,6 +17,7 @@ import {
 import { Suspense, type ReactNode } from "react";
 import { BrandStory } from "@/components/brand/BrandStory";
 import { AdoptionPreview } from "@/components/home/AdoptionPreview";
+import { HeroSlides } from "@/components/home/HeroSlides";
 import { HelpActions } from "@/components/home/HelpActions";
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { NetworkStats } from "@/components/home/NetworkStats";
@@ -343,18 +343,11 @@ function HeroPhoto() {
     </svg>
   );
   return (
-    <div className="relative mx-auto w-full max-w-xl animate-enter lg:max-w-none" style={{ animationDelay: "120ms" }}>
+    <div className="relative mx-auto mb-6 w-full max-w-xl animate-enter lg:max-w-none" style={{ animationDelay: "120ms" }}>
       {ribbon("mh-ribbon--back")}
       <div className="mh-photo-wrap">
-        <Image
-          src="/fotos/mel-e-gatinho.webp"
-          alt="A Mel, uma Yorkshire com laço amarelo, abraçada a um gatinho tigrado"
-          width={1600}
-          height={901}
-          priority
-          sizes="(min-width: 1024px) 560px, 100vw"
-          className="aspect-[16/11] w-full rounded-hero object-cover object-[62%_35%] shadow-lg lg:aspect-auto lg:h-[480px]"
-        />
+        {/* Duas cenas que se alternam: a foto da Mel e o Guardião no bairro (com o selo de baixo). */}
+        <HeroSlides />
       </div>
       {ribbon("mh-ribbon--front")}
       <svg aria-hidden="true" viewBox="0 0 100 100" className="mel-draw mel-float absolute -top-4 -left-3 z-[3] size-16 text-primary sm:size-20">
@@ -368,13 +361,6 @@ function HeroPhoto() {
           style={{ "--len": 300, "--delay": "1s" } as React.CSSProperties}
         />
       </svg>
-      <div className="absolute bottom-4 left-4 z-[3] flex items-center gap-3 rounded-lg border border-border-strong/70 bg-background/85 py-2.5 pr-4 pl-3 shadow-md backdrop-blur-md">
-        <span aria-hidden="true" className="mel-live size-2.5 rounded-full bg-status-found-accent" />
-        <span className="text-sm">
-          <strong className="block font-bold">Avistamentos em tempo real</strong>
-          <span className="text-text-secondary">chegam direto para o tutor</span>
-        </span>
-      </div>
     </div>
   );
 }
