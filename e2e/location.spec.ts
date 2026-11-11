@@ -30,7 +30,7 @@ test("GPS marks the current location and shows the approximate address", async (
 
 test("address search moves the pin to the chosen result", async ({ page }) => {
   await openPicker(page);
-  await page.getByLabel("Ou busque um endereço ou lugar").fill("Praça da Sé");
+  await page.getByLabel("Ou busque pela rua, pelo CEP ou por um lugar").fill("Praça da Sé");
   await page.getByRole("button", { name: "Praça da Sé, Sé, São Paulo – SP" }).click();
 
   await expect(page.getByTestId("picked-label")).toContainText("perto de Praça da Sé, Sé, São Paulo – SP");
@@ -73,7 +73,7 @@ test("denied GPS permission explains what to do instead", async ({ browser }) =>
 test("search failure is reported, never silent", async ({ page }) => {
   await mockGeocoding(page, 500);
   await page.goto("/dev/local");
-  await page.getByLabel("Ou busque um endereço ou lugar").fill("Praça da Sé");
+  await page.getByLabel("Ou busque pela rua, pelo CEP ou por um lugar").fill("Praça da Sé");
   await expect(page.getByText("A busca de endereço não respondeu. Tente de novo ou marque no mapa.")).toBeVisible();
 });
 

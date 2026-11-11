@@ -38,13 +38,17 @@ test("'Minha cachorrinha sumiu há 15 minutos': alert → anonymous sighting →
   await signInAs(tutor, user.email, "/publicar/perdido");
   await expect(tutor.getByRole("heading", { name: "Qual pet desapareceu?" })).toBeVisible();
   await tutor.getByLabel("Foto do pet").setInputFiles({ name: "mel.png", mimeType: "image/png", buffer: solidPng() });
+  // Ao escolher, abre o recorte: aqui a foto vai inteira.
+  await tutor.getByRole("button", { name: "Usar esta foto" }).click();
+  await expect(tutor.getByTestId("foto-escolhida")).toContainText("Foto carregada");
   await tutor.getByLabel("Nome do pet").fill("Mel");
   await tutor.getByRole("radio", { name: "Cachorro" }).check({ force: true });
   await tutor.getByRole("button", { name: "Cadastrar e continuar" }).click();
   await tutor.getByRole("button", { name: /Usar minha localização atual/ }).click();
   await expect(tutor.getByTestId("picked-label")).toContainText("perto de");
   await cont(tutor).click();
-  await tutor.getByRole("radio", { name: "Agora há pouco" }).check({ force: true });
+  await tutor.getByRole("button", { name: "Abrir o calendário" }).click();
+  await tutor.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(tutor).click();
   await cont(tutor).click(); // detalhes opcionais
   await expect(tutor.getByRole("checkbox", { name: /chat da MEL/ })).toBeChecked(); // chat ligado por padrão

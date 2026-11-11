@@ -123,7 +123,7 @@ test("a visitor WITHOUT an account talks to the tutor in real time; no phone is 
   createdEmails.push(outsider.email);
   await signInAs(other, outsider.email, "/conversas");
   await other.goto(conversationPath);
-  await expect(other.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(other.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
   await expect(other.getByRole("banner")).toHaveCount(1);
 
   await ctx.close();

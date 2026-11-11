@@ -1,14 +1,14 @@
 "use client";
 
-import { createMapTilerGeocoder, geolocationErrorMessage, UserFacingError, type Geocoder, type LatLng } from "@mel/core";
+import { createMapTilerGeocoder, createViaCepLookup, geolocationErrorMessage, UserFacingError, withCepSearch, type Geocoder, type LatLng } from "@mel/core";
 
 let geocoder: Geocoder | undefined;
 
-/** Geocoder do app (MapTiler). Trocar de fornecedor = trocar esta linha. */
+/** Geocoder do app (MapTiler), que também entende CEP (ViaCEP, público e gratuito). Trocar de fornecedor = trocar esta linha. */
 export function getGeocoder(): Geocoder {
   const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
   if (!apiKey) throw new Error("NEXT_PUBLIC_MAPTILER_KEY ausente (veja .env.example).");
-  geocoder ??= createMapTilerGeocoder({ apiKey });
+  geocoder ??= withCepSearch(createMapTilerGeocoder({ apiKey }), createViaCepLookup());
   return geocoder;
 }
 

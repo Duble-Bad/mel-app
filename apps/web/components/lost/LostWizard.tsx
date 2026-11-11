@@ -1,5 +1,6 @@
 "use client";
 
+import { ClipboardCheck, Clock, FileText, MapPin, MessageCircle, PawPrint, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { contactStepSchema, detailsStepSchema, fieldErrors, firstIncompleteStep, formatBrPhone, formatDateTimeBr, formatPhoneInput, LOST_STEPS, type LostCase, type LostStep, type Pet, petSummary, publicAreaFrom, userErrorMessage, type Wearing, WEARING, WEARING_LABELS, whenStepSchema, whereStepSchema } from "@mel/core";
@@ -10,10 +11,28 @@ import { LocationPicker, type PickedLocation } from "@/components/location/Locat
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
+import { MultiChoiceGroup } from "@/components/ui/Choice";
+import { DateCalendar } from "@/components/ui/DateCalendar";
+import { TimeField } from "@/components/ui/TimeField";
 import { TextField } from "@/components/ui/Field";
 import { QuickPetForm } from "./QuickPetForm";
 import { PublicDescriptionField } from "@/components/pets/PublicDescriptionField";
+import { FieldMessage, motionCard, MotionRoot, Shake, SideArrows, StepStage, type Direction } from "@/components/motion/Motion";
+import { MotionSteps } from "@/components/motion/MotionSteps";
+import type { StepState } from "@/components/ui/StepIndicator";
+
+/** Nome curto e ícone de cada passo no indicador. */
+const STEP_META: Record<LostStep, { label: string; icon: LucideIcon }> = {
+  pet: { label: "Pet", icon: PawPrint },
+  where: { label: "Onde", icon: MapPin },
+  when: { label: "Quando", icon: Clock },
+  details: { label: "Detalhes", icon: FileText },
+  contact: { label: "Contato", icon: MessageCircle },
+  review: { label: "Revisão", icon: ClipboardCheck },
+};
+
+/** Avisa o assistente quando o passo atual tem erro de validação (o indicador mostra "com erro"). */
+type OnInvalid = (invalid: boolean) => void;
 
 const TITLES: Record<LostStep, string> = {
   pet: "Qual pet desapareceu?",
@@ -44,7 +63,18 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
   const steps = editing ? EDIT_STEPS : LOST_STEPS;
   const [pets, setPets] = useState(initialPets);
   const [lostCase, setLostCase] = useState<LostCase | null>(draft);
-  const [step, setStep] = useState<LostStep>(() => (editing ? "where" : firstIncompleteStep(draft)));
+  const [step, setStepState] = useState<LostStep>(() => (editing ? "where" : firstIncompleteStep(draft)));
+  // Sentido da última troca (a animação acompanha), se o tutor já navegou (o foco só muda
+  // depois disso) e se o passo atual está com erro de validação.
+  const [direction, setDirection] = useState<Direction>("forward");
+  const [moved, setMoved] = useState(false);
+  const [invalid, setInvalid] = useState(false);
+  const setStep = (next: LostStep) => {
+    setDirection(steps.indexOf(next) < steps.indexOf(step) ? "back" : "forward");
+    setMoved(true);
+    setInvalid(false);
+    setStepState(next);
+  };
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -113,29 +143,63 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
   }
 
   const back = index > 0 ? () => setStep(steps[index - 1]!) : undefined;
+  // Passos anteriores ficam concluídos (tocar volta a eles); o atual pode estar com erro.
+  const states: StepState[] = steps.map((_, i) => (i < index ? "done" : i === index ? (invalid ? "error" : "current") : "pending"));
 
   return (
-    <div className="flex flex-col gap-6">
+    <MotionRoot variant="b" className="flex scroll-mt-20 flex-col gap-6" data-step-flow>
       <header className="flex flex-col gap-2">
-        <div className="flex items-center justify-between text-sm text-text-secondary">
-          <span>
-            {editing && "Editar alerta · "}Passo {index + 1} de {steps.length}
-          </span>
-          {saved && <span role="status">{editing ? "✓ Alterações salvas" : "✓ Rascunho salvo"}</span>}
+        <div className="flex items-center justify-between gap-3 text-sm text-text-secondary">
+          {/* No celular, "Editar alerta" aparece junto do "Passo N de M" do indicador. */}
+          <span className="hidden font-semibold sm:inline">{editing && "Editar alerta"}</span>
+          {saved && (
+            <span role="status" className="ml-auto">
+              {editing ? "✓ Alterações salvas" : "✓ Rascunho salvo"}
+            </span>
+          )}
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-surface-muted" aria-hidden="true">
-          <div className="h-full bg-status-lost-solid transition-all" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
-        </div>
-        <h1 className="text-2xl font-bold">{TITLES[step]}</h1>
-        {pet && step !== "pet" && (
-          <p className="flex items-center gap-2 text-text-secondary">
-            <PetAvatar pet={pet} size="sm" /> {pet.name}
-          </p>
-        )}
+        <MotionSteps
+          steps={steps.map((k) => STEP_META[k])}
+          states={states}
+          onSelect={busy ? undefined : (i) => setStep(steps[i]!)}
+          label={editing ? "Passos da edição do alerta" : "Passos do alerta"}
+          variant="b"
+          direction={direction}
+          prefix={editing ? "Editar alerta · " : undefined}
+        />
       </header>
+      {/* Telas largas: setas laterais. Continuar envia o formulário do passo (valida, salva e avança, como o botão);
+          na revisão não há seta: o alerta só é ativado pelo botão "Ativar alerta MEL". */}
+      <SideArrows
+        onBack={back && !busy ? back : undefined}
+        onNext={
+          busy || step === "review"
+            ? undefined
+            : step === "pet"
+              ? lostCase
+                ? () => setStep(firstIncompleteStep(lostCase) === "pet" ? "where" : firstIncompleteStep(lostCase))
+                : undefined
+              : () => document.querySelector<HTMLFormElement>("[data-step-flow] [data-phase=\"in\"] form[data-step-form]")?.requestSubmit()
+        }
+        nextLabel={editing && step === "contact" ? "Salvar alterações" : "Continuar"}
+      />
 
       {notice && <Alert tone="info">{notice}</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
+
+      <StepStage stepKey={step} direction={direction} focus={moved}>
+      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h1 data-step-heading tabIndex={-1} className="text-2xl font-bold">
+          {TITLES[step]}
+        </h1>
+        {pet && step !== "pet" && (
+          // <div>, não <p>: o PetAvatar é um <div> (dentro de <p> o HTML é inválido e quebra a hidratação).
+          <div className="flex items-center gap-2 text-text-secondary">
+            <PetAvatar pet={pet} size="sm" /> {pet.name}
+          </div>
+        )}
+      </div>
 
       {step === "pet" && (
         <PetStep
@@ -152,19 +216,20 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
         />
       )}
       {step === "where" && lostCase && (
-        <WhereStep lostCase={lostCase} busy={busy} onBack={back} onNext={(patch) => save(patch, "when")} />
+        <WhereStep lostCase={lostCase} busy={busy} onBack={back} onInvalid={setInvalid} onNext={(patch) => save(patch, "when")} />
       )}
       {step === "when" && lostCase && (
-        <WhenStep lostCase={lostCase} busy={busy} onBack={back} onNext={(patch) => save(patch, "details")} />
+        <WhenStep lostCase={lostCase} busy={busy} onBack={back} onInvalid={setInvalid} onNext={(patch) => save(patch, "details")} />
       )}
       {step === "details" && lostCase && (
-        <DetailsStep lostCase={lostCase} busy={busy} onBack={back} onNext={(patch) => save(patch, "contact")} />
+        <DetailsStep lostCase={lostCase} busy={busy} onBack={back} onInvalid={setInvalid} posterPrefix={pet?.uniqueMarks ?? null} onNext={(patch) => save(patch, "contact")} />
       )}
       {step === "contact" && lostCase && (
         <ContactStep
           lostCase={lostCase}
           busy={busy}
           onBack={back}
+          onInvalid={setInvalid}
           onNext={(patch) => save(patch, editing ? "done" : "review")}
           submitLabel={editing ? "Salvar alterações" : undefined}
         />
@@ -172,20 +237,23 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
       {step === "review" && lostCase && pet && (
         <ReviewStep lostCase={lostCase} pet={pet} busy={busy} onEdit={setStep} onActivate={activate} />
       )}
-    </div>
+      </div>
+      </StepStage>
+    </MotionRoot>
   );
 }
 
 // ---------------------------------------------------------------------------
 
+/** Celular: Continuar em cima, ocupando a largura (polegar), e Voltar embaixo. Telas maiores: lado a lado, no tamanho normal. */
 function Nav({ busy, onBack, children = "Continuar" }: { busy: boolean; onBack?: () => void; children?: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 pt-2">
-      <Button type="submit" loading={busy} loadingText="Salvando…">
+    <div className="flex flex-col gap-3 pt-2 sm:flex-row-reverse sm:items-center sm:justify-between">
+      <Button type="submit" loading={busy} loadingText="Salvando…" className="sm:w-auto sm:min-w-44">
         {children}
       </Button>
       {onBack && (
-        <Button variant="ghost" size="md" onClick={onBack} disabled={busy}>
+        <Button variant="ghost" size="md" onClick={onBack} disabled={busy} className="sm:w-auto">
           Voltar
         </Button>
       )}
@@ -220,7 +288,7 @@ function PetStep({
                 disabled={busy}
                 onClick={() => onChoose(p.id)}
                 aria-pressed={p.id === selectedId}
-                className="flex w-full items-center gap-4 rounded-lg border-2 border-border bg-surface p-3 text-left hover:border-primary aria-pressed:border-primary aria-pressed:bg-primary-soft"
+                className={`${motionCard} flex w-full items-center gap-4 rounded-lg border-2 border-border bg-surface p-3 text-left hover:border-primary aria-pressed:border-primary aria-pressed:bg-primary-soft`}
               >
                 <PetAvatar pet={p} size="sm" />
                 <span className="min-w-0 flex-1">
@@ -247,26 +315,41 @@ function PetStep({
   );
 }
 
+/** Erro de validação de um passo: mensagem, tentativas (o campo balança a cada uma) e aviso ao indicador. */
+function useStepError(onInvalid?: OnInvalid) {
+  const [error, setErrorState] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const setError = (message: string | null) => {
+    setErrorState(message);
+    if (message) setAttempt((n) => n + 1);
+    onInvalid?.(Boolean(message));
+  };
+  return { error, attempt, setError };
+}
+
 function WhereStep({
   lostCase,
   busy,
   onBack,
   onNext,
+  onInvalid,
 }: {
   lostCase: LostCase;
   busy: boolean;
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
+  onInvalid?: OnInvalid;
 }) {
   const [picked, setPicked] = useState<PickedLocation | null>(
     lostCase.lastSeen ? { position: lostCase.lastSeen, label: lostCase.lastSeenLabel ?? undefined, source: "map" } : null,
   );
   const [exact, setExact] = useState(lostCase.publicPointExact);
-  const [error, setError] = useState<string | null>(null);
+  const { error, attempt, setError } = useStepError(onInvalid);
 
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
@@ -291,14 +374,16 @@ function WhereStep({
         });
       }}
     >
-      <LocationPicker
-        value={picked}
-        onChange={(v) => {
-          setPicked(v);
-          setError(null);
-        }}
-        privacyNote="No alerta mostramos um local aproximado (cerca de 100 m) e só o bairro. Seu endereço não aparece."
-      />
+      <Shake attempt={attempt}>
+        <LocationPicker
+          value={picked}
+          onChange={(v) => {
+            setPicked(v);
+            if (error) setError(null);
+          }}
+          privacyNote="No alerta mostramos um local aproximado (cerca de 100 m) e só o bairro. Seu endereço não aparece."
+        />
+      </Shake>
       <label className="flex min-h-12 items-start gap-3">
         <input type="checkbox" checked={exact} onChange={(e) => setExact(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
         <span>
@@ -306,59 +391,51 @@ function WhereStep({
           <span className="block text-sm text-text-secondary">Não recomendado se o local for a sua casa.</span>
         </span>
       </label>
-      {error && (
-        <p role="alert" className="font-medium text-danger">
-          {error}
-        </p>
-      )}
+      <FieldMessage id="erro-onde" message={error} />
       <Nav busy={busy} onBack={onBack} />
     </form>
   );
 }
 
-type WhenChoice = "now" | "today" | "yesterday" | "other";
-
 const pad = (n: number) => String(n).padStart(2, "0");
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const localTime = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+/** Hora sugerida: uma hora atrás (logo depois da meia-noite, 00:00, para não cair no dia anterior). */
+const suggestedTime = () => {
+  const now = new Date();
+  return now.getHours() >= 1 ? localTime(new Date(now.getTime() - 60 * 60_000)) : "00:00";
+};
 
 function WhenStep({
   lostCase,
   busy,
   onBack,
   onNext,
+  onInvalid,
 }: {
   lostCase: LostCase;
   busy: boolean;
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
+  onInvalid?: OnInvalid;
 }) {
   const saved = lostCase.lostAt ? new Date(lostCase.lostAt) : null;
-  const [choice, setChoice] = useState<WhenChoice | null>(saved ? "other" : null);
-  const [time, setTime] = useState(() => localTime(new Date(Date.now() - 60 * 60_000)));
-  const [other, setOther] = useState(saved ? `${localDate(saved)}T${localTime(saved)}` : "");
+  // Dia no calendário (digitável) + hora aproximada. As regras são as mesmas: obrigatório e nunca no futuro.
+  const [date, setDate] = useState(saved ? localDate(saved) : "");
+  const [time, setTime] = useState(() => (saved ? localTime(saved) : suggestedTime()));
   const [uncertain, setUncertain] = useState(lostCase.lostAtUncertain);
-  const [error, setError] = useState<string | null>(null);
+  const { error, attempt, setError } = useStepError(onInvalid);
 
   function computeLostAt(): string | null {
-    const now = new Date();
-    if (choice === "now") return now.toISOString();
-    if (choice === "today" || choice === "yesterday") {
-      const day = new Date(now);
-      if (choice === "yesterday") day.setDate(day.getDate() - 1);
-      const d = new Date(`${localDate(day)}T${time || "12:00"}`);
-      return Number.isNaN(d.getTime()) ? null : d.toISOString();
-    }
-    if (choice === "other" && other) {
-      const d = new Date(other);
-      return Number.isNaN(d.getTime()) ? null : d.toISOString();
-    }
-    return null;
+    if (!date) return null;
+    const d = new Date(`${date}T${time || "12:00"}`);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
   }
 
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
@@ -370,43 +447,36 @@ function WhenStep({
         onNext(parsed.data);
       }}
     >
-      <ChoiceGroup
-        name="when"
-        legend="Quando foi?"
-        columns={2}
-        value={choice}
-        onChange={(v) => {
-          setChoice(v);
-          setError(null);
-        }}
-        options={[
-          { value: "now", label: "Agora há pouco" },
-          { value: "today", label: "Hoje" },
-          { value: "yesterday", label: "Ontem" },
-          { value: "other", label: "Outro dia" },
-        ]}
-      />
-      {(choice === "today" || choice === "yesterday") && (
-        <TextField label="Mais ou menos que horas?" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-      )}
-      {choice === "other" && (
-        <TextField
-          label="Dia e hora aproximados"
-          type="datetime-local"
-          max={`${localDate(new Date())}T${localTime(new Date())}`}
-          value={other}
-          onChange={(e) => setOther(e.target.value)}
+      {/* Data e hora lado a lado, com o mesmo rótulo e a mesma altura; o calendário abre pelo botão do campo. */}
+      <div className="grid items-start gap-5 sm:grid-cols-2">
+        <Shake attempt={attempt}>
+          <DateCalendar
+            label="Em que dia ele sumiu?"
+            value={date}
+            max={localDate(new Date())}
+            invalid={Boolean(error)}
+            describedBy="erro-quando"
+            onChange={(v) => {
+              setDate(v);
+              if (error) setError(null);
+            }}
+          />
+        </Shake>
+        <TimeField
+          label="Mais ou menos que horas?"
+          value={time}
+          max={date === localDate(new Date()) ? localTime(new Date()) : undefined}
+          onChange={(t) => {
+            setTime(t);
+            if (error) setError(null);
+          }}
         />
-      )}
-      <label className="flex min-h-12 items-center gap-3">
+      </div>
+      <label className="-mt-1 flex min-h-12 items-center gap-3">
         <input type="checkbox" checked={uncertain} onChange={(e) => setUncertain(e.target.checked)} className="size-5 accent-primary" />
         <span className="font-semibold">Não sei exatamente o horário</span>
       </label>
-      {error && (
-        <p role="alert" className="font-medium text-danger">
-          {error}
-        </p>
-      )}
+      <FieldMessage id="erro-quando" message={error} />
       <Nav busy={busy} onBack={onBack} />
     </form>
   );
@@ -417,18 +487,24 @@ function DetailsStep({
   busy,
   onBack,
   onNext,
+  onInvalid,
+  posterPrefix,
 }: {
   lostCase: LostCase;
   busy: boolean;
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
+  onInvalid?: OnInvalid;
+  /** Descrição pública do pet: no cartaz ela vem antes das observações e divide o mesmo espaço. */
+  posterPrefix?: string | null;
 }) {
   const [wearing, setWearing] = useState<Wearing[]>(lostCase.wearing);
   const [notes, setNotes] = useState(lostCase.notes ?? "");
-  const [error, setError] = useState<string | null>(null);
+  const { error, attempt, setError } = useStepError(onInvalid);
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
@@ -450,16 +526,22 @@ function DetailsStep({
         options={WEARING.map((w) => ({ value: w, label: WEARING_LABELS[w] }))}
       />
       {/* Observações do alerta: mesmo campo livre e público da descrição do pet (componente compartilhado). */}
-      <PublicDescriptionField
-        id="notes"
-        label="Algo importante?"
-        guidance="Conte o que ajuda quem estiver procurando: comportamento (ex.: é medroso e foge de gente, atende pelo nome), condições especiais (precisa de remédio) e referências de onde foi visto ou desapareceu."
-        placeholder="Ex.: é dócil, mas pode ficar assustado e se esconder. Foi visto pela última vez próximo à praça do bairro."
-        value={notes}
-        onChange={setNotes}
-        error={error ?? undefined}
-        className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
-      />
+      <Shake attempt={attempt}>
+        <PublicDescriptionField
+          id="notes"
+          label="Algo importante?"
+          guidance="Conte o que ajuda quem estiver procurando: comportamento (ex.: é medroso e foge de gente, atende pelo nome), condições especiais (precisa de remédio) e referências de onde foi visto ou desapareceu."
+          placeholder="Ex.: é dócil, mas pode ficar assustado e se esconder. Foi visto pela última vez próximo à praça do bairro."
+          value={notes}
+          onChange={(v) => {
+            setNotes(v);
+            if (error) setError(null);
+          }}
+          error={error ?? undefined}
+          posterSplit={{ prefix: posterPrefix }}
+          className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
+        />
+      </Shake>
       <Nav busy={busy} onBack={onBack} />
     </form>
   );
@@ -470,24 +552,27 @@ function ContactStep({
   busy,
   onBack,
   onNext,
+  onInvalid,
   submitLabel,
 }: {
   lostCase: LostCase;
   busy: boolean;
   onBack?: () => void;
   onNext: (patch: LostCasePatch) => void;
+  onInvalid?: OnInvalid;
   submitLabel?: string;
 }) {
   const [chat, setChat] = useState(lostCase.contactChat);
   const [whatsapp, setWhatsapp] = useState(lostCase.contactWhatsappPublic);
   const [phonePublic, setPhonePublic] = useState(lostCase.contactPhonePublic);
   const [phone, setPhone] = useState(lostCase.contactPhone ? formatBrPhone(lostCase.contactPhone) : "");
-  const [error, setError] = useState<string | undefined>();
+  const { error, attempt, setError } = useStepError(onInvalid);
   const wantsPhone = whatsapp || phonePublic;
 
   return (
     <form
       noValidate
+      data-step-form
       className="flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
@@ -498,7 +583,7 @@ function ContactStep({
           contactPhone: phone || null,
         });
         if (!parsed.success) {
-          setError(fieldErrors(parsed.error).contactPhone);
+          setError(fieldErrors(parsed.error).contactPhone ?? null);
           return;
         }
         onNext(parsed.data);
@@ -514,25 +599,33 @@ function ContactStep({
       <p className="text-text-secondary">
         Seu número <strong className="text-text-primary">só aparece no alerta se você marcar</strong> uma das opções abaixo.
       </p>
-      <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
-        <span className="font-semibold">Mostrar botão de WhatsApp no alerta</span>
-      </label>
-      <label className="flex min-h-12 items-start gap-3">
-        <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primary" />
-        <span className="font-semibold">Mostrar botão para ligar</span>
-      </label>
+      {/* As duas opções do número ficam juntas: cada uma mantém 44 px de toque, sem espaço sobrando entre elas. */}
+      <div className="-mt-2 flex flex-col">
+        <label className="flex min-h-11 items-center gap-3">
+          <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="size-5 shrink-0 accent-primary" />
+          <span className="font-semibold">Mostrar botão de WhatsApp no alerta</span>
+        </label>
+        <label className="flex min-h-11 items-center gap-3">
+          <input type="checkbox" checked={phonePublic} onChange={(e) => setPhonePublic(e.target.checked)} className="size-5 shrink-0 accent-primary" />
+          <span className="font-semibold">Mostrar botão para ligar</span>
+        </label>
+      </div>
       {wantsPhone && (
-        <TextField
-          label="Seu celular com DDD"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel-national"
-          placeholder="(11) 98765-4321"
-          value={phone}
-          onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
-          error={error}
-        />
+        <Shake attempt={attempt}>
+          <TextField
+            label="Seu celular com DDD"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel-national"
+            placeholder="(11) 98765-4321"
+            value={phone}
+            onChange={(e) => {
+              setPhone(formatPhoneInput(e.target.value));
+              if (error) setError(null);
+            }}
+            error={error ?? undefined}
+          />
+        </Shake>
       )}
       <Alert tone="info">
         <strong>Cuidado com golpes.</strong> Desconfie de quem pedir PIX ou dinheiro antes de mostrar o animal. A MEL nunca

@@ -9,7 +9,8 @@ import { prepareImage } from "@/lib/images";
 import { LocationPicker, type PickedLocation } from "@/components/location/LocationPicker";
 import { Alert } from "@/components/ui/Alert";
 import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
-import { TextField } from "@/components/ui/Field";
+import { DateTimeFields, isoDate } from "@/components/ui/DateCalendar";
+import { limitedTextarea } from "@/components/ui/limitedText";
 import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
 
 // Rosa dos ventos: Norte em cima, Oeste à esquerda… "Não sei" no centro.
@@ -149,7 +150,7 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
           options={SEEN_WHEN.map((w) => ({ value: w, label: SEEN_WHEN_LABELS[w] }))}
         />
         {when === "other" && (
-          <TextField label="Dia e hora aproximados" type="datetime-local" value={other} onChange={(e) => setOther(e.target.value)} />
+          <DateTimeFields dateLabel="Em que dia?" value={other} max={isoDate(new Date())} onChange={setOther} />
         )}
       </section>
 
@@ -204,14 +205,13 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
         <textarea
           id="sighting-notes"
           rows={3}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          {...limitedTextarea(notes, setNotes, 500)}
           placeholder="Ex.: entrou num terreno; estava perto do ponto de ônibus."
           aria-describedby="sighting-notes-hint"
           className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
         />
         <p id="sighting-notes-hint" className="text-sm text-text-secondary">
-          Não escreva seu endereço, número da casa, apartamento ou outros dados pessoais.
+          Não escreva seu endereço, número da casa, apartamento ou outros dados pessoais. <span className="tabular-nums">{notes.length}/500</span>
         </p>
       </div>
 

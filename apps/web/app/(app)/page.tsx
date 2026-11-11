@@ -203,18 +203,22 @@ export default function HomePage() {
           <Link
             href="/guardiao"
             data-reveal
-            className="mh-step group flex items-start gap-4 self-start rounded-card border border-primary/40 bg-primary-soft/40 p-6 hover:border-primary sm:p-7"
+            // Card de destaque com brilho e feixe dourado na borda (home.css: .mh-glow).
+            className="mh-step mh-glow group flex flex-col gap-5 self-start rounded-card p-6 sm:p-7"
           >
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-primary">
-              <ShieldCheck aria-hidden="true" className="size-6" strokeWidth={2} />
-            </span>
-            <span className="flex flex-col gap-1">
-              <span className="text-xl font-extrabold">Seja um Guardião MEL</span>
-              <span className="text-text-secondary">Receba um aviso quando um pet se perder perto de você. Leva 1 minuto.</span>
-              <span className="mt-2 inline-flex items-center gap-1 font-semibold text-link">
-                Ativar alertas próximos{" "}
-                <ArrowRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-1" strokeWidth={2} />
+            <span aria-hidden="true" className="mh-glow__border" />
+            <span className="flex items-start gap-4">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-primary">
+                <ShieldCheck aria-hidden="true" className="size-6" strokeWidth={2} />
               </span>
+              <span className="flex flex-col gap-1">
+                <span className="text-xl font-extrabold">Seja um Guardião MEL</span>
+                <span className="text-text-secondary">Receba um aviso quando um pet se perder perto de você. Leva 1 minuto.</span>
+              </span>
+            </span>
+            <span className="mh-glow__cta inline-flex min-h-12 w-full items-center justify-center gap-1.5 rounded-full px-5 font-bold text-primary-foreground">
+              Ativar alertas próximos
+              <ArrowRight aria-hidden="true" className="size-4 transition-transform group-hover:translate-x-1" strokeWidth={2.25} />
             </span>
           </Link>
           <div data-reveal style={{ "--d": "0.1s" } as React.CSSProperties}>

@@ -257,13 +257,18 @@ test("create poster flow (DEV): the tutor picks a format, sees three real previe
   await expect(page.getByRole("button", { name: "Foto 3: não cabe neste modelo" })).toBeDisabled();
   await page.getByRole("slider").fill("2");
   const preview = page.getByTestId("editor-previa");
-  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3&fotos=1%2C0&foco=50%2C50&zoom=2\.00$/);
+  // Um enquadramento por foto, na ordem do cartaz (?quadros=x,y,zoom_…; "-" = padrão do modelo).
+  await expect(preview).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3&fotos=1%2C0&quadros=50%2C50%2C2\.00_-$/);
+  // A complementar também se enquadra, e pode ficar menor que o espaço (inteira, sobra com o fundo).
+  await page.getByRole("radio", { name: /Complementar 1/ }).click();
+  await page.getByRole("button", { name: "Caber inteira" }).click();
+  await expect(preview).toHaveAttribute("src", /&quadros=50%2C50%2C2\.00_50%2C50%2C\d\.\d\d$/);
   const png = await (await request.get((await preview.getAttribute("src"))!)).body();
   expect((await sharp(png).metadata()).height).toBe(1920);
   expect(await readQr(png)).toBe(`${baseURL}/alerta/${t.code}`);
   // A escolha sobrevive ao recarregar (fica no endereço da página).
   await page.reload();
-  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /zoom=2\.00$/);
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /&quadros=50%2C50%2C2\.00_50%2C50%2C\d\.\d\d$/);
   await page.getByRole("button", { name: "Continuar" }).click();
   await expect.poll(states).toEqual(["done", "done", "done", "current"]);
   // Restaurar avisa e permite desfazer.
@@ -271,7 +276,7 @@ test("create poster flow (DEV): the tutor picks a format, sees three real previe
   await page.getByRole("button", { name: "Restaurar o modelo original" }).click();
   await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /\/cartaz\/story\?modelo=proposta&estilo=3$/);
   await page.getByRole("button", { name: "Desfazer" }).click();
-  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /zoom=2\.00$/);
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /&quadros=50%2C50%2C2\.00_50%2C50%2C\d\.\d\d$/);
   // Trocar de formato mostra os três modelos do novo formato.
   await page.getByTestId("etapa-1").getByRole("button").click();
   await page.getByTestId("formato-square").click();
@@ -302,6 +307,8 @@ test("saved poster (tutor account): the tutor saves a format and it reopens in a
   await expect(page.getByTestId("editor-moldura").locator("img")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Usar a foto 2 como principal" }).click();
   await page.getByRole("slider").fill("1.5");
+  await page.getByRole("radio", { name: /Complementar 1/ }).click();
+  await page.getByRole("slider").fill("1.2");
   await page.getByRole("button", { name: "Continuar" }).click();
   // Salvar na conta: o estado muda para "salvo" e o botão fica indisponível até mudar algo.
   await expect(page.getByTestId("salvar-estado")).toHaveText("Salve para encontrar este cartaz pronto em qualquer aparelho.");
@@ -309,14 +316,19 @@ test("saved poster (tutor account): the tutor saves a format and it reopens in a
   await expect(page.getByTestId("salvar-estado")).toHaveText("✓ Este é o cartaz salvo na sua conta para este formato.", { timeout: 15_000 });
   const saved = await getPosterDesigns(anon(), t.code);
   expect(saved).toHaveLength(1);
-  expect(saved[0]).toMatchObject({ format: "square", model: 3, framing: { x: 50, y: 50, zoom: 1.5 } });
+  expect(saved[0]).toMatchObject({ format: "square", model: 3 });
+  // Enquadramento de cada foto, na ordem salva: a principal e a 1ª complementar.
+  expect(saved[0]!.framings.slice(0, 2)).toEqual([
+    { x: 50, y: 50, zoom: 1.5 },
+    { x: 50, y: 50, zoom: 1.2 },
+  ]);
   expect(saved[0]!.photoIds[0]).toBe(before!.pet.photos[1]!.id);
   // Outra sessão do tutor (endereço limpo, sem ajustes na URL): abre com o salvo.
   await page.goto(`/alerta/${t.code}/cartaz/criar`);
   await page.getByTestId("formato-square").click();
   await expect(page.getByTestId("salvo-3")).toBeVisible();
   await page.getByTestId("modelo-3").getByRole("button", { name: "Escolher este modelo" }).click();
-  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /estilo=3&fotos=1%2C0.*&foco=50%2C50&zoom=1\.50$/);
+  await expect(page.getByTestId("editor-previa")).toHaveAttribute("src", /estilo=3&fotos=1%2C0.*&quadros=50%2C50%2C1\.50_50%2C50%2C1\.20/);
   // Visitante: cria e baixa, mas não vê "Salvar".
   const visitor = await browser.newPage();
   await visitor.goto(`/alerta/${t.code}/cartaz/criar?formato=square&estilo=3`);
@@ -329,8 +341,8 @@ test("saved poster (tutor account): the tutor saves a format and it reopens in a
   created.push(other.email);
   const otherClient = anon();
   await (otherClient as unknown as ReturnType<typeof createClient>).auth.signInWithPassword({ email: other.email, password: TEST_PASSWORD });
-  await expect(savePosterDesign(otherClient, t.code, { format: "story", model: 1, photoIds: [], framing: null })).rejects.toThrow(/Só o tutor/);
-  await expect(savePosterDesign(anon(), t.code, { format: "story", model: 1, photoIds: [], framing: null })).rejects.toThrow();
+  await expect(savePosterDesign(otherClient, t.code, { format: "story", model: 1, photoIds: [], framings: [] })).rejects.toThrow(/Só o tutor/);
+  await expect(savePosterDesign(anon(), t.code, { format: "story", model: 1, photoIds: [], framings: [] })).rejects.toThrow();
   expect(await getPosterDesigns(anon(), t.code)).toHaveLength(1);
   // Fotos, capa e ordem do cadastro continuam iguais.
   expect((await getPublicLostCase(anon(), t.code))!.pet.photos).toEqual(before!.pet.photos);

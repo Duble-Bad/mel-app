@@ -4,32 +4,27 @@ import { Clock, Heart, MapPin, PawPrint } from "lucide-react";
 import { ageLabel, SIZE_LABELS, type PublicAdoption } from "@mel/core";
 import { listAdoptions } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
+import { AdoptionCarousel } from "./AdoptionCarousel";
 
-/** Dois anúncios reais de adoção (já revisados pela moderação) ou um convite para a fila. */
+/** Até 8 anúncios reais de adoção (já revisados pela moderação) num carrossel, ou um convite para a fila. */
 export async function AdoptionPreview() {
   await connection();
   let items: PublicAdoption[] = [];
   try {
-    items = (await listAdoptions(createPublicClient(), { pageSize: 2 })).items;
+    items = (await listAdoptions(createPublicClient(), { pageSize: 8 })).items;
   } catch (error) {
     console.error("[home] prévia de adoção falhou", error);
   }
   if (items.length === 0) return <QueueInvite />;
-  return (
-    <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] gap-4.5">
-      {items.map((a) => (
-        <li key={a.code}>
-          <AdoptionMiniCard a={a} />
-        </li>
-      ))}
-    </ul>
-  );
+  return <AdoptionCarousel items={items.map((a) => <AdoptionMiniCard key={a.code} a={a} />)} labels={items.map((a) => a.name)} />;
 }
 
 function AdoptionMiniCard({ a }: { a: PublicAdoption }) {
   const second = [ageLabel(a.ageMonths), a.size && `Porte ${SIZE_LABELS[a.size].label.toLowerCase()}`].filter(Boolean).join(" · ");
   return (
-    <article className="mh-pet flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface">
+    // Só a borda com o feixe dourado (home.css: .mh-glow__border), visível no card do centro do carrossel.
+    <article className="mh-pet relative flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface">
+      <span aria-hidden="true" className="mh-glow__border" />
       <div className="relative aspect-[4/3.3] overflow-hidden bg-surface-muted">
         {a.photoUrls[0] ? (
           // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio

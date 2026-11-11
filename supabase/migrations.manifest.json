@@ -188,6 +188,10 @@
     {
       "file": "20261110120000_poster_designs.sql",
       "sha256": "2d04808b04b41ee80a53469fd22c4149e4f7ea893366385d9532bea5710cbe21"
+    },
+    {
+      "file": "20261110180000_poster_photo_framings.sql",
+      "sha256": "ec4aa70cd8da3fec767b92adc1f156bb27ccc456afd91fbbd34509b44a42a957"
     }
   ]
 }

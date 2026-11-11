@@ -7,6 +7,7 @@ export { SERVER_MESSAGES } from "./errors/serverMessages";
 export * from "./pet/pet";
 export * from "./pet/breeds";
 export * from "./adapters/maptiler-geocoder";
+export * from "./adapters/cep-geocoder";
 export * from "./geo/geolocation";
 export * from "./lost/lost";
 export * from "./lost/reunion";

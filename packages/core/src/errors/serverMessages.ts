@@ -121,4 +121,5 @@ export const SERVER_MESSAGES: readonly string[] = [
   "Foto repetida no cartaz.",
   "Use só fotos deste pet.",
   "Só o tutor do alerta pode alterar o cartaz salvo.",
+  "Enquadramento inválido.",
 ];

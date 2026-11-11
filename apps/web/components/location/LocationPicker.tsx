@@ -186,14 +186,14 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote, gp
 
       <div className="relative flex flex-col gap-1.5">
         <label htmlFor={searchId} className="font-semibold">
-          Ou busque um endereço ou lugar
+          Ou busque pela rua, pelo CEP ou por um lugar
         </label>
         <input
           id={searchId}
           type="search"
           inputMode="search"
           autoComplete="off"
-          placeholder="Ex.: Rua das Flores, 100 ou Praça da Sé"
+          placeholder="Ex.: Rua das Flores, 100 · 01001-000 · Praça da Sé"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           aria-describedby={`${searchId}-status`}
@@ -204,7 +204,7 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote, gp
         </p>
         {visibleResults && (
           <ul className="flex flex-col overflow-hidden rounded-md border-2 border-border-strong bg-surface" aria-label="Resultados da busca">
-            {visibleResults.length === 0 && <li className="px-4 py-3 text-text-secondary">Nada encontrado. Tente outro endereço ou marque no mapa.</li>}
+            {visibleResults.length === 0 && <li className="px-4 py-3 text-text-secondary">Nada encontrado. Confira o CEP ou o nome da rua, ou marque no mapa.</li>}
             {visibleResults.map((r) => (
               <li key={`${r.position.lat},${r.position.lng}`} className="border-b border-border last:border-0">
                 <button type="button" onClick={() => chooseResult(r)} className="min-h-12 w-full px-4 py-2 text-left hover:bg-surface-muted">

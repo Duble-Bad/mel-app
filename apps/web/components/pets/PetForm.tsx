@@ -42,6 +42,8 @@ import { FillCityFromLocation } from "@/components/location/FillCityFromLocation
 import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
 import { PET_DESCRIPTION_COPY, PublicDescriptionField } from "./PublicDescriptionField";
+import { limitedTextarea } from "@/components/ui/limitedText";
+import { DateCalendar, isoDate } from "@/components/ui/DateCalendar";
 
 interface PetFormProps {
   ownerId: string;
@@ -273,14 +275,13 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
           Mais detalhes <span className="text-base font-normal text-text-secondary">(pode completar depois)</span>
         </h2>
         <div id="field-birthDate">
-          <TextField
+          <DateCalendar
             label="Data de nascimento"
             name="birthDate"
-            type="date"
             optional
-            max={new Date().toISOString().slice(0, 10)}
+            max={isoDate(new Date())}
             value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
+            onChange={setBirthDate}
             error={errors.birthDate}
           />
         </div>
@@ -313,7 +314,8 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             Sobre o pet <span className="font-normal text-text-secondary">(opcional)</span>
           </label>
           <p className="text-sm text-text-secondary">Jeito, se é medroso, se atende pelo nome…</p>
-          <textarea id="description" rows={4} className={textarea} value={description} onChange={(e) => setDescription(e.target.value)} />
+          <textarea id="description" rows={4} className={textarea} {...limitedTextarea(description, setDescription, 1000)} />
+          <p className="text-right text-xs text-text-secondary tabular-nums">{description.length}/1000</p>
           {errors.description && <p className="text-sm font-medium text-danger">{errors.description}</p>}
         </div>
         <div className="flex flex-col gap-2">
@@ -358,14 +360,16 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             Sinais que só você conhece <span className="font-normal text-text-secondary">(opcional)</span>
           </label>
           <p className="text-sm text-text-secondary">Ex.: cicatriz na barriga, unha diferente, manchinha escondida.</p>
-          <textarea id="hiddenMarks" rows={3} className={textarea} value={hiddenMarks} onChange={(e) => setHiddenMarks(e.target.value)} />
+          <textarea id="hiddenMarks" rows={3} className={textarea} {...limitedTextarea(hiddenMarks, setHiddenMarks, 500)} />
+          <p className="text-right text-xs text-text-secondary tabular-nums">{hiddenMarks.length}/500</p>
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ownershipNotes" className="font-semibold">
             Outras provas de posse <span className="font-normal text-text-secondary">(opcional)</span>
           </label>
           <p className="text-sm text-text-secondary">Ex.: tenho carteira de vacinação, fotos antigas, nota da adoção.</p>
-          <textarea id="ownershipNotes" rows={3} className={textarea} value={ownershipNotes} onChange={(e) => setOwnershipNotes(e.target.value)} />
+          <textarea id="ownershipNotes" rows={3} className={textarea} {...limitedTextarea(ownershipNotes, setOwnershipNotes, 1000)} />
+          <p className="text-right text-xs text-text-secondary tabular-nums">{ownershipNotes.length}/1000</p>
         </div>
       </section>
 

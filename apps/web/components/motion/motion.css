@@ -1,0 +1,697 @@
+/*
+ * Microinterações das etapas (PROTÓTIPO em DEV, 2026-11-10): duas linguagens de movimento
+ * sobre os mesmos componentes. Só transform e opacity animam (o preenchimento dos
+ * conectores é scaleX; o destaque e o marcador andam por translateX em unidades do
+ * contêiner). Com "reduzir movimento", o CSS global já deixa toda animação e transição
+ * com 0,01 ms; aqui os deslocamentos também viram zero.
+ *
+ * Opção A — Progressão elegante: evolução do indicador atual. Conector que se preenche,
+ * ícone que vira ✓ desenhado, halo discreto na etapa atual, conteúdo cruzando com 6 px.
+ * Opção B — Progressão dinâmica: um destaque que desliza até a etapa ativa, uma trilha
+ * contínua com marcador na ponta, etapa alcançada com leve "pop", conteúdo deslizando
+ * no sentido do avanço (ou do retorno).
+ */
+
+.mm-root {
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-slow: 320ms;
+  --ease: var(--mel-easing);
+  /* Ultrapassa ~4% e assenta: perceptível, sem quicar. */
+  --ease-spring: cubic-bezier(0.3, 1.35, 0.55, 1);
+  --accent: var(--color-status-lost-solid);
+  --accent-soft: var(--color-status-lost-soft);
+}
+
+/* ---------- Indicador de etapas ---------- */
+
+.mm-steps {
+  position: relative;
+  /* Raio do círculo: os conectores da opção A param na borda dele. */
+  --r: 1.125rem;
+}
+.mm-steps[data-dense] {
+  --r: 1rem;
+}
+@media (min-width: 640px) {
+  .mm-steps {
+    --r: 1.375rem;
+  }
+  .mm-steps[data-dense] {
+    --r: 1.25rem;
+  }
+}
+.mm-stepList {
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+}
+
+.mm-step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mm-stepButton {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  border-radius: var(--mel-radius-md);
+  padding-block: 0.25rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.mm-stepButton:enabled {
+  cursor: pointer;
+}
+.mm-stepButton:enabled:hover .mm-circle {
+  transform: scale(1.06);
+}
+.mm-stepButton:enabled:active .mm-circle {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+.mm-circleRow {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+}
+
+.mm-circle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  transition:
+    background-color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+@media (min-width: 640px) {
+  .mm-circle {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+.mm-steps[data-dense] .mm-circle {
+  width: 2rem;
+  height: 2rem;
+}
+@media (min-width: 640px) {
+  .mm-steps[data-dense] .mm-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+.mm-circle[data-state="current"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.mm-circle[data-state="done"] {
+  border: 2px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--color-status-lost);
+}
+.mm-circle[data-state="skipped"] {
+  border: 2px dashed var(--color-border-strong);
+}
+.mm-circle[data-state="error"] {
+  border-color: var(--color-danger-solid);
+  background: var(--color-danger-solid);
+  color: #fff;
+}
+
+/* Ícone da etapa e ✓ ocupam o mesmo lugar: um sai enquanto o outro entra. */
+.mm-glyph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.mm-glyph svg {
+  width: 1rem;
+  height: 1rem;
+}
+@media (min-width: 640px) {
+  .mm-glyph svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+.mm-glyph[data-on="false"] {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+/* ✓ desenhado: o traço corre em 240 ms depois que o conector chega (sem atraso de navegação:
+   a etapa já mudou; só o desenho termina um pouco depois). */
+.mm-check path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+}
+.mm-glyph[data-on="true"] .mm-check path {
+  animation: mm-draw 240ms var(--ease) 120ms forwards;
+}
+@keyframes mm-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Halo da etapa atual (A): aparece suave em volta do círculo. */
+.mm-halo {
+  position: absolute;
+  inset: -5px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur-slow) var(--ease);
+  pointer-events: none;
+}
+.mm-circle[data-state="current"] .mm-halo,
+.mm-circle[data-state="error"] .mm-halo {
+  opacity: 1;
+  transform: scale(1);
+}
+.mm-circle[data-state="error"] .mm-halo {
+  background: color-mix(in srgb, var(--color-danger-solid) 24%, transparent);
+}
+
+/* Conectores da opção A: um por trecho, preenchidos por scaleX a partir da esquerda. */
+.mm-seg {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--color-border-strong);
+}
+.mm-seg[data-side="left"] {
+  left: 0;
+  right: calc(50% + var(--r) + 4px);
+}
+.mm-seg[data-side="right"] {
+  left: calc(50% + var(--r) + 4px);
+  right: 0;
+}
+.mm-seg[data-edge] {
+  visibility: hidden;
+}
+.mm-segFill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease);
+}
+.mm-seg[data-on="true"] .mm-segFill {
+  transform: scaleX(1);
+}
+/* Avançando: a metade direita do círculo anterior enche primeiro, depois a esquerda do próximo. */
+.mm-seg[data-side="left"] .mm-segFill {
+  transition-delay: var(--fill-delay, 0ms);
+}
+
+/* Nomes e estado das etapas. */
+.mm-label {
+  margin-top: 0.375rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: 0.125rem;
+  text-align: center;
+  line-height: 1.15;
+}
+.mm-name {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  transition: color var(--dur) var(--ease);
+}
+@media (min-width: 640px) {
+  .mm-name {
+    font-size: 0.875rem;
+  }
+}
+.mm-name[data-state="current"] {
+  font-weight: 700;
+  color: var(--color-status-lost);
+}
+.mm-name[data-state="done"] {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.mm-name[data-state="error"] {
+  font-weight: 700;
+  color: var(--color-danger);
+}
+/* Com 6 etapas no celular só a atual mostra o nome embaixo; as outras ficam no "Passo N de M". */
+@media (max-width: 639.98px) {
+  .mm-steps[data-dense] .mm-name:not([data-state="current"]):not([data-state="error"]) {
+    opacity: 0;
+  }
+  .mm-steps[data-dense] .mm-name {
+    white-space: nowrap;
+  }
+}
+.mm-status {
+  display: none;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+@media (min-width: 640px) {
+  .mm-status {
+    display: block;
+  }
+}
+.mm-status[data-state="error"] {
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+/* ---------- Opção B: trilha contínua, marcador e destaque deslizante ---------- */
+
+.mm-rail {
+  position: absolute;
+  top: calc(0.25rem + 1.375rem);
+  left: calc(100% / var(--n) / 2);
+  right: calc(100% / var(--n) / 2);
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 3px;
+  background: var(--color-border-strong);
+  container-type: inline-size;
+  pointer-events: none;
+}
+.mm-railFill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, #f6b928), var(--accent));
+  transform: scaleX(var(--p));
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease);
+}
+/* Marcador na ponta do preenchimento: anda junto (translateX em largura do contêiner). */
+.mm-bead {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: translateX(calc(var(--p) * 100cqw));
+  transition:
+    transform var(--dur-slow) var(--ease),
+    opacity var(--dur-fast) var(--ease);
+}
+.mm-bead[data-hidden] {
+  opacity: 0;
+}
+
+/* Destaque que acompanha a etapa ativa: um disco claro que desliza por baixo do círculo. */
+.mm-spot {
+  position: absolute;
+  top: 0.25rem;
+  left: 0;
+  width: calc(100% / var(--n));
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform var(--dur-slow) var(--ease-spring);
+}
+/* Disco perfeito em volta do círculo: mesmo tamanho nos dois eixos (raio do círculo + 7 px). */
+.mm-spot::before {
+  content: "";
+  flex-shrink: 0;
+  width: calc(var(--r) * 2 + 14px);
+  height: calc(var(--r) * 2 + 14px);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  transition: background-color var(--dur) var(--ease);
+}
+.mm-spot[data-error]::before {
+  background: color-mix(in srgb, var(--color-danger-solid) 24%, transparent);
+}
+
+/* Etapa alcançada: um pop curto (só ao chegar; a classe é trocada pela chave do elemento). */
+.mm-pop {
+  animation: mm-pop 260ms var(--ease-spring);
+}
+@keyframes mm-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* "Passo N de M" no celular: o número troca rolando (B) ou cruzando (A). */
+.mm-compact {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+@media (min-width: 640px) {
+  .mm-compact {
+    display: none;
+  }
+}
+.mm-compactSwap {
+  display: inline-block;
+  animation: mm-fade-in var(--dur) var(--ease);
+}
+.mm-root[data-variant="b"] .mm-compactSwap {
+  animation: mm-roll-in var(--dur) var(--ease);
+}
+.mm-root[data-variant="b"] .mm-compactSwap[data-dir="back"] {
+  animation-name: mm-roll-in-back;
+}
+@keyframes mm-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes mm-roll-in {
+  from {
+    opacity: 0;
+    transform: translateY(70%);
+  }
+}
+@keyframes mm-roll-in-back {
+  from {
+    opacity: 0;
+    transform: translateY(-70%);
+  }
+}
+
+/* ---------- Troca de conteúdo entre etapas ---------- */
+
+/* As duas camadas ocupam a mesma célula: a anterior sai enquanto a nova entra, sem piscar. */
+.mm-stage {
+  display: grid;
+}
+.mm-layer {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.mm-layer[data-phase="out"] {
+  pointer-events: none;
+  animation: mm-a-out var(--dur-fast) var(--ease) forwards;
+}
+.mm-layer[data-phase="in"] {
+  animation: mm-a-in var(--dur) var(--ease) both;
+}
+@keyframes mm-a-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes mm-a-in {
+  from {
+    opacity: 0.01;
+    transform: translateY(6px);
+  }
+}
+.mm-root[data-variant="b"] .mm-layer[data-phase="out"] {
+  animation: mm-b-out var(--dur) var(--ease) forwards;
+}
+.mm-root[data-variant="b"] .mm-layer[data-phase="in"] {
+  animation: mm-b-in var(--dur-slow) var(--ease) both;
+}
+.mm-root[data-variant="b"] .mm-layer[data-phase="out"][data-dir="back"] {
+  animation-name: mm-b-out-back;
+}
+.mm-root[data-variant="b"] .mm-layer[data-phase="in"][data-dir="back"] {
+  animation-name: mm-b-in-back;
+}
+@keyframes mm-b-out {
+  to {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+@keyframes mm-b-in {
+  from {
+    opacity: 0.01;
+    transform: translateX(32px);
+  }
+}
+@keyframes mm-b-out-back {
+  to {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+@keyframes mm-b-in-back {
+  from {
+    opacity: 0.01;
+    transform: translateX(-32px);
+  }
+}
+
+/* ---------- Cartões selecionáveis ---------- */
+
+.mm-card {
+  position: relative;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.mm-card:active {
+  transform: scale(0.985);
+  transition-duration: 60ms;
+}
+.mm-root[data-variant="b"] .mm-card:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -16px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.mm-root[data-variant="b"] .mm-card:active:not(:disabled) {
+  transform: translateY(0) scale(0.975);
+}
+.mm-root[data-variant="b"] .mm-card[aria-pressed="true"] {
+  animation: mm-card-pick 280ms var(--ease-spring);
+}
+@keyframes mm-card-pick {
+  0% {
+    transform: scale(0.97);
+  }
+  55% {
+    transform: scale(1.015);
+  }
+}
+
+/* Selo de selecionado: entra pequeno e assenta. */
+.mm-badge {
+  animation: mm-badge-in var(--dur) var(--ease-spring) both;
+}
+.mm-root[data-variant="a"] .mm-badge {
+  animation: mm-badge-in-soft var(--dur) var(--ease) both;
+}
+@keyframes mm-badge-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+@keyframes mm-badge-in-soft {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+/* ---------- Validação ---------- */
+
+/* A linha da mensagem abre sem empurrar o conteúdo de uma vez (grade de 0fr → 1fr). */
+.mm-msg {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur) var(--ease);
+}
+.mm-msg[data-open] {
+  grid-template-rows: 1fr;
+}
+.mm-msgInner {
+  overflow: hidden;
+  min-height: 0;
+}
+.mm-msgText {
+  padding-top: 0.375rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.mm-msg[data-open] .mm-msgText {
+  opacity: 1;
+  transform: none;
+}
+/* B: o campo com erro balança uma vez (3 oscilações de 4 px, 280 ms). */
+.mm-root[data-variant="b"] .mm-shake {
+  animation: mm-shake 280ms var(--ease);
+}
+@keyframes mm-shake {
+  20% {
+    transform: translateX(-4px);
+  }
+  45% {
+    transform: translateX(4px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+}
+
+/* ---------- Botão com processamento real ---------- */
+
+/* O rótulo segue a direção e o espaçamento do botão (ícone em cima no celular, ao lado no desktop). */
+.mm-actionLabel {
+  display: inline-flex;
+  flex-direction: inherit;
+  align-items: center;
+  gap: inherit;
+  animation: mm-fade-in var(--dur-fast) var(--ease);
+}
+.mm-root[data-variant="b"] .mm-actionLabel {
+  animation: mm-roll-in var(--dur) var(--ease);
+}
+
+/* ---------- Setas flutuantes (telas largas) ---------- */
+
+.mm-sideArrow {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .mm-sideArrow {
+    position: fixed;
+    top: 50%;
+    z-index: 30;
+    display: flex;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-top: -1.625rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid var(--color-border-strong);
+    background: color-mix(in srgb, var(--color-surface-elevated) 92%, transparent);
+    color: var(--color-text-primary);
+    box-shadow: var(--mel-shadow-md);
+    backdrop-filter: blur(6px);
+    transition:
+      transform var(--dur-fast) var(--ease),
+      background-color var(--dur) var(--ease),
+      border-color var(--dur) var(--ease);
+  }
+  .mm-sideArrow[data-side="left"] {
+    left: 1.25rem;
+  }
+  .mm-sideArrow[data-side="right"] {
+    right: 1.25rem;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+  }
+  .mm-sideArrow:hover {
+    transform: scale(1.06);
+  }
+  .mm-sideArrow:active {
+    transform: scale(0.95);
+    transition-duration: 60ms;
+  }
+}
+/* Dica com o nome: aparece ao passar o mouse ou focar pelo teclado. */
+.mm-sideTip {
+  position: absolute;
+  top: 50%;
+  white-space: nowrap;
+  border-radius: var(--mel-radius-md);
+  background: var(--color-text-primary);
+  color: var(--color-background, #0a111d);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(var(--tip-shift, 0)) scale(0.96);
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.mm-sideArrow[data-side="left"] .mm-sideTip {
+  left: calc(100% + 0.625rem);
+  --tip-shift: -4px;
+}
+.mm-sideArrow[data-side="right"] .mm-sideTip {
+  right: calc(100% + 0.625rem);
+  --tip-shift: 4px;
+}
+.mm-sideArrow:hover .mm-sideTip,
+.mm-sideArrow:focus-visible .mm-sideTip {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-spot,
+  .mm-bead,
+  .mm-railFill,
+  .mm-segFill,
+  .mm-halo,
+  .mm-glyph {
+    transition-duration: 0.01ms !important;
+  }
+  .mm-card:hover,
+  .mm-card:active,
+  .mm-stepButton:enabled:hover .mm-circle {
+    transform: none !important;
+  }
+  .mm-glyph[data-on="true"] .mm-check path {
+    stroke-dashoffset: 0;
+  }
+}

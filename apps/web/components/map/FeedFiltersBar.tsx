@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { LocateFixed } from "lucide-react";
+import { ChevronDown, LocateFixed } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
 import { PERIOD_LABELS, PERIODS, PET_SIZES, RADII_KM, SIZE_LABELS, type Species, userErrorMessage } from "@mel/core";
 import { getCurrentPosition } from "@/lib/geo/client";
@@ -20,8 +20,20 @@ const SPECIES_OPTIONS: { value: Species; label: string }[] = [
 ];
 
 const scroller = "-mx-[var(--mel-page-gutter)] flex gap-2 overflow-x-auto px-[var(--mel-page-gutter)] pb-1 [scrollbar-width:none]";
+// Mesma altura e cantos dos botões do topo do mural ("Para adoção", "Ver no mapa"). Sem a seta
+// nativa (no Chrome do Windows ela ocupava o espaço do texto e cortava "porte"): o ícone é nosso.
 const select =
-  "min-h-11 w-full min-w-[9.5rem] rounded-full border border-border-strong bg-surface px-4 pr-9 text-sm font-semibold text-text-primary transition-colors hover:border-text-muted focus-visible:border-primary";
+  "min-h-12 w-full min-w-[9.5rem] appearance-none truncate rounded-md border border-border-strong bg-surface-elevated pr-8 pl-3 sm:pr-10 sm:pl-4 text-sm font-semibold text-text-primary shadow-xs transition-colors hover:bg-surface-muted focus-visible:border-primary";
+
+/** Select do mural com a seta desenhada por cima (não intercepta o toque). */
+function SelectBox({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative flex">
+      {children}
+      <ChevronDown aria-hidden="true" className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 sm:right-3.5 text-text-secondary" strokeWidth={2.25} />
+    </span>
+  );
+}
 
 /**
  * Filtros do mapa e do mural (Conceito B): tipo em pílulas (um por vez),
@@ -126,39 +138,43 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             {kindChips}
-            <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto">
+            <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:gap-2">
               <label className="sr-only" htmlFor="mural-especie">
                 Espécie
               </label>
-              <select
-                id="mural-especie"
-                className={select}
-                value={f.species.length === 1 ? f.species[0] : ""}
-                onChange={(e) => apply({ filters: { species: e.target.value ? [e.target.value as Species] : [] } })}
-              >
-                <option value="">Cães e gatos</option>
-                {SPECIES_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
+              <SelectBox>
+                <select
+                  id="mural-especie"
+                  className={select}
+                  value={f.species.length === 1 ? f.species[0] : ""}
+                  onChange={(e) => apply({ filters: { species: e.target.value ? [e.target.value as Species] : [] } })}
+                >
+                  <option value="">Cães e gatos</option>
+                  {SPECIES_OPTIONS.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </SelectBox>
               <label className="sr-only" htmlFor="mural-porte">
                 Porte
               </label>
-              <select
-                id="mural-porte"
-                className={select}
-                value={current.size ?? ""}
-                onChange={(e) => apply({ size: (e.target.value || null) as FeedState["size"] })}
-              >
-                <option value="">Qualquer porte</option>
-                {PET_SIZES.map((s) => (
-                  <option key={s} value={s}>
-                    {SIZE_LABELS[s].label}
-                  </option>
-                ))}
-              </select>
+              <SelectBox>
+                <select
+                  id="mural-porte"
+                  className={select}
+                  value={current.size ?? ""}
+                  onChange={(e) => apply({ size: (e.target.value || null) as FeedState["size"] })}
+                >
+                  <option value="">Qualquer porte</option>
+                  {PET_SIZES.map((s) => (
+                    <option key={s} value={s}>
+                      {SIZE_LABELS[s].label}
+                    </option>
+                  ))}
+                </select>
+              </SelectBox>
             </div>
           </div>
           <div className={scroller} role="group" aria-label="Local, período e distância">

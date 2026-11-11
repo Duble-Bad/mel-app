@@ -41,6 +41,9 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   // 1 — Pet (sem pets: cadastro relâmpago com foto).
   await expect(page.getByRole("heading", { name: "Qual pet desapareceu?" })).toBeVisible();
   await page.getByLabel("Foto do pet").setInputFiles({ name: "mel.png", mimeType: "image/png", buffer: solidPng() });
+  // Ao escolher, abre o recorte: aqui a foto vai inteira.
+  await page.getByRole("button", { name: "Usar esta foto" }).click();
+  await expect(page.getByTestId("foto-escolhida")).toContainText("Foto carregada");
   await page.getByLabel("Nome do pet").fill("Mel");
   await page.getByRole("radio", { name: "Cachorro" }).check({ force: true });
   await page.getByRole("radio", { name: /Mini/ }).check({ force: true });
@@ -56,7 +59,8 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
 
   // 3 — Quando.
   await expect(page.getByRole("heading", { name: "Quando ele sumiu?" })).toBeVisible();
-  await page.getByRole("radio", { name: "Agora há pouco" }).check({ force: true });
+  await page.getByRole("button", { name: "Abrir o calendário" }).click();
+  await page.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(page).click();
 
   // 4 — Detalhes.
@@ -83,7 +87,7 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   await expect(page.getByText("Alerta MEL ativado.")).toBeVisible();
   await expect(page.locator("article header").getByText("Perdido")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Mel", level: 1 })).toBeVisible();
-  await expect(page.getByText(/Desapareceu agora há pouco/)).toBeVisible();
+  await expect(page.getByText(/Desapareceu há 1 hora/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Compartilhar no WhatsApp" })).toBeVisible();
   await expect(page.getByRole("img", { name: "Foto de Mel" })).toBeVisible();
 
@@ -149,8 +153,20 @@ test("each step explains what is missing", async ({ page }) => {
 
   await cont(page).click();
   await expect(page.getByText("Diga quando ele sumiu (mesmo que aproximado).")).toBeVisible();
-  await page.getByRole("radio", { name: "Agora há pouco" }).check({ force: true });
+  await page.getByRole("button", { name: "Abrir o calendário" }).click();
+  await page.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(page).click();
+  // Limite de verdade: não passa de 500 (nem colando), não começa com espaço e perde o do fim ao sair.
+  const notes = page.getByLabel(/Algo importante/);
+  await notes.fill(`   ${"a".repeat(600)}`);
+  await expect(notes).toHaveValue("a".repeat(500));
+  await expect(page.getByTestId("contador-notes")).toContainText("500/500");
+  await notes.fill("Medroso, atende pelo nome.   ");
+  await notes.blur();
+  await expect(notes).toHaveValue("Medroso, atende pelo nome.");
+  // O quadro do cartaz mostra só o que entra (sem "…").
+  await notes.fill(`É dócil, ${"muito ".repeat(30)}fim.`);
+  await expect(page.getByTestId("vai-no-cartaz")).not.toContainText("…");
   await cont(page).click(); // detalhes são opcionais
 
   await page.getByRole("checkbox", { name: /botão para ligar/ }).check();
@@ -161,11 +177,11 @@ test("each step explains what is missing", async ({ page }) => {
 test("unknown alert codes show a friendly not-found page", async ({ page }) => {
   for (const code of ["zzzzzz", "nao-existe"]) {
     await page.goto(`/alerta/${code}`);
-    await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
     await expect(page.getByRole("banner")).toHaveCount(1); // um cabeçalho só (antes saía duplicado)
   }
   // Endereço que não existe em lugar nenhum: também com um cabeçalho (o da página global).
   await page.goto("/rota-que-nao-existe");
-  await expect(page.getByRole("heading", { name: "Não encontramos esta página" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ops, esta página se perdeu!" })).toBeVisible();
   await expect(page.getByRole("banner")).toHaveCount(1);
 });
