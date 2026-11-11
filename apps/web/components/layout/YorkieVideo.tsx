@@ -36,8 +36,8 @@ export function YorkieVideo() {
     return (
       <video
         className={cls}
-        src="/404/yorkshire.webm"
-        poster="/404/yorkshire.webp"
+        src="/404/yorkshire.webm?v=4"
+        poster="/404/yorkshire.webp?v=4"
         autoPlay
         loop
         muted
@@ -50,5 +50,5 @@ export function YorkieVideo() {
     );
   }
   // eslint-disable-next-line @next/next/no-img-element -- animação/foto com transparência, já no tamanho final
-  return <img className={cls} src={mode === "webp" ? "/404/yorkshire-animada.webp" : "/404/yorkshire.webp"} alt="" draggable={false} data-testid={`yorkshire-${mode}`} />;
+  return <img className={cls} src={mode === "webp" ? "/404/yorkshire-animada.webp?v=4" : "/404/yorkshire.webp?v=4"} alt="" draggable={false} data-testid={`yorkshire-${mode}`} />;
 }

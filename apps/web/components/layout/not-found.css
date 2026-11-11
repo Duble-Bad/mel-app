@@ -9,8 +9,7 @@
   );
 }
 
-/* Camada do "404": clara, para os pelos do recorte (que vieram de um fundo de estúdio claro) se
-   misturarem ao fundo em vez de marcar a silhueta da cachorra. Fica só na área da cachorra e
+/* Camada do "404": letras claras, com o miolo do "0" escuro. Fica só na área da cachorra e
    esmaece até sumir antes do texto, que continua legível nos dois temas. */
 .nf-bg {
   opacity: 0.92;
@@ -19,9 +18,6 @@
 }
 .nf-404 {
   color: color-mix(in srgb, white 90%, var(--mel-primary));
-}
-.nf-404-oval {
-  background: color-mix(in srgb, white 90%, var(--mel-primary));
 }
 
 /* Yorkshire: entra subindo de leve; uma sombra suave no chão a "assenta" na página. */

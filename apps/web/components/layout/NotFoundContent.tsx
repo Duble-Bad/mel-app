@@ -15,7 +15,7 @@ export function NotFoundContent() {
     <main className="nf-page relative flex min-h-[calc(100dvh-65px)] w-full flex-1 flex-col overflow-hidden">
       {/* Yorkshire no fluxo da página: ocupa o espaço que sobra acima do texto, sem nunca cobri-lo. */}
       {/* O "404" claro fica só nesta área e some antes do texto (que fica sobre o fundo normal). */}
-      <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-end justify-center overflow-hidden px-4 pt-4 pb-3">
+      <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center overflow-hidden px-4 pt-4 pb-3">
         <Big404 />
         <div className="nf-dog aspect-[3/4] h-[clamp(170px,48dvh,480px)] max-w-full">
           <YorkieVideo />

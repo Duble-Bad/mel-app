@@ -4,8 +4,8 @@ import { useLayoutEffect, useRef, useState } from "react";
 
 /**
  * "404" gigante ao fundo: esticado na horizontal (1,15×) e, na vertical, o bastante para
- * ocupar a altura da tela (medido no navegador). Um oval da mesma cor cobre o miolo do "0".
- * Tudo esmaece para baixo (máscara) e não recebe cliques.
+ * ocupar a altura da tela (medido no navegador). O miolo do "0" fica escuro (é ali que a
+ * cachorra aparece). Tudo esmaece para baixo (máscara) e não recebe cliques.
  */
 export function Big404() {
   const text = useRef<HTMLSpanElement>(null);
@@ -30,12 +30,6 @@ export function Big404() {
       >
         404
       </span>
-      <span
-        // Maior que no modelo: cobre todo o miolo do "0", para a cachorra ficar inteira sobre o claro.
-        // No celular o "0" é mais estreito que a cachorra: o oval fica mais largo que ele.
-        className="nf-404-oval absolute h-[30vh] w-[min(84vw,360px)] rounded-full sm:h-[36vh] md:h-[58vh] md:w-[clamp(150px,23vw,440px)]"
-        style={{ transform: `scaleY(${scaleY})`, transformOrigin: "center" }}
-      />
     </div>
   );
 }
