@@ -1,27 +1,27 @@
 import { ArrowLeft, Map } from "lucide-react";
 import Link from "next/link";
 import { Big404 } from "./Big404";
-import { BoneFrame } from "./BoneFrame";
+import { DogHouse } from "./DogHouse";
 import { YorkieVideo } from "./YorkieVideo";
 import "./not-found.css";
 
 /**
  * Página "não encontrado" (com ou sem cabeçalho, conforme quem usa). Tela cheia abaixo do
  * cabeçalho: "404" gigante ao fundo, esmaecendo para baixo; no miolo do "0", uma yorkshire de
- * verdade (vídeo com o fundo de estúdio original) numa moldura em forma de osso, inclinando a
- * cabeça, curiosa; embaixo, a mensagem e o caminho de volta.
+ * verdade (vídeo com o fundo de estúdio original) na porta de uma casinha de cachorro, inclinando
+ * a cabeça, curiosa; embaixo, a mensagem e o caminho de volta.
  * Inspirada num modelo de 404 com raposa em vídeo, nas cores da MEL.
  */
 export function NotFoundContent() {
   return (
     <main className="nf-page relative flex min-h-[calc(100dvh-65px)] w-full flex-1 flex-col overflow-hidden">
       {/* Yorkshire no fluxo da página: ocupa o espaço que sobra acima do texto, sem nunca cobri-lo. */}
-      <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center overflow-hidden px-4 pt-4 pb-3">
+      <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center overflow-hidden px-4 pt-4 pb-10">
         <Big404 />
-        <div className="nf-dog aspect-[3/4] h-[clamp(170px,44dvh,440px)] max-w-full">
-          <BoneFrame>
+        <div className="nf-dog aspect-[500/560] h-[clamp(200px,50dvh,500px)] max-w-full">
+          <DogHouse>
             <YorkieVideo />
-          </BoneFrame>
+          </DogHouse>
           <DogExtras />
         </div>
       </div>
@@ -53,18 +53,18 @@ export function NotFoundContent() {
   );
 }
 
-// Fora do osso: no chão, dos dois lados (coordenadas do quadro 300×400 da moldura).
+// No chão, na frente da casinha, abaixo da base (cabem em qualquer largura de tela; quadro 500×560).
 const PAWS: [number, number, number][] = [
-  [-62, 396, -18],
-  [-26, 380, -10],
-  [326, 396, 14],
-  [362, 378, 22],
+  [92, 586, -16],
+  [136, 574, -8],
+  [364, 574, 8],
+  [408, 586, 16],
 ];
 
-/** "?" no ar ao lado da moldura e patinhas no chão, fora dela (cor da marca). */
+/** "?" no ar ao lado do telhado e patinhas no chão, dos dois lados da casinha (cor da marca). */
 function DogExtras() {
   return (
-    <svg viewBox="0 0 300 400" className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true">
+    <svg viewBox="0 0 500 560" className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true">
       {PAWS.map(([x, y, r], i) => (
         <g key={i} className="nf-paw" style={{ animationDelay: `${i * 0.45}s` }} transform={`translate(${x} ${y}) rotate(${r})`}>
           <ellipse cx="0" cy="4" rx="8" ry="7" fill="var(--mel-primary)" />
@@ -75,7 +75,7 @@ function DogExtras() {
         </g>
       ))}
       <g className="nf-q">
-        <text x="304" y="66" fontSize="64" fontWeight="900" fill="var(--mel-primary)" stroke="var(--mel-primary-hover)" strokeWidth="1.5" fontFamily="inherit">
+        <text x="410" y="70" fontSize="80" fontWeight="900" fill="var(--mel-primary)" stroke="var(--mel-primary-hover)" strokeWidth="1.5" fontFamily="inherit">
           ?
         </text>
       </g>
