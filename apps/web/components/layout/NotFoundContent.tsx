@@ -6,19 +6,21 @@ import "./not-found.css";
 
 /**
  * Página "não encontrado" (com ou sem cabeçalho, conforme quem usa). Tela cheia abaixo do
- * cabeçalho: "404" gigante ao fundo, esmaecendo para baixo; no centro, uma yorkshire de verdade
- * (vídeo, fundo recortado) inclinando a cabeça, curiosa; embaixo, a mensagem e o caminho de volta.
+ * cabeçalho: "404" gigante ao fundo, esmaecendo para baixo; no miolo do "0", uma yorkshire de
+ * verdade (vídeo com o fundo de estúdio original) numa moldura em arco, inclinando a cabeça,
+ * curiosa; embaixo, a mensagem e o caminho de volta.
  * Inspirada num modelo de 404 com raposa em vídeo, nas cores da MEL.
  */
 export function NotFoundContent() {
   return (
     <main className="nf-page relative flex min-h-[calc(100dvh-65px)] w-full flex-1 flex-col overflow-hidden">
       {/* Yorkshire no fluxo da página: ocupa o espaço que sobra acima do texto, sem nunca cobri-lo. */}
-      {/* O "404" claro fica só nesta área e some antes do texto (que fica sobre o fundo normal). */}
       <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center overflow-hidden px-4 pt-4 pb-3">
         <Big404 />
-        <div className="nf-dog aspect-[3/4] h-[clamp(170px,48dvh,480px)] max-w-full">
-          <YorkieVideo />
+        <div className="nf-dog aspect-[3/4] h-[clamp(170px,44dvh,440px)] max-w-full">
+          <div className="nf-arch">
+            <YorkieVideo />
+          </div>
           <DogExtras />
         </div>
       </div>
@@ -50,14 +52,15 @@ export function NotFoundContent() {
   );
 }
 
+// Fora da moldura: no chão, dos dois lados (coordenadas do quadro 300×400 da moldura).
 const PAWS: [number, number, number][] = [
-  [-26, 392, -18],
-  [12, 376, -10],
-  [288, 392, 14],
-  [322, 374, 22],
+  [-62, 396, -18],
+  [-26, 380, -10],
+  [326, 396, 14],
+  [362, 378, 22],
 ];
 
-/** "?" no ar ao lado da cabeça e patinhas no chão, por cima do vídeo (cor da marca). */
+/** "?" no ar ao lado da moldura e patinhas no chão, fora dela (cor da marca). */
 function DogExtras() {
   return (
     <svg viewBox="0 0 300 400" className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true">
@@ -71,7 +74,7 @@ function DogExtras() {
         </g>
       ))}
       <g className="nf-q">
-        <text x="262" y="70" fontSize="64" fontWeight="900" fill="var(--mel-primary)" stroke="var(--mel-primary-hover)" strokeWidth="1.5" fontFamily="inherit">
+        <text x="304" y="66" fontSize="64" fontWeight="900" fill="var(--mel-primary)" stroke="var(--mel-primary-hover)" strokeWidth="1.5" fontFamily="inherit">
           ?
         </text>
       </g>

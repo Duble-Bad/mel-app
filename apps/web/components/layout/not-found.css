@@ -9,12 +9,8 @@
   );
 }
 
-/* Camada do "404", com o miolo do "0" escuro. Fica só na área da cachorra e esmaece até sumir
-   antes do texto, que continua legível nos dois temas.
-   Cada tema tem um fundo de um tom só atrás da cachorra, combinando com a versão do recorte do
-   vídeo daquele tema (YorkieVideo): no claro, letras claras (os pelos que vieram do fundo de
-   estúdio claro se misturam); no escuro, letras num dourado escuro e suave (com o recorte do tema
-   escuro, sem franja clara; letras claras ali fariam a borda escura do recorte aparecer). */
+/* Camada do "404": letras claras com o miolo do "0" escuro, onde fica a moldura da cachorra. Fica
+   só na área da cachorra e esmaece até sumir antes do texto, que continua legível nos dois temas. */
 .nf-bg {
   opacity: 0.92;
   -webkit-mask-image: linear-gradient(to bottom, black 62%, transparent 100%);
@@ -23,50 +19,32 @@
 .nf-404 {
   color: color-mix(in srgb, white 90%, var(--mel-primary));
 }
-:root[data-theme="dark"] .nf-404 {
-  color: color-mix(in srgb, var(--mel-primary) 24%, var(--mel-background));
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .nf-404 {
-    color: color-mix(in srgb, var(--mel-primary) 24%, var(--mel-background));
-  }
-}
 
-/* Yorkshire: entra subindo de leve; uma sombra suave no chão a "assenta" na página. */
+/* Yorkshire: entra subindo de leve. */
 .nf-dog {
   position: relative;
-  isolation: isolate; /* a sombra (z-index −1) fica atrás da cachorra, não atrás da página */
   animation: nf-in 0.7s var(--mel-easing) both;
 }
-.nf-dog::after {
+/* Moldura em arco (janela de retrato): o vídeo aparece inteiro, com o próprio fundo claro de
+   estúdio, sem recorte. Topo arredondado, base reta levemente arredondada, borda na cor da marca e
+   sombra para destacar do fundo. */
+.nf-arch {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 999px 999px 28px 28px;
+  border: 3px solid var(--mel-primary);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--mel-primary) 22%, transparent),
+    0 24px 48px -16px rgb(0 0 0 / 0.55);
+}
+/* Luz suave por dentro da moldura (de cima), para o fundo de estúdio não parecer chapado. */
+.nf-arch::after {
   content: "";
   position: absolute;
-  z-index: -1;
-  left: 18%;
-  right: 18%;
-  bottom: 1%;
-  height: 7%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(0 0 0 / 0.28), transparent);
-}
-/* Tema escuro: brilho suave atrás da cabeça, como um holofote. Os fios loiros da franja ficam com
-   cara de pelo iluminado em vez de recorte; o miolo do "0" continua escuro em volta. */
-.nf-dog::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 4% 2% 30% 2%;
-  border-radius: 50%;
-  opacity: 0;
-  background: radial-gradient(closest-side, color-mix(in srgb, white 16%, transparent), transparent);
-}
-:root[data-theme="dark"] .nf-dog::before {
-  opacity: 1;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .nf-dog::before {
-    opacity: 1;
-  }
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, white 18%, transparent), transparent 60%);
 }
 @keyframes nf-in {
   from {
@@ -79,7 +57,7 @@
   }
 }
 
-/* "?" no ar e patinhas no chão, por cima do vídeo (como na animação anterior). */
+/* "?" no ar e patinhas no chão, fora da moldura (como na animação anterior). */
 .nf-q {
   transform-box: fill-box;
   transform-origin: center;
