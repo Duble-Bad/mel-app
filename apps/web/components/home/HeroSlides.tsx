@@ -30,11 +30,13 @@ const SLIDES: Slide[] = [
   },
   {
     key: "guardiao",
-    src: "/fotos/guardiao-bairro.webp",
-    ratio: 1172 / 724,
-    alt: "Uma Yorkshire e um gato laranja diante de um escudo dourado, sobre o mapa iluminado de um bairro",
-    pos: [0.56, 0.5],
-    origin: [0.51, 0.8], // o pino dourado do mapa
+    src: "/fotos/guardiao-escudo.webp",
+    // Fundo da ilustração estendido acima e abaixo (1172×1060): os bichos e as casinhas dos dois
+    // lados cabem inteiros no card, no desktop e no celular.
+    ratio: 1172 / 1060,
+    alt: "Uma Yorkshire e um gato laranja sentados diante de um escudo dourado, sobre o mapa iluminado de um bairro",
+    pos: [0.5, 0.5],
+    origin: [0.51, 0.72], // o pino dourado do mapa
     label: "Guardiões no bairro",
     chip: { title: "Guardiões no seu bairro", text: "avisos chegam a quem está perto", dot: "bg-primary" },
   },
