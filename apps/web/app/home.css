@@ -104,11 +104,13 @@
   transform: none;
 }
 
-/* ---------- Card com brilho (Guardião MEL) ----------
+/* ---------- Card com brilho (Guardião MEL e "Quero adotar") ----------
    Inspirado no card "Keys to Success" (Uiverse), nas cores da MEL: fundo com luz dourada subindo
    de baixo, borda fina em degradê e um feixe dourado percorrendo a borda devagar. Só o feixe anima,
-   e só por transform (rotate). Usar uma vez por tela: é destaque, não padrão de card. */
+   e só por transform (rotate). É destaque, não padrão de card. Cor: --glow (padrão, o dourado da
+   marca; o "Quero adotar" usa a cor de adoção). */
 .mh-glow {
+  --g: var(--glow, var(--mel-primary));
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -117,10 +119,10 @@
     radial-gradient(at 88% 40%, var(--mel-surface) 0, transparent 85%),
     radial-gradient(at 49% 30%, var(--mel-surface) 0, transparent 85%),
     radial-gradient(at 14% 26%, var(--mel-surface) 0, transparent 85%),
-    radial-gradient(at 0% 64%, color-mix(in srgb, var(--mel-primary) 30%, transparent) 0, transparent 85%),
-    radial-gradient(at 41% 94%, color-mix(in srgb, var(--mel-primary) 42%, transparent) 0, transparent 85%),
-    radial-gradient(at 100% 99%, color-mix(in srgb, var(--mel-primary-hover) 26%, transparent) 0, transparent 85%);
-  box-shadow: inset 0 -16px 24px 0 color-mix(in srgb, var(--mel-primary) 20%, transparent);
+    radial-gradient(at 0% 64%, color-mix(in srgb, var(--g) 30%, transparent) 0, transparent 85%),
+    radial-gradient(at 41% 94%, color-mix(in srgb, var(--g) 42%, transparent) 0, transparent 85%),
+    radial-gradient(at 100% 99%, color-mix(in srgb, var(--g) 26%, transparent) 0, transparent 85%);
+  box-shadow: inset 0 -16px 24px 0 color-mix(in srgb, var(--g) 20%, transparent);
 }
 /* Borda de 1,5px: degradê claro embaixo, discreto em cima, com o feixe passando por cima dela. */
 .mh-glow__border {
@@ -152,11 +154,11 @@
   background: conic-gradient(
     from 0deg,
     transparent 0 64%,
-    color-mix(in srgb, var(--mel-primary) 0%, transparent) 64%,
-    var(--mel-primary) 76%,
-    color-mix(in srgb, var(--mel-primary) 55%, white) 80%,
-    var(--mel-primary) 84%,
-    color-mix(in srgb, var(--mel-primary) 0%, transparent) 96%,
+    color-mix(in srgb, var(--g) 0%, transparent) 64%,
+    var(--g) 76%,
+    color-mix(in srgb, var(--g) 55%, white) 80%,
+    var(--g) 84%,
+    color-mix(in srgb, var(--g) 0%, transparent) 96%,
     transparent 100%
   );
   transform: translate(-50%, -50%) rotate(0deg);
@@ -168,12 +170,18 @@
   }
 }
 .mh-glow > :not(.mh-glow__border) {
-  position: relative;
   z-index: 2;
+}
+.mh-glow > :not(.mh-glow__border, .absolute) {
+  position: relative;
+}
+/* Nas ações do topo (.mel-action), o brilho substitui o fundo e a borda colorida do card. */
+.mel-action.mh-glow {
+  border-color: transparent;
 }
 /* Botão do card: pílula dourada com brilho interno, como o do exemplo. */
 .mh-glow__cta {
-  background-image: linear-gradient(0deg, var(--mel-primary), var(--mel-primary-hover) 100%);
+  background-image: linear-gradient(0deg, var(--g), var(--mel-primary-hover) 100%);
   box-shadow: inset 0 -2px 22px -6px color-mix(in srgb, white 85%, transparent);
   transition: transform 0.25s var(--mel-easing), filter 0.25s var(--mel-easing);
 }
