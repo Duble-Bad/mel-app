@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, Info, ShieldCheck, Smartphone } from "lucide-react";
+import { BellRing, Info, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DAILY_LIMITS, fieldErrors, GUARDIAN_RADII_M, type GuardianRadius, type GuardianSettings, guardianSettingsSchema, publicAreaFrom, radiusLabel, userErrorMessage } from "@mel/core";
 import { saveGuardianSettings } from "@mel/data";
@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { FilterChip } from "@/components/ui/FilterChip";
 import { Card } from "@/components/ui/Surface";
+import { GuardianHero } from "./GuardianHero";
 import { Switch } from "@/components/ui/Switch";
 import { useToast } from "@/components/ui/Toast";
 
@@ -61,9 +62,7 @@ export function GuardianForm({ userId, initial }: { userId: string; initial: Gua
   return (
     <div className="flex flex-col gap-6">
       <Card className="flex flex-col gap-4 bg-surface-warm">
-        <span className="flex size-12 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
-          <ShieldCheck aria-hidden="true" className="size-6" strokeWidth={1.75} />
-        </span>
+        <GuardianHero radiusLabel={radiusLabel(radiusM)} />
         <div className="flex flex-col gap-1.5">
           <h1 className="text-2xl font-bold">Seja um Guardião MEL</h1>
           <p className="text-text-secondary">
