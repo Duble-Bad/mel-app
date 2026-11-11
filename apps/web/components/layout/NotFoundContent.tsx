@@ -13,12 +13,13 @@ import "./not-found.css";
 export function NotFoundContent() {
   return (
     <main className="nf-page relative flex min-h-[calc(100dvh-65px)] w-full flex-1 flex-col overflow-hidden">
-      <Big404 />
-
       {/* Yorkshire no fluxo da página: ocupa o espaço que sobra acima do texto, sem nunca cobri-lo. */}
-      <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-center justify-center px-4 pt-4">
+      {/* O "404" claro fica só nesta área e some antes do texto (que fica sobre o fundo normal). */}
+      <div aria-hidden="true" className="pointer-events-none relative z-10 flex min-h-[150px] flex-1 items-end justify-center overflow-hidden px-4 pt-4 pb-3">
+        <Big404 />
         <div className="nf-dog aspect-[3/4] h-[clamp(170px,48dvh,480px)] max-w-full">
           <YorkieVideo />
+          <DogExtras />
         </div>
       </div>
 
@@ -46,5 +47,34 @@ export function NotFoundContent() {
         </div>
       </div>
     </main>
+  );
+}
+
+const PAWS: [number, number, number][] = [
+  [-26, 392, -18],
+  [12, 376, -10],
+  [288, 392, 14],
+  [322, 374, 22],
+];
+
+/** "?" no ar ao lado da cabeça e patinhas no chão, por cima do vídeo (cor da marca). */
+function DogExtras() {
+  return (
+    <svg viewBox="0 0 300 400" className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true">
+      {PAWS.map(([x, y, r], i) => (
+        <g key={i} className="nf-paw" style={{ animationDelay: `${i * 0.45}s` }} transform={`translate(${x} ${y}) rotate(${r})`}>
+          <ellipse cx="0" cy="4" rx="8" ry="7" fill="var(--mel-primary)" />
+          <circle cx="-8" cy="-6" r="3.2" fill="var(--mel-primary)" />
+          <circle cx="-2.8" cy="-10" r="3.2" fill="var(--mel-primary)" />
+          <circle cx="2.8" cy="-10" r="3.2" fill="var(--mel-primary)" />
+          <circle cx="8" cy="-6" r="3.2" fill="var(--mel-primary)" />
+        </g>
+      ))}
+      <g className="nf-q">
+        <text x="262" y="70" fontSize="64" fontWeight="900" fill="var(--mel-primary)" stroke="var(--mel-primary-hover)" strokeWidth="1.5" fontFamily="inherit">
+          ?
+        </text>
+      </g>
+    </svg>
   );
 }

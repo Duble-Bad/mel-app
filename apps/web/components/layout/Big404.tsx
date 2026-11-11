@@ -31,8 +31,10 @@ export function Big404() {
         404
       </span>
       <span
-        className="nf-404-oval absolute h-[22vh] rounded-full sm:h-[26vh] md:h-[50vh]"
-        style={{ width: "clamp(120px, 20vw, 400px)", transform: `scaleY(${scaleY})`, transformOrigin: "center" }}
+        // Maior que no modelo: cobre todo o miolo do "0", para a cachorra ficar inteira sobre o claro.
+        // No celular o "0" é mais estreito que a cachorra: o oval fica mais largo que ele.
+        className="nf-404-oval absolute h-[30vh] w-[min(84vw,360px)] rounded-full sm:h-[36vh] md:h-[58vh] md:w-[clamp(150px,23vw,440px)]"
+        style={{ transform: `scaleY(${scaleY})`, transformOrigin: "center" }}
       />
     </div>
   );

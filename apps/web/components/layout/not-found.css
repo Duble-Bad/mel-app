@@ -1,5 +1,5 @@
 /* Página 404: fundo, "404" gigante e a yorkshire (NotFoundContent, Big404, YorkieVideo).
-   Cores só dos tokens da MEL (temas escuro e claro). Só transform e opacity animam. */
+   Cores dos tokens da MEL (temas escuro e claro). Só transform e opacity animam. */
 
 .nf-page {
   background: linear-gradient(
@@ -9,18 +9,19 @@
   );
 }
 
-/* Camada do "404": esmaece para baixo. */
+/* Camada do "404": clara, para os pelos do recorte (que vieram de um fundo de estúdio claro) se
+   misturarem ao fundo em vez de marcar a silhueta da cachorra. Fica só na área da cachorra e
+   esmaece até sumir antes do texto, que continua legível nos dois temas. */
 .nf-bg {
-  opacity: 0.9;
-  -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 95%);
-  mask-image: linear-gradient(to bottom, black 40%, transparent 95%);
+  opacity: 0.92;
+  -webkit-mask-image: linear-gradient(to bottom, black 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 62%, transparent 100%);
 }
-.nf-404,
-.nf-404-oval {
-  color: color-mix(in srgb, var(--mel-primary) 13%, var(--mel-background));
+.nf-404 {
+  color: color-mix(in srgb, white 90%, var(--mel-primary));
 }
 .nf-404-oval {
-  background: color-mix(in srgb, var(--mel-primary) 13%, var(--mel-background));
+  background: color-mix(in srgb, white 90%, var(--mel-primary));
 }
 
 /* Yorkshire: entra subindo de leve; uma sombra suave no chão a "assenta" na página. */
@@ -38,7 +39,7 @@
   bottom: 1%;
   height: 7%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(0 0 0 / 0.32), transparent);
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.28), transparent);
 }
 @keyframes nf-in {
   from {
@@ -51,8 +52,45 @@
   }
 }
 
+/* "?" no ar e patinhas no chão, por cima do vídeo (como na animação anterior). */
+.nf-q {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nf-bob 2.8s ease-in-out infinite;
+}
+.nf-paw {
+  opacity: 0;
+  animation: nf-paw 3.6s ease-in-out infinite;
+}
+@keyframes nf-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(-10px) rotate(8deg);
+    opacity: 1;
+  }
+}
+@keyframes nf-paw {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  30%,
+  60% {
+    opacity: 0.7;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .nf-dog {
+  .nf-dog,
+  .nf-q {
     animation: none;
+  }
+  .nf-paw {
+    animation: none;
+    opacity: 0.6;
   }
 }
