@@ -1,4 +1,6 @@
-"""Recorte do fundo do vídeo da yorkshire, quadro a quadro (uso: python matte.py <pasta_entrada> <pasta_saida> [preview]).
+"""Recorte do fundo do vídeo da yorkshire, quadro a quadro (uso: python matte.py <pasta_entrada> <pasta_saida> [preview] [dark]).
+
+"dark" gera a variante para o tema escuro (borda mais fina e fios da beirada escurecidos).
 
 1. Fundo de estúdio: transparência pela distância até a cor do fundo (rampa suave).
 2. Faixa de baixo (patas e chão): some também o que é cinza claro (sombra do chão), mantendo o
@@ -63,6 +65,9 @@ def main_blob(a, k=4):
     return full
 
 
+DARK = False
+
+
 def matte(img):
     c = np.asarray(img.convert("RGB"), dtype=np.float64) / 255
     h, w, _ = c.shape
@@ -81,17 +86,29 @@ def matte(img):
     weight = smooth(0.80, 0.87, y)
     a = a * (1 - weight * (1 - keep))
 
-    a = box(shift_min(a)) * main_blob(a)
+    blob = main_blob(a)
+    if DARK:
+        # Tema escuro: borda 2 px mais fina e semitransparentes mais transparentes (a franja clara
+        # dos pelos finos some sobre o fundo escuro).
+        a = box(shift_min(shift_min(a))) * blob
+        a = a**1.6
+    else:
+        a = box(shift_min(a)) * blob
     a = np.where(a < 0.03, 0, a)
 
     f = (c - (1 - a)[..., None] * BG) / np.maximum(a, 0.05)[..., None]
     f = np.clip(f, 0, 1)
+    if DARK:
+        # Fios da beirada escurecidos: o que restar de fundo branco misturado não brilha no escuro.
+        f = f * (0.45 + 0.55 * a)[..., None]
     f[a == 0] = 0  # pixels invisíveis com cor lisa: o vídeo comprime muito melhor
     rgba = np.dstack([f, a])
     return Image.fromarray((rgba * 255 + 0.5).astype(np.uint8), "RGBA")
 
 
 def main():
+    global DARK
+    DARK = "dark" in sys.argv[3:]
     src, dst = Path(sys.argv[1]), Path(sys.argv[2])
     dst.mkdir(parents=True, exist_ok=True)
     files = sorted(src.glob("*.png"))
@@ -99,7 +116,7 @@ def main():
         matte(Image.open(fp)).save(dst / fp.name)
         if (i + 1) % 20 == 0:
             print(f"{i + 1}/{len(files)}", flush=True)
-    if len(sys.argv) > 3:  # prévia sobre escuro, cinza-médio e claro
+    if "preview" in sys.argv[3:]:  # prévia sobre escuro, cinza-médio e claro
         for fp in files:
             m = Image.open(dst / fp.name)
             for name, col in {"dark": (15, 25, 40), "mid": (122, 122, 120), "light": (242, 237, 228)}.items():
