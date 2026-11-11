@@ -43,7 +43,7 @@ const TRANSLATIONS = {
 const iconBtn =
   "inline-flex size-10 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors duration-200 ease-mel hover:bg-surface-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-35";
 const selectCls =
-  "min-h-10 flex-1 rounded-md border border-border-input bg-input px-2 text-sm font-semibold text-text-primary capitalize hover:border-border-strong focus:border-focus focus:outline-none focus:ring-4 focus:ring-primary-soft";
+  "min-h-10 min-w-0 flex-1 rounded-md border border-border-input bg-input px-2 text-sm font-semibold text-text-primary hover:border-border-strong focus:border-focus focus:outline-none focus:ring-4 focus:ring-primary-soft";
 const cellBase =
   "flex items-center justify-center rounded-md font-semibold tabular-nums transition-colors duration-150 ease-mel cursor-pointer select-none hover:bg-surface-muted " +
   "data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-primary " +
@@ -55,7 +55,7 @@ const cellBase =
 /**
  * Campo de data no padrão brasileiro: digita-se dd/mm/aaaa (a máscara põe as barras) ou abre-se o
  * calendário pelo botão do campo. O calendário (Ark UI, em pt-BR, semana começando no domingo) tem
- * mês e ano para escolher direto, visão de meses e de anos pelo título, e respeita `min`/`max`:
+ * setas nas laterais das listas de mês e de ano (sem título repetido) e respeita `min`/`max`:
  * datas fora ficam desabilitadas. A data digitada é conferida aqui ("não existe", "no futuro"),
  * nunca trocada em silêncio. Valor AAAA-MM-DD ("" = nenhuma data).
  */
@@ -194,16 +194,50 @@ export function DateCalendar({
             className="w-[min(calc(100vw-2rem),22rem)] rounded-lg border border-border-strong bg-surface-elevated p-3 text-text-primary shadow-lg outline-none data-[state=open]:animate-pop"
             data-testid="calendario"
           >
-            <div className="mb-3 flex gap-2">
-              <DatePicker.MonthSelect className={selectCls} />
-              <DatePicker.YearSelect className={`${selectCls} max-w-28`} />
-            </div>
-
             <DatePicker.View view="day">
               <DatePicker.Context>
                 {(api) => (
                   <>
-                    <Header />
+                    {/* Uma linha só: ‹ [Mês] [Ano] ›. O mês e o ano aparecem só nas listas, sem título repetido. */}
+                    <DatePicker.ViewControl className="mb-2 flex items-center gap-1.5">
+                      <DatePicker.PrevTrigger className={iconBtn}>
+                        <ChevronLeft aria-hidden="true" className="size-5" />
+                      </DatePicker.PrevTrigger>
+                      <select
+                        aria-label="Mês"
+                        value={api.focusedValue.month}
+                        onChange={(e) => api.focusMonth(Number(e.target.value))}
+                        className={selectCls}
+                        data-testid="calendario-mes"
+                      >
+                        {api.getMonths().map((m) => (
+                          <option key={m.value} value={m.value} disabled={m.disabled}>
+                            {m.label.charAt(0).toUpperCase() + m.label.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        aria-label="Ano"
+                        value={api.focusedValue.year}
+                        onChange={(e) => api.focusYear(Number(e.target.value))}
+                        className={`${selectCls} max-w-24 flex-none`}
+                        data-testid="calendario-ano"
+                      >
+                        {/* Mais recente primeiro: as datas do app são de agora para trás. */}
+                        {api
+                          .getYears()
+                          .filter((y) => !y.disabled)
+                          .reverse()
+                          .map((y) => (
+                            <option key={y.value} value={y.value}>
+                              {y.label}
+                            </option>
+                          ))}
+                      </select>
+                      <DatePicker.NextTrigger className={iconBtn}>
+                        <ChevronRight aria-hidden="true" className="size-5" />
+                      </DatePicker.NextTrigger>
+                    </DatePicker.ViewControl>
                     <DatePicker.Table className="w-full border-separate border-spacing-1">
                       <DatePicker.TableHead>
                         <DatePicker.TableRow>
@@ -230,74 +264,10 @@ export function DateCalendar({
                 )}
               </DatePicker.Context>
             </DatePicker.View>
-
-            <DatePicker.View view="month">
-              <DatePicker.Context>
-                {(api) => (
-                  <>
-                    <Header />
-                    <DatePicker.Table className="w-full border-separate border-spacing-1.5">
-                      <DatePicker.TableBody>
-                        {api.getMonthsGrid({ columns: 3, format: "short" }).map((months, i) => (
-                          <DatePicker.TableRow key={i}>
-                            {months.map((month, j) => (
-                              <DatePicker.TableCell key={j} value={month.value} className="p-0">
-                                <DatePicker.TableCellTrigger className={`${cellBase} h-12 w-full text-sm capitalize`}>{month.label.replace(".", "")}</DatePicker.TableCellTrigger>
-                              </DatePicker.TableCell>
-                            ))}
-                          </DatePicker.TableRow>
-                        ))}
-                      </DatePicker.TableBody>
-                    </DatePicker.Table>
-                  </>
-                )}
-              </DatePicker.Context>
-            </DatePicker.View>
-
-            <DatePicker.View view="year">
-              <DatePicker.Context>
-                {(api) => (
-                  <>
-                    <Header />
-                    <DatePicker.Table className="w-full border-separate border-spacing-1.5">
-                      <DatePicker.TableBody>
-                        {api.getYearsGrid({ columns: 4 }).map((years, i) => (
-                          <DatePicker.TableRow key={i}>
-                            {years.map((year, j) => (
-                              <DatePicker.TableCell key={j} value={year.value} className="p-0">
-                                <DatePicker.TableCellTrigger className={`${cellBase} h-12 w-full text-sm`}>{year.label}</DatePicker.TableCellTrigger>
-                              </DatePicker.TableCell>
-                            ))}
-                          </DatePicker.TableRow>
-                        ))}
-                      </DatePicker.TableBody>
-                    </DatePicker.Table>
-                  </>
-                )}
-              </DatePicker.Context>
-            </DatePicker.View>
           </DatePicker.Content>
         </DatePicker.Positioner>
       </Portal>
     </DatePicker.Root>
-  );
-}
-
-/** Mês/ano (ou década) no meio, com as setas dos lados; clicar no título sobe de nível. */
-function Header() {
-  return (
-    <DatePicker.ViewControl className="mb-1 flex items-center justify-between">
-      <DatePicker.PrevTrigger className={iconBtn}>
-        <ChevronLeft aria-hidden="true" className="size-5" />
-      </DatePicker.PrevTrigger>
-      <DatePicker.ViewTrigger className="min-h-10 rounded-md px-3 font-bold transition-colors hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-primary">
-        {/* "Novembro de 2026": maiúscula só na primeira letra (capitalize faria "De"). */}
-        <DatePicker.RangeText className="inline-block first-letter:uppercase" />
-      </DatePicker.ViewTrigger>
-      <DatePicker.NextTrigger className={iconBtn}>
-        <ChevronRight aria-hidden="true" className="size-5" />
-      </DatePicker.NextTrigger>
-    </DatePicker.ViewControl>
   );
 }
 
