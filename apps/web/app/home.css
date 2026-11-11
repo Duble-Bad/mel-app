@@ -135,6 +135,7 @@
   padding: 1.5px;
   border-radius: inherit;
   pointer-events: none;
+  transition: opacity 0.4s var(--mel-easing);
   background: linear-gradient(
     0deg,
     color-mix(in srgb, var(--mel-text-primary) 60%, transparent) -50%,
@@ -147,6 +148,7 @@
   mask-composite: exclude;
 }
 .mh-glow__border::before {
+  --g: var(--glow, var(--mel-primary)); /* também fora de .mh-glow (só a borda) */
   content: "";
   position: absolute;
   top: 50%;
@@ -176,6 +178,13 @@
 }
 .mh-glow > :not(.mh-glow__border, .absolute) {
   position: relative;
+}
+/* Carrossel de adoção: só o card do centro mostra a borda com o feixe. */
+.mh-slide:not([data-center]) .mh-glow__border {
+  opacity: 0;
+}
+.mh-slide:not([data-center]) .mh-glow__border::before {
+  animation-play-state: paused;
 }
 /* Nas ações do topo (.mel-action), o brilho substitui o fundo e a borda colorida do card. */
 .mel-action.mh-glow {

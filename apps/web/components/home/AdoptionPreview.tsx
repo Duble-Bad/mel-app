@@ -22,8 +22,8 @@ export async function AdoptionPreview() {
 function AdoptionMiniCard({ a }: { a: PublicAdoption }) {
   const second = [ageLabel(a.ageMonths), a.size && `Porte ${SIZE_LABELS[a.size].label.toLowerCase()}`].filter(Boolean).join(" · ");
   return (
-    // Brilho e feixe dourado na borda, como os destaques da home (home.css: .mh-glow).
-    <article className="mh-pet mh-glow flex h-full flex-col overflow-hidden rounded-card">
+    // Só a borda com o feixe dourado (home.css: .mh-glow__border), visível no card do centro do carrossel.
+    <article className="mh-pet relative flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface">
       <span aria-hidden="true" className="mh-glow__border" />
       <div className="relative aspect-[4/3.3] overflow-hidden bg-surface-muted">
         {a.photoUrls[0] ? (

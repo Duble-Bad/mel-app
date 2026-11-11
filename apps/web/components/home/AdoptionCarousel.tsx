@@ -281,7 +281,8 @@ function Slide({
       aria-roledescription="slide"
       aria-label={label}
       aria-hidden={!isCenter}
-      className="relative col-start-1 row-start-1 mx-auto w-[64%] max-w-[300px] will-change-transform sm:w-[54%]"
+      data-center={isCenter || undefined}
+      className="mh-slide relative col-start-1 row-start-1 mx-auto w-[64%] max-w-[300px] will-change-transform sm:w-[54%]"
       style={{ x, y, scale, rotateY, opacity, zIndex, pointerEvents }}
     >
       {/* Só o conteúdo fica inerte: a camada de clique abaixo precisa receber o toque. */}
