@@ -1,9 +1,10 @@
 "use client";
 
-import { DatePicker, parseDate, type DateValue } from "@ark-ui/react/date-picker";
+import { DatePicker, parseDate, useDatePickerContext, type DateValue } from "@ark-ui/react/date-picker";
 import { Portal } from "@ark-ui/react/portal";
 import { CalendarDays, ChevronLeft, ChevronRight, CircleAlert, X } from "lucide-react";
-import { useId, useState, type ReactNode } from "react";
+import { MotionConfig, motion } from "motion/react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { controlClasses } from "./Field";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -42,20 +43,31 @@ const TRANSLATIONS = {
 
 const iconBtn =
   "inline-flex size-10 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors duration-200 ease-mel hover:bg-surface-muted hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-35";
-const selectCls =
-  "min-h-10 min-w-0 flex-1 rounded-md border border-border-input bg-input px-2 text-sm font-semibold text-text-primary hover:border-border-strong focus:border-focus focus:outline-none focus:ring-4 focus:ring-primary-soft";
-const cellBase =
-  "flex items-center justify-center rounded-md font-semibold tabular-nums transition-colors duration-150 ease-mel cursor-pointer select-none hover:bg-surface-muted " +
-  "data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-primary " +
+const MONTHS_SHORT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const MONTHS_LONG = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+const WEEK = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+/** Dia: círculo; escolhido preenchido com a cor da marca, hoje com contorno, fora do mês apagado. */
+const dayCls =
+  "mx-auto flex size-10 items-center justify-center rounded-full text-sm tabular-nums transition-colors duration-150 ease-mel cursor-pointer select-none hover:bg-surface-muted " +
+  "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary " +
   "data-[today]:ring-2 data-[today]:ring-inset data-[today]:ring-primary " +
-  "data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:hover:bg-primary-hover " +
-  "data-[disabled]:cursor-not-allowed data-[disabled]:opacity-30 data-[disabled]:hover:bg-transparent " +
-  "data-[outside-range]:text-text-muted data-[outside-range]:opacity-50";
+  "data-[outside-range]:text-text-muted data-[outside-range]:opacity-60 " +
+  "data-[disabled]:cursor-not-allowed data-[disabled]:text-text-muted data-[disabled]:opacity-40 data-[disabled]:hover:bg-transparent " +
+  "data-[selected]:bg-primary data-[selected]:font-bold data-[selected]:text-primary-foreground data-[selected]:opacity-100 data-[selected]:ring-0 data-[selected]:hover:bg-primary-hover";
+/** Mês ou ano nas grades: retângulo arredondado; o atual preenchido. */
+const gridBtn = (on: boolean) =>
+  `flex h-12 items-center justify-center rounded-xl text-sm transition-colors duration-150 ease-mel focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary disabled:cursor-not-allowed disabled:text-text-muted disabled:opacity-40 disabled:hover:bg-transparent ${
+    on ? "bg-primary font-bold text-primary-foreground hover:bg-primary-hover" : "hover:bg-surface-muted"
+  }`;
+/** Mês e ano no cabeçalho: texto clicável; o da grade aberta ganha fundo. */
+const pill = (on: boolean) =>
+  `min-h-9 rounded-lg px-2.5 text-base font-bold transition-colors duration-150 ease-mel hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-primary ${on ? "bg-surface-muted" : ""}`;
 
 /**
  * Campo de data no padrão brasileiro: digita-se dd/mm/aaaa (a máscara põe as barras) ou abre-se o
- * calendário pelo botão do campo. O calendário (Ark UI, em pt-BR, semana começando no domingo) tem
- * setas nas laterais das listas de mês e de ano (sem título repetido) e respeita `min`/`max`:
+ * calendário pelo botão do campo. O calendário segue o desenho da referência "calendar" do 21st.dev
+ * (cabeçalho "‹ Novembro | 2026 ›"; clicar no mês ou no ano abre a grade de meses ou de anos), em
+ * pt-BR e com o Ark UI por trás para teclado e acessibilidade. Respeita `min`/`max`:
  * datas fora ficam desabilitadas. A data digitada é conferida aqui ("não existe", "no futuro"),
  * nunca trocada em silêncio. Valor AAAA-MM-DD ("" = nenhuma data).
  */
@@ -131,6 +143,7 @@ export function DateCalendar({
     <DatePicker.Root
       locale="pt-BR"
       startOfWeek={0}
+      fixedWeeks
       value={toValue(value)}
       max={parseDate(max)}
       min={parseDate(minIso)}
@@ -191,83 +204,167 @@ export function DateCalendar({
         <DatePicker.Positioner className="z-50">
           <DatePicker.Content
             aria-label={`Calendário: ${label}`}
-            className="w-[min(calc(100vw-2rem),22rem)] rounded-lg border border-border-strong bg-surface-elevated p-3 text-text-primary shadow-lg outline-none data-[state=open]:animate-pop"
+            className="w-[min(calc(100vw-2rem),22rem)] rounded-2xl border border-border-strong bg-surface-elevated p-3 text-text-primary shadow-lg outline-none data-[state=open]:animate-pop"
             data-testid="calendario"
           >
-            <DatePicker.View view="day">
-              <DatePicker.Context>
-                {(api) => (
-                  <>
-                    {/* Uma linha só: ‹ [Mês] [Ano] ›. O mês e o ano aparecem só nas listas, sem título repetido. */}
-                    <DatePicker.ViewControl className="mb-2 flex items-center gap-1.5">
-                      <DatePicker.PrevTrigger className={iconBtn}>
-                        <ChevronLeft aria-hidden="true" className="size-5" />
-                      </DatePicker.PrevTrigger>
-                      <select
-                        aria-label="Mês"
-                        value={api.focusedValue.month}
-                        onChange={(e) => api.focusMonth(Number(e.target.value))}
-                        className={selectCls}
-                        data-testid="calendario-mes"
-                      >
-                        {api.getMonths().map((m) => (
-                          <option key={m.value} value={m.value} disabled={m.disabled}>
-                            {m.label.charAt(0).toUpperCase() + m.label.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        aria-label="Ano"
-                        value={api.focusedValue.year}
-                        onChange={(e) => api.focusYear(Number(e.target.value))}
-                        className={`${selectCls} max-w-24 flex-none`}
-                        data-testid="calendario-ano"
-                      >
-                        {/* Mais recente primeiro: as datas do app são de agora para trás. */}
-                        {api
-                          .getYears()
-                          .filter((y) => !y.disabled)
-                          .reverse()
-                          .map((y) => (
-                            <option key={y.value} value={y.value}>
-                              {y.label}
-                            </option>
-                          ))}
-                      </select>
-                      <DatePicker.NextTrigger className={iconBtn}>
-                        <ChevronRight aria-hidden="true" className="size-5" />
-                      </DatePicker.NextTrigger>
-                    </DatePicker.ViewControl>
-                    <DatePicker.Table className="w-full border-separate border-spacing-1">
-                      <DatePicker.TableHead>
-                        <DatePicker.TableRow>
-                          {api.weekDays.map((w, i) => (
-                            <DatePicker.TableHeader key={i} abbr={w.long} className="py-1 text-xs font-semibold text-text-secondary uppercase">
-                              {w.narrow}
-                            </DatePicker.TableHeader>
-                          ))}
-                        </DatePicker.TableRow>
-                      </DatePicker.TableHead>
-                      <DatePicker.TableBody>
-                        {api.weeks.map((week, i) => (
-                          <DatePicker.TableRow key={i}>
-                            {week.map((day, j) => (
-                              <DatePicker.TableCell key={j} value={day} className="p-0">
-                                <DatePicker.TableCellTrigger className={`${cellBase} h-10 w-full text-sm`}>{day.day}</DatePicker.TableCellTrigger>
-                              </DatePicker.TableCell>
-                            ))}
-                          </DatePicker.TableRow>
-                        ))}
-                      </DatePicker.TableBody>
-                    </DatePicker.Table>
-                  </>
-                )}
-              </DatePicker.Context>
-            </DatePicker.View>
+            <CalendarPanel minIso={minIso} max={max} />
           </DatePicker.Content>
         </DatePicker.Positioner>
       </Portal>
     </DatePicker.Root>
+  );
+}
+
+type View = "day" | "month" | "year";
+
+/**
+ * O painel do calendário. Dias pela tabela do Ark (setas do teclado, PageUp/PageDown, leitor de
+ * tela); meses e anos em grades próprias de 3 colunas, como na referência. A troca de mês desliza
+ * de leve (motion; com "reduzir movimento", sem deslizar).
+ */
+function CalendarPanel({ minIso, max }: { minIso: string; max: string }) {
+  const api = useDatePickerContext();
+  const { month, year } = api.focusedValue;
+  const view = api.view as View;
+  const [minY, minM] = minIso.split("-").map(Number) as [number, number];
+  const [maxY, maxM] = max.split("-").map(Number) as [number, number];
+  const ym = (y: number, m: number) => y * 12 + m;
+  const [pageStart, setPageStart] = useState(year - 5);
+  const [dir, setDir] = useState(0);
+
+  // Ao fechar, a próxima abertura começa pelos dias.
+  useEffect(() => {
+    if (!api.open && api.view !== "day") api.setView("day");
+  }, [api, api.open]);
+
+  const monthOut = (y: number, m: number) => ym(y, m) < ym(minY, minM) || ym(y, m) > ym(maxY, maxM);
+  const step = (delta: number) => {
+    setDir(delta);
+    if (view === "day") return delta < 0 ? api.goToPrev() : api.goToNext();
+    api.focusYear(Math.min(maxY, Math.max(minY, year + delta)));
+  };
+  const canPrev = view === "day" ? ym(year, month) > ym(minY, minM) : year > minY;
+  const canNext = view === "day" ? ym(year, month) < ym(maxY, maxM) : year < maxY;
+  const byMonth = view === "day";
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="mb-2 flex items-center justify-between">
+        <button type="button" onClick={() => step(-1)} disabled={!canPrev} aria-label={byMonth ? "Mês anterior" : "Ano anterior"} className={iconBtn}>
+          <ChevronLeft aria-hidden="true" className="size-5" />
+        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => api.setView(view === "month" ? "day" : "month")}
+            aria-expanded={view === "month"}
+            aria-label={`${MONTHS_LONG[month - 1]}: escolher o mês`}
+            className={pill(view === "month")}
+            data-testid="calendario-botao-mes"
+          >
+            {MONTHS_LONG[month - 1]}
+          </button>
+          <span aria-hidden="true" className="h-5 w-px bg-border-strong" />
+          <button
+            type="button"
+            onClick={() => {
+              if (view !== "year") setPageStart(Math.min(year - 5, maxY - 11));
+              api.setView(view === "year" ? "day" : "year");
+            }}
+            aria-expanded={view === "year"}
+            aria-label={`${year}: escolher o ano`}
+            className={`${pill(view === "year")} tabular-nums`}
+            data-testid="calendario-botao-ano"
+          >
+            {year}
+          </button>
+        </div>
+        <button type="button" onClick={() => step(1)} disabled={!canNext} aria-label={byMonth ? "Próximo mês" : "Próximo ano"} className={iconBtn}>
+          <ChevronRight aria-hidden="true" className="size-5" />
+        </button>
+      </div>
+
+      <DatePicker.View view="day">
+        <motion.div key={`${year}-${month}`} initial={{ opacity: 0, x: dir * 18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}>
+          <DatePicker.Table className="w-full border-separate border-spacing-y-1">
+            <DatePicker.TableHead>
+              <DatePicker.TableRow>
+                {api.weekDays.map((w, i) => (
+                  <DatePicker.TableHeader key={i} abbr={w.long} className="pb-1 text-xs font-semibold text-text-secondary">
+                    {WEEK[i]}
+                  </DatePicker.TableHeader>
+                ))}
+              </DatePicker.TableRow>
+            </DatePicker.TableHead>
+            <DatePicker.TableBody>
+              {api.weeks.map((week, i) => (
+                <DatePicker.TableRow key={i}>
+                  {week.map((day, j) => (
+                    <DatePicker.TableCell key={j} value={day} className="p-0">
+                      <DatePicker.TableCellTrigger className={dayCls}>{day.day}</DatePicker.TableCellTrigger>
+                    </DatePicker.TableCell>
+                  ))}
+                </DatePicker.TableRow>
+              ))}
+            </DatePicker.TableBody>
+          </DatePicker.Table>
+        </motion.div>
+      </DatePicker.View>
+
+      {view === "month" && (
+        <div role="group" aria-label={`Meses de ${year}`} className="grid grid-cols-3 gap-2 pt-1" data-testid="calendario-meses">
+          {MONTHS_SHORT.map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              disabled={monthOut(year, i + 1)}
+              aria-pressed={i + 1 === month}
+              aria-label={`${MONTHS_LONG[i]} de ${year}`}
+              onClick={() => {
+                api.focusMonth(i + 1);
+                api.setView("day");
+              }}
+              className={gridBtn(i + 1 === month)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === "year" && (
+        <div data-testid="calendario-anos">
+          <div className="mb-1 flex items-center justify-between">
+            <button type="button" onClick={() => setPageStart((p) => p - 12)} disabled={pageStart <= minY} aria-label="Anos anteriores" className={iconBtn}>
+              <ChevronLeft aria-hidden="true" className="size-4" />
+            </button>
+            <span className="text-sm font-semibold text-text-secondary tabular-nums">
+              {pageStart}–{pageStart + 11}
+            </span>
+            <button type="button" onClick={() => setPageStart((p) => p + 12)} disabled={pageStart + 11 >= maxY} aria-label="Próximos anos" className={iconBtn}>
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </button>
+          </div>
+          <div role="group" aria-label={`Anos de ${pageStart} a ${pageStart + 11}`} className="grid grid-cols-3 gap-2">
+            {Array.from({ length: 12 }, (_, i) => pageStart + i).map((y) => (
+              <button
+                key={y}
+                type="button"
+                disabled={y < minY || y > maxY}
+                aria-pressed={y === year}
+                onClick={() => {
+                  api.focusYear(y);
+                  api.setView("day");
+                }}
+                className={`${gridBtn(y === year)} tabular-nums`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </MotionConfig>
   );
 }
 
