@@ -13,6 +13,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { MultiChoiceGroup } from "@/components/ui/Choice";
 import { DateCalendar } from "@/components/ui/DateCalendar";
+import { TimeField } from "@/components/ui/TimeField";
 import { TextField } from "@/components/ui/Field";
 import { QuickPetForm } from "./QuickPetForm";
 import { PublicDescriptionField } from "@/components/pets/PublicDescriptionField";
@@ -460,12 +461,12 @@ function WhenStep({
             }}
           />
         </Shake>
-        <TextField
+        <TimeField
           label="Mais ou menos que horas?"
-          type="time"
           value={time}
-          onChange={(e) => {
-            setTime(e.target.value);
+          max={date === localDate(new Date()) ? localTime(new Date()) : undefined}
+          onChange={(t) => {
+            setTime(t);
             if (error) setError(null);
           }}
         />

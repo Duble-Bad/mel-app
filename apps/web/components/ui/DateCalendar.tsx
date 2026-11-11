@@ -6,6 +6,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, CircleAlert, X } from "lucide-
 import { MotionConfig, motion } from "motion/react";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { controlClasses } from "./Field";
+import { TimeField } from "./TimeField";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 /** Data local no formato do campo (AAAA-MM-DD), sem fuso. */
@@ -22,6 +23,11 @@ const toBr = (s: string) => {
 const maskBr = (raw: string) => {
   const d = raw.replace(/\D/g, "").slice(0, 8);
   return [d.slice(0, 2), d.slice(2, 4), d.slice(4, 8)].filter(Boolean).join("/");
+};
+/** Hora local agora ("HH:mm"): limite do horário quando a data é hoje. */
+const nowTime = () => {
+  const d = new Date();
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 const toValue = (iso: string): DateValue[] => (fromIso(iso) ? [parseDate(iso)] : []);
 
@@ -387,7 +393,6 @@ export function DateTimeFields({
   max: string;
   error?: string;
 }) {
-  const timeId = useId();
   const [date, setDate] = useState(value.slice(0, 10));
   const [time, setTime] = useState(value.slice(11, 16));
   const emit = (d: string, t: string) => onChange(d && t ? `${d}T${t}` : "");
@@ -404,21 +409,15 @@ export function DateTimeFields({
           emit(d, time);
         }}
       />
-      <div className="flex flex-col gap-2">
-        <label htmlFor={timeId} className="text-sm font-semibold text-text-primary">
-          {timeLabel}
-        </label>
-        <input
-          id={timeId}
-          type="time"
-          value={time}
-          onChange={(e) => {
-            setTime(e.target.value);
-            emit(date, e.target.value);
-          }}
-          className={controlClasses(false, "tabular-nums")}
-        />
-      </div>
+      <TimeField
+        label={timeLabel}
+        value={time}
+        max={date === max ? nowTime() : undefined}
+        onChange={(t) => {
+          setTime(t);
+          emit(date, t);
+        }}
+      />
     </div>
   );
 }
