@@ -1,12 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LocateFixed } from "lucide-react";
+import { ChevronDown, LocateFixed, MapPin, X } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
-import { PERIOD_LABELS, PERIODS, PET_SIZES, RADII_KM, SIZE_LABELS, type Species, userErrorMessage } from "@mel/core";
+import { DEFAULT_CENTER, PERIOD_LABELS, PERIODS, PET_SIZES, RADII_KM, RADIUS_ALL, RADIUS_ALL_LABEL, SIZE_LABELS, type Species, userErrorMessage } from "@mel/core";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { FilterChip } from "@/components/ui/FilterChip";
 import { FEED_KINDS, feedQuery, type FeedState } from "./feed";
+import { PlaceSearch } from "./PlaceSearch";
 
 const SPECIES_CHIPS: { value: Species; label: string }[] = [
   { value: "dog", label: "Cachorros" },
@@ -37,7 +38,7 @@ function SelectBox({ children }: { children: ReactNode }) {
 
 /**
  * Filtros do mapa e do mural (Conceito B): tipo em pílulas (um por vez),
- * período, raio, "Perto de mim" e espécie (pílulas no mapa, seleção no mural,
+ * onde procurar (cidade/bairro, "Perto de mim"), período, raio (até 50 km ou toda a rede) e espécie (pílulas no mapa, seleção no mural,
  * com porte). Tudo no endereço: dá para compartilhar o link já filtrado.
  */
 export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState; variant: "map" | "mural"; trailing?: ReactNode }) {
@@ -66,7 +67,7 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
     setGeoError(null);
     try {
       const { position } = await getCurrentPosition();
-      apply({ filters: { center: position, hasCenter: true } });
+      apply({ filters: { center: position, hasCenter: true, place: undefined } });
     } catch (err) {
       setGeoError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
@@ -75,10 +76,35 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
   }
 
   const nearMe = (
-    <FilterChip pressed={f.hasCenter} onClick={locate} disabled={locating} small={variant === "mural"}>
+    <FilterChip pressed={f.hasCenter && !f.place} onClick={locate} disabled={locating} small>
       <LocateFixed aria-hidden="true" className="size-4" strokeWidth={2} />
       {locating ? "Localizando…" : "Perto de mim"}
     </FilterChip>
+  );
+  // Onde procurar: cidade/bairro (sem GPS), "Perto de mim" e o lugar escolhido (com X para voltar ao padrão).
+  const locationRow = (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Onde procurar">
+      <PlaceSearch
+        near={f.center}
+        className="w-full sm:w-72"
+        onPick={(r) => apply({ filters: { center: r.position, hasCenter: true, place: r.label } })}
+      />
+      {nearMe}
+      {f.place && (
+        <span className="inline-flex h-10 max-w-full items-center gap-1.5 rounded-full border border-primary bg-primary/15 pr-1 pl-3 text-sm font-semibold text-text-primary">
+          <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2.25} />
+          <span className="truncate">{f.place}</span>
+          <button
+            type="button"
+            onClick={() => apply({ filters: { center: DEFAULT_CENTER, hasCenter: false, place: undefined } })}
+            aria-label={`Remover ${f.place}`}
+            className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <X aria-hidden="true" className="size-4" strokeWidth={2.25} />
+          </button>
+        </span>
+      )}
+    </div>
   );
   const kindChips = (
     <div className={`${scroller} sm:flex-wrap`} role="group" aria-label="Tipo de caso">
@@ -87,12 +113,6 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
           {k.label}
         </FilterChip>
       ))}
-      {variant === "map" && (
-        <>
-          <span aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" />
-          {nearMe}
-        </>
-      )}
     </div>
   );
   const periodRadius = (
@@ -108,6 +128,9 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
           {r} km
         </FilterChip>
       ))}
+      <FilterChip small pressed={f.radiusKm === RADIUS_ALL} onClick={() => apply({ filters: { radiusKm: RADIUS_ALL } })}>
+        {RADIUS_ALL_LABEL}
+      </FilterChip>
     </>
   );
 
@@ -116,6 +139,7 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
       {variant === "map" ? (
         <>
           {kindChips}
+          {locationRow}
           <div className="flex items-center gap-3">
             <div className={`${scroller} min-w-0 flex-1 lg:flex-wrap`} role="group" aria-label="Período, distância e espécie">
               {periodRadius}
@@ -177,9 +201,8 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
               </SelectBox>
             </div>
           </div>
-          <div className={scroller} role="group" aria-label="Local, período e distância">
-            {nearMe}
-            <span aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" />
+          {locationRow}
+          <div className={`${scroller} lg:flex-wrap`} role="group" aria-label="Período e distância">
             {periodRadius}
           </div>
         </>

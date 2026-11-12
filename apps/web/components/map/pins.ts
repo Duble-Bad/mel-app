@@ -1,7 +1,8 @@
 import { itemTitle, type MapPin, type PinKind, type PublicCaseItem } from "@mel/core";
 
 /** Zoom inicial por raio de busca (o mesmo no /mapa e na prévia da home). */
-export const ZOOM_BY_RADIUS: Record<number, number> = { 1: 15, 3: 13.5, 5: 12.8, 10: 11.8 };
+// 0 = toda a rede (visão da região metropolitana; o mapa continua navegável).
+export const ZOOM_BY_RADIUS: Record<number, number> = { 1: 15, 3: 13.5, 5: 12.8, 10: 11.8, 25: 10.6, 50: 9.6, 0: 9 };
 
 /** Ponto público (já aproximado) de um caso ou anúncio. */
 export interface PublicPoint {

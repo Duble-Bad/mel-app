@@ -16,8 +16,21 @@ export type Period = (typeof PERIODS)[number];
 export const PERIOD_LABELS: Record<Period, string> = { "24h": "24 horas", "7d": "7 dias", "30d": "30 dias", todos: "Qualquer data" };
 const PERIOD_DAYS: Record<Period, number | null> = { "24h": 1, "7d": 7, "30d": 30, todos: null };
 
-export const RADII_KM = [1, 3, 5, 10] as const;
-export type RadiusKm = (typeof RADII_KM)[number];
+export const RADII_KM = [1, 3, 5, 10, 25, 50] as const;
+/** "Toda a rede": sem limite de distância (no endereço, `raio=todos`; o banco recebe 0). Ordena pelo mais perto. */
+export const RADIUS_ALL = 0 as const;
+export type RadiusKm = (typeof RADII_KM)[number] | typeof RADIUS_ALL;
+export const RADIUS_ALL_LABEL = "Toda a rede";
+
+/** Texto do alcance da busca: "em até 10 km" ou "em toda a rede". */
+export const radiusPhrase = (r: RadiusKm) => (r === RADIUS_ALL ? "em toda a rede" : `em até ${r} km`);
+/** Rótulo curto: "até 10 km" ou "toda a rede". */
+export const radiusShort = (r: RadiusKm) => (r === RADIUS_ALL ? "toda a rede" : `até ${r} km`);
+/** Metros para o banco (0 = sem limite). */
+export const radiusMeters = (r: RadiusKm) => r * 1000;
+
+/** Nome do lugar escolhido na busca por cidade/bairro (no endereço, `local=`): curto e sem marcação. */
+const cleanPlace = (s: string | undefined) => (s ?? "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 80);
 
 /** Sem localização da pessoa: Praça da Sé (centro de São Paulo, local público). */
 export const DEFAULT_CENTER: LatLng = { lat: -23.55052, lng: -46.633308 };
@@ -30,8 +43,10 @@ export interface SearchFilters {
   period: Period;
   radiusKm: RadiusKm;
   center: LatLng;
-  /** true quando o centro veio da pessoa (GPS/mapa), não do padrão. */
+  /** true quando o centro veio da pessoa (GPS/mapa/busca), não do padrão. */
   hasCenter: boolean;
+  /** Nome do lugar quando o centro veio da busca por cidade/bairro ("Ferraz de Vasconcelos – SP"). */
+  place?: string;
   page: number;
 }
 
@@ -48,8 +63,9 @@ export function parseSearchParams(params: Params, fixedKinds?: PublicKind[]): Se
   const species = list(params.especie).filter((s): s is Species => (SPECIES as readonly string[]).includes(s));
   const periodRaw = first(params.periodo);
   const period = (PERIODS as readonly string[]).includes(periodRaw ?? "") ? (periodRaw as Period) : "30d";
-  const radiusRaw = Number(first(params.raio));
-  const radiusKm = (RADII_KM as readonly number[]).includes(radiusRaw) ? (radiusRaw as RadiusKm) : 5;
+  const radiusParam = first(params.raio);
+  const radiusRaw = Number(radiusParam);
+  const radiusKm: RadiusKm = radiusParam === "todos" ? RADIUS_ALL : (RADII_KM as readonly number[]).includes(radiusRaw) ? (radiusRaw as RadiusKm) : 5;
   const lat = Number(first(params.lat));
   const lng = Number(first(params.lng));
   const hasCenter = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && first(params.lat) !== undefined;
@@ -61,6 +77,7 @@ export function parseSearchParams(params: Params, fixedKinds?: PublicKind[]): Se
     radiusKm,
     center: hasCenter ? { lat: roundCenter(lat), lng: roundCenter(lng) } : DEFAULT_CENTER,
     hasCenter,
+    ...(hasCenter && cleanPlace(first(params.local)) ? { place: cleanPlace(first(params.local)) } : {}),
     page,
   };
 }
@@ -75,10 +92,12 @@ export function toSearchParams(f: SearchFilters, fixedKinds?: PublicKind[]): str
   if (!fixedKinds && f.kinds.length !== PUBLIC_KINDS.length) p.set("tipos", f.kinds.join(","));
   if (f.species.length) p.set("especie", f.species.join(","));
   if (f.period !== "30d") p.set("periodo", f.period);
-  if (f.radiusKm !== 5) p.set("raio", String(f.radiusKm));
+  if (f.radiusKm !== 5) p.set("raio", f.radiusKm === RADIUS_ALL ? "todos" : String(f.radiusKm));
   if (f.hasCenter) {
     p.set("lat", String(roundCenter(f.center.lat)));
     p.set("lng", String(roundCenter(f.center.lng)));
+    const place = cleanPlace(f.place);
+    if (place) p.set("local", place);
   }
   if (f.page > 1) p.set("pagina", String(f.page));
   const s = p.toString();

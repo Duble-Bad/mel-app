@@ -1,4 +1,4 @@
-import { PAGE_SIZE, sinceFrom, type PublicCaseItem, type SearchFilters } from "@mel/core";
+import { PAGE_SIZE, radiusMeters, sinceFrom, type PublicCaseItem, type SearchFilters } from "@mel/core";
 import { DataError, type MelClient } from "./client";
 
 interface ItemJson {
@@ -35,7 +35,7 @@ export async function searchPublicCases(
   const { data, error } = await client.rpc("search_public_cases", {
     p_lat: f.center.lat,
     p_lng: f.center.lng,
-    p_radius_m: f.radiusKm * 1000,
+    p_radius_m: radiusMeters(f.radiusKm),
     p_kinds: f.kinds,
     p_species: f.species.length ? f.species : undefined,
     p_since: sinceFrom(f.period, now) ?? undefined,

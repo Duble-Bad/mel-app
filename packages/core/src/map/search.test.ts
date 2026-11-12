@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_CENTER, itemHref, itemTitle, parseSearchParams, sinceFrom, toSearchParams } from "./search";
+import { DEFAULT_CENTER, itemHref, itemTitle, parseSearchParams, RADIUS_ALL, radiusMeters, radiusPhrase, sinceFrom, toSearchParams } from "./search";
 
 describe("parseSearchParams", () => {
   it("uses safe defaults for an empty or invalid URL", () => {
@@ -55,5 +55,31 @@ describe("helpers", () => {
     expect(itemTitle({ kind: "found", title: null, species: "dog" })).toBe("Cachorro encontrado");
     expect(itemHref({ kind: "lost", code: "abc234" })).toBe("/alerta/abc234");
     expect(itemHref({ kind: "sighting", code: "abc234" })).toBe("/encontrado/abc234");
+  });
+});
+
+describe("raio maior, toda a rede e lugar escolhido", () => {
+  it("lê 25/50 km e 'todos' (0 = sem limite) e devolve o mesmo link", () => {
+    expect(parseSearchParams({ raio: "50" }).radiusKm).toBe(50);
+    expect(parseSearchParams({ raio: "25" }).radiusKm).toBe(25);
+    const all = parseSearchParams({ raio: "todos" });
+    expect(all.radiusKm).toBe(RADIUS_ALL);
+    expect(toSearchParams(all)).toBe("?raio=todos");
+    expect(radiusMeters(all.radiusKm)).toBe(0);
+    expect(parseSearchParams({ raio: "0" }).radiusKm).toBe(5);
+    expect(parseSearchParams({ raio: "999" }).radiusKm).toBe(5);
+  });
+
+  it("guarda o lugar da busca só junto com um centro, limpo e curto", () => {
+    const f = parseSearchParams({ lat: "-23.538", lng: "-46.369", local: "  Ferraz de Vasconcelos – SP <b> " });
+    expect(f.place).toBe("Ferraz de Vasconcelos – SP b");
+    expect(toSearchParams(f)).toContain("local=Ferraz");
+    expect(parseSearchParams({ local: "Ferraz" }).place).toBeUndefined();
+    expect(parseSearchParams({ lat: "-23.5", lng: "-46.3", local: "x".repeat(200) }).place).toHaveLength(80);
+  });
+
+  it("descreve o alcance", () => {
+    expect(radiusPhrase(10)).toBe("em até 10 km");
+    expect(radiusPhrase(RADIUS_ALL)).toBe("em toda a rede");
   });
 });

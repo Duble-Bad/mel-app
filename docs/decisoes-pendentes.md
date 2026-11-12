@@ -18,6 +18,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
+| 13 | 2026-11-12 | **Aplicar a migration 49 ("Toda a rede") no `mel-dev`** | A trava do projeto recusou o `npm run db:push`: o `mel-dev` não está em `MEL_SAFE_TARGET_REFS` nesta máquina (variável fora do repositório). Até aplicar, o botão "Toda a rede" mostra só os casos a até 500 m; 25 e 50 km já funcionam |
 | 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–48, chaves PII) e publicar | Nada em produção sem autorização expressa |
 
 ## Decididas
