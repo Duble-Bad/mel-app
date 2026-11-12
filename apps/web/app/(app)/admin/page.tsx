@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Moderação", robots: { index: false
 
 export default function AdminPage({ searchParams }: PageProps<"/admin">) {
   return (
-    <main className="mx-auto w-full max-w-[1100px] flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
+    <main className="mel-container max-w-[1124px] flex-1 pt-6 pb-12">
       <Suspense fallback={<LoadingState />}>{searchParams.then((q) => <Content tab={q.aba === "resolvidas" ? "closed" : "open"} />)}</Suspense>
     </main>
   );
