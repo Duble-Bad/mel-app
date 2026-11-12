@@ -29,7 +29,6 @@ export default function OriginPage() {
   return (
     <main className="flex flex-1 flex-col">
       <RevealMotion />
-      <div aria-hidden="true" className="or-progress" />
       <section aria-labelledby="origem-title" className="relative isolate overflow-hidden">
         <div
           aria-hidden="true"

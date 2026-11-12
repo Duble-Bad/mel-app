@@ -354,3 +354,34 @@ input:-webkit-autofill:focus {
     animation: none;
   }
 }
+
+/* ---------- Barra de progresso de leitura (todas as páginas; ScrollProgress no layout raiz) ----------
+   Linha dourada no topo da tela que enche conforme a página rola. Onde há animação por rolagem o
+   CSS faz tudo; senão o componente atualiza o transform. Sem rolagem vertical, fica em 0 (invisível). */
+.mel-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 70;
+  height: 3px;
+  background: linear-gradient(90deg, var(--mel-primary), color-mix(in srgb, var(--mel-primary) 45%, white));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--mel-primary) 60%, transparent);
+  transform-origin: left;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .mel-scroll-progress {
+    animation: mel-scroll-progress auto linear both !important;
+    animation-timeline: scroll(root block) !important;
+  }
+}
+@keyframes mel-scroll-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+@media print {
+  .mel-scroll-progress {
+    display: none;
+  }
+}

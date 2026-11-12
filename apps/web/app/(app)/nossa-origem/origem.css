@@ -175,34 +175,6 @@
   }
 }
 
-/* Barra de progresso de leitura (onde há suporte a animação por rolagem). */
-.or-progress {
-  position: fixed;
-  inset: 0 0 auto 0;
-  z-index: 60;
-  height: 3px;
-  background: linear-gradient(90deg, var(--mel-primary), #fff3c4);
-  transform-origin: left;
-  transform: scaleX(0);
-  pointer-events: none;
-}
-@supports (animation-timeline: scroll()) {
-  .or-progress {
-    animation: or-progress linear both;
-    animation-timeline: scroll(root block);
-  }
-}
-@supports not (animation-timeline: scroll()) {
-  .or-progress {
-    display: none;
-  }
-}
-@keyframes or-progress {
-  to {
-    transform: scaleX(1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .or-shimmer,
   .or-float,

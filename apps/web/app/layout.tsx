@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { themes } from "@mel/ui-tokens";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
+import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col bg-background text-text-primary">
+        <ScrollProgress />
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
