@@ -16,19 +16,19 @@ interface GroupProps {
   hint?: ReactNode;
   error?: string;
   optional?: boolean;
-  columns?: 1 | 2 | 3;
+  columns?: 1 | 2 | 3 | 5 | 6;
   children: ReactNode;
 }
 
 function Group({ legend, hint, error, optional, columns = 3, children }: GroupProps) {
   return (
     <fieldset className="flex flex-col gap-2" aria-invalid={error ? true : undefined}>
-      <legend className="mb-1.5 font-semibold">
+      <legend className="mb-1.5 text-sm font-semibold">
         {legend}
         {optional && <span className="ml-1 font-normal text-text-secondary">(opcional)</span>}
       </legend>
       {hint && <p className="-mt-1 text-sm text-text-secondary">{hint}</p>}
-      <div className={`grid gap-2 ${columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-3"}`}>{children}</div>
+      <div className={`grid gap-2 ${columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : columns === 5 ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" : columns === 6 ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6" : "grid-cols-2 sm:grid-cols-3"}`}>{children}</div>
       {error && <p className="text-sm font-medium text-danger">{error}</p>}
     </fieldset>
   );

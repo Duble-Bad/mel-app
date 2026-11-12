@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 export interface ComboboxOption {
@@ -23,6 +24,8 @@ interface ComboboxProps {
   emptyText?: string;
   /** Converte texto digitado em uma opção (apelidos, variações). Padrão: nome exato. */
   resolve?: (typed: string) => string | null;
+  /** Ícone/ação ao lado do rótulo (ex.: InfoTip). */
+  labelAside?: ReactNode;
 }
 
 /**
@@ -42,6 +45,7 @@ export function Combobox({
   onChange,
   emptyText = "Nada encontrado.",
   resolve,
+  labelAside,
 }: ComboboxProps) {
   const id = useId();
   const listId = `${id}-list`;
@@ -106,10 +110,13 @@ export function Combobox({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="font-semibold">
-        {label}
-        {optional && <span className="ml-1 font-normal text-text-secondary">(opcional)</span>}
-      </label>
+      <div className="flex items-center gap-1">
+        <label htmlFor={id} className="text-sm font-semibold">
+          {label}
+          {optional && <span className="ml-1 font-normal text-text-secondary">(opcional)</span>}
+        </label>
+        {labelAside}
+      </div>
       {hint && (
         <p id={hintId} className="text-sm text-text-secondary">
           {hint}
@@ -158,9 +165,27 @@ export function Combobox({
               Limpar
             </button>
           )}
-          <span aria-hidden="true" className="px-2 text-text-secondary">
-            ▾
-          </span>
+          {/* A seta abre e fecha a lista (antes era só desenho: só o clique no texto funcionava). */}
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label={open ? `Fechar a lista de ${label}` : `Abrir a lista de ${label}`}
+            // mousedown + preventDefault: não deixa o campo perder o foco (o blur fecharia a lista).
+            onMouseDown={(e) => {
+              e.preventDefault();
+              if (open) {
+                setOpen(false);
+                setQuery("");
+              } else {
+                inputRef.current?.focus();
+                setOpen(true);
+                setActive(0);
+              }
+            }}
+            className="inline-flex size-10 items-center justify-center rounded-md text-text-secondary transition-colors duration-200 ease-mel hover:bg-surface-muted hover:text-text-primary"
+          >
+            <ChevronDown aria-hidden="true" className={`size-5 transition-transform duration-200 ease-mel ${open ? "rotate-180" : ""}`} strokeWidth={2} />
+          </button>
         </div>
         {open && (
           <ul
