@@ -94,7 +94,9 @@ export function SteppedForm<T extends string>({
         {asideFooter}
       </aside>
 
-      <div className="flex min-w-0 flex-col gap-5">
+      {/* Abaixo de lg: um único cartão centralizado (como "Cadastrar minha organização"), seções separadas
+          por linha e o botão dentro dele. No desktop: cada etapa é um cartão e só a ativa aparece. */}
+      <div className="mx-auto flex w-full max-w-[880px] min-w-0 flex-col gap-6 rounded-2xl border border-border bg-surface p-5 sm:p-8 lg:max-w-none lg:gap-5 lg:border-0 lg:bg-transparent lg:p-0">
         {before}
         <ActiveStep.Provider value={active}>{children}</ActiveStep.Provider>
 
@@ -117,7 +119,7 @@ export function SteppedForm<T extends string>({
           )}
         </div>
 
-        <div className="lg:hidden">{submit("mobile")}</div>
+        <div className="border-t border-border pt-6 lg:hidden">{submit("mobile")}</div>
         {asideFooter && <div className="lg:hidden">{asideFooter}</div>}
       </div>
     </div>
@@ -130,7 +132,7 @@ export function StepCard({ id, title, Icon, aside, children }: { id: string; tit
   return (
     <section
       aria-labelledby={`etapa-${id}`}
-      className={`scroll-mt-24 rounded-2xl border border-border bg-surface p-5 sm:p-6 lg:p-7 ${active === id ? "" : "lg:hidden"}`}
+      className={`scroll-mt-24 border-border [&+&]:border-t [&+&]:pt-6 lg:rounded-2xl lg:border lg:bg-surface lg:p-7 lg:[&+&]:pt-7 ${active === id ? "" : "lg:hidden"}`}
     >
       <div className="mb-5 flex items-center gap-2.5">
         <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">

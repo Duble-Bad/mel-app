@@ -185,7 +185,7 @@ export function AdoptionForm({ userId }: { userId: string }) {
       </StepCard>
 
       <StepCard {...step("pet")}>
-        <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-6">
+        <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
           <TextField label="Nome" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} error={errors.name} />
           <ChoiceGroup
             name="ad-species"
@@ -208,7 +208,7 @@ export function AdoptionForm({ userId }: { userId: string }) {
             ))}
           </SelectField>
           {species && species !== "other" && <BreedField species={species} value={breed} onChange={setBreed} />}
-          <div className="lg:col-span-2">
+          <div className="sm:col-span-2">
             <ChoiceGroup
               name="ad-size"
               legend="Porte"
@@ -234,7 +234,7 @@ export function AdoptionForm({ userId }: { userId: string }) {
             onChange={setTemperament}
             options={TEMPERAMENTS.map((t) => ({ value: t, label: TEMPERAMENT_LABELS[t] }))}
           />
-          <div className="grid gap-5 lg:grid-cols-3 lg:gap-x-6">
+          <div className="grid gap-5 sm:grid-cols-3 sm:gap-x-6">
             <YesNoUnknown name="ad-neutered" legend="É castrado?" value={neutered} onChange={setNeutered} />
             <YesNoUnknown name="ad-vaccinated" legend="Vacinas em dia?" value={vaccinated} onChange={setVaccinated} />
             <YesNoUnknown name="ad-dewormed" legend="Vermifugado?" value={dewormed} onChange={setDewormed} />
@@ -243,7 +243,7 @@ export function AdoptionForm({ userId }: { userId: string }) {
       </StepCard>
 
       <StepCard {...step("sobre")}>
-        <div className="grid gap-5 lg:grid-cols-[3fr_2fr] lg:gap-x-6">
+        <div className="grid gap-5 sm:grid-cols-[3fr_2fr] sm:gap-x-6">
           <TextareaField
             label="Conte sobre ele"
             rows={5}

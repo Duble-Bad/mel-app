@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function NewPetPage() {
   return (
-    <main className="mel-container max-w-[1184px] flex-1 pt-6 pb-12">
+    <main className="mel-container max-w-[944px] flex-1 pt-6 pb-12 lg:max-w-[1184px]">
       <h1 className="text-2xl font-bold lg:text-3xl">Cadastrar pet</h1>
       <p className="mt-2 mb-6 text-text-secondary">
         Com o pet cadastrado, um alerta de desaparecimento fica pronto em segundos se você precisar.

@@ -277,7 +277,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
         </StepCard>
 
         <StepCard {...step("basico")}>
-          <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-6">
+          <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
             <div id="field-name">
               <TextField label="Nome" name="name" value={name} onChange={(e) => setName(e.target.value)} required error={errors.name} />
             </div>
@@ -306,7 +306,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
               onChange={setSex}
               options={PET_SEXES.map((s) => ({ value: s, label: SEX_LABELS[s] }))}
             />
-            <div className="lg:col-span-2">
+            <div className="sm:col-span-2">
               <ChoiceGroup
                 name="size"
                 legend="Porte"
@@ -360,7 +360,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
         </StepCard>
 
         <StepCard {...step("detalhes")} aside={<span className="text-sm text-text-secondary">· pode completar depois</span>}>
-          <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-6">
+          <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
             <div id="field-birthDate">
               <DateCalendar
                 label="Data de nascimento"
@@ -396,7 +396,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             </div>
             <YesNoUnknown name="neutered" legend="É castrado(a)?" value={neutered} onChange={setNeutered} />
             <YesNoUnknown name="hasMicrochip" legend="Tem microchip?" value={hasMicrochip} onChange={setHasMicrochip} />
-            <div className="flex flex-col gap-1.5 lg:col-span-2">
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
               <label htmlFor="description" className="text-sm font-semibold">
                 Sobre o pet <span className="font-normal text-text-secondary">(opcional)</span>
               </label>
@@ -443,8 +443,8 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
               <Lock aria-hidden="true" className="size-4 text-text-secondary" strokeWidth={2.25} />
               Só para você
             </p>
-            <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-6">
-              <div className="lg:col-span-2 lg:max-w-[calc(50%-12px)]">
+            <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
+              <div className="sm:col-span-2 sm:max-w-[calc(50%-12px)]">
                 <TextField
                   label="Número do microchip"
                   name="microchipNumber"

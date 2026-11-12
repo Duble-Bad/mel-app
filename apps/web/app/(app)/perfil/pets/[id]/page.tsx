@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function EditPetPage({ params, searchParams }: PageProps<"/perfil/pets/[id]">) {
   return (
-    <main className="mel-container max-w-[1184px] flex-1 pt-6 pb-12">
+    <main className="mel-container max-w-[944px] flex-1 pt-6 pb-12 lg:max-w-[1184px]">
       <Suspense fallback={<LoadingState />}>
         <EditPetContent params={params} searchParams={searchParams} />
       </Suspense>

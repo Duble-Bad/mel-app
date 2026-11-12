@@ -1,0 +1,105 @@
+/* Hero de "Seja um parceiro da MEL" (PartnerHero). Cores só dos tokens; anima transform e opacity. */
+
+.ph {
+  background:
+    radial-gradient(120% 90% at 50% 50%, color-mix(in srgb, var(--mel-primary) 10%, transparent), transparent 60%),
+    color-mix(in srgb, var(--mel-surface-muted) 70%, var(--mel-surface));
+  box-shadow:
+    inset 0 0 0 1px var(--mel-border),
+    0 30px 60px -30px color-mix(in srgb, var(--mel-primary) 45%, transparent);
+}
+.ph svg * {
+  transform-box: fill-box;
+}
+.ph-blocks rect {
+  fill: color-mix(in srgb, var(--mel-surface) 72%, var(--mel-surface-muted));
+}
+.ph-street {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mel-primary) 18%, var(--mel-surface-elevated));
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+/* Ligações tracejadas que "correm" do centro para os parceiros */
+.ph-link {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mel-text-primary) 28%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 5 7;
+  animation: ph-dash 2.4s linear infinite;
+}
+.ph-link--main {
+  stroke: var(--mel-primary);
+  stroke-width: 3;
+}
+@keyframes ph-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* Ondas saindo do animal encontrado */
+.ph-ring {
+  fill: none;
+  stroke: var(--mel-status-found-accent);
+  stroke-width: 2.5;
+  transform-origin: center;
+  opacity: 0;
+  animation: ph-ring 3.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+@keyframes ph-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(3.4);
+    opacity: 0;
+  }
+}
+
+/* Pontos de apoio: acendem um a um e ficam */
+.ph-pin {
+  opacity: 0;
+  animation: ph-pin 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+/* Só "scale" (propriedade própria): soma com o "translate" do Tailwind que centraliza o ponto. */
+@keyframes ph-pin {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* Cartões flutuam devagar, fora de fase */
+.ph-card {
+  animation: ph-float 6s ease-in-out infinite;
+}
+.ph-card--b {
+  animation-delay: -3s;
+}
+@keyframes ph-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ph-link,
+  .ph-card {
+    animation: none;
+  }
+  .ph-ring {
+    animation: none;
+    opacity: 0.3;
+  }
+  .ph-pin {
+    animation: none;
+    opacity: 1;
+  }
+}
