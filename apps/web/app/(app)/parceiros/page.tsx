@@ -29,7 +29,7 @@ function parse(q: Record<string, string | string[] | undefined>) {
 
 export default function PartnersPage({ searchParams }: PageProps<"/parceiros">) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-14 sm:pt-12">
+    <main className="mel-container flex-1 pt-8 pb-14 sm:pt-12">
       <ProgramIntro />
       <section id="cadastro" aria-labelledby="cadastro-titulo" className="mx-auto mt-10 max-w-[900px] scroll-mt-24 sm:mt-14">
         <div className="rounded-[22px] border border-border bg-surface p-6 md:p-8">

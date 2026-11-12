@@ -27,7 +27,7 @@ import "../home.css";
 const STEPS: { Icon: LucideIcon; title: string; text: string }[] = [
   { Icon: Megaphone, title: "Publique em 2 minutos", text: "Foto, nome e a região onde o pet sumiu. A MEL gera um cartaz com QR Code para imprimir e compartilhar." },
   { Icon: Bell, title: "A vizinhança é avisada", text: "Guardiões da região recebem o alerta. Quem vê o pet registra o avistamento com foto, mesmo sem conta." },
-  { Icon: MessageSquare, title: "Conversa segura até o reencontro", text: "O contato acontece pelo chat da MEL. Seu endereço nunca aparece, e o telefone só se você quiser." },
+  { Icon: MessageSquare, title: "Chat seguro até o reencontro", text: "O contato acontece pelo chat da MEL. Seu endereço nunca aparece, e o telefone só se você quiser." },
 ];
 
 const ADOPTION_CHECKS = [
@@ -57,7 +57,7 @@ export default function HomePage() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-[radial-gradient(60%_70%_at_75%_35%,color-mix(in_srgb,var(--color-status-found-accent)_14%,transparent),transparent_70%),radial-gradient(40%_50%_at_5%_95%,color-mix(in_srgb,var(--color-primary)_12%,transparent),transparent_70%)]"
         />
-        <div className="flex mel-container flex-col gap-6 pt-7 pb-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-14">
+        <div className="flex mel-container flex-col gap-6 pt-7 pb-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-8">
           <div className="flex flex-col items-start gap-4 lg:gap-6 lg:pt-6">
             <span className="inline-flex animate-enter items-center gap-2 rounded-full border border-primary/50 bg-primary-soft/60 px-3.5 py-1.5 text-sm font-semibold text-text-primary">
               <PawPrintSmall />
@@ -109,7 +109,7 @@ export default function HomePage() {
       </section>
 
       <section id="como-funciona" aria-labelledby="cf-title" className="scroll-mt-20">
-        <div className="mel-container py-16 lg:py-[72px]">
+        <div className="mel-container py-16 lg:pt-11 lg:pb-[72px]">
           <SectionHead eyebrow="Como funciona" id="cf-title" title="Do alerta ao reencontro, em três passos">
             Sem custo, sem anúncios. A MEL avisa quem está perto e protege os dados de quem pede ajuda.
           </SectionHead>

@@ -29,7 +29,7 @@ const grid = "mel-stagger grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px
  */
 export function MuralFeed({ searchParams }: { searchParams: Promise<Params> }) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pb-16">
+    <main className="mel-container flex-1 pb-16">
       <header className="flex animate-enter flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-10 pb-6">
         <div className="flex max-w-2xl flex-col gap-2.5">
           <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.05] font-black tracking-[-0.03em]">Mural da MEL</h1>

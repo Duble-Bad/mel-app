@@ -28,7 +28,7 @@ const SEEKER_FORM = "/adocao/quero-adotar";
 
 export default function AdoptionListPage({ searchParams }: PageProps<"/adocao">) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pb-16">
+    <main className="mel-container flex-1 pb-16">
       <header className="grid animate-enter items-center gap-5 pt-10 pb-6 min-[860px]:grid-cols-[1fr_auto]">
         <div>
           <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.08] font-black tracking-[-0.03em]">Adoção responsável</h1>

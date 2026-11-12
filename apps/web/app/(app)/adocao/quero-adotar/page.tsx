@@ -22,7 +22,7 @@ export const metadata: Metadata = {
  */
 export default function SeekerPage() {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-16">
+    <main className="mel-container flex-1 pt-8 pb-16">
       <Link href="/adocao?aba=quero-adotar" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-link hover:underline">
         <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={2} /> Adoção
       </Link>

@@ -33,7 +33,7 @@ export function CaseListPage({
   searchParams: Promise<Params>;
 }) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-14">
+    <main className="mel-container flex-1 pt-8 pb-14">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex max-w-2xl flex-col gap-2">
           <h1 className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">{title}</h1>
