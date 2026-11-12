@@ -73,7 +73,7 @@ async function ProfileContent({
             <MyAlerts ownerId={profile.id} />
           </Suspense>
 
-          <section aria-labelledby="meus-pets" className="flex flex-col gap-4">
+          <section aria-labelledby="meus-pets" className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-5 sm:p-6">
             <h2 id="meus-pets" className="text-xl font-bold">
               Meus pets
             </h2>
@@ -139,7 +139,7 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
     data.pets.find((p) => p.id === id)?.name ?? "Pet";
 
   return (
-    <section aria-labelledby="meus-alertas" className="flex flex-col gap-3">
+    <section aria-labelledby="meus-alertas" className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 id="meus-alertas" className="text-xl font-bold">
           Meus alertas

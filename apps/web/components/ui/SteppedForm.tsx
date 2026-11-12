@@ -57,7 +57,16 @@ export function SteppedForm<T extends string>({
             {steps.map((s, i) => {
               const on = s.id === active;
               return (
-                <li key={s.id}>
+                <li key={s.id} className="relative">
+                  {/* Linha até o próximo passo: dourada quando este passo já está feito. */}
+                  {i < steps.length - 1 && (
+                    <span
+                      aria-hidden="true"
+                      className={`absolute top-[44px] left-[27px] h-[27px] w-0.5 rounded-full transition-colors duration-300 ease-mel ${
+                        s.done && !s.error ? "bg-primary" : "bg-border-strong"
+                      }`}
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={() => goTo(s.id)}
