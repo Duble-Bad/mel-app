@@ -69,8 +69,13 @@ export default function HomePage() {
               style={{ animationDelay: "80ms" }}
             >
               Uma rede inteira procurando{" "}
-              <span className="mh-shimmer relative inline-block whitespace-nowrap text-primary">
-                com você.
+              {/* Sempre amarelo sólido: letras sobem uma a uma e um halo dourado respira atrás (ver home.css). */}
+              <span className="mh-word relative inline-block whitespace-nowrap text-primary" data-text="com você.">
+                {Array.from("com você.").map((ch, i) => (
+                  <span key={i} className="mh-letter" style={{ "--i": i } as React.CSSProperties}>
+                    {ch}
+                  </span>
+                ))}
                 <svg aria-hidden="true" viewBox="0 0 300 30" preserveAspectRatio="none" className="mel-draw absolute -bottom-[0.14em] left-0 h-[0.3em] w-[92%] overflow-visible">
                   <path d="M4 20 C 80 6, 200 4, 296 16" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" style={{ "--len": 320, "--delay": "0.7s" } as React.CSSProperties} />
                 </svg>
