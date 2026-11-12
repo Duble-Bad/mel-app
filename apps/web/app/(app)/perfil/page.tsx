@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function ProfilePage({ searchParams }: PageProps<"/perfil">) {
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
+    <main className="mel-container max-w-[1184px] flex-1 pt-6 pb-12">
       <Suspense fallback={<LoadingState label="Carregando seu perfil…" />}>
         <ProfileContent searchParams={searchParams} />
       </Suspense>
@@ -28,10 +28,13 @@ export default function ProfilePage({ searchParams }: PageProps<"/perfil">) {
   );
 }
 
-async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "searchParams">) {
+async function ProfileContent({
+  searchParams,
+}: Pick<PageProps<"/perfil">, "searchParams">) {
   const profile = await requireOnboardedProfile("/perfil");
   const query = await searchParams;
-  const stateName = BR_STATES.find((s) => s.uf === profile.state)?.name ?? profile.state;
+  const stateName =
+    BR_STATES.find((s) => s.uf === profile.state)?.name ?? profile.state;
 
   return (
     <div className="flex flex-col gap-8">
@@ -39,9 +42,16 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
         <div className="size-20 shrink-0 overflow-hidden rounded-full bg-surface-muted">
           {profile.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- avatar já reduzido no upload
-            <img src={profile.avatarUrl} alt="" className="size-full object-cover" />
+            <img
+              src={profile.avatarUrl}
+              alt=""
+              className="size-full object-cover"
+            />
           ) : (
-            <span aria-hidden="true" className="flex size-full items-center justify-center text-3xl">
+            <span
+              aria-hidden="true"
+              className="flex size-full items-center justify-center text-3xl"
+            >
               🐾
             </span>
           )}
@@ -56,41 +66,52 @@ async function ProfileContent({ searchParams }: Pick<PageProps<"/perfil">, "sear
 
       {query.pet_removido && <Alert tone="success">Pet excluído.</Alert>}
 
-      <Suspense fallback={null}>
-        <MyAlerts ownerId={profile.id} />
-      </Suspense>
+      {/* Desktop: o que é do dia a dia (alertas e pets) à esquerda; atalhos e conta à direita. */}
+      <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:items-start lg:gap-10">
+        <div className="flex flex-col gap-8">
+          <Suspense fallback={null}>
+            <MyAlerts ownerId={profile.id} />
+          </Suspense>
 
-      <section aria-labelledby="meus-pets" className="flex flex-col gap-4">
-        <h2 id="meus-pets" className="text-xl font-bold">
-          Meus pets
-        </h2>
-        <Suspense fallback={<LoadingState label="Carregando seus pets…" />}>
-          <MyPets ownerId={profile.id} />
-        </Suspense>
-      </section>
+          <section aria-labelledby="meus-pets" className="flex flex-col gap-4">
+            <h2 id="meus-pets" className="text-xl font-bold">
+              Meus pets
+            </h2>
+            <Suspense fallback={<LoadingState label="Carregando seus pets…" />}>
+              <MyPets ownerId={profile.id} />
+            </Suspense>
+          </section>
+        </div>
 
-      <ButtonLink href="/guardiao" variant="secondary" size="md">
-        Guardião MEL: alertas perto de mim
-      </ButtonLink>
+        <div className="flex flex-col gap-8 lg:sticky lg:top-24 lg:rounded-2xl lg:border lg:border-border lg:bg-surface lg:p-6">
+          <ButtonLink href="/guardiao" variant="secondary" size="md">
+            Guardião MEL: alertas perto de mim
+          </ButtonLink>
 
-      <section aria-labelledby="aparencia" className="flex flex-col gap-3">
-        <h2 id="aparencia" className="text-xl font-bold">
-          Aparência
-        </h2>
-        <ThemeOptions layout="segmented" />
-      </section>
+          <section aria-labelledby="aparencia" className="flex flex-col gap-3">
+            <h2 id="aparencia" className="text-xl font-bold">
+              Aparência
+            </h2>
+            <ThemeOptions layout="segmented" />
+          </section>
 
-      <div className="flex flex-col gap-3">
-        <ButtonLink href="/perfil/editar" variant="secondary" size="md">
-          Editar perfil
-        </ButtonLink>
-        <ButtonLink href="/perfil/dados" variant="secondary" size="md">
-          Dados pessoais e documentos
-        </ButtonLink>
-        <ButtonLink href="/perfil/privacidade" variant="secondary" size="md">
-          Privacidade e dados
-        </ButtonLink>
-        <SignOutButton />
+          <div className="flex flex-col gap-3">
+            <ButtonLink href="/perfil/editar" variant="secondary" size="md">
+              Editar perfil
+            </ButtonLink>
+            <ButtonLink href="/perfil/dados" variant="secondary" size="md">
+              Dados pessoais e documentos
+            </ButtonLink>
+            <ButtonLink
+              href="/perfil/privacidade"
+              variant="secondary"
+              size="md"
+            >
+              Privacidade e dados
+            </ButtonLink>
+            <SignOutButton />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -100,14 +121,22 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
   const supabase = await createSessionClient();
   let data;
   try {
-    const [cases, pets] = await Promise.all([listMyLostCases(supabase, ownerId), listMyPets(supabase, ownerId)]);
+    const [cases, pets] = await Promise.all([
+      listMyLostCases(supabase, ownerId),
+      listMyPets(supabase, ownerId),
+    ]);
     data = { cases, pets };
   } catch (error) {
     console.error("[perfil] falha ao listar alertas", error);
-    return <ErrorState>Não conseguimos carregar seus alertas agora. Atualize a página.</ErrorState>;
+    return (
+      <ErrorState>
+        Não conseguimos carregar seus alertas agora. Atualize a página.
+      </ErrorState>
+    );
   }
   if (data.cases.length === 0) return null;
-  const petName = (id: string) => data.pets.find((p) => p.id === id)?.name ?? "Pet";
+  const petName = (id: string) =>
+    data.pets.find((p) => p.id === id)?.name ?? "Pet";
 
   return (
     <section aria-labelledby="meus-alertas" className="flex flex-col gap-3">
@@ -115,7 +144,10 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
         <h2 id="meus-alertas" className="text-xl font-bold">
           Meus alertas
         </h2>
-        <Link href="/perfil/correspondencias" className="inline-flex min-h-11 items-center text-sm font-semibold text-link underline-offset-4 hover:underline">
+        <Link
+          href="/perfil/correspondencias"
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-link underline-offset-4 hover:underline"
+        >
           Radar MEL
         </Link>
       </div>
@@ -123,7 +155,9 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
         {data.cases.map((c) => (
           <li key={c.id}>
             <Link
-              href={c.status === "DRAFT" ? "/publicar/perdido" : `/alerta/${c.code}`}
+              href={
+                c.status === "DRAFT" ? "/publicar/perdido" : `/alerta/${c.code}`
+              }
               className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 shadow-card"
             >
               <span>
@@ -134,8 +168,8 @@ async function MyAlerts({ ownerId }: { ownerId: string }) {
                     : c.status === "CLOSED"
                       ? "Encerrado por você"
                       : c.publishedAt
-                      ? `Publicado ${timeAgo(c.publishedAt)}`
-                      : ""}
+                        ? `Publicado ${timeAgo(c.publishedAt)}`
+                        : ""}
                 </span>
               </span>
               {c.status === "DRAFT" ? (
@@ -161,7 +195,12 @@ async function MyPets({ ownerId }: { ownerId: string }) {
     pets = await listMyPets(await createSessionClient(), ownerId);
   } catch (error) {
     console.error("[perfil] falha ao listar pets", error);
-    return <ErrorState>Não conseguimos carregar seus pets agora. Atualize a página para tentar de novo.</ErrorState>;
+    return (
+      <ErrorState>
+        Não conseguimos carregar seus pets agora. Atualize a página para tentar
+        de novo.
+      </ErrorState>
+    );
   }
 
   if (pets.length === 0) {
@@ -174,7 +213,8 @@ async function MyPets({ ownerId }: { ownerId: string }) {
           </ButtonLink>
         }
       >
-        Cadastrar agora deixa tudo pronto: se ele se perder, o alerta sai em segundos.
+        Cadastrar agora deixa tudo pronto: se ele se perder, o alerta sai em
+        segundos.
       </EmptyState>
     );
   }
