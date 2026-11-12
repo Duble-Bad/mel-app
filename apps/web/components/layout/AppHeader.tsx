@@ -13,7 +13,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
       <div className="flex h-16 mel-container items-center justify-between gap-2 sm:gap-4">
         <Link href="/" className="-ml-1 shrink-0 rounded-md p-1" aria-label="MEL — início">
-          <MelLogo size={32} />
+          <MelLogo size={32} accent />
         </Link>
         <Suspense fallback={<DesktopNavList pathname="" />}>
           <DesktopNav />

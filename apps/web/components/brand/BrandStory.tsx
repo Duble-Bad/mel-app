@@ -28,7 +28,7 @@ export function BrandStory() {
         <div className="flex min-w-0 flex-col gap-2">
           <p className="text-caption font-semibold tracking-[.06em] text-link uppercase">Nossa origem</p>
           <h2 id="historia" className="text-lg font-bold">
-            Antes de ser um aplicativo, MEL foi uma busca.
+            Antes de ser um aplicativo, <span className="text-primary">MEL</span> foi uma busca.
           </h2>
         </div>
       </div>
