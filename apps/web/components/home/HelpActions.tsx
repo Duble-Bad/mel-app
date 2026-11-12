@@ -37,7 +37,7 @@ export function HelpActions() {
           <Link
             href={href}
             style={{ "--c": accent[tone], "--glow": accent[tone] } as React.CSSProperties}
-            className={`mel-action ${glow ? "mh-glow" : ""} group relative flex h-full min-h-36 flex-col overflow-hidden rounded-card border-[1.5px] p-3.5 text-text-primary transition-[transform,box-shadow,border-color] duration-300 ease-mel hover:-translate-y-1.5 focus-visible:-translate-y-1.5 active:scale-[.98] sm:p-5 lg:min-h-48`}
+            className={`mel-action ${glow ? "mh-glow" : ""} group relative flex h-full flex-col overflow-hidden rounded-card border-[1.5px] p-3.5 text-text-primary transition-[transform,box-shadow,border-color] duration-300 ease-mel hover:-translate-y-1.5 focus-visible:-translate-y-1.5 active:scale-[.98] sm:min-h-27 sm:p-4.5 lg:min-h-49 lg:p-5.5`}
           >
             {glow && <span aria-hidden="true" className="mh-glow__border" />}
             <PawPrint aria-hidden="true" className="absolute -top-2 -right-2 size-20 rotate-12 text-text-primary opacity-[.06]" strokeWidth={1.5} />
@@ -48,9 +48,9 @@ export function HelpActions() {
             >
               <Icon className="size-5 sm:size-6" strokeWidth={2.25} />
             </span>
-            <span className="mt-3 text-[17px] leading-tight font-extrabold tracking-[-0.01em] sm:mt-4 sm:text-xl lg:text-[22px]">{label}</span>
-            <span className="mt-1 flex items-end justify-between gap-2">
-              <span className="text-[13px] leading-snug text-text-secondary sm:text-sm">{hint}</span>
+            <span className="mt-2.5 text-[17px] leading-[1.1] font-extrabold tracking-[-0.01em] sm:text-xl lg:mt-3.5 lg:text-[22px]">{label}</span>
+            <span className="mt-1 flex items-end lg:mt-1.5 justify-between gap-2">
+              <span className="text-[13px] leading-snug text-text-primary/85 sm:text-sm">{hint}</span>
               <span
                 aria-hidden="true"
                 className="hidden size-9 shrink-0 items-center justify-center rounded-full text-white transition-transform duration-300 ease-mel group-hover:translate-x-1 sm:flex"

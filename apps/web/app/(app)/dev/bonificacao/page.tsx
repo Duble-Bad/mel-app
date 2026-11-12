@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Bonificação (protótipo)", robots:
 
 export default function RewardPrototypePage() {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10">
+    <main className="mel-container flex-1 pt-6 pb-10">
       <Suspense fallback={<LoadingState label="Preparando o protótipo…" />}>
         <Gate />
       </Suspense>

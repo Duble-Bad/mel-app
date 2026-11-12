@@ -57,7 +57,7 @@ export default function HomePage() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-[radial-gradient(60%_70%_at_75%_35%,color-mix(in_srgb,var(--color-status-found-accent)_14%,transparent),transparent_70%),radial-gradient(40%_50%_at_5%_95%,color-mix(in_srgb,var(--color-primary)_12%,transparent),transparent_70%)]"
         />
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-7 pb-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-14">
+        <div className="flex mel-container flex-col gap-6 pt-7 pb-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-14">
           <div className="flex flex-col items-start gap-4 lg:gap-6 lg:pt-6">
             <span className="inline-flex animate-enter items-center gap-2 rounded-full border border-primary/50 bg-primary-soft/60 px-3.5 py-1.5 text-sm font-semibold text-text-primary">
               <PawPrintSmall />
@@ -109,7 +109,7 @@ export default function HomePage() {
       </section>
 
       <section id="como-funciona" aria-labelledby="cf-title" className="scroll-mt-20">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 lg:py-[72px]">
+        <div className="mel-container py-16 lg:py-[72px]">
           <SectionHead eyebrow="Como funciona" id="cf-title" title="Do alerta ao reencontro, em três passos">
             Sem custo, sem anúncios. A MEL avisa quem está perto e protege os dados de quem pede ajuda.
           </SectionHead>
@@ -119,13 +119,13 @@ export default function HomePage() {
                 key={title}
                 data-reveal
                 style={{ "--d": `${i * 0.1}s` } as React.CSSProperties}
-                className="mh-step relative rounded-card border border-border bg-surface/70 p-6 sm:p-7"
+                className="mh-step relative rounded-card border border-border bg-surface/70 p-6.5"
               >
-                <span aria-hidden="true" className="mb-4 block text-[15px] font-extrabold tracking-[.08em] text-primary">
+                <span aria-hidden="true" className="mb-4.5 block text-[15px] font-extrabold tracking-[.08em] text-primary">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <IconTile Icon={Icon} />
-                <h3 className="mb-2 pr-12 text-[21px] leading-tight font-extrabold tracking-[-0.02em]">{title}</h3>
+                <h3 className="mb-2 text-[21px] leading-[1.1] font-extrabold tracking-[-0.02em]">{title}</h3>
                 <p className="text-text-secondary">{text}</p>
               </li>
             ))}
@@ -134,7 +134,7 @@ export default function HomePage() {
       </section>
 
       <section aria-labelledby="rede-title" className="border-y border-border bg-gradient-to-b from-surface-warm to-background">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 lg:py-[72px]">
+        <div className="mel-container py-16 lg:py-[72px]">
           <div data-reveal className="mb-9 flex flex-wrap items-end justify-between gap-5">
             <div>
               <Eyebrow>Agora na sua região</Eyebrow>
@@ -162,7 +162,7 @@ export default function HomePage() {
       </section>
 
       <section aria-labelledby="ad-title">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-7 px-4 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
+        <div className="grid mel-container items-center gap-7 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
           <div data-reveal>
             <Eyebrow>Adoção responsável</Eyebrow>
             <h2 id="ad-title" className={h2Class}>
@@ -199,7 +199,7 @@ export default function HomePage() {
       </section>
 
       <section aria-label="Guardiões e a origem da MEL" className="border-t border-border">
-        <div className="mx-auto grid w-full max-w-6xl gap-4.5 px-4 py-16 lg:grid-cols-2 lg:items-stretch lg:py-[72px]">
+        <div className="grid mel-container gap-4.5 py-16 lg:grid-cols-2 lg:items-stretch lg:py-[72px]">
           <Link
             href="/guardiao"
             data-reveal
@@ -228,7 +228,7 @@ export default function HomePage() {
       </section>
 
       <section aria-labelledby="pa-title" className="border-y border-border bg-gradient-to-b from-surface-warm to-background">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-7 px-4 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
+        <div className="grid mel-container items-center gap-7 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
           <div data-reveal>
             <Eyebrow>Parceiros da MEL</Eyebrow>
             <h2 id="pa-title" className={h2Class}>

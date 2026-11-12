@@ -310,10 +310,21 @@ input:-webkit-autofill:focus {
     transform: translateY(-8px) rotate(-3deg);
   }
 }
+/* Largura padrão das páginas (a do conceito B): conteúdo até 1200px, margem lateral 16px no celular e 32px a partir de 720px. */
+@utility mel-container {
+  width: 100%;
+  max-width: 1264px;
+  margin-inline: auto;
+  padding-inline: 16px;
+  @media (min-width: 720px) {
+    padding-inline: 32px;
+  }
+}
 .mel-action {
   --c: var(--color-status-lost-accent);
-  border-color: color-mix(in srgb, var(--c) 65%, transparent);
-  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 30%, var(--mel-surface)) 0%, color-mix(in srgb, var(--c) 10%, var(--mel-surface)) 100%);
+  border-color: color-mix(in srgb, var(--c) 70%, transparent);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 34%, var(--mel-surface)) 0%, color-mix(in srgb, var(--c) 12%, var(--mel-surface)) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 .mel-action:hover,
 .mel-action:focus-visible {

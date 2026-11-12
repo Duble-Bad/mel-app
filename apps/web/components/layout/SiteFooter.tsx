@@ -38,7 +38,7 @@ const COLUMNS = [
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-border text-text-secondary">
-      <div className="mx-auto w-full max-w-6xl px-4 pt-12 pb-10">
+      <div className="mel-container pt-12 pb-10">
         <div className="grid grid-cols-2 gap-x-6 gap-y-7 min-[860px]:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="col-span-2 min-[860px]:col-span-1">
             <MelLogo size={34} />

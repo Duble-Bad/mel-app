@@ -11,7 +11,7 @@ import { NotificationBell } from "./NotificationBell";
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
+      <div className="flex h-16 mel-container items-center justify-between gap-4">
         <Link href="/" className="-ml-1 rounded-md p-1" aria-label="MEL — início">
           <MelLogo size={32} />
         </Link>
