@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: PageProps<"/alerta/[code]">):
 
 export default function AlertPage({ params, searchParams }: PageProps<"/alerta/[code]">) {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 pb-10">
+    <main className="mx-auto w-full max-w-xl flex-1 pb-10 lg:max-w-[1264px] lg:px-8 lg:pt-8">
       <Suspense fallback={<div className="px-4 pt-6"><LoadingState label="Carregando alerta…" /></div>}>
         <AlertContent params={params} searchParams={searchParams} />
       </Suspense>
@@ -105,16 +105,21 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
   const visibleSightings = timeline.filter((s) => !s.hidden);
 
   return (
-    <article className="flex flex-col gap-6">
-      {photo ? (
-        <PhotoGallery photos={c.pet.photos} name={c.pet.name} mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-lg" thumbsClassName="px-4" />
-      ) : (
-        <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-5xl" aria-hidden="true">
-          {c.pet.species === "cat" ? "🐱" : c.pet.species === "dog" ? "🐶" : "🐾"}
-        </div>
-      )}
+    // Desktop: galeria fixa à esquerda e o essencial (status, ações, compartilhar) à direita;
+    // mapa e linha do tempo lado a lado embaixo. Celular: uma coluna, como antes.
+    <article className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10 lg:gap-y-10">
+      <div className="lg:sticky lg:top-24">
+        {photo ? (
+          // Foto inteira (contain): cartaz vertical ou foto deitada não perdem o topo nem os lados.
+          <PhotoGallery photos={c.pet.photos} name={c.pet.name} mainClassName="aspect-square w-full bg-surface-muted object-contain sm:rounded-b-lg lg:rounded-2xl" thumbsClassName="px-4 lg:px-0" />
+        ) : (
+          <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-5xl lg:rounded-2xl" aria-hidden="true">
+            {c.pet.species === "cat" ? "🐱" : c.pet.species === "dog" ? "🐶" : "🐾"}
+          </div>
+        )}
+      </div>
 
-      <div className="flex flex-col gap-6 px-4">
+      <div className="flex flex-col gap-6 px-4 lg:px-0">
         {c.status === "FOUND" && <ReunionBanner c={c} celebrate={c.isOwner && Boolean(query.reencontro)} />}
 
         {c.status === "CLOSED" && (
@@ -133,8 +138,6 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
             ainda mais pessoas.
           </Alert>
         )}
-
-        {c.isOwner && c.status === "ACTIVE" && <TutorPushPrompt />}
 
         <header className="flex flex-col gap-2">
           <div>
@@ -208,10 +211,15 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
         </section>
         )}
 
+        {/* Depois do essencial (nome, ações, compartilhar): o convite para avisos não toma o topo. */}
+        {c.isOwner && c.status === "ACTIVE" && <TutorPushPrompt />}
+
         <Contact c={c} />
 
         <Facts c={c} />
+      </div>
 
+      <div className="flex flex-col gap-6 px-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-0">
         {c.point && (
           <section aria-labelledby="mapa" className="flex flex-col gap-2">
             <h2 id="mapa" className="font-bold">
@@ -265,7 +273,7 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 
         {c.isOwner && user && c.status === "ACTIVE" && <LiveSightings userId={user.id} code={c.code} />}
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 lg:col-span-2">
           <p className="text-sm text-text-secondary">
             MEL ID {c.pet.melId} · Alerta {c.code}
           </p>

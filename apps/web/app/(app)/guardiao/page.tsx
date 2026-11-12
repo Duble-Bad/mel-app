@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Guardião MEL", robots: { index: fal
 
 export default function GuardianPage() {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
+    <main className="mel-container max-w-[1184px] flex-1 pt-6 pb-12">
       <Suspense fallback={<LoadingState />}>
         <Content />
       </Suspense>
