@@ -96,79 +96,101 @@ export default function OriginPage() {
         </div>
       </section>
 
-      <article id="historia" aria-label="A história da Mel" className="mel-container scroll-mt-20 pb-16">
-        <div className="grid gap-8 border-t border-border pt-12 lg:grid-cols-2 lg:gap-16 lg:pt-16">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-5 text-body-lg text-text-secondary">
-              <p>De repente, alguém que fazia parte da família não estava mais ali.</p>
-              <p>
-                Vieram as buscas pelas ruas, os cartazes, as mensagens, os grupos, as publicações nas redes sociais e aquela
-                esperança que fazia cada informação parecer a possibilidade de trazê-la de volta.
-              </p>
-              <p>Muitas pessoas quiseram ajudar. Mas percebemos um problema:</p>
+      <article id="historia" aria-label="A história da Mel" className="mel-container flex scroll-mt-20 flex-col gap-6 pb-16 lg:gap-8">
+        {/* A história em um painel só: três capítulos lado a lado no desktop (um embaixo do outro no
+            celular) e o fechamento dentro do mesmo painel. Textos do proprietário sem alteração. */}
+        <section aria-label="A história" className="overflow-hidden rounded-hero border border-border bg-surface/60 shadow-sm">
+          <div className="grid lg:grid-cols-[1fr_1.05fr_1fr]">
+            <div className="flex flex-col gap-4 p-7 sm:p-9">
+              <ChapterLabel n="01" title="A busca" />
+              <div className="flex flex-col gap-4 text-body-lg text-text-secondary">
+                <p>De repente, alguém que fazia parte da família não estava mais ali.</p>
+                <p>
+                  Vieram as buscas pelas ruas, os cartazes, as mensagens, os grupos, as publicações nas redes sociais e aquela
+                  esperança que fazia cada informação parecer a possibilidade de trazê-la de volta.
+                </p>
+                <p>Muitas pessoas quiseram ajudar. Mas percebemos um problema:</p>
+              </div>
             </div>
-            <blockquote className="rounded-card border-l-4 border-brand bg-surface-warm p-6 text-xl leading-snug font-semibold text-foreground">
-              Quem procurava, quem tinha visto e quem queria ajudar estavam espalhados por lugares diferentes.
-            </blockquote>
+
+            <div className="flex flex-col gap-4 border-y border-border bg-primary/[.04] p-7 sm:p-9 lg:border-x lg:border-y-0">
+              <ChapterLabel n="02" title="O problema" />
+              <div className="flex flex-1 items-center">
+                <blockquote className="border-l-4 border-brand pl-5 text-[clamp(20px,1.9vw,23px)] leading-snug font-bold tracking-[-0.01em] text-foreground">
+                  Quem procurava, quem tinha visto e quem queria ajudar estavam espalhados por lugares diferentes.
+                </blockquote>
+              </div>
+              <p className="text-body-lg text-text-secondary">Faltava uma forma simples de conectar todas essas pessoas no momento em que cada minuto importava.</p>
+            </div>
+
+            <div className="flex flex-col gap-4 p-7 sm:p-9">
+              <ChapterLabel n="03" title="A rede" />
+              <div className="flex flex-col gap-4 text-body-lg text-text-secondary">
+                <p className="font-semibold text-foreground">Foi dessa busca que nasceu a MEL.</p>
+                <p>
+                  Uma rede criada para transformar a procura solitária em uma busca coletiva — conectando famílias, pessoas
+                  próximas, avistamentos e informações em um só lugar.
+                </p>
+              </div>
+              <div className="mt-auto flex items-start gap-3.5 rounded-card border border-primary/30 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_14%,transparent),transparent_75%)] p-4.5">
+                <MelMark size={36} className="shrink-0" />
+                <p className="text-text-secondary">
+                  <strong className="font-semibold text-foreground">A Mel foi o começo dessa história.</strong> Hoje, cada animal encontrado,
+                  cada família ajudada e cada reencontro possível carrega um pouco dela.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-5 text-body-lg text-text-secondary">
-            <p>Faltava uma forma simples de conectar todas essas pessoas no momento em que cada minuto importava.</p>
-            <p className="font-semibold text-foreground">Foi dessa busca que nasceu a MEL.</p>
-            <p>
-              Uma rede criada para transformar a procura solitária em uma busca coletiva — conectando famílias, pessoas
-              próximas, avistamentos e informações em um só lugar.
-            </p>
-            <p>A Mel foi o começo dessa história.</p>
-            <p>Hoje, cada animal encontrado, cada família ajudada e cada reencontro possível carrega um pouco dela.</p>
-          </div>
-        </div>
+        </section>
 
-        <section aria-labelledby="nome-title" className="mt-16 lg:mt-20">
-          <div className="mb-8 flex flex-col gap-3 lg:mb-10 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+        {/* O nome: um painel com a introdução (e o símbolo) à esquerda e as três letras à direita. */}
+        <section aria-labelledby="nome-title" className="grid overflow-hidden rounded-hero border border-border bg-surface/60 shadow-sm lg:grid-cols-[0.95fr_1.25fr]">
+          <div className="flex flex-col gap-4 p-7 sm:p-9 lg:justify-between lg:gap-8">
             <div className="flex flex-col gap-3">
               <p className="text-caption font-semibold tracking-[.08em] text-link uppercase">O nome</p>
-              <h2 id="nome-title" className="text-[clamp(28px,5vw,40px)] leading-[1.08] font-extrabold tracking-[-0.03em] text-balance">
+              <h2 id="nome-title" className="text-[clamp(28px,4vw,40px)] leading-[1.08] font-extrabold tracking-[-0.03em] text-balance">
                 <span className="text-primary">MEL</span> é o nome dela. E virou o nosso.
               </h2>
+              <p className="text-body-lg text-text-secondary">
+                Cada letra guarda uma parte do que aprendemos procurando a Mel:{" "}
+                <strong className="font-semibold text-foreground">Movimento de Encontro e Localização</strong>.
+              </p>
             </div>
-            <p className="max-w-[44ch] text-body-lg text-text-secondary">
-              Cada letra guarda uma parte do que aprendemos procurando a Mel: <strong className="font-semibold text-foreground">Movimento de Encontro e Localização</strong>.
-            </p>
+            <div className="flex items-start gap-4 rounded-card border border-border bg-surface-warm p-5">
+              <MelMark size={44} className="shrink-0" />
+              <p className="text-text-secondary">
+                <strong className="font-semibold text-foreground">O símbolo também é ela:</strong> a cabeça de uma Yorkshire, com as orelhas
+                marcantes, que converge para a ponta de um pino de localização. O focinho é o ponto no mapa.
+              </p>
+            </div>
           </div>
-          <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
+
+          <ol className="flex flex-col border-t border-border lg:border-t-0 lg:border-l">
             {LETTERS.map(({ letter, word, text, Icon }) => (
               <li
                 key={letter}
-                className="group relative overflow-hidden rounded-card border border-border bg-surface/70 p-6.5 transition-[transform,border-color] duration-300 hover:-translate-y-1 hover:border-primary/50"
+                className="group flex flex-1 items-center gap-5 border-b border-border p-6 transition-colors duration-300 last:border-b-0 hover:bg-primary/[.05] sm:gap-7 sm:px-9"
               >
                 <span
                   aria-hidden="true"
-                  className="pointer-events-none absolute -right-1 -bottom-9 origin-bottom-right text-[150px] leading-none font-extrabold tracking-[-0.06em] text-primary/[.08] transition-transform duration-500 group-hover:scale-105"
+                  className="w-14 shrink-0 text-center text-[64px] leading-none font-extrabold tracking-[-0.05em] text-primary transition-transform duration-300 group-hover:scale-110 sm:w-16 sm:text-[76px]"
                 >
                   {letter}
                 </span>
-                <span className="mb-5 grid size-12 place-items-center rounded-xl bg-primary/15 text-primary">
-                  <Icon aria-hidden="true" className="size-6" />
-                </span>
-                <h3 className="mb-2 text-2xl font-extrabold tracking-[-0.02em]">
-                  <span className="text-primary">{letter}</span>
-                  {word.slice(1)}
-                </h3>
-                <p className="relative text-text-secondary">{text}</p>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h3 className="flex items-center gap-2 text-xl font-extrabold tracking-[-0.02em]">
+                    {word}
+                    <Icon aria-hidden="true" className="size-4.5 text-primary" />
+                  </h3>
+                  <p className="text-text-secondary">{text}</p>
+                </div>
               </li>
             ))}
           </ol>
-          <div className="mt-5 flex items-center gap-4 rounded-card border border-border bg-surface-warm p-5 sm:p-6">
-            <MelMark size={44} className="shrink-0" />
-            <p className="text-text-secondary">
-              <strong className="font-semibold text-foreground">O símbolo também é ela:</strong> a cabeça de uma Yorkshire, com as orelhas
-              marcantes, que converge para a ponta de um pino de localização. O focinho é o ponto no mapa.
-            </p>
-          </div>
         </section>
 
-        <footer className="mt-14 flex flex-col items-start gap-6 rounded-hero border border-border bg-surface-warm p-7 sm:p-10 lg:flex-row lg:items-center lg:justify-between">
+        <footer className="flex flex-col items-start gap-6 rounded-hero border border-primary/30 bg-[linear-gradient(120deg,color-mix(in_srgb,var(--color-primary)_14%,var(--color-surface-warm)),var(--color-surface-warm)_60%)] p-7 sm:p-9 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-5">
             <MelMark size={56} className="shrink-0" />
             <p className="max-w-[34ch] text-2xl leading-tight font-bold tracking-[-0.02em] text-foreground">
@@ -181,5 +203,15 @@ export default function OriginPage() {
         </footer>
       </article>
     </main>
+  );
+}
+
+/** Rótulo de capítulo da história: número e título. */
+function ChapterLabel({ n, title }: { n: string; title: string }) {
+  return (
+    <p className="flex items-center gap-2.5 text-caption font-bold tracking-[.08em] uppercase">
+      <span className="grid size-7 place-items-center rounded-full bg-primary/15 text-[12px] text-primary">{n}</span>
+      <span className="text-text-secondary">{title}</span>
+    </p>
   );
 }
