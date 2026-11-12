@@ -137,11 +137,10 @@ async function AlertContent({
   const visibleSightings = timeline.filter((s) => !s.hidden);
 
   return (
-    // Desktop: galeria fixa à esquerda e o essencial (status, ações, compartilhar) à direita;
-    // mapa e linha do tempo lado a lado embaixo. Celular: uma coluna, como antes.
-    <article className="flex flex-col gap-6 lg:gap-10">
-      {/* Bloco de cima num grid próprio: a galeria fica fixa só enquanto a coluna da direita rola e
-          nunca passa por cima do mapa e da linha do tempo, que vêm depois, em outro bloco. */}
+    // Desktop (padrão de página de produto): à esquerda só as fotos, fixas durante toda a rolagem;
+    // à direita todo o conteúdo em sequência — status, ações, compartilhar, como reconhecer, mapa e
+    // linha do tempo. Nada fica embaixo das fotos. Celular: uma coluna, na mesma ordem.
+    <article>
       <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
         <div className="lg:sticky lg:top-24">
           {photo ? (
@@ -295,89 +294,87 @@ async function AlertContent({
           <Contact c={c} />
 
           <Facts c={c} />
-        </div>
-      </div>
 
-      <div className="flex flex-col gap-6 px-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-0">
-        {c.point && (
-          <section aria-labelledby="mapa" className="flex flex-col gap-2">
-            <h2 id="mapa" className="font-bold">
-              {visibleSightings.length
-                ? "Mapa da busca"
-                : "Último local conhecido"}
-            </h2>
-            <MapView
-              // Remonta quando chegam avistamentos novos (o mapa é estático).
-              key={visibleSightings.length}
-              center={c.point}
-              zoom={15}
-              areaLabel={c.areaLabel}
-              pins={[
-                {
-                  id: c.code,
-                  kind: "lost",
-                  position: c.point,
-                  label: `${c.pet.name}, último local conhecido`,
-                },
-                ...visibleSightings.map((s, i) => ({
-                  id: s.id,
-                  kind: "sighting" as const,
-                  position: s.position,
-                  label: `avistamento ${i + 1}, ${formatDateTimeBr(s.seenAt)}`,
-                })),
-              ]}
-              path={[c.point, ...visibleSightings.map((s) => s.position)]}
-              label={`Mapa: ${c.pet.name} visto por último perto de ${c.areaLabel ?? "este ponto"}${
-                visibleSightings.length
-                  ? ` e ${visibleSightings.length} avistamento(s)`
-                  : ""
-              }`}
-            />
-            <p className="text-sm text-text-secondary">
-              {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 100 m)"}. `}
-              {visibleSightings.length > 0 &&
-                `Pontos com olho (👁): avistamentos, ligados por linha tracejada em ordem de horário${
-                  visibleSightings.some((s) => !s.pointIsExact)
-                    ? " (localização aproximada)"
+          {c.point && (
+            <section aria-labelledby="mapa" className="flex flex-col gap-2">
+              <h2 id="mapa" className="font-bold">
+                {visibleSightings.length
+                  ? "Mapa da busca"
+                  : "Último local conhecido"}
+              </h2>
+              <MapView
+                // Remonta quando chegam avistamentos novos (o mapa é estático).
+                key={visibleSightings.length}
+                center={c.point}
+                zoom={15}
+                areaLabel={c.areaLabel}
+                pins={[
+                  {
+                    id: c.code,
+                    kind: "lost",
+                    position: c.point,
+                    label: `${c.pet.name}, último local conhecido`,
+                  },
+                  ...visibleSightings.map((s, i) => ({
+                    id: s.id,
+                    kind: "sighting" as const,
+                    position: s.position,
+                    label: `avistamento ${i + 1}, ${formatDateTimeBr(s.seenAt)}`,
+                  })),
+                ]}
+                path={[c.point, ...visibleSightings.map((s) => s.position)]}
+                label={`Mapa: ${c.pet.name} visto por último perto de ${c.areaLabel ?? "este ponto"}${
+                  visibleSightings.length
+                    ? ` e ${visibleSightings.length} avistamento(s)`
                     : ""
-                }.`}
-            </p>
-          </section>
-        )}
-
-        {(c.status !== "CLOSED" || c.isOwner) && (
-          <section
-            aria-labelledby="linha-do-tempo-titulo"
-            id="linha-do-tempo"
-            className="flex scroll-mt-4 flex-col gap-2"
-          >
-            <h2 id="linha-do-tempo-titulo" className="font-bold">
-              Linha do tempo
-            </h2>
-            <Timeline
-              petName={c.pet.name}
-              lastSeen={
-                c.lostAt ? { at: c.lostAt, areaLabel: c.areaLabel } : null
-              }
-              sightings={timeline}
-              isOwner={c.isOwner}
-              helpfulSightingId={c.helpfulSightingId}
-              closed={c.status !== "ACTIVE"}
-            />
-          </section>
-        )}
-
-        {c.isOwner && user && c.status === "ACTIVE" && (
-          <LiveSightings userId={user.id} code={c.code} />
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-2 lg:col-span-2">
-          <p className="text-sm text-text-secondary">
-            MEL ID {c.pet.melId} · Alerta {c.code}
-          </p>
-          {!c.isOwner && c.status !== "CLOSED" && (
-            <ReportButton type="lost_case" targetKey={c.code} />
+                }`}
+              />
+              <p className="text-sm text-text-secondary">
+                {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 100 m)"}. `}
+                {visibleSightings.length > 0 &&
+                  `Pontos com olho (👁): avistamentos, ligados por linha tracejada em ordem de horário${
+                    visibleSightings.some((s) => !s.pointIsExact)
+                      ? " (localização aproximada)"
+                      : ""
+                  }.`}
+              </p>
+            </section>
           )}
+
+          {(c.status !== "CLOSED" || c.isOwner) && (
+            <section
+              aria-labelledby="linha-do-tempo-titulo"
+              id="linha-do-tempo"
+              className="flex scroll-mt-4 flex-col gap-2"
+            >
+              <h2 id="linha-do-tempo-titulo" className="font-bold">
+                Linha do tempo
+              </h2>
+              <Timeline
+                petName={c.pet.name}
+                lastSeen={
+                  c.lostAt ? { at: c.lostAt, areaLabel: c.areaLabel } : null
+                }
+                sightings={timeline}
+                isOwner={c.isOwner}
+                helpfulSightingId={c.helpfulSightingId}
+                closed={c.status !== "ACTIVE"}
+              />
+            </section>
+          )}
+
+          {c.isOwner && user && c.status === "ACTIVE" && (
+            <LiveSightings userId={user.id} code={c.code} />
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-text-secondary">
+              MEL ID {c.pet.melId} · Alerta {c.code}
+            </p>
+            {!c.isOwner && c.status !== "CLOSED" && (
+              <ReportButton type="lost_case" targetKey={c.code} />
+            )}
+          </div>
         </div>
       </div>
     </article>
