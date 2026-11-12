@@ -7,7 +7,7 @@ export interface ChoiceOption<T extends string> {
 }
 
 const chip =
-  "flex min-h-12 cursor-pointer flex-col justify-center rounded-md border-2 border-border-strong bg-surface px-4 py-2 " +
+  "flex min-h-12 cursor-pointer flex-col justify-center rounded-md border-2 border-border-strong bg-surface py-2 " +
   "has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:text-primary-soft-foreground " +
   "has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus";
 
@@ -19,6 +19,9 @@ interface GroupProps {
   columns?: 1 | 2 | 3 | 5 | 6;
   children: ReactNode;
 }
+
+/** Botões curtos (Sim / Não / Não sei): texto centralizado e sem quebrar, cabem três lado a lado. */
+const dense = "items-center px-2 text-center whitespace-nowrap";
 
 function Group({ legend, hint, error, optional, columns = 3, children }: GroupProps) {
   return (
@@ -40,17 +43,19 @@ export function ChoiceGroup<T extends string>({
   options,
   value,
   onChange,
+  compact,
   ...group
 }: Omit<GroupProps, "children"> & {
   name: string;
   options: ChoiceOption<T>[];
   value: T | null;
   onChange: (value: T) => void;
+  compact?: boolean;
 }) {
   return (
     <Group {...group}>
       {options.map((o) => (
-        <label key={o.value} className={chip}>
+        <label key={o.value} className={compact ? `${chip} ${dense}` : `${chip} px-4`}>
           <input
             type="radio"
             name={name}
@@ -83,7 +88,7 @@ export function MultiChoiceGroup<T extends string>({
   return (
     <Group {...group}>
       {options.map((o) => (
-        <label key={o.value} className={chip}>
+        <label key={o.value} className={`${chip} px-4`}>
           <input
             type="checkbox"
             name={name}
@@ -117,6 +122,7 @@ export function YesNoUnknown({
       name={name}
       legend={legend}
       columns={3}
+      compact
       value={current}
       onChange={(v) => onChange(v === "unknown" ? null : v === "yes")}
       options={[

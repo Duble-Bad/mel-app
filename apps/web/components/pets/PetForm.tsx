@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { Camera, Check, ChevronLeft, ChevronRight, ClipboardList, Lock, PawPrint, ScanEye, type LucideIcon } from "lucide-react";
+import { Camera, ClipboardList, Lock, PawPrint, ScanEye, type LucideIcon } from "lucide-react";
 import {
   AGE_OPTIONS,
   BR_STATES,
@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/Button";
 import { ChoiceGroup, MultiChoiceGroup, YesNoUnknown } from "@/components/ui/Choice";
 import { SelectField, TextField } from "@/components/ui/Field";
 import { InfoTip } from "@/components/ui/InfoTip";
+import { StepCard, SteppedForm, type Step } from "@/components/ui/SteppedForm";
 import { FillCityFromLocation } from "@/components/location/FillCityFromLocation";
 import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
@@ -140,14 +141,7 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
     privado: Boolean(microchipNumber || hiddenMarks.trim() || ownershipNotes.trim() || isPublic),
   };
   const sectionErrors = new Set(Object.keys(errors).map((k) => FIELD_SECTION[k]).filter(Boolean));
-  const index = SECTIONS.findIndex((s) => s.id === active);
 
-  function goTo(id: SectionId) {
-    setActive(id);
-    // No desktop a etapa troca no lugar: volta ao topo do formulário se ele ficou para cima.
-    const top = document.getElementById("pet-form")?.getBoundingClientRect().top ?? 0;
-    if (top < 0) document.getElementById("pet-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 
   async function handlePhotoAction(action: () => Promise<void>) {
     setBusy(true);
@@ -242,80 +236,35 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
   }
 
   const submitLabel = isEdit ? "Salvar alterações" : "Cadastrar pet";
-  /** Cartão de cada etapa: sempre visível no celular; no desktop só a etapa ativa. */
-  const card = (id: SectionId) =>
-    `scroll-mt-24 rounded-2xl border border-border bg-surface p-5 sm:p-6 lg:p-7 ${active === id ? "" : "lg:hidden"}`;
-  const heading = (id: SectionId, extra?: ReactNode) => {
-    const s = SECTIONS.find((x) => x.id === id)!;
-    return (
-      <div className="mb-5 flex items-center gap-2.5">
-        <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-xl bg-primary/12 text-primary">
-          <s.Icon className="size-5" strokeWidth={2} />
-        </span>
-        <h2 id={`sec-${id}`} className="text-lg font-bold">
-          {s.title}
-        </h2>
-        {extra}
-      </div>
-    );
-  };
+  const steps: Step<SectionId>[] = SECTIONS.map((sec) => ({
+    ...sec,
+    done: filled[sec.id],
+    error: sectionErrors.has(sec.id),
+    status: sec.id === "basico" ? "Obrigatório" : sec.id === "fotos" ? `${photoCount} de 6` : filled[sec.id] ? "Preenchido" : "Opcional",
+  }));
+  const step = (id: SectionId) => SECTIONS.find((x) => x.id === id)!;
 
   return (
-    <form id="pet-form" onSubmit={handleSubmit} noValidate className="scroll-mt-24 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
-      {/* Menu de etapas (desktop) */}
-      <aside className="hidden lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-4">
-        <nav aria-label="Etapas do cadastro" className="rounded-2xl border border-border bg-surface p-2">
-          <ol className="flex flex-col gap-1">
-            {SECTIONS.map((s, i) => {
-              const on = s.id === active;
-              const bad = sectionErrors.has(s.id);
-              return (
-                <li key={s.id}>
-                  <button
-                    type="button"
-                    onClick={() => goTo(s.id)}
-                    aria-current={on ? "step" : undefined}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-200 ease-mel ${
-                      on ? "bg-primary-soft text-primary-soft-foreground" : "hover:bg-surface-muted"
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                        bad
-                          ? "bg-danger text-white"
-                          : filled[s.id]
-                            ? "bg-primary text-primary-foreground"
-                            : on
-                              ? "border-2 border-primary text-primary"
-                              : "border-2 border-border-strong text-text-secondary"
-                      }`}
-                    >
-                      {bad ? "!" : filled[s.id] ? <Check className="size-4" strokeWidth={3} /> : i + 1}
-                    </span>
-                    <span className="flex min-w-0 flex-col leading-tight">
-                      <span className="font-semibold">{s.title}</span>
-                      <span className="text-xs text-text-secondary">
-                        {bad ? "Confira os campos" : s.id === "basico" ? "Obrigatório" : s.id === "fotos" ? `${photoCount} de 6` : filled[s.id] ? "Preenchido" : "Opcional"}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </nav>
-        <Button type="submit" loading={busy} loadingText={progress ?? "Salvando…"} className="w-full">
-          {submitLabel}
-        </Button>
-        {asideFooter}
-      </aside>
-
-      <div className="flex min-w-0 flex-col gap-5">
-        {formError && <Alert tone="error">{formError}</Alert>}
-
-        <section className={card("fotos")} aria-labelledby="sec-fotos">
-          {heading("fotos")}
+    <form onSubmit={handleSubmit} noValidate>
+      <SteppedForm
+        steps={steps}
+        active={active}
+        onActiveChange={setActive}
+        asideFooter={asideFooter}
+        before={formError && <Alert tone="error">{formError}</Alert>}
+        submit={(where) => (
+          <Button
+            type="submit"
+            size={where === "last" ? "md" : "lg"}
+            className={where === "last" ? "w-auto" : "w-full"}
+            loading={busy}
+            loadingText={progress ?? "Salvando…"}
+          >
+            {submitLabel}
+          </Button>
+        )}
+      >
+        <StepCard {...step("fotos")}>
           <PhotoManager
             existing={pet?.photos ?? []}
             pending={pendingPhotos}
@@ -325,10 +274,9 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
             onMakePrimary={pet ? (id) => handlePhotoAction(() => setPrimaryPetPhoto(getBrowserClient(), pet.id, id)) : undefined}
             onRemoveExisting={pet ? (id) => handlePhotoAction(() => removePetPhoto(getBrowserClient(), id)) : undefined}
           />
-        </section>
+        </StepCard>
 
-        <section className={card("basico")} aria-labelledby="sec-basico">
-          {heading("basico")}
+        <StepCard {...step("basico")}>
           <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-6">
             <div id="field-name">
               <TextField label="Nome" name="name" value={name} onChange={(e) => setName(e.target.value)} required error={errors.name} />
@@ -370,10 +318,9 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
               />
             </div>
           </div>
-        </section>
+        </StepCard>
 
-        <section className={card("aparencia")} aria-labelledby="sec-aparencia">
-          {heading("aparencia")}
+        <StepCard {...step("aparencia")}>
           <div className="flex flex-col gap-5">
             <ChoiceGroup
               name="colorPrimary"
@@ -410,10 +357,9 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
               />
             </div>
           </div>
-        </section>
+        </StepCard>
 
-        <section className={card("detalhes")} aria-labelledby="sec-detalhes">
-          {heading("detalhes", <span className="text-sm text-text-secondary">· pode completar depois</span>)}
+        <StepCard {...step("detalhes")} aside={<span className="text-sm text-text-secondary">· pode completar depois</span>}>
           <div className="grid gap-5 lg:grid-cols-2 lg:gap-x-6">
             <div id="field-birthDate">
               <DateCalendar
@@ -482,15 +428,16 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
               ))}
             </SelectField>
           </div>
-        </section>
+        </StepCard>
 
-        <section className={card("privado")} aria-labelledby="sec-privado">
-          {heading(
-            "privado",
+        <StepCard
+          {...step("privado")}
+          aside={
             <InfoTip label="Quem vê estas informações">
               Os campos de &quot;Só para você&quot; ninguém mais vê. Eles ajudam a provar que o pet é seu se alguém o encontrar.
-            </InfoTip>,
-          )}
+            </InfoTip>
+          }
+        >
           <div className="flex flex-col gap-5 rounded-xl bg-surface-muted p-4 sm:p-5">
             <p className="flex items-center gap-2 font-semibold">
               <Lock aria-hidden="true" className="size-4 text-text-secondary" strokeWidth={2.25} />
@@ -551,38 +498,8 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
               Útil para plaquinha com QR Code. Se ele se perder, o alerta é publicado de qualquer forma.
             </InfoTip>
           </div>
-        </section>
-
-        {/* Desktop: navegação entre etapas. */}
-        <div className="hidden items-center justify-between gap-3 lg:flex">
-          {index > 0 ? (
-            <Button type="button" variant="ghost" size="md" className="w-auto" onClick={() => goTo(SECTIONS[index - 1].id)}>
-              <ChevronLeft aria-hidden="true" className="size-4" strokeWidth={2.5} />
-              {SECTIONS[index - 1].title}
-            </Button>
-          ) : (
-            <span />
-          )}
-          {index < SECTIONS.length - 1 ? (
-            <Button type="button" variant="secondary" size="md" className="w-auto" onClick={() => goTo(SECTIONS[index + 1].id)}>
-              Próximo: {SECTIONS[index + 1].title}
-              <ChevronRight aria-hidden="true" className="size-4" strokeWidth={2.5} />
-            </Button>
-          ) : (
-            <Button type="submit" size="md" className="w-auto" loading={busy} loadingText={progress ?? "Salvando…"}>
-              {submitLabel}
-            </Button>
-          )}
-        </div>
-
-        {/* Celular: um botão no fim. */}
-        <div className="lg:hidden">
-          <Button type="submit" loading={busy} loadingText={progress ?? "Salvando…"} className="w-full">
-            {submitLabel}
-          </Button>
-        </div>
-        {asideFooter && <div className="lg:hidden">{asideFooter}</div>}
-      </div>
+        </StepCard>
+      </SteppedForm>
     </form>
   );
 }
