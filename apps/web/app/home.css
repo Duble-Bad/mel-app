@@ -1,33 +1,168 @@
 /* Início (Conceito B): efeitos só da home. Fica fora do globals.css para não
    pesar nas outras telas. Tudo usa os tokens do tema (claro e escuro). */
 
-/* ---------- Foto do topo: fita que passa por trás e pela frente da foto ---------- */
-.mh-ribbon {
-  position: absolute;
-  right: -12%;
-  top: 12%;
-  width: 62%;
-  /* Mesma proporção do viewBox: os recortes abaixo valem em unidades do desenho. */
-  aspect-ratio: 4 / 5;
-  height: auto;
-  pointer-events: none;
-  color: var(--mel-primary);
-  overflow: visible;
-}
-.mh-ribbon--back {
-  z-index: 0;
-}
-/* Mesma fita, recortada só no trecho de volta e só dentro da foto: a fita sai
-   de trás da foto, contorna a borda direita e volta cruzando a foto pela
-   frente. O recorte direito (19,4%) coincide com a borda da foto, então a
-   emenda some na própria borda. */
-.mh-ribbon--front {
-  z-index: 2;
-  clip-path: inset(30% 19.4% -30% -30%);
-}
-.mh-photo-wrap {
+/* ---------- Topo (conceito C): o vídeo é o palco ----------
+   Celular: o vídeo vem depois das ações, em largura total. Desktop: encostado na borda direita da
+   tela, inteiro (na proporção do vídeo, sem corte) e dissolvendo no fundo à esquerda e embaixo. */
+.mh-cine-stage {
   position: relative;
-  z-index: 1;
+  aspect-ratio: 1024 / 592;
+  width: calc(100% + 2 * var(--mel-page-gutter));
+  margin-inline: calc(-1 * var(--mel-page-gutter));
+  overflow: hidden;
+  /* Dissolve em transparência (não numa cor): o fundo do topo tem brilhos e não deixa emenda. */
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 80%, transparent 100%);
+}
+@media (min-width: 1024px) {
+  .mh-cine-stage {
+    position: absolute;
+    top: 28px;
+    right: 0;
+    width: min(54vw, 940px);
+    margin: 0;
+    z-index: -1;
+    mask-image:
+      linear-gradient(to right, transparent 0%, #000 28%),
+      linear-gradient(to bottom, transparent 0%, #000 14%, #000 74%, transparent 100%);
+    mask-composite: intersect;
+  }
+  .mh-cine-copy {
+    text-shadow: 0 2px 24px color-mix(in srgb, var(--mel-background) 85%, transparent);
+  }
+}
+/* Pinos de avistamento: pousam, abrem uma onda, mostram o rótulo e somem (ciclo de 7 s). */
+.mh-pin {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+}
+.mh-pin-dot {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--mel-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+  opacity: 0;
+  animation: mh-pin-drop 7s cubic-bezier(0.3, 1.4, 0.5, 1) infinite;
+  animation-delay: var(--d);
+}
+.mh-pin-ring {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--mel-primary);
+  opacity: 0;
+  animation: mh-pin-ring 7s ease-out infinite;
+  animation-delay: var(--d);
+}
+.mh-pin-label {
+  position: absolute;
+  left: 14px;
+  top: -14px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0a111d;
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.45);
+  opacity: 0;
+  animation: mh-pin-label 7s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  animation-delay: var(--d);
+}
+.mh-pin--left .mh-pin-label {
+  left: auto;
+  right: 14px;
+}
+@keyframes mh-pin-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.6);
+  }
+  6%,
+  60% {
+    opacity: 1;
+    transform: none;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes mh-pin-ring {
+  0%,
+  5% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  8% {
+    opacity: 0.9;
+  }
+  30%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+@keyframes mh-pin-label {
+  0%,
+  7% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  12%,
+  58% {
+    opacity: 1;
+    transform: none;
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+/* Brilho que atravessa "com você". */
+.mh-shimmer {
+  background: linear-gradient(100deg, var(--mel-primary) 0%, var(--mel-primary) 40%, #fff3c4 50%, var(--mel-primary) 60%, var(--mel-primary) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: mh-shimmer 4.5s ease-in-out 1.2s infinite;
+}
+.mh-shimmer svg {
+  color: var(--mel-primary);
+}
+@keyframes mh-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  45%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-shimmer {
+    animation: none;
+  }
+  .mh-pin-dot,
+  .mh-pin-label {
+    animation: none;
+    opacity: 1;
+  }
+  .mh-pin-ring {
+    display: none;
+  }
 }
 
 /* Indicador de tempo de cada cena do topo (HeroSlides): enche da esquerda para a direita; pausa

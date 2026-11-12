@@ -17,7 +17,7 @@ import {
 import { Suspense, type ReactNode } from "react";
 import { BrandStory } from "@/components/brand/BrandStory";
 import { AdoptionPreview } from "@/components/home/AdoptionPreview";
-import { HeroSlides } from "@/components/home/HeroSlides";
+import { HeroCinema } from "@/components/home/HeroCinema";
 import { HelpActions } from "@/components/home/HelpActions";
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { NetworkStats } from "@/components/home/NetworkStats";
@@ -57,8 +57,8 @@ export default function HomePage() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-[radial-gradient(60%_70%_at_75%_35%,color-mix(in_srgb,var(--color-status-found-accent)_14%,transparent),transparent_70%),radial-gradient(40%_50%_at_5%_95%,color-mix(in_srgb,var(--color-primary)_12%,transparent),transparent_70%)]"
         />
-        <div className="flex mel-container flex-col gap-6 pt-7 pb-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-8">
-          <div className="flex flex-col items-start gap-4 lg:gap-6 lg:pt-6">
+        <div className="flex mel-container flex-col gap-6 pt-7 pb-10 lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-8">
+          <div className="mh-cine-copy relative z-[1] flex flex-col items-start gap-4 lg:min-h-[470px] lg:justify-center lg:gap-6">
             <span className="inline-flex animate-enter items-center gap-2 rounded-full border border-primary/50 bg-primary-soft/60 px-3.5 py-1.5 text-sm font-semibold text-text-primary">
               <PawPrintSmall />
               Rede de Encontro e Adoção de Pets
@@ -69,7 +69,7 @@ export default function HomePage() {
               style={{ animationDelay: "80ms" }}
             >
               Uma rede inteira procurando{" "}
-              <span className="relative inline-block whitespace-nowrap text-primary">
+              <span className="mh-shimmer relative inline-block whitespace-nowrap text-primary">
                 com você.
                 <svg aria-hidden="true" viewBox="0 0 300 30" preserveAspectRatio="none" className="mel-draw absolute -bottom-[0.14em] left-0 h-[0.3em] w-[92%] overflow-visible">
                   <path d="M4 20 C 80 6, 200 4, 296 16" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" style={{ "--len": 320, "--delay": "0.7s" } as React.CSSProperties} />
@@ -91,9 +91,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Celular: as ações (e os números) vêm antes da foto, pois são a prioridade. Desktop: foto ao lado do texto. */}
-          <div className="order-3 lg:order-none">
-            <HeroPhoto />
+          {/* Celular: as ações (e os números) vêm antes do vídeo, pois são a prioridade. Desktop: o vídeo é o
+              palco à direita, até a borda da tela (posicionado pelo CSS, atrás do texto). */}
+          <div className="order-3 lg:order-none lg:contents">
+            <HeroCinema />
           </div>
 
           <section aria-labelledby="como-ajudar" className="order-2 lg:order-none lg:col-span-2 lg:mt-10">
@@ -327,40 +328,3 @@ function PawPrintSmall() {
   );
 }
 
-// Começa escondida atrás da foto, sai pela direita e volta por cima (ver home.css).
-const RIBBON = "M270 0 C 330 120, 430 250, 250 340 S 120 470, 20 490";
-
-/**
- * Foto do topo com a fita dourada entrelaçada: a mesma fita é desenhada duas
- * vezes — atrás da foto e, recortada só na parte de baixo, na frente dela —
- * e as duas animam juntas, então parece uma fita só passando por trás e por
- * cima. Animações desligam com "reduzir movimento".
- */
-function HeroPhoto() {
-  const ribbon = (cls: string) => (
-    <svg aria-hidden="true" viewBox="0 0 400 500" className={`mh-ribbon ${cls} mel-draw`}>
-      <path d={RIBBON} fill="none" stroke="currentColor" strokeWidth="44" strokeLinecap="round" style={{ "--len": 700, "--delay": "0.5s" } as React.CSSProperties} />
-    </svg>
-  );
-  return (
-    <div className="relative mx-auto mb-6 w-full max-w-xl animate-enter lg:max-w-none" style={{ animationDelay: "120ms" }}>
-      {ribbon("mh-ribbon--back")}
-      <div className="mh-photo-wrap">
-        {/* Duas cenas que se alternam: a foto da Mel e o Guardião no bairro (com o selo de baixo). */}
-        <HeroSlides />
-      </div>
-      {ribbon("mh-ribbon--front")}
-      <svg aria-hidden="true" viewBox="0 0 100 100" className="mel-draw mel-float absolute -top-4 -left-3 z-[3] size-16 text-primary sm:size-20">
-        <path
-          d="M50 84 C 18 60, 8 40, 22 26 C 34 14, 48 24, 50 36 C 54 22, 70 12, 80 26 C 94 44, 74 64, 50 84"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ "--len": 300, "--delay": "1s" } as React.CSSProperties}
-        />
-      </svg>
-    </div>
-  );
-}
