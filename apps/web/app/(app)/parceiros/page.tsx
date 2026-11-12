@@ -90,7 +90,7 @@ function ProgramIntro() {
           Programa de parceiros
         </p>
         <h1 id="programa" className="mt-4 text-[clamp(38px,5.4vw,60px)] leading-[1.02] font-black tracking-[-0.035em]">
-          Seja um parceiro da MEL
+          Seja um parceiro da <span className="text-primary">MEL</span>
         </h1>
         <p className="mt-4 max-w-[54ch] text-lg text-text-secondary">
           Clínicas, pet shops, ONGs, protetores e serviços que ajudam animais a voltar para casa. Parceria pela causa: sem mensalidade, sem venda

@@ -132,11 +132,11 @@ export function PetGallery({ photos, name }: { photos: Photo[]; name: string }) 
             {/* Indicadores: o atual é uma barra que enche no tempo da troca automática. */}
             <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center gap-1.5">
               {photos.map((p, i) => (
-                <span key={p.id} aria-hidden="true" className={`relative h-1.5 overflow-hidden rounded-full bg-[rgb(255_255_255/0.45)] transition-[width] duration-300 ease-mel ${i === index ? "w-7" : "w-1.5"}`}>
+                <span key={p.id} aria-hidden="true" className={`relative h-1.5 overflow-hidden rounded-full bg-[rgb(255_255_255/0.4)] transition-[width] duration-300 ease-mel ${i === index ? "w-7" : "w-1.5"}`}>
                   {i === index && !paused && !reduced && (
-                    <span key={cycle} className="pg-fill absolute inset-0 origin-left rounded-full bg-[rgb(255_255_255)]" style={{ animationDuration: `${AUTOPLAY_MS}ms` }} />
+                    <span key={cycle} className="pg-fill absolute inset-0 origin-left rounded-full bg-primary" style={{ animationDuration: `${AUTOPLAY_MS}ms` }} />
                   )}
-                  {i === index && (paused || reduced) && <span className="absolute inset-0 rounded-full bg-[rgb(255_255_255)]" />}
+                  {i === index && (paused || reduced) && <span className="absolute inset-0 rounded-full bg-primary" />}
                 </span>
               ))}
             </div>
@@ -145,7 +145,7 @@ export function PetGallery({ photos, name }: { photos: Photo[]; name: string }) 
       </div>
 
       {many && (
-        <ul className="flex gap-2 overflow-x-auto pb-1" aria-label="Escolher foto">
+        <ul className="-m-1 flex gap-2 overflow-x-auto p-1" aria-label="Escolher foto">
           {photos.map((p, i) => (
             <li key={p.id} className="shrink-0">
               <button
@@ -153,7 +153,7 @@ export function PetGallery({ photos, name }: { photos: Photo[]; name: string }) 
                 onClick={() => go(i, i >= index ? 1 : -1)}
                 aria-label={`Mostrar foto ${i + 1} de ${photos.length}`}
                 aria-current={i === index || undefined}
-                className={`block size-18 overflow-hidden rounded-xl ring-offset-2 ring-offset-background transition-[opacity,box-shadow] duration-200 ease-mel sm:size-20 ${
+                className={`block size-18 overflow-hidden rounded-xl ring-offset-1 ring-offset-background transition-[opacity,box-shadow] duration-200 ease-mel sm:size-20 ${
                   i === index ? "ring-2 ring-primary" : "opacity-60 hover:opacity-100"
                 }`}
               >

@@ -30,7 +30,7 @@ export default function OriginPage() {
           </figure>
           <div className="mt-4 flex flex-col gap-3">
             <p className="text-caption font-semibold tracking-[.08em] text-link uppercase">Nossa origem</p>
-            <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-4xl">Antes de ser um aplicativo, MEL foi uma busca.</h1>
+            <h1 className="text-3xl font-bold tracking-[-0.025em] sm:text-4xl">Antes de ser um aplicativo, <span className="text-primary">MEL</span> foi uma busca.</h1>
           </div>
         </header>
 

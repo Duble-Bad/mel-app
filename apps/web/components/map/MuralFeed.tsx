@@ -32,7 +32,7 @@ export function MuralFeed({ searchParams }: { searchParams: Promise<Params> }) {
     <main className="mel-container flex-1 pb-16">
       <header className="flex animate-enter flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-10 pb-6">
         <div className="flex max-w-2xl flex-col gap-2.5">
-          <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.05] font-black tracking-[-0.03em]">Mural da MEL</h1>
+          <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.05] font-black tracking-[-0.03em]">Mural da <span className="text-primary">MEL</span></h1>
           <p className="max-w-[60ch] text-lg text-text-secondary">Acompanhe os pets perdidos, encontrados e disponíveis para adoção na sua região.</p>
         </div>
         {/* No celular, duas colunas iguais: os mesmos lados dos filtros "Cães e gatos" e "Qualquer porte". */}

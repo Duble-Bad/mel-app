@@ -67,7 +67,7 @@ export function GuardianForm({ userId, initial }: { userId: string; initial: Gua
         <Card className="flex flex-col gap-4 bg-surface-warm">
           <GuardianHero radiusLabel={radiusLabel(radiusM)} />
           <div className="flex flex-col gap-1.5">
-            <h1 className="text-2xl font-bold">Seja um Guardião MEL</h1>
+            <h1 className="text-2xl font-bold">Seja um Guardião <span className="text-primary">MEL</span></h1>
             <p className="text-text-secondary">
               Receba um aviso quando um pet se perder — ou for encontrado — perto de você. Você escolhe a área, o raio e quantos
               avisos por dia.
