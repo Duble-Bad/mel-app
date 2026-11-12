@@ -40,13 +40,25 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 
 const isCode = (code: string) => /^[a-z2-9]{6}$/i.test(code);
 
-export async function generateMetadata({ params }: PageProps<"/alerta/[code]">): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps<"/alerta/[code]">): Promise<Metadata> {
   const { code } = await params;
-  const c = isCode(code) ? await getPublicLostCase(createPublicClient(), code).catch(() => null) : null;
+  const c = isCode(code)
+    ? await getPublicLostCase(createPublicClient(), code).catch(() => null)
+    : null;
   if (!c) return { title: "Alerta não encontrado", robots: { index: false } };
   // Encerrado pelo tutor: página só histórica, sem prévia de "procura-se" e fora das buscas.
-  if (c.status === "CLOSED") return { title: `Alerta encerrado: ${c.pet.name}`, description: "Este alerta foi encerrado pelo tutor.", robots: { index: false, follow: false } };
-  const title = c.status === "FOUND" ? `ENCONTRADO: ${c.pet.name}` : `PERDIDO: ${c.pet.name}`;
+  if (c.status === "CLOSED")
+    return {
+      title: `Alerta encerrado: ${c.pet.name}`,
+      description: "Este alerta foi encerrado pelo tutor.",
+      robots: { index: false, follow: false },
+    };
+  const title =
+    c.status === "FOUND"
+      ? `ENCONTRADO: ${c.pet.name}`
+      : `PERDIDO: ${c.pet.name}`;
   const description = [
     petSummary(c.pet),
     c.areaLabel && `visto por último perto de ${c.areaLabel}`,
@@ -70,23 +82,43 @@ export async function generateMetadata({ params }: PageProps<"/alerta/[code]">):
       siteName: "MEL",
       locale: "pt_BR",
       // Prévia do link: a FOTO do animal em destaque (1200×630), com status, nome e região.
-      images: [{ url: `${canonical}/cartaz/og`, type: "image/png", width: 1200, height: 630, alt: `Foto de ${c.pet.name} — ${title}` }],
+      images: [
+        {
+          url: `${canonical}/cartaz/og`,
+          type: "image/png",
+          width: 1200,
+          height: 630,
+          alt: `Foto de ${c.pet.name} — ${title}`,
+        },
+      ],
     },
     twitter: { card: "summary_large_image" },
   };
 }
 
-export default function AlertPage({ params, searchParams }: PageProps<"/alerta/[code]">) {
+export default function AlertPage({
+  params,
+  searchParams,
+}: PageProps<"/alerta/[code]">) {
   return (
     <main className="mx-auto w-full max-w-xl flex-1 pb-10 lg:max-w-[1264px] lg:px-8 lg:pt-8">
-      <Suspense fallback={<div className="px-4 pt-6"><LoadingState label="Carregando alerta…" /></div>}>
+      <Suspense
+        fallback={
+          <div className="px-4 pt-6">
+            <LoadingState label="Carregando alerta…" />
+          </div>
+        }
+      >
         <AlertContent params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]">) {
+async function AlertContent({
+  params,
+  searchParams,
+}: PageProps<"/alerta/[code]">) {
   const { code } = await params;
   const query = await searchParams;
   if (!isCode(code)) notFound();
@@ -107,123 +139,172 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
   return (
     // Desktop: galeria fixa à esquerda e o essencial (status, ações, compartilhar) à direita;
     // mapa e linha do tempo lado a lado embaixo. Celular: uma coluna, como antes.
-    <article className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10 lg:gap-y-10">
-      <div className="lg:sticky lg:top-24">
-        {photo ? (
-          // Foto inteira (contain): cartaz vertical ou foto deitada não perdem o topo nem os lados.
-          <PhotoGallery photos={c.pet.photos} name={c.pet.name} mainClassName="aspect-square w-full bg-surface-muted object-contain sm:rounded-b-lg lg:rounded-2xl" thumbsClassName="px-4 lg:px-0" />
-        ) : (
-          <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-5xl lg:rounded-2xl" aria-hidden="true">
-            {c.pet.species === "cat" ? "🐱" : c.pet.species === "dog" ? "🐶" : "🐾"}
-          </div>
-        )}
-      </div>
+    <article className="flex flex-col gap-6 lg:gap-10">
+      {/* Bloco de cima num grid próprio: a galeria fica fixa só enquanto a coluna da direita rola e
+          nunca passa por cima do mapa e da linha do tempo, que vêm depois, em outro bloco. */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
+        <div className="lg:sticky lg:top-24">
+          {photo ? (
+            // Foto inteira (contain): cartaz vertical ou foto deitada não perdem o topo nem os lados.
+            <PhotoGallery
+              photos={c.pet.photos}
+              name={c.pet.name}
+              mainClassName="aspect-square w-full bg-surface-muted object-contain sm:rounded-b-lg lg:rounded-2xl"
+              thumbsClassName="px-4 lg:px-0"
+            />
+          ) : (
+            <div
+              className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-5xl lg:rounded-2xl"
+              aria-hidden="true"
+            >
+              {c.pet.species === "cat"
+                ? "🐱"
+                : c.pet.species === "dog"
+                  ? "🐶"
+                  : "🐾"}
+            </div>
+          )}
+        </div>
 
-      <div className="flex flex-col gap-6 px-4 lg:px-0">
-        {c.status === "FOUND" && <ReunionBanner c={c} celebrate={c.isOwner && Boolean(query.reencontro)} />}
+        <div className="flex flex-col gap-6 px-4 lg:px-0">
+          {c.status === "FOUND" && (
+            <ReunionBanner
+              c={c}
+              celebrate={c.isOwner && Boolean(query.reencontro)}
+            />
+          )}
 
-        {c.status === "CLOSED" && (
-          <Alert tone="info">
-            <strong>Este alerta foi encerrado pelo tutor.</strong>
-            {c.closedAt && ` Encerrado em ${formatDateTimeBr(c.closedAt)}.`}
-            {c.isOwner && " Os avistamentos e as conversas continuam guardados aqui para você."}
-          </Alert>
-        )}
+          {c.status === "CLOSED" && (
+            <Alert tone="info">
+              <strong>Este alerta foi encerrado pelo tutor.</strong>
+              {c.closedAt && ` Encerrado em ${formatDateTimeBr(c.closedAt)}.`}
+              {c.isOwner &&
+                " Os avistamentos e as conversas continuam guardados aqui para você."}
+            </Alert>
+          )}
 
-        {c.isOwner && query.editado && c.status === "ACTIVE" && <Alert tone="success">Alterações salvas.</Alert>}
+          {c.isOwner && query.editado && c.status === "ACTIVE" && (
+            <Alert tone="success">Alterações salvas.</Alert>
+          )}
 
-        {c.isOwner && query.novo && (
-          <Alert tone="success">
-            <strong>Alerta MEL ativado.</strong> Agora outras pessoas poderão ajudar na busca. Compartilhe para alcançar
-            ainda mais pessoas.
-          </Alert>
-        )}
+          {c.isOwner && query.novo && (
+            <Alert tone="success">
+              <strong>Alerta MEL ativado.</strong> Agora outras pessoas poderão
+              ajudar na busca. Compartilhe para alcançar ainda mais pessoas.
+            </Alert>
+          )}
 
-        <header className="flex flex-col gap-2">
-          <div>
-            {c.status === "FOUND" ? (
-              <StatusBadge status="found">Encontrado</StatusBadge>
-            ) : c.status === "CLOSED" ? (
-              <StatusBadge status="draft">Encerrado</StatusBadge>
-            ) : (
-              <StatusBadge status="lost">Perdido</StatusBadge>
+          <header className="flex flex-col gap-2">
+            <div>
+              {c.status === "FOUND" ? (
+                <StatusBadge status="found">Encontrado</StatusBadge>
+              ) : c.status === "CLOSED" ? (
+                <StatusBadge status="draft">Encerrado</StatusBadge>
+              ) : (
+                <StatusBadge status="lost">Perdido</StatusBadge>
+              )}
+            </div>
+            <h1 className="text-3xl font-bold">{c.pet.name}</h1>
+            <p className="text-lg text-text-secondary">{petSummary(c.pet)}</p>
+            {c.lostAt && c.status === "FOUND" && (
+              <p className="text-text-secondary">
+                Desapareceu em {formatDateTimeBr(c.lostAt)}
+              </p>
             )}
-          </div>
-          <h1 className="text-3xl font-bold">{c.pet.name}</h1>
-          <p className="text-lg text-text-secondary">{petSummary(c.pet)}</p>
-          {c.lostAt && c.status === "FOUND" && (
-            <p className="text-text-secondary">Desapareceu em {formatDateTimeBr(c.lostAt)}</p>
-          )}
-          {c.lostAt && c.status === "ACTIVE" && (
-            <p className="font-semibold">
-              Desapareceu {timeAgo(c.lostAt)}
-              <span className="font-normal text-text-secondary">
-                {" "}
-                · {formatDateTimeBr(c.lostAt)}
-                {c.lostAtUncertain && " (horário aproximado)"}
-              </span>
-            </p>
-          )}
-          {c.areaLabel && c.status === "ACTIVE" && <p>Visto por último perto de <strong>{c.areaLabel}</strong></p>}
-        </header>
+            {c.lostAt && c.status === "ACTIVE" && (
+              <p className="font-semibold">
+                Desapareceu {timeAgo(c.lostAt)}
+                <span className="font-normal text-text-secondary">
+                  {" "}
+                  · {formatDateTimeBr(c.lostAt)}
+                  {c.lostAtUncertain && " (horário aproximado)"}
+                </span>
+              </p>
+            )}
+            {c.areaLabel && c.status === "ACTIVE" && (
+              <p>
+                Visto por último perto de <strong>{c.areaLabel}</strong>
+              </p>
+            )}
+          </header>
 
-        {c.isOwner && c.status === "ACTIVE" && (
-          <Link
-            href={`/alerta/${c.code}/reencontro`}
-            className="inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-md bg-status-found-solid px-5 font-semibold text-text-inverse shadow-xs transition-[filter,transform] duration-200 ease-mel hover:brightness-110 active:scale-[.985]"
-          >
-            <Heart aria-hidden="true" className="size-5" strokeWidth={2} />
-            Meu pet foi encontrado
-          </Link>
-        )}
-        {c.isOwner && c.status === "ACTIVE" && (
-          // Reencontro é a ação positiva; editar é normal; encerrar é secundária (com confirmação).
-          <div className="-mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <ButtonLink href={`/alerta/${c.code}/editar`} variant="secondary" size="md" className="whitespace-nowrap sm:w-auto sm:px-6">
-              <Pencil aria-hidden="true" className="size-4" strokeWidth={2} />
-              Editar alerta
-            </ButtonLink>
-            <CloseLostCaseButton code={c.code} petName={c.pet.name} />
-          </div>
-        )}
-
-        {!c.isOwner && c.status === "ACTIVE" && (
-          <Link
-            href={`/avistamento/${c.code}`}
-            className="inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-lg bg-status-sighting-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card"
-          >
-            <span aria-hidden="true">👁</span> {SIGHTING_BUTTON_LABEL}
-          </Link>
-        )}
-
-        {c.status !== "CLOSED" && (
-        <section aria-labelledby="compartilhar" className="flex flex-col gap-2">
-          <h2 id="compartilhar" className="font-bold">
-            {c.status === "FOUND" ? "Compartilhe a boa notícia" : c.isOwner ? "Compartilhe para alcançar mais pessoas" : "Ajude compartilhando"}
-          </h2>
-          {/* "Criar cartaz": quatro modelos por formato (liberado pelo proprietário em 2026-11-10). */}
           {c.isOwner && c.status === "ACTIVE" && (
-            <ButtonLink href={`/alerta/${c.code}/cartaz/criar`} variant="secondary" size="md" data-testid="criar-cartaz-link">
-              🖼️ Criar cartaz (escolha o modelo)
-            </ButtonLink>
+            <Link
+              href={`/alerta/${c.code}/reencontro`}
+              className="inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-md bg-status-found-solid px-5 font-semibold text-text-inverse shadow-xs transition-[filter,transform] duration-200 ease-mel hover:brightness-110 active:scale-[.985]"
+            >
+              <Heart aria-hidden="true" className="size-5" strokeWidth={2} />
+              Meu pet foi encontrado
+            </Link>
           )}
-          <ShareAlert lostCase={c} path={alertPath(c.code)} />
-        </section>
-        )}
+          {c.isOwner && c.status === "ACTIVE" && (
+            // Reencontro é a ação positiva; editar é normal; encerrar é secundária (com confirmação).
+            <div className="-mt-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <ButtonLink
+                href={`/alerta/${c.code}/editar`}
+                variant="secondary"
+                size="md"
+                className="whitespace-nowrap sm:w-auto sm:px-6"
+              >
+                <Pencil aria-hidden="true" className="size-4" strokeWidth={2} />
+                Editar alerta
+              </ButtonLink>
+              <CloseLostCaseButton code={c.code} petName={c.pet.name} />
+            </div>
+          )}
 
-        {/* Depois do essencial (nome, ações, compartilhar): o convite para avisos não toma o topo. */}
-        {c.isOwner && c.status === "ACTIVE" && <TutorPushPrompt />}
+          {!c.isOwner && c.status === "ACTIVE" && (
+            <Link
+              href={`/avistamento/${c.code}`}
+              className="inline-flex min-h-16 w-full items-center justify-center gap-2 rounded-lg bg-status-sighting-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card"
+            >
+              <span aria-hidden="true">👁</span> {SIGHTING_BUTTON_LABEL}
+            </Link>
+          )}
 
-        <Contact c={c} />
+          {c.status !== "CLOSED" && (
+            <section
+              aria-labelledby="compartilhar"
+              className="flex flex-col gap-2"
+            >
+              <h2 id="compartilhar" className="font-bold">
+                {c.status === "FOUND"
+                  ? "Compartilhe a boa notícia"
+                  : c.isOwner
+                    ? "Compartilhe para alcançar mais pessoas"
+                    : "Ajude compartilhando"}
+              </h2>
+              {/* "Criar cartaz": quatro modelos por formato (liberado pelo proprietário em 2026-11-10). */}
+              {c.isOwner && c.status === "ACTIVE" && (
+                <ButtonLink
+                  href={`/alerta/${c.code}/cartaz/criar`}
+                  variant="secondary"
+                  size="md"
+                  data-testid="criar-cartaz-link"
+                >
+                  🖼️ Criar cartaz (escolha o modelo)
+                </ButtonLink>
+              )}
+              <ShareAlert lostCase={c} path={alertPath(c.code)} />
+            </section>
+          )}
 
-        <Facts c={c} />
+          {/* Depois do essencial (nome, ações, compartilhar): o convite para avisos não toma o topo. */}
+          {c.isOwner && c.status === "ACTIVE" && <TutorPushPrompt />}
+
+          <Contact c={c} />
+
+          <Facts c={c} />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-6 px-4 lg:col-span-2 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-0">
+      <div className="flex flex-col gap-6 px-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-10 lg:px-0">
         {c.point && (
           <section aria-labelledby="mapa" className="flex flex-col gap-2">
             <h2 id="mapa" className="font-bold">
-              {visibleSightings.length ? "Mapa da busca" : "Último local conhecido"}
+              {visibleSightings.length
+                ? "Mapa da busca"
+                : "Último local conhecido"}
             </h2>
             <MapView
               // Remonta quando chegam avistamentos novos (o mapa é estático).
@@ -232,7 +313,12 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               zoom={15}
               areaLabel={c.areaLabel}
               pins={[
-                { id: c.code, kind: "lost", position: c.point, label: `${c.pet.name}, último local conhecido` },
+                {
+                  id: c.code,
+                  kind: "lost",
+                  position: c.point,
+                  label: `${c.pet.name}, último local conhecido`,
+                },
                 ...visibleSightings.map((s, i) => ({
                   id: s.id,
                   kind: "sighting" as const,
@@ -242,42 +328,56 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
               ]}
               path={[c.point, ...visibleSightings.map((s) => s.position)]}
               label={`Mapa: ${c.pet.name} visto por último perto de ${c.areaLabel ?? "este ponto"}${
-                visibleSightings.length ? ` e ${visibleSightings.length} avistamento(s)` : ""
+                visibleSightings.length
+                  ? ` e ${visibleSightings.length} avistamento(s)`
+                  : ""
               }`}
             />
             <p className="text-sm text-text-secondary">
               {`Ponto vermelho (!): último local conhecido${c.pointIsExact ? "" : ", aproximado (cerca de 100 m)"}. `}
               {visibleSightings.length > 0 &&
                 `Pontos com olho (👁): avistamentos, ligados por linha tracejada em ordem de horário${
-                  visibleSightings.some((s) => !s.pointIsExact) ? " (localização aproximada)" : ""
+                  visibleSightings.some((s) => !s.pointIsExact)
+                    ? " (localização aproximada)"
+                    : ""
                 }.`}
             </p>
           </section>
         )}
 
         {(c.status !== "CLOSED" || c.isOwner) && (
-        <section aria-labelledby="linha-do-tempo-titulo" id="linha-do-tempo" className="flex scroll-mt-4 flex-col gap-2">
-          <h2 id="linha-do-tempo-titulo" className="font-bold">
-            Linha do tempo
-          </h2>
-          <Timeline
-            petName={c.pet.name}
-            lastSeen={c.lostAt ? { at: c.lostAt, areaLabel: c.areaLabel } : null}
-            sightings={timeline}
-            isOwner={c.isOwner}
-            helpfulSightingId={c.helpfulSightingId}
-            closed={c.status !== "ACTIVE"}
-          />
-        </section>
+          <section
+            aria-labelledby="linha-do-tempo-titulo"
+            id="linha-do-tempo"
+            className="flex scroll-mt-4 flex-col gap-2"
+          >
+            <h2 id="linha-do-tempo-titulo" className="font-bold">
+              Linha do tempo
+            </h2>
+            <Timeline
+              petName={c.pet.name}
+              lastSeen={
+                c.lostAt ? { at: c.lostAt, areaLabel: c.areaLabel } : null
+              }
+              sightings={timeline}
+              isOwner={c.isOwner}
+              helpfulSightingId={c.helpfulSightingId}
+              closed={c.status !== "ACTIVE"}
+            />
+          </section>
         )}
 
-        {c.isOwner && user && c.status === "ACTIVE" && <LiveSightings userId={user.id} code={c.code} />}
+        {c.isOwner && user && c.status === "ACTIVE" && (
+          <LiveSightings userId={user.id} code={c.code} />
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-2 lg:col-span-2">
           <p className="text-sm text-text-secondary">
             MEL ID {c.pet.melId} · Alerta {c.code}
           </p>
-          {!c.isOwner && c.status !== "CLOSED" && <ReportButton type="lost_case" targetKey={c.code} />}
+          {!c.isOwner && c.status !== "CLOSED" && (
+            <ReportButton type="lost_case" targetKey={c.code} />
+          )}
         </div>
       </div>
     </article>
@@ -287,7 +387,12 @@ async function AlertContent({ params, searchParams }: PageProps<"/alerta/[code]"
 function Contact({ c }: { c: PublicLostCase }) {
   const chat = c.contactChat && c.status === "ACTIVE";
   // Encontrado: sem contato público (o chat de quem já conversou continua em Conversas).
-  if (c.isOwner || c.status !== "ACTIVE" || (!chat && !c.contactWhatsapp && !c.contactPhone)) return null;
+  if (
+    c.isOwner ||
+    c.status !== "ACTIVE" ||
+    (!chat && !c.contactWhatsapp && !c.contactPhone)
+  )
+    return null;
   return (
     <section aria-labelledby="contato" className="flex flex-col gap-2">
       <h2 id="contato" className="font-bold">
@@ -303,11 +408,16 @@ function Contact({ c }: { c: PublicLostCase }) {
       )}
       {c.contactWhatsapp && (
         <a
-          href={whatsappChatUrl(c.contactWhatsapp, `Olá! Vi o alerta da MEL sobre ${c.pet.name}.`)}
+          href={whatsappChatUrl(
+            c.contactWhatsapp,
+            `Olá! Vi o alerta da MEL sobre ${c.pet.name}.`,
+          )}
           target="_blank"
           rel="noopener noreferrer"
           className={`inline-flex items-center justify-center gap-2 rounded-md px-4 font-bold ${
-            chat ? "min-h-12 border-2 border-border-strong bg-surface" : "min-h-14 bg-primary text-lg text-primary-foreground"
+            chat
+              ? "min-h-12 border-2 border-border-strong bg-surface"
+              : "min-h-14 bg-primary text-lg text-primary-foreground"
           }`}
         >
           WhatsApp do tutor
@@ -322,8 +432,9 @@ function Contact({ c }: { c: PublicLostCase }) {
         </a>
       )}
       <p className="text-sm text-text-secondary">
-        {chat && "Pelo chat, seu telefone e o do tutor não aparecem. "}Nunca pague nada antes de ver o animal pessoalmente. A MEL
-        nunca pede pagamento.
+        {chat && "Pelo chat, seu telefone e o do tutor não aparecem. "}Nunca
+        pague nada antes de ver o animal pessoalmente. A MEL nunca pede
+        pagamento.
       </p>
     </section>
   );
@@ -331,14 +442,27 @@ function Contact({ c }: { c: PublicLostCase }) {
 
 function Facts({ c }: { c: PublicLostCase }) {
   const p = c.pet;
-  const colors = [p.colorPrimary, ...p.colorsSecondary].filter(Boolean).map(colorLabel).join(", ");
+  const colors = [p.colorPrimary, ...p.colorsSecondary]
+    .filter(Boolean)
+    .map(colorLabel)
+    .join(", ");
   const rows: [string, string | null][] = [
     ["Raça", p.breed ? breedLabel(p.breed) : null],
     ["Sexo", p.sex !== "unknown" ? SEX_LABELS[p.sex] : null],
-    ["Porte", p.size ? `${SIZE_LABELS[p.size].label} (${SIZE_LABELS[p.size].hint})` : null],
+    [
+      "Porte",
+      p.size
+        ? `${SIZE_LABELS[p.size].label} (${SIZE_LABELS[p.size].hint})`
+        : null,
+    ],
     ["Idade", describeAge(p)],
     ["Cores", colors || null],
-    ["Usando", c.wearing.length ? c.wearing.map((w) => WEARING_LABELS[w]).join(", ") : null],
+    [
+      "Usando",
+      c.wearing.length
+        ? c.wearing.map((w) => WEARING_LABELS[w]).join(", ")
+        : null,
+    ],
   ];
   const visible = rows.filter(([, v]) => v);
   // Pet cadastrado só com o essencial: nada de título sem conteúdo.
