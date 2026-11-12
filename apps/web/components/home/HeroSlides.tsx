@@ -1,11 +1,14 @@
 "use client";
 
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 
-type Slide = {
+export type Slide = {
   key: string;
+  /** Imagem da cena (no vídeo, é o quadro de capa: o primeiro quadro do vídeo). */
   src: string;
+  /** Cena em vídeo (sem som, em loop). A troca usa o quadro que estava na tela. */
+  video?: { mp4: string; webm: string };
   /** Proporção natural da imagem (largura / altura). */
   ratio: number;
   alt: string;
@@ -17,7 +20,7 @@ type Slide = {
   chip: { title: string; text: string; dot: string };
 };
 
-const SLIDES: Slide[] = [
+const DEFAULT_SLIDES: Slide[] = [
   {
     key: "rede",
     src: "/fotos/mel-e-gatinho.webp",
@@ -41,6 +44,17 @@ const SLIDES: Slide[] = [
     chip: { title: "Guardiões no seu bairro", text: "avisos chegam a quem está perto", dot: "bg-primary" },
   },
 ];
+
+/** A cena da Mel com o gatinho em vídeo (loop de 10 s, vai e volta). */
+export const VIDEO_SLIDE: Slide = {
+  ...DEFAULT_SLIDES[0]!,
+  src: "/videos/mel-e-gatinho-poster.webp",
+  video: { mp4: "/videos/mel-e-gatinho.mp4", webm: "/videos/mel-e-gatinho.webm" },
+  ratio: 1024 / 592,
+  pos: [0.62, 0.4],
+  alt: "Vídeo: a Mel, uma Yorkshire com laço amarelo, brincando com um gatinho tigrado na grama",
+};
+export const VIDEO_SLIDES: Slide[] = [VIDEO_SLIDE, DEFAULT_SLIDES[1]!];
 
 const HOLD_S = 7; // tempo de cada cena
 const FLIP_S = 0.9; // virada de cada quarteirão
@@ -70,7 +84,10 @@ function coverRect(s: Slide, W: number, H: number) {
  * um toque; pausa com o mouse em cima ou o foco dentro. "Reduzir movimento": sem troca automática,
  * sem inclinação e a troca só esmaece.
  */
-export function HeroSlides() {
+export function HeroSlides({ slides: SLIDES = DEFAULT_SLIDES, frameClassName }: { slides?: Slide[]; frameClassName?: string } = {}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  // Quadro do vídeo no instante da troca: os quarteirões viram a partir dele, sem "pulo".
+  const [snap, setSnap] = useState<string | null>(null);
   const frame = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [state, setState] = useState<{ index: number; next: number | null; run: number }>({ index: 0, next: null, run: 0 });
@@ -79,6 +96,14 @@ export function HeroSlides() {
   const { index, next } = state;
   const slide = SLIDES[index]!;
   const shown = SLIDES[next ?? index]!; // o selo e os indicadores já mostram a cena que está chegando
+
+  // Vídeo: toca só sem "reduzir movimento" (fica no quadro de capa); o atributo autoPlay tocaria antes de sabermos.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (reduced) v.pause();
+    else v.play().catch(() => {});
+  }, [reduced, slide.key]);
 
   useLayoutEffect(() => {
     const el = frame.current;
@@ -90,6 +115,18 @@ export function HeroSlides() {
 
   const go = (i: number) => {
     const target = (i + SLIDES.length) % SLIDES.length;
+    const v = videoRef.current;
+    if (state.next === null && target !== state.index && v && v.readyState >= 2 && v.videoWidth) {
+      try {
+        const c = document.createElement("canvas");
+        c.width = v.videoWidth;
+        c.height = v.videoHeight;
+        c.getContext("2d")?.drawImage(v, 0, 0);
+        setSnap(c.toDataURL("image/jpeg", 0.85));
+      } catch {
+        setSnap(null);
+      }
+    } else if (state.next === null) setSnap(null);
     setState((s) => (s.next !== null || target === s.index ? s : { ...s, next: target, run: s.run + 1 }));
   };
   const finish = () => setState((s) => (s.next === null ? s : { index: s.next, next: null, run: s.run }));
@@ -126,7 +163,7 @@ export function HeroSlides() {
       onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setHold(false)}
     >
       {/* isolate: as camadas das cenas ficam presas no quadro e nunca cobrem os controles. */}
-      <div ref={frame} className="mh-slides relative isolate aspect-[16/11] w-full overflow-hidden rounded-hero bg-surface-muted shadow-lg lg:aspect-auto lg:h-[480px]">
+      <div ref={frame} className={frameClassName ?? "mh-slides relative isolate aspect-[16/11] w-full overflow-hidden rounded-hero bg-surface-muted shadow-lg lg:aspect-auto lg:h-[480px]"}>
         {/* Cena atual (inteira, nítida) */}
         <AnimatePresence initial={false}>
           <motion.div
@@ -137,20 +174,37 @@ export function HeroSlides() {
             exit={reduced ? { opacity: 0 } : { opacity: 1, transition: { duration: 0 } }}
             transition={{ duration: 0.5 }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element -- já otimizada; repetida nos quarteirões da troca */}
-            <img
-              src={slide.src}
-              alt={slide.alt}
-              fetchPriority={index === 0 ? "high" : "auto"}
-              className="hs-kenburns size-full object-cover"
-              style={{ objectPosition: `${slide.pos[0] * 100}% ${slide.pos[1] * 100}%` }}
-            />
+            {slide.video ? (
+              <video
+                ref={videoRef}
+                aria-label={slide.alt}
+                poster={slide.src}
+                muted
+                loop
+                playsInline
+                preload="auto"
+                className="size-full object-cover"
+                style={{ objectPosition: `${slide.pos[0] * 100}% ${slide.pos[1] * 100}%` }}
+              >
+                <source src={slide.video.webm} type="video/webm" />
+                <source src={slide.video.mp4} type="video/mp4" />
+              </video>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- já otimizada; repetida nos quarteirões da troca
+              <img
+                src={slide.src}
+                alt={slide.alt}
+                fetchPriority={index === 0 ? "high" : "auto"}
+                className="hs-kenburns size-full object-cover"
+                style={{ objectPosition: `${slide.pos[0] * 100}% ${slide.pos[1] * 100}%` }}
+              />
+            )}
             {slide.key === "guardiao" && size.w > 0 && <GuardianLife slide={slide} W={size.w} H={size.h} />}
           </motion.div>
         </AnimatePresence>
 
         {/* Troca: a grade de quarteirões vira em onda a partir da origem da cena que chega */}
-        {next !== null && !reduced && size.w > 0 && <TileWave key={state.run} from={slide} to={SLIDES[next]!} W={size.w} H={size.h} onDone={finish} />}
+        {next !== null && !reduced && size.w > 0 && <TileWave key={state.run} from={slide} fromSrc={slide.video ? snap : null} to={SLIDES[next]!} W={size.w} H={size.h} onDone={finish} />}
         {next !== null && reduced && <ReducedSwap onDone={finish} />}
 
         {/* Reflexo de luz que acompanha o mouse */}
@@ -216,12 +270,12 @@ export function HeroSlides() {
 }
 
 /** Uma imagem recortada no tamanho do quadro, para cada face de cada quarteirão. */
-function FaceImg({ s, W, H, c, r, tw, th }: { s: Slide; W: number; H: number; c: number; r: number; tw: number; th: number }) {
+function FaceImg({ s, src, W, H, c, r, tw, th }: { s: Slide; src?: string | null; W: number; H: number; c: number; r: number; tw: number; th: number }) {
   const rect = coverRect(s, W, H);
   return (
     // eslint-disable-next-line @next/next/no-img-element -- recorte da mesma imagem já carregada
     <img
-      src={s.src}
+      src={src ?? s.src}
       alt=""
       draggable={false}
       className="absolute max-w-none select-none"
@@ -235,7 +289,7 @@ function FaceImg({ s, W, H, c, r, tw, th }: { s: Slide; W: number; H: number; c:
  * = cena atual, verso = cena nova; cada quarteirão sobe um pouco no meio da virada e acende uma borda
  * dourada. Ao terminar, avisa (onDone) e some — a cena nova já está inteira por baixo.
  */
-function TileWave({ from, to, W, H, onDone }: { from: Slide; to: Slide; W: number; H: number; onDone: () => void }) {
+function TileWave({ from, fromSrc, to, W, H, onDone }: { from: Slide; fromSrc?: string | null; to: Slide; W: number; H: number; onDone: () => void }) {
   const cols = W >= 480 ? 8 : 6;
   const rows = Math.max(4, Math.round((cols * H) / W));
   const tw = W / cols;
@@ -263,7 +317,7 @@ function TileWave({ from, to, W, H, onDone }: { from: Slide; to: Slide; W: numbe
         >
           <div className="hs-tile-inner">
             <div className="hs-face hs-face--front">
-              <FaceImg s={from} W={W} H={H} c={c} r={r} tw={tw} th={th} />
+              <FaceImg s={from} src={fromSrc} W={W} H={H} c={c} r={r} tw={tw} th={th} />
             </div>
             <div className="hs-face hs-face--back">
               <FaceImg s={to} W={W} H={H} c={c} r={r} tw={tw} th={th} />

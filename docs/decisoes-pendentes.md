@@ -18,6 +18,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
+| 12 | 2026-11-12 | **Topo do início: vídeo da Mel com o gatinho + 1 de 3 conceitos no lugar da fita amarela** — A · Rede viva, B · Moldura de luz, C · Cinemático | Protótipo em `/dev/hero-conceitos?c=a` (`b`, `c`); a home real não mudou. Vídeo em loop contínuo de 10 s, sem som (WebM 1,9 MB / MP4 2,1 MB) |
 | 10 | 2026-11-06 | **Merge e produção**: configurar `mel-prod` (migrations 24–48, chaves PII) e publicar | Nada em produção sem autorização expressa |
 
 ## Decididas
