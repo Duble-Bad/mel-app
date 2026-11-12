@@ -7,6 +7,10 @@
    PROIBIDO: cor direta (bg-[#…]) quando existe token. */
 @theme inline {
   --color-*: initial;
+  /* Branco e preto puros: o "--color-*: initial" acima apagava os dois, e text-white, bg-black/70
+     etc. (ícones sobre cor, selos sobre fotos, fundo de tela cheia) ficavam sem cor. */
+  --color-white: #fff;
+  --color-black: #000;
   --color-honey-50: var(--mel-honey-50);
   --color-honey-100: var(--mel-honey-100);
   --color-honey-200: var(--mel-honey-200);

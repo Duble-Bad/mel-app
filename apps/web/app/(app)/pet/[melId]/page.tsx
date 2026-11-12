@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Cake, Cpu, HeartPulse, MapPin, Palette, PawPrint, Ruler, Weight, type LucideIcon } from "lucide-react";
 import {
   BR_STATES,
   breedLabel,
@@ -17,6 +18,7 @@ import { getPetByMelId } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { Alert } from "@/components/ui/Alert";
+import { PetGallery } from "@/components/pets/PetGallery";
 import { LoadingState } from "@/components/ui/States";
 
 export async function generateMetadata({ params }: PageProps<"/pet/[melId]">): Promise<Metadata> {
@@ -101,30 +103,13 @@ async function PetContent({ melId }: { melId: string }) {
 }
 
 function Hero({ pet }: { pet: Pet }) {
+  if (!pet.photos.length) return null;
+  // Principal primeiro, depois as outras na ordem do cadastro.
   const photo = primaryPhoto(pet);
-  const others = pet.photos.filter((p) => p.id !== photo?.id);
-  if (!photo) return null;
+  const ordered = photo ? [photo, ...pet.photos.filter((p) => p.id !== photo.id)] : pet.photos;
   return (
-    <div className="flex flex-col gap-3 lg:sticky lg:top-24">
-      {/* Foto inteira, sem corte (cartaz vertical, foto deitada…): o fundo é a própria foto desfocada. */}
-      <div className="relative isolate flex aspect-[4/5] max-h-[78vh] w-full items-center justify-center overflow-hidden rounded-2xl bg-surface-muted">
-        {/* eslint-disable-next-line @next/next/no-img-element -- fundo decorativo (miniatura) */}
-        <img src={photo.thumbUrl} alt="" aria-hidden="true" className="absolute inset-0 -z-10 size-full scale-110 object-cover opacity-60 blur-2xl" />
-        {/* eslint-disable-next-line @next/next/no-img-element -- imagem já otimizada (1280px) no upload */}
-        <img src={photo.url} alt={`Foto de ${pet.name}`} className="max-h-full max-w-full object-contain" />
-      </div>
-      {others.length > 0 && (
-        <ul className="flex gap-2 overflow-x-auto" aria-label="Outras fotos">
-          {others.map((p) => (
-            <li key={p.id} className="shrink-0">
-              <a href={p.url} target="_blank" rel="noreferrer" className="block size-20 overflow-hidden rounded-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element -- miniatura */}
-                <img src={p.thumbUrl} alt={`Outra foto de ${pet.name}`} loading="lazy" className="size-full object-cover" />
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="min-w-0 lg:sticky lg:top-24">
+      <PetGallery photos={ordered.map(({ id, url, thumbUrl }) => ({ id, url, thumbUrl }))} name={pet.name} />
     </div>
   );
 }
@@ -133,26 +118,52 @@ function Facts({ pet }: { pet: Pet }) {
   const age = describeAge(pet);
   const colors = [pet.colorPrimary, ...pet.colorsSecondary].filter(Boolean).map(colorLabel).join(", ");
   const stateName = BR_STATES.find((s) => s.uf === pet.state)?.uf;
-  const rows: [string, string | null][] = [
-    ["Raça", pet.breed ? breedLabel(pet.breed) : null],
-    ["Idade", age],
-    ["Porte", pet.size ? `${SIZE_LABELS[pet.size].label} (${SIZE_LABELS[pet.size].hint})` : null],
-    ["Peso", pet.weightKg ? `${String(pet.weightKg).replace(".", ",")} kg` : null],
-    ["Cores", colors || null],
-    ["Castrado(a)", pet.neutered == null ? null : pet.neutered ? "Sim" : "Não"],
-    ["Microchip", pet.hasMicrochip == null ? null : pet.hasMicrochip ? "Sim" : "Não"],
-    ["Cidade", pet.city ? [pet.city, stateName].filter(Boolean).join(" – ") : null],
+  const rows: { label: string; value: string | null; Icon: LucideIcon; wide?: boolean }[] = [
+    { label: "Raça", value: pet.breed ? breedLabel(pet.breed) : null, Icon: PawPrint },
+    { label: "Idade", value: age, Icon: Cake },
+    { label: "Porte", value: pet.size ? `${SIZE_LABELS[pet.size].label} (${SIZE_LABELS[pet.size].hint})` : null, Icon: Ruler },
+    { label: "Peso", value: pet.weightKg ? `${String(pet.weightKg).replace(".", ",")} kg` : null, Icon: Weight },
+    { label: "Cores", value: colors || null, Icon: Palette, wide: true },
+    { label: "Cidade", value: pet.city ? [pet.city, stateName].filter(Boolean).join(" – ") : null, Icon: MapPin, wide: true },
   ];
-  const visible = rows.filter(([, v]) => v);
-  if (!visible.length) return null;
+  const visible = rows.filter((r) => r.value);
+  // Sim/Não viram selos (verde = sim), não texto solto.
+  const flags = [
+    { label: "Castrado(a)", value: pet.neutered, Icon: HeartPulse },
+    { label: "Microchip", value: pet.hasMicrochip, Icon: Cpu },
+  ].filter((f) => f.value != null);
+  if (!visible.length && !flags.length) return null;
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg bg-surface p-4 shadow-card">
-      {visible.map(([label, value]) => (
-        <div key={label}>
-          <dt className="text-sm text-text-secondary">{label}</dt>
-          <dd className="font-semibold">{value}</dd>
-        </div>
-      ))}
-    </dl>
+    <section aria-label={`Características de ${pet.name}`} className="relative overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-5">
+      <span aria-hidden="true" className="pointer-events-none absolute -top-16 -right-16 size-48 rounded-full bg-primary/10 blur-3xl" />
+      <dl className="relative grid grid-cols-2 gap-2.5">
+        {visible.map(({ label, value, Icon, wide }) => (
+          <div key={label} className={`flex items-center gap-3 rounded-xl bg-surface-muted/60 p-3 ${wide ? "col-span-2" : ""}`}>
+            <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+              <Icon className="size-5" strokeWidth={2} />
+            </span>
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-text-secondary">{label}</dt>
+              <dd className="leading-tight font-bold break-words">{value}</dd>
+            </div>
+          </div>
+        ))}
+      </dl>
+      {flags.length > 0 && (
+        <ul className="relative mt-3 flex flex-wrap gap-2" aria-label="Saúde e identificação">
+          {flags.map(({ label, value, Icon }) => (
+            <li
+              key={label}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold ${
+                value ? "border-status-found-solid/40 bg-status-found-soft text-status-found" : "border-border bg-surface-muted text-text-secondary"
+              }`}
+            >
+              <Icon aria-hidden="true" className="size-4" strokeWidth={2.25} />
+              {label}: {value ? "Sim" : "Não"}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

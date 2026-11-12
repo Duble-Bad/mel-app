@@ -50,8 +50,11 @@ export function SteppedForm<T extends string>({
   }
 
   return (
-    <div id="stepped-form" className="scroll-mt-24 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
-      <aside className="hidden lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-4">
+    <div id="stepped-form" className="flex scroll-mt-24 flex-col gap-4 lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-8">
+      {/* Coluna lateral: fixa no desktop. No celular só o rodapé (ex.: excluir) aparece, e no fim (order-last).
+          O rodapé é renderizado UMA vez: o mesmo elemento em dois lugares gerava aviso de "key" do React. */}
+      <div className="order-last flex flex-col gap-4 lg:sticky lg:top-24 lg:order-none">
+      <aside className="hidden lg:flex lg:flex-col lg:gap-4">
         <nav aria-label="Etapas" className="rounded-2xl border border-border bg-surface p-2">
           <ol className="flex flex-col gap-1">
             {steps.map((s, i) => {
@@ -100,8 +103,9 @@ export function SteppedForm<T extends string>({
           </ol>
         </nav>
         {submit("aside")}
-        {asideFooter}
       </aside>
+      {asideFooter && <div className="mx-auto w-full max-w-[880px] lg:max-w-none">{asideFooter}</div>}
+      </div>
 
       {/* Abaixo de lg: um único cartão centralizado (como "Cadastrar minha organização"), seções separadas
           por linha e o botão dentro dele. No desktop: cada etapa é um cartão e só a ativa aparece. */}
@@ -129,7 +133,6 @@ export function SteppedForm<T extends string>({
         </div>
 
         <div className="border-t border-border pt-6 lg:hidden">{submit("mobile")}</div>
-        {asideFooter && <div className="lg:hidden">{asideFooter}</div>}
       </div>
     </div>
   );
