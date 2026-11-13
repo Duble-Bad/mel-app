@@ -119,12 +119,25 @@ export interface PublicCaseItem {
   breed: string | null;
   size: PetSize | null;
   colorPrimary: string | null;
+  /** Miniatura da capa (cartões e listas). */
   photoUrl: string | null;
+  /** Mesma foto em tamanho normal (gaveta do mapa); sem ela, usa a miniatura. */
+  photoFullUrl?: string | null;
+  /** Ponto de foco da capa ajustado pelo tutor (0–100, em %); null = centro. */
+  photoFocus?: PhotoFocus | null;
   areaLabel: string | null;
   at: string;
   position: LatLng;
   distanceM: number;
 }
+
+export interface PhotoFocus {
+  x: number;
+  y: number;
+}
+
+/** object-position para o recorte da foto (centro quando não há foco). */
+export const focusPosition = (f?: PhotoFocus | null) => (f ? `${f.x}% ${f.y}%` : undefined);
 
 export const itemHref = (i: Pick<PublicCaseItem, "kind" | "code">) => (i.kind === "lost" ? `/alerta/${i.code}` : `/encontrado/${i.code}`);
 

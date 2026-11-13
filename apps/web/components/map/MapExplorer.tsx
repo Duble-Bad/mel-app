@@ -5,7 +5,7 @@ import "@/app/map.css";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Clock, LoaderCircle, LocateFixed, MapPin, Minus, Plus, Search, SearchX, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { distanceMeters, formatDistance, PERIOD_LABELS, PUBLIC_KINDS, RADIUS_ALL, radiusShort, type PublicCaseItem, type RadiusKm, type SearchFilters, userErrorMessage } from "@mel/core";
+import { distanceMeters, focusPosition, formatDistance, PERIOD_LABELS, PUBLIC_KINDS, RADIUS_ALL, radiusShort, type PublicCaseItem, type RadiusKm, type SearchFilters, userErrorMessage } from "@mel/core";
 import { listAdoptions, searchAdoptionsOnMap, searchPublicCases } from "@mel/data";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { type AreaMapHandle, mapLibreAreasProvider } from "@/lib/map/maplibre";
@@ -16,6 +16,7 @@ import { FeedFiltersBar } from "./FeedFiltersBar";
 import { casePoint, spreadPins, ZOOM_BY_RADIUS } from "./pins";
 import { MapDrawer } from "./MapDrawer";
 import { PetPhoto } from "@/components/ui/PetPhoto";
+
 
 const CASE_LEGEND = ["lost", "found", "sighting"] as const;
 
@@ -367,7 +368,7 @@ function CaseRow({ entry: e, active, onOpen, onHover }: { entry: FeedEntry; acti
       onBlur={() => onHover(null)}
       aria-haspopup="dialog"
     >
-      <PetPhoto src={e.photoUrl} alt="" loading="lazy" className="mel-case__thumb" fallbackClassName="mel-case__thumb flex items-center justify-center" iconClassName="size-8" />
+      <PetPhoto src={e.photoUrl} alt="" loading="lazy" className="mel-case__thumb" style={{ objectPosition: focusPosition(e.photoFocus) }} fallbackClassName="mel-case__thumb flex items-center justify-center" iconClassName="size-8" />
       <span className="block min-w-0">
         <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
         <strong>{e.title}</strong>

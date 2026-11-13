@@ -10,6 +10,10 @@ interface ItemJson {
   size: PublicCaseItem["size"];
   color_primary: string | null;
   photo_path: string | null;
+  /** Migration 50: foto em tamanho normal e foco da capa (ausentes antes dela). */
+  photo_full_path?: string | null;
+  focus_x?: number | null;
+  focus_y?: number | null;
   photo_bucket: "pet-photos" | "sighting-media";
   area_label: string | null;
   at: string;
@@ -55,6 +59,8 @@ export async function searchPublicCases(
       size: i.size,
       colorPrimary: i.color_primary,
       photoUrl: i.photo_path ? client.storage.from(i.photo_bucket).getPublicUrl(i.photo_path).data.publicUrl : null,
+      photoFullUrl: i.photo_full_path ? client.storage.from(i.photo_bucket).getPublicUrl(i.photo_full_path).data.publicUrl : null,
+      photoFocus: i.focus_x != null && i.focus_y != null ? { x: i.focus_x, y: i.focus_y } : null,
       areaLabel: i.area_label,
       at: i.at,
       position: { lat: i.lat, lng: i.lng },

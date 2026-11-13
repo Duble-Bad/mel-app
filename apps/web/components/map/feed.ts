@@ -83,6 +83,10 @@ export interface FeedEntry {
   href: string;
   title: string;
   photoUrl: string | null;
+  /** Foto em tamanho normal (gaveta); sem ela, a miniatura. */
+  photoFullUrl?: string | null;
+  /** Foco da capa ajustado pelo tutor (object-position). */
+  photoFocus?: PublicCaseItem["photoFocus"];
   areaLabel: string | null;
   /** "a 1,2 km daqui" (só casos: adoção não tem ponto público). */
   distanceM: number | null;
@@ -113,6 +117,8 @@ export function caseEntry(i: PublicCaseItem): FeedEntry {
     href: itemHref(i),
     title: itemTitle(i),
     photoUrl: i.photoUrl,
+    photoFullUrl: i.photoFullUrl ?? null,
+    photoFocus: i.photoFocus ?? null,
     areaLabel: i.areaLabel,
     distanceM: i.distanceM,
     when: `${VERB[i.kind]} ${timeAgo(i.at)}`,

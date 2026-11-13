@@ -633,6 +633,14 @@ li:nth-child(3n + 3) > .mel-pet .mel-pet__beam::before {
   overflow: hidden;
   background: var(--color-surface-muted);
 }
+/* Recorte padrão um pouco acima do meio: em fotos em pé o rosto costuma estar em cima. O foco que o
+   tutor ajusta no cartaz (style inline com object-position) tem prioridade. Em fotos deitadas o
+   recorte é na horizontal e a posição vertical não muda nada. */
+.mel-drawer__media img,
+.mel-pet__media img,
+.mel-case__thumb {
+  object-position: 50% 35%;
+}
 .mel-drawer__media img {
   display: block;
   width: 100%;

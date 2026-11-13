@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Clock, Eye, Heart, MapPin, ShieldCheck, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { formatDistance, timeAgo } from "@mel/core";
+import { focusPosition, formatDistance, timeAgo } from "@mel/core";
 import { KIND_BADGE, type FeedEntry } from "./feed";
 import { PetPhoto } from "@/components/ui/PetPhoto";
 
@@ -66,7 +66,8 @@ export function MapDrawer({ entry: e, onClose }: { entry: FeedEntry; onClose: ()
           <X aria-hidden="true" className="size-[22px]" strokeWidth={2} />
         </button>
         <div className="mel-drawer__media">
-          <PetPhoto src={e.photoUrl} alt={`Foto de ${e.title}`} iconClassName="size-14" />
+          {/* Foto em tamanho normal (a miniatura ficava borrada aqui) com o foco que o tutor ajustou. */}
+          <PetPhoto src={e.photoFullUrl ?? e.photoUrl} alt={`Foto de ${e.title}`} iconClassName="size-14" style={{ objectPosition: focusPosition(e.photoFocus) }} />
         </div>
         <div className="grid gap-4 p-[22px]">
           <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
