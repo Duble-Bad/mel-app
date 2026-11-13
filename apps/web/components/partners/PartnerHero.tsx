@@ -1,81 +1,117 @@
-import { BadgeCheck, HandHeart, House, MapPin, ScanLine, ShoppingBag, Stethoscope, type LucideIcon } from "lucide-react";
+"use client";
+
+import { AnimatePresence, motion } from "motion/react";
+import { BadgeCheck, HandHeart, House, ShoppingBag, Stethoscope, type LucideIcon } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import "./partner-hero.css";
 
-/** Pontos de apoio no mapa (posição em % do quadro), cada um aparece em sequência. */
-const PARTNERS: { x: number; y: number; Icon: LucideIcon; label: string; tone: string; delay: string }[] = [
-  { x: 27, y: 42, Icon: Stethoscope, label: "Clínica", tone: "var(--mel-status-sighting-accent)", delay: "0.2s" },
-  { x: 74, y: 24, Icon: ShoppingBag, label: "Pet shop", tone: "var(--mel-primary)", delay: "0.5s" },
-  { x: 78, y: 70, Icon: HandHeart, label: "ONG", tone: "var(--mel-status-adoption-accent)", delay: "0.8s" },
-  { x: 27, y: 78, Icon: House, label: "Lar temporário", tone: "var(--mel-status-found-accent)", delay: "1.1s" },
+const REDUCED = "(prefers-reduced-motion: reduce)";
+const sub = (cb: () => void) => {
+  const mq = window.matchMedia(REDUCED);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+};
+
+/** Tipos de parceiro em volta do vídeo (posição em % do palco; ficam um pouco para fora da moldura). */
+const NODES: { Icon: LucideIcon; label: string; x: number; y: number; tone: string }[] = [
+  { Icon: Stethoscope, label: "Clínica", x: 2, y: 16, tone: "var(--mel-status-sighting-accent)" },
+  { Icon: ShoppingBag, label: "Pet shop", x: 98, y: 22, tone: "var(--mel-primary)" },
+  { Icon: HandHeart, label: "ONG", x: 98, y: 82, tone: "var(--mel-status-adoption-accent)" },
+  { Icon: House, label: "Lar temporário", x: 3, y: 78, tone: "var(--mel-status-found-accent)" },
+];
+
+/** Avisos de exemplo (genéricos) que se revezam no canto, como a rede de parceiros trabalhando. */
+const TOASTS = [
+  { title: "Leitor de microchip", text: "clínica parceira a 400 m", dot: "bg-status-sighting-accent" },
+  { title: "Ponto de apoio", text: "pet encontrado recebido agora", dot: "bg-status-found-accent" },
+  { title: "Lar temporário", text: "gatinho seguro até a família chegar", dot: "bg-status-adoption-accent" },
+  { title: "Novo parceiro", text: "selo liberado pela moderação", dot: "bg-primary" },
 ];
 
 /**
- * Ilustração do topo de "Seja um parceiro da MEL": o bairro com os pontos de apoio acendendo um a um,
- * um animal encontrado no centro ligado ao parceiro mais próximo e os cartões "leitor de microchip" e
- * "parceiro verificado". Decorativa (dados genéricos). Só transform e opacity animam; com "reduzir
- * movimento" fica tudo parado e visível.
+ * Topo de "Seja um parceiro da MEL" (a partir do conceito A · Rede viva de /dev/hero-conceitos):
+ * o vídeo dos pets no centro de uma rede — grade de pontos e ondas de radar atrás, os tipos de
+ * parceiro em volta com feixes de luz correndo até o quadro e avisos de exemplo se revezando.
+ * Decorativo. Só transform/opacity animam; com "reduzir movimento" o vídeo fica no primeiro quadro,
+ * os avisos param e as ondas ficam paradas.
  */
 export function PartnerHero() {
+  const reduced = useSyncExternalStore(sub, () => window.matchMedia(REDUCED).matches, () => false);
+  const video = useRef<HTMLVideoElement>(null);
+  const [t, setT] = useState(0);
+
+  useEffect(() => {
+    // Sem autoPlay no atributo: tocaria antes de sabermos da preferência de movimento.
+    if (reduced) video.current?.pause();
+    else video.current?.play().catch(() => {});
+  }, [reduced]);
+
+  useEffect(() => {
+    if (reduced) return;
+    const id = window.setInterval(() => setT((v) => (v + 1) % TOASTS.length), 3800);
+    return () => window.clearInterval(id);
+  }, [reduced]);
+
+  const toast = TOASTS[t]!;
   return (
-    <div className="ph relative aspect-[5/4] w-full overflow-hidden rounded-[28px]" aria-hidden="true">
-      <svg viewBox="0 0 500 400" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full">
-        <g className="ph-blocks">
-          {[
-            [-10, -10, 150, 100],
-            [170, -10, 150, 70],
-            [350, -10, 160, 120],
-            [-10, 130, 90, 130],
-            [380, 150, 130, 110],
-            [-10, 290, 170, 120],
-            [190, 320, 150, 90],
-            [370, 290, 140, 120],
-          ].map(([x, y, w, h], i) => (
-            <rect key={i} x={x} y={y} width={w} height={h} rx="16" />
+    <div className="ph relative mx-auto w-full max-w-xl pt-7 pb-4 sm:px-10 sm:pt-9 lg:max-w-none" aria-hidden="true">
+      {/* Fundo (grade + ondas) recortado no próprio palco: nunca cria rolagem lateral na página. */}
+      <div className="ph-bg">
+        <div className="ph-grid" />
+        <div className="ph-rings">
+          {[0, 1, 2].map((i) => (
+            <span key={i} style={{ animationDelay: `${i * 1.3}s` }} />
           ))}
-        </g>
-        <path className="ph-street" d="M-20 112 C120 104 260 126 520 100" />
-        <path className="ph-street" d="M-20 282 C140 270 300 300 520 268" />
-        <path className="ph-street" d="M160 -20 C150 120 176 260 166 420" />
-        <path className="ph-street" d="M352 -20 C360 140 340 260 356 420" />
-
-        {/* Ligação do animal encontrado (centro) ao parceiro mais próximo e aos demais */}
-        <path className="ph-link ph-link--main" d="M250 200 C215 188 175 172 135 168" />
-        <path className="ph-link" d="M250 200 C300 160 340 120 370 96" />
-        <path className="ph-link" d="M250 200 C300 230 350 260 390 280" />
-        <path className="ph-link" d="M250 200 C210 240 170 290 135 312" />
-
-        {[0, 1].map((i) => (
-          <circle key={i} className="ph-ring" cx="250" cy="200" r="34" style={{ animationDelay: `${i * 1.6}s` }} />
+        </div>
+      </div>
+      {/* Feixes: dos parceiros até o centro (a parte de dentro fica escondida atrás do vídeo). */}
+      <svg className="ph-beams" viewBox="0 0 100 100" preserveAspectRatio="none">
+        {NODES.map((n, i) => (
+          <g key={n.label}>
+            <line x1={n.x} y1={n.y} x2={50} y2={50} className="ph-beam-track" vectorEffect="non-scaling-stroke" />
+            <line x1={n.x} y1={n.y} x2={50} y2={50} className="ph-beam" style={{ animationDelay: `${i * 0.7}s` }} vectorEffect="non-scaling-stroke" />
+          </g>
         ))}
       </svg>
 
-      {/* Animal encontrado no centro */}
-      <span className="ph-center absolute top-1/2 left-1/2 flex size-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-status-found-solid text-white shadow-lg ring-4 ring-surface-elevated">
-        <MapPin className="size-6" strokeWidth={2.25} />
-      </span>
+      <div className="ph-frame relative z-[2] aspect-[4/3] overflow-hidden rounded-[28px] bg-surface-muted">
+        <video ref={video} poster="/videos/mel-e-gatinho-poster.webp" muted loop playsInline preload="metadata" tabIndex={-1} className="size-full object-cover">
+          <source src="/videos/mel-e-gatinho.webm" type="video/webm" />
+          <source src="/videos/mel-e-gatinho.mp4" type="video/mp4" />
+        </video>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/45 to-transparent" />
+        <div className="absolute right-4 bottom-4 flex items-center gap-2 rounded-full border border-primary/50 bg-background/80 py-1.5 pr-3.5 pl-2 shadow-lg backdrop-blur-md">
+          <BadgeCheck className="size-6 text-primary" strokeWidth={2.25} />
+          <span className="text-sm font-bold text-text-primary">Parceiro verificado</span>
+        </div>
+      </div>
 
-      {PARTNERS.map(({ x, y, Icon, label, tone, delay }) => (
-        <span key={label} className="ph-pin absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5" style={{ left: `${x}%`, top: `${y}%`, animationDelay: delay }}>
-          <span className="flex size-12 items-center justify-center rounded-2xl text-white shadow-lg ring-4 ring-surface-elevated/90" style={{ background: tone }}>
-            <Icon className="size-6" strokeWidth={2.1} />
+      {NODES.map(({ Icon, label, x, y, tone }, i) => (
+        <span key={label} className="ph-node absolute z-[3] hidden sm:flex" style={{ left: `${x}%`, top: `${y}%`, "--tone": tone, "--i": i } as CSSProperties}>
+          <span className="ph-node-dot">
+            <Icon className="size-5" strokeWidth={2.25} />
           </span>
-          <span className="rounded-full bg-surface-elevated/95 px-2.5 py-0.5 text-xs font-bold whitespace-nowrap text-text-primary shadow-sm">{label}</span>
+          <span className="ph-node-label">{label}</span>
         </span>
       ))}
 
-      {/* Cartões flutuantes */}
-      <div className="ph-card ph-card--a absolute top-4 left-4 hidden items-center sm:flex gap-2.5 rounded-2xl border border-border bg-surface-elevated/95 px-3 py-2 shadow-lg backdrop-blur-sm sm:top-5 sm:left-5">
-        <span className="flex size-8 items-center justify-center rounded-full bg-status-sighting-soft text-status-sighting">
-          <ScanLine className="size-4" strokeWidth={2.25} />
-        </span>
-        <span className="flex flex-col leading-tight">
-          <span className="text-sm font-bold text-text-primary">Leitor de microchip</span>
-          <span className="text-xs text-text-secondary">Clínica a 400 m</span>
-        </span>
-      </div>
-      <div className="ph-card ph-card--b absolute top-3 left-3 flex sm:top-auto sm:right-5 sm:bottom-5 sm:left-auto items-center gap-2 rounded-full border border-primary/40 bg-surface-elevated/95 py-1.5 pr-3.5 pl-2 shadow-lg backdrop-blur-sm">
-        <BadgeCheck className="size-6 text-primary" strokeWidth={2.25} />
-        <span className="text-sm font-bold text-text-primary">Parceiro verificado</span>
+      {/* Avisos de exemplo (mesmo visual do aviso do topo do início). */}
+      <div className="absolute top-2 left-4 z-[4] overflow-hidden rounded-lg border border-border-strong/70 bg-background/85 shadow-md backdrop-blur-md sm:top-3 sm:left-14">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={toast.title}
+            className="flex items-center gap-3 py-2 pr-4 pl-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            <span className={`mel-live size-2.5 shrink-0 rounded-full ${toast.dot}`} />
+            <span className="text-sm">
+              <strong className="font-bold">{toast.title}</strong> <span className="text-text-secondary">· {toast.text}</span>
+            </span>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

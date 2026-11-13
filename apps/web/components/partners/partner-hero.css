@@ -1,105 +1,160 @@
-/* Hero de "Seja um parceiro da MEL" (PartnerHero). Cores só dos tokens; anima transform e opacity. */
+/* Topo de "Seja um parceiro da MEL" (PartnerHero), a partir do conceito A · Rede viva.
+   Cores só dos tokens; anima só transform e opacity; tudo para com "reduzir movimento". */
 
-.ph {
-  background:
-    radial-gradient(120% 90% at 50% 50%, color-mix(in srgb, var(--mel-primary) 10%, transparent), transparent 60%),
-    color-mix(in srgb, var(--mel-surface-muted) 70%, var(--mel-surface));
+/* Camada de fundo: recorta grade e ondas no palco e some suave nas bordas (sem corte seco). */
+.ph-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+}
+
+/* Grade de pontos dourados, sumindo nas bordas */
+.ph-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--mel-primary) 45%, transparent) 1.2px, transparent 1.6px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+@media (max-width: 639px) {
+  .ph-grid {
+    display: none;
+  }
+}
+
+/* Ondas de radar saindo de trás do vídeo */
+.ph-rings {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  z-index: 0;
+  pointer-events: none;
+}
+.ph-rings span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  opacity: 0;
+  animation: ph-ring 3.9s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+@keyframes ph-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.75);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.45);
+    opacity: 0;
+  }
+}
+
+/* Moldura do vídeo: borda fina e brilho dourado embaixo */
+.ph-frame {
   box-shadow:
     inset 0 0 0 1px var(--mel-border),
     0 30px 60px -30px color-mix(in srgb, var(--mel-primary) 45%, transparent);
 }
-.ph svg * {
-  transform-box: fill-box;
-}
-.ph-blocks rect {
-  fill: color-mix(in srgb, var(--mel-surface) 72%, var(--mel-surface-muted));
-}
-.ph-street {
-  fill: none;
-  stroke: color-mix(in srgb, var(--mel-primary) 18%, var(--mel-surface-elevated));
-  stroke-width: 12;
-  stroke-linecap: round;
-}
 
-/* Ligações tracejadas que "correm" do centro para os parceiros */
-.ph-link {
-  fill: none;
-  stroke: color-mix(in srgb, var(--mel-text-primary) 28%, transparent);
-  stroke-width: 2;
-  stroke-dasharray: 5 7;
-  animation: ph-dash 2.4s linear infinite;
+/* Feixes de luz dos parceiros até o vídeo */
+.ph-beams {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
 }
-.ph-link--main {
+@media (max-width: 639px) {
+  .ph-beams {
+    display: none;
+  }
+}
+.ph-beam-track {
+  stroke: color-mix(in srgb, var(--mel-primary) 30%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+.ph-beam {
   stroke: var(--mel-primary);
-  stroke-width: 3;
-}
-@keyframes ph-dash {
-  to {
-    stroke-dashoffset: -24;
-  }
-}
-
-/* Ondas saindo do animal encontrado */
-.ph-ring {
-  fill: none;
-  stroke: var(--mel-status-found-accent);
   stroke-width: 2.5;
-  transform-origin: center;
-  opacity: 0;
-  animation: ph-ring 3.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+  stroke-linecap: round;
+  stroke-dasharray: 8 140;
+  filter: drop-shadow(0 0 4px var(--mel-primary));
+  animation: ph-beam 2.8s linear infinite;
 }
-@keyframes ph-ring {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(3.4);
-    opacity: 0;
-  }
-}
-
-/* Pontos de apoio: acendem um a um e ficam */
-.ph-pin {
-  opacity: 0;
-  animation: ph-pin 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) both;
-}
-/* Só "scale" (propriedade própria): soma com o "translate" do Tailwind que centraliza o ponto. */
-@keyframes ph-pin {
-  from {
-    opacity: 0;
-    scale: 0.6;
-  }
+@keyframes ph-beam {
   to {
-    opacity: 1;
-    scale: 1;
+    stroke-dashoffset: -148;
   }
 }
 
-/* Cartões flutuam devagar, fora de fase */
-.ph-card {
-  animation: ph-float 6s ease-in-out infinite;
+/* Tipos de parceiro em volta: entram em sequência e flutuam fora de fase */
+.ph-node {
+  translate: -50% -50%;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: ph-node-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.5s + var(--i) * 0.15s);
 }
-.ph-card--b {
-  animation-delay: -3s;
+.ph-node-dot {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 18%, var(--mel-background));
+  border: 1.5px solid color-mix(in srgb, var(--tone) 70%, transparent);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--tone) 10%, transparent),
+    0 10px 24px -10px var(--tone);
+  animation: ph-float 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.2s);
 }
+.ph-node-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mel-background) 80%, transparent);
+  border: 1px solid var(--mel-border);
+}
+/* Flutua só na vertical (o mel-float inclina e entortava os ícones). */
 @keyframes ph-float {
   50% {
     transform: translateY(-6px);
   }
 }
+@keyframes ph-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .ph-link,
-  .ph-card {
+  .ph-rings span,
+  .ph-beam,
+  .ph-node,
+  .ph-node-dot {
     animation: none;
   }
-  .ph-ring {
-    animation: none;
-    opacity: 0.3;
-  }
-  .ph-pin {
-    animation: none;
-    opacity: 1;
+  .ph-rings span {
+    opacity: 0.25;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
