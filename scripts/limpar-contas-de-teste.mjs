@@ -28,7 +28,7 @@ for (const u of found) {
   const label = u.email.replace(/-[0-9a-f]{8}@.*$/, "");
   byLabel[label] = (byLabel[label] ?? 0) + 1;
 }
-console.log(`${found.length} conta(s) de teste encontrada(s):`, byLabel);
+console.log("Contas de teste encontradas:", found.length, byLabel);
 if (!apagar) {
   console.log("Nada foi apagado. Para apagar, repita com --apagar.");
   process.exit(0);
