@@ -32,6 +32,9 @@ export function PhotoGallery({
   const dialog = useRef<HTMLDialogElement>(null);
   const touchX = useRef<number | null>(null);
   const mainImg = useRef<HTMLImageElement>(null);
+  const mainTouchX = useRef<number | null>(null);
+  // Deslizar na foto não deve também abrir a tela cheia (o toque termina num clique).
+  const swiped = useRef(false);
   const total = photos.length;
   const photo = photos[current];
 
@@ -64,18 +67,60 @@ export function PhotoGallery({
 
   return (
     <div className="flex flex-col gap-2" data-testid="photo-gallery" data-photos={total}>
-      <div className="relative">
+      {/* Foto grande: com mais de uma, setas nas laterais, deslizar com o dedo e ←/→ trocam no lugar. */}
+      <div
+        className="relative overflow-hidden"
+        onKeyDown={onKeyDown}
+        onTouchStart={(e) => (mainTouchX.current = e.touches[0]?.clientX ?? null)}
+        onTouchEnd={(e) => {
+          const start = mainTouchX.current;
+          const end = e.changedTouches[0]?.clientX;
+          mainTouchX.current = null;
+          if (start == null || end == null || total < 2 || Math.abs(end - start) < 40) return;
+          swiped.current = true;
+          window.setTimeout(() => (swiped.current = false), 400);
+          go(end < start ? 1 : -1);
+        }}
+      >
         {failed.has(photo.url) ? (
           <Unavailable className={mainClassName} />
         ) : (
-          <button type="button" onClick={() => setOpen(true)} className="group relative block w-full" aria-label={`Ampliar ${alt(current).replace(/^F/, "f")}`}>
+          <button
+            type="button"
+            onClick={() => !swiped.current && setOpen(true)}
+            className="group relative block w-full"
+            aria-label={`Ampliar ${alt(current).replace(/^F/, "f")}`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- foto já reduzida no envio */}
-            <img ref={mainImg} src={photo.url} alt={alt(current)} onError={() => fail(photo.url)} className={mainClassName} />
+            <img key={photo.url} ref={mainImg} src={photo.url} alt={alt(current)} onError={() => fail(photo.url)} className={`mel-photo-in ${mainClassName}`} />
             <span aria-hidden="true" className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-semibold text-white">
               <Maximize2 className="size-3.5" strokeWidth={2.25} />
               {total > 1 ? `${current + 1}/${total}` : "Ampliar"}
             </span>
           </button>
+        )}
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => go(-1)}
+              aria-label="Foto anterior"
+              className="absolute top-1/2 left-3 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <ChevronLeft aria-hidden="true" className="size-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => go(1)}
+              aria-label="Próxima foto"
+              className="absolute top-1/2 right-3 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <ChevronRight aria-hidden="true" className="size-6" />
+            </button>
+            <span className="sr-only" aria-live="polite">
+              {alt(current)}
+            </span>
+          </>
         )}
       </div>
 

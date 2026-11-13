@@ -355,6 +355,18 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* Troca de foto na galeria (alerta, adoção): a nova surge suave em vez de pular. */
+@keyframes mel-photo-in {
+  from {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mel-photo-in {
+    animation: mel-photo-in 260ms var(--mel-easing) both;
+  }
+}
+
 /* Barra de rolagem fina e discreta dentro das listas suspensas (fica por dentro da borda arredondada). */
 .mel-scroll-thin {
   scrollbar-width: thin;

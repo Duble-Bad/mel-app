@@ -237,6 +237,11 @@ test("photo gallery: thumbnails, enlarge, next/previous, close (✕ and Esc) and
   await expect(gallery.getByRole("button", { name: /^Mostrar foto/ })).toHaveCount(3);
   await gallery.getByRole("button", { name: "Mostrar foto 2 de 3 de Galeria" }).click();
   await expect(gallery.locator("img").first()).toHaveAttribute("alt", "Foto 2 de 3 de Galeria");
+  // Setas na própria foto grande trocam no lugar (sem abrir a tela cheia).
+  await gallery.getByRole("button", { name: "Próxima foto" }).first().click();
+  await expect(gallery.locator("img").first()).toHaveAttribute("alt", "Foto 3 de 3 de Galeria");
+  await gallery.getByRole("button", { name: "Foto anterior" }).first().click();
+  await expect(gallery.locator("img").first()).toHaveAttribute("alt", "Foto 2 de 3 de Galeria");
 
   await gallery.getByRole("button", { name: /^Ampliar/ }).click();
   const dialog = page.getByRole("dialog", { name: "Fotos de Galeria" });
