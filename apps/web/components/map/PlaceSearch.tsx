@@ -4,6 +4,7 @@ import { Loader2, MapPin, Search } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import type { GeocodeResult, LatLng } from "@mel/core";
 import { getGeocoder } from "@/lib/geo/client";
+import { popoverBox, popoverScroll } from "@/components/ui/SelectMenu";
 
 /**
  * Busca por cidade ou bairro (mapa e mural): centraliza a busca no lugar escolhido, sem precisar
@@ -128,12 +129,8 @@ export function PlaceSearch({ near, onPick, className = "" }: { near: LatLng; on
       />
       {searching && <Loader2 aria-hidden="true" className="absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin text-text-secondary" />}
       {open && (
-        <ul
-          id={listId}
-          role="listbox"
-          aria-label="Lugares encontrados"
-          className="absolute top-full right-0 left-0 z-30 mt-1.5 max-h-72 overflow-auto rounded-lg border border-border-strong bg-surface-elevated p-1 shadow-lg"
-        >
+        <div className={`${popoverBox} right-0 left-0 sm:right-auto sm:w-80`}>
+        <ul id={listId} role="listbox" aria-label="Lugares encontrados" className={popoverScroll}>
           {results.length === 0 ? (
             <li className="px-3 py-2.5 text-sm text-text-secondary">Nenhum lugar encontrado.</li>
           ) : (
@@ -146,7 +143,7 @@ export function PlaceSearch({ near, onPick, className = "" }: { near: LatLng; on
                 onPointerDown={(e) => e.preventDefault()}
                 onClick={() => choose(r)}
                 onPointerEnter={() => setActive(i)}
-                className={`flex cursor-pointer items-start gap-2 rounded-md px-3 py-2.5 text-sm ${i === active ? "bg-surface-muted" : ""}`}
+                className={`flex cursor-pointer items-start gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors ${i === active ? "bg-surface-muted" : ""}`}
               >
                 <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" strokeWidth={2} />
                 <span className="min-w-0">{r.label}</span>
@@ -154,6 +151,7 @@ export function PlaceSearch({ near, onPick, className = "" }: { near: LatLng; on
             ))
           )}
         </ul>
+        </div>
       )}
       {error && (
         <p role="alert" className="mt-1 text-sm font-medium text-danger">

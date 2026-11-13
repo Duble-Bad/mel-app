@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarClock, ChevronDown, Loader2, LocateFixed, MapPin, PawPrint, Radar, Ruler, X, type LucideIcon } from "lucide-react";
+import { CalendarClock, Loader2, LocateFixed, MapPin, PawPrint, Radar, Ruler, X } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
 import {
   DEFAULT_CENTER,
@@ -18,6 +18,7 @@ import {
 } from "@mel/core";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { FilterChip } from "@/components/ui/FilterChip";
+import { SelectMenu, type SelectMenuOption } from "@/components/ui/SelectMenu";
 import { FEED_KINDS, feedQuery, type FeedState } from "./feed";
 import { PlaceSearch } from "./PlaceSearch";
 
@@ -31,46 +32,13 @@ const PERIOD_OPTIONS: Record<Period, string> = { "24h": "24 horas", "7d": "7 dia
 
 const scroller = "-mx-[var(--mel-page-gutter)] flex gap-2 overflow-x-auto px-[var(--mel-page-gutter)] pb-1 [scrollbar-width:none] sm:flex-wrap";
 
-/**
- * Seleção compacta com ícone à esquerda e seta própria (a nativa cortava o texto no Chrome do
- * Windows). Mesma altura e cantos das pílulas e da busca, para a barra ficar numa linha só.
- */
-function FilterSelect({
-  id,
-  label,
-  Icon,
-  value,
-  active,
-  onChange,
-  children,
-}: {
-  id: string;
-  label: string;
-  Icon: LucideIcon;
-  value: string;
-  /** Diferente do padrão: borda dourada, como uma pílula marcada. */
-  active: boolean;
-  onChange: (v: string) => void;
-  children: ReactNode;
-}) {
-  return (
-    <span className="relative flex">
-      <label htmlFor={id} className="sr-only">
-        {label}
-      </label>
-      <Icon aria-hidden="true" className={`pointer-events-none absolute top-1/2 left-3 sm:left-3.5 size-4 -translate-y-1/2 ${active ? "text-primary" : "text-text-secondary"}`} strokeWidth={2.25} />
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`h-10 w-full appearance-none truncate rounded-full border pr-8 pl-9 text-[13px] font-semibold sm:pr-9 sm:pl-10 sm:text-sm text-text-primary shadow-xs transition-colors hover:bg-surface-muted focus-visible:border-primary focus-visible:outline-none ${active ? "border-primary bg-primary/12" : "border-border-strong bg-surface-elevated"}`}
-      >
-        {children}
-      </select>
-      <ChevronDown aria-hidden="true" className="pointer-events-none absolute top-1/2 right-3 sm:right-3.5 size-4 -translate-y-1/2 text-text-secondary" strokeWidth={2.25} />
-    </span>
-  );
-}
+const RADIUS_OPTIONS: SelectMenuOption[] = [
+  ...RADII_KM.map((r) => ({ value: String(r), label: `Até ${r} km` })),
+  { value: String(RADIUS_ALL), label: RADIUS_ALL_LABEL },
+];
+const PERIOD_MENU: SelectMenuOption[] = PERIODS.map((p) => ({ value: p, label: PERIOD_OPTIONS[p] }));
+const SPECIES_MENU: SelectMenuOption[] = [{ value: "", label: "Todos os pets" }, ...SPECIES_OPTIONS];
+const SIZE_MENU: SelectMenuOption[] = [{ value: "", label: "Qualquer porte" }, ...PET_SIZES.map((s) => ({ value: s, label: SIZE_LABELS[s].label }))];
 
 /**
  * Filtros do mapa e do mural, em três grupos:
@@ -116,7 +84,9 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
 
   const ids = `feed-${variant}`;
   return (
-    <div className="flex animate-enter flex-col gap-3" aria-busy={pending || undefined}>
+    // relative z-20: a entrada animada cria uma camada própria; sem isso, as listas suspensas
+    // ficavam atrás dos cartões que vêm depois na página.
+    <div className="relative z-20 flex animate-enter flex-col gap-3" aria-busy={pending || undefined}>
       {/* 1. O quê */}
       <div className={scroller} role="group" aria-label="Tipo de caso">
         {FEED_KINDS.map((k) => (
@@ -154,66 +124,45 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
 
         {/* 3. Alcance: distância, período, espécie (e porte no mural) */}
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center" role="group" aria-label="Alcance da busca">
-          <FilterSelect
+          <SelectMenu
             id={`${ids}-raio`}
             label="Distância"
             Icon={Radar}
             value={String(f.radiusKm)}
+            options={RADIUS_OPTIONS}
             active={f.radiusKm !== 5}
             onChange={(v) => apply({ filters: { radiusKm: Number(v) as RadiusKm } })}
-          >
-            {RADII_KM.map((r) => (
-              <option key={r} value={r}>
-                Até {r} km
-              </option>
-            ))}
-            <option value={RADIUS_ALL}>{RADIUS_ALL_LABEL}</option>
-          </FilterSelect>
-          <FilterSelect
+          />
+          <SelectMenu
             id={`${ids}-periodo`}
             label="Período"
             Icon={CalendarClock}
             value={f.period}
+            options={PERIOD_MENU}
             active={f.period !== "30d"}
             onChange={(v) => apply({ filters: { period: v as Period } })}
-          >
-            {PERIODS.map((p) => (
-              <option key={p} value={p}>
-                {PERIOD_OPTIONS[p]}
-              </option>
-            ))}
-          </FilterSelect>
-          <FilterSelect
+            align="right"
+          />
+          <SelectMenu
             id={`${ids}-especie`}
             label="Espécie"
             Icon={PawPrint}
             value={f.species.length === 1 ? f.species[0]! : ""}
+            options={SPECIES_MENU}
             active={f.species.length > 0}
             onChange={(v) => apply({ filters: { species: v ? [v as Species] : [] } })}
-          >
-            <option value="">Todos os pets</option>
-            {SPECIES_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </FilterSelect>
+          />
           {variant === "mural" && (
-            <FilterSelect
+            <SelectMenu
               id={`${ids}-porte`}
               label="Porte"
               Icon={Ruler}
               value={current.size ?? ""}
+              options={SIZE_MENU}
               active={!!current.size}
               onChange={(v) => apply({ size: (v || null) as FeedState["size"] })}
-            >
-              <option value="">Qualquer porte</option>
-              {PET_SIZES.map((s) => (
-                <option key={s} value={s}>
-                  {SIZE_LABELS[s].label}
-                </option>
-              ))}
-            </FilterSelect>
+              align="right"
+            />
           )}
           {pending && (
             <span role="status" className="col-span-2 inline-flex items-center gap-1.5 text-sm text-text-secondary">
