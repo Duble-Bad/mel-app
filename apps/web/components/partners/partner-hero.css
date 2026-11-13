@@ -65,6 +65,193 @@
     0 30px 60px -30px color-mix(in srgb, var(--mel-primary) 45%, transparent);
 }
 
+/* ── Duas cenas no quadro: vídeo ⇄ mapa da rede ──────────────────────────────────────────────
+   O vídeo encolhe num círculo (clip-path) até virar o pino do centro do mapa, com os pets dentro
+   (o vídeo também diminui, para as duas carinhas caberem no pino). O mapa sai do desfoque com um
+   leve recuo de câmera; parceiros e ligações entram em sequência. Na volta, tudo ao contrário. */
+.ph {
+  --ph-ease: cubic-bezier(0.76, 0, 0.18, 1);
+  --ph-pin: 38px;
+}
+
+.ph-map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(120% 90% at 50% 50%, color-mix(in srgb, var(--mel-primary) 12%, transparent), transparent 60%),
+    color-mix(in srgb, var(--mel-surface-muted) 70%, var(--mel-surface));
+  opacity: 0;
+  transform: scale(1.18);
+  filter: blur(8px);
+  transition:
+    opacity 0.7s ease 0.35s,
+    transform 1.3s var(--ph-ease),
+    filter 0.9s ease;
+}
+.ph[data-scene="map"] .ph-map {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+  transition:
+    opacity 0.6s ease,
+    transform 1.6s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 1s ease 0.15s;
+}
+.ph-map svg * {
+  transform-box: fill-box;
+}
+.ph-blocks rect {
+  fill: color-mix(in srgb, var(--mel-surface) 72%, var(--mel-surface-muted));
+}
+.ph-street {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mel-primary) 18%, var(--mel-surface-elevated));
+  stroke-width: 12;
+  stroke-linecap: round;
+}
+
+/* Ligações: se desenham do pino central até cada parceiro */
+.ph-link {
+  fill: none;
+  stroke: color-mix(in srgb, var(--mel-text-primary) 30%, transparent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.3s ease;
+}
+.ph-link--main {
+  stroke: var(--mel-primary);
+  stroke-width: 3;
+}
+.ph[data-scene="map"] .ph-link {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  transition-delay: calc(0.75s + var(--i) * 0.14s);
+}
+
+/* Parceiros no mapa: acendem um a um com um leve quique */
+.ph-pin {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  translate: -50% -50%;
+  opacity: 0;
+  scale: 0.5;
+  transition:
+    opacity 0.25s ease,
+    scale 0.3s ease;
+}
+.ph[data-scene="map"] .ph-pin {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 0.4s ease,
+    scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: calc(1.1s + var(--i) * 0.14s);
+}
+
+/* Ondas saindo do pino central, só na cena do mapa */
+.ph-me-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--ph-pin) * 2);
+  height: calc(var(--ph-pin) * 2);
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 2px solid var(--mel-primary);
+  opacity: 0;
+}
+.ph[data-scene="map"] .ph-me-pulse {
+  animation: ph-me-pulse 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) 1s infinite;
+}
+@keyframes ph-me-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* O vídeo: quadro inteiro ⇄ pino redondo no centro */
+.ph-video {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  background: var(--mel-surface-muted);
+  clip-path: circle(75% at 50% 50%);
+  transition: clip-path 1.2s var(--ph-ease) 0.1s;
+  will-change: clip-path;
+}
+.ph-video video {
+  transition: transform 1.3s var(--ph-ease);
+}
+.ph[data-scene="map"] .ph-video {
+  clip-path: circle(var(--ph-pin) at 50% 50%);
+  transition: clip-path 1.1s var(--ph-ease);
+}
+.ph[data-scene="map"] .ph-video video {
+  transform: scale(0.34);
+  transition: transform 1.2s var(--ph-ease);
+}
+.ph-shade {
+  transition: opacity 0.5s ease;
+}
+.ph[data-scene="map"] .ph-shade {
+  opacity: 0;
+}
+/* Selo "Parceiro verificado": sai de cena no mapa (para não cobrir os parceiros) e volta com o vídeo */
+.ph-badge {
+  transition:
+    opacity 0.45s ease 0.9s,
+    translate 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.9s;
+}
+.ph[data-scene="map"] .ph-badge {
+  opacity: 0;
+  translate: 0 12px;
+  transition:
+    opacity 0.3s ease,
+    translate 0.4s ease;
+}
+
+/* Aro dourado do pino (aparece quando o vídeo termina de encolher) */
+.ph-me-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  width: calc(var(--ph-pin) * 2 + 8px);
+  height: calc(var(--ph-pin) * 2 + 8px);
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 4px solid var(--mel-primary);
+  box-shadow:
+    0 0 0 4px var(--mel-surface-elevated),
+    0 12px 30px -8px color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  opacity: 0;
+  scale: 1.6;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    scale 0.3s ease;
+}
+.ph[data-scene="map"] .ph-me-ring {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 0.35s ease 0.75s,
+    scale 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.75s;
+}
+
 /* Feixes de luz dos parceiros até o vídeo */
 .ph-beams {
   position: absolute;
@@ -152,6 +339,15 @@
   .ph-node,
   .ph-node-dot {
     animation: none;
+  }
+  .ph-map,
+  .ph-video,
+  .ph-video video,
+  .ph-pin,
+  .ph-link,
+  .ph-badge,
+  .ph-me-ring {
+    transition: none !important;
   }
   .ph-rings span {
     opacity: 0.25;
