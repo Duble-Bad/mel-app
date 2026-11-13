@@ -192,6 +192,14 @@
     {
       "file": "20261110180000_poster_photo_framings.sql",
       "sha256": "ec4aa70cd8da3fec767b92adc1f156bb27ccc456afd91fbbd34509b44a42a957"
+    },
+    {
+      "file": "20261112200000_search_whole_network.sql",
+      "sha256": "7cfbfe3974cfa1126d4bc0f7ac4fa8abc8ed61171fda53991536f6212834568a"
+    },
+    {
+      "file": "20261113120000_public_cases_photo_focus.sql",
+      "sha256": "9cb02978011a656088d969fde6d0fd4d50d72b0475c095316ee4242fa1057975"
     }
   ]
 }
