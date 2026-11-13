@@ -37,6 +37,7 @@ export function SelectMenu({
   /** Diferente do padrão: borda dourada, como uma pílula marcada. */
   active: boolean;
   onChange: (v: string) => void;
+  /** "right": no celular (coluna da direita) a lista abre para dentro da tela; do sm em diante, sempre alinhada à esquerda do botão. */
   align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
@@ -129,7 +130,7 @@ export function SelectMenu({
         />
       </button>
       {open && (
-        <div className={`${popoverBox} min-w-full ${align === "right" ? "right-0" : "left-0"}`}>
+        <div className={`${popoverBox} min-w-full ${align === "right" ? "right-0 sm:right-auto sm:left-0" : "left-0"}`}>
           <ul
             ref={list}
             id={listId}
