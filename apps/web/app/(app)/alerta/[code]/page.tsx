@@ -150,6 +150,7 @@ async function AlertContent({
               name={c.pet.name}
               mainClassName="aspect-square w-full bg-surface-muted object-contain sm:rounded-b-lg lg:rounded-2xl"
               thumbsClassName="px-4 lg:px-0"
+              autoplay
             />
           ) : (
             <div

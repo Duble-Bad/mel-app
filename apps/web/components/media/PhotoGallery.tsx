@@ -1,17 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronLeft, ChevronRight, ImageOff, Maximize2, X } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { ChevronLeft, ChevronRight, ImageOff, Maximize2, Pause, Play, X } from "lucide-react";
+import { focusPosition, type PhotoFocus } from "@mel/core";
 
 export interface GalleryPhoto {
   url: string;
   /** Miniatura (menor); sem ela, usa a própria foto. */
   thumbUrl?: string;
+  /** Ponto de foco ajustado pelo tutor (usado quando a foto é recortada, ex.: gaveta do mapa). */
+  focus?: PhotoFocus | null;
 }
 
+const AUTOPLAY_MS = 5000;
+const reducedQuery = "(prefers-reduced-motion: reduce)";
+const subscribeReduced = (cb: () => void) => {
+  const m = window.matchMedia(reducedQuery);
+  m.addEventListener("change", cb);
+  return () => m.removeEventListener("change", cb);
+};
+
 /**
- * Fotos de um animal (alerta, encontrado, adoção): a principal no topo, miniaturas
+ * Fotos de um animal (alerta, encontrado, adoção, gaveta do mapa): a principal no topo, miniaturas
  * quando há mais de uma, e ampliação em tela cheia (setas, deslizar, Esc ou ✕ fecham).
+ * Carrossel automático e manual: com `autoplay`, troca sozinha a cada 5 s (uma barra dourada mostra
+ * o tempo) e para com o mouse em cima, com foco dentro, na tela cheia, no botão de pausa ou com
+ * "reduzir movimento"; setas, deslizar, ←/→ e miniaturas trocam na hora e reiniciam o tempo.
  * Foto que não carrega vira um aviso claro, nunca um ícone quebrado.
  */
 export function PhotoGallery({
@@ -19,20 +33,36 @@ export function PhotoGallery({
   name,
   mainClassName,
   thumbsClassName = "",
+  autoplay = false,
+  thumbSize = "size-16 sm:size-20",
 }: {
+  /** Tamanho das miniaturas (classes); a gaveta do mapa usa menores. */
+  thumbSize?: string;
   photos: GalleryPhoto[];
   /** Nome usado nos textos alternativos ("Foto 2 de 3 de Thor"). */
   name: string;
   mainClassName: string;
   thumbsClassName?: string;
+  autoplay?: boolean;
 }) {
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrentRaw] = useState(0);
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  // Muda a cada troca: reinicia o tempo da troca automática (e a barra).
+  const [cycle, setCycle] = useState(0);
+  const reduced = useSyncExternalStore(subscribeReduced, () => window.matchMedia(reducedQuery).matches, () => true);
+  const setCurrent = (v: number | ((i: number) => number)) => {
+    setCurrentRaw(v);
+    setCycle((c) => c + 1);
+  };
   const [failed, setFailed] = useState<Set<string>>(() => new Set());
   const dialog = useRef<HTMLDialogElement>(null);
   const touchX = useRef<number | null>(null);
   const mainImg = useRef<HTMLImageElement>(null);
   const mainTouchX = useRef<number | null>(null);
+  const thumbs = useRef<HTMLUListElement>(null);
   // Deslizar na foto não deve também abrir a tela cheia (o toque termina num clique).
   const swiped = useRef(false);
   const total = photos.length;
@@ -48,6 +78,28 @@ export function PhotoGallery({
     if (open && !d.open) d.showModal();
     if (!open && d.open) d.close();
   }, [open]);
+
+  // A miniatura da foto atual fica à vista na faixa (só rola a faixa, nunca a página).
+  useEffect(() => {
+    const ul = thumbs.current;
+    const li = ul?.children[current] as HTMLElement | undefined;
+    if (!ul || !li) return;
+    const left = li.offsetLeft - ul.offsetLeft;
+    if (left < ul.scrollLeft || left + li.offsetWidth > ul.scrollLeft + ul.clientWidth) {
+      ul.scrollTo({ left: left - (ul.clientWidth - li.offsetWidth) / 2, behavior: reduced ? "auto" : "smooth" });
+    }
+  }, [current, reduced]);
+
+  const canAuto = autoplay && total > 1 && !reduced;
+  const running = canAuto && !stopped && !hovered && !focused && !open;
+  useEffect(() => {
+    if (!running) return;
+    const t = window.setTimeout(() => {
+      setCurrentRaw((i) => (i + 1) % total);
+      setCycle((c) => c + 1);
+    }, AUTOPLAY_MS);
+    return () => window.clearTimeout(t);
+  }, [running, total, cycle]);
 
   // Erro antes da hidratação (foto que falhou enquanto a página carregava) não chama o onError.
   useEffect(() => {
@@ -66,11 +118,21 @@ export function PhotoGallery({
   }
 
   return (
-    <div className="flex flex-col gap-2" data-testid="photo-gallery" data-photos={total}>
+    <div
+      className="flex flex-col gap-2"
+      data-testid="photo-gallery"
+      data-photos={total}
+      data-autoplay={running ? "on" : "off"}
+      // Foco pelo teclado pausa (para dar tempo de ler); clique com o mouse não segura a pausa.
+      onFocus={(e) => setFocused(e.target.matches(":focus-visible"))}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setFocused(false)}
+    >
       {/* Foto grande: com mais de uma, setas nas laterais, deslizar com o dedo e ←/→ trocam no lugar. */}
       <div
         className="relative overflow-hidden"
         onKeyDown={onKeyDown}
+        onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
         onTouchStart={(e) => (mainTouchX.current = e.touches[0]?.clientX ?? null)}
         onTouchEnd={(e) => {
           const start = mainTouchX.current;
@@ -92,7 +154,15 @@ export function PhotoGallery({
             aria-label={`Ampliar ${alt(current).replace(/^F/, "f")}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- foto já reduzida no envio */}
-            <img key={photo.url} ref={mainImg} src={photo.url} alt={alt(current)} onError={() => fail(photo.url)} className={`mel-photo-in ${mainClassName}`} />
+            <img
+              key={photo.url}
+              ref={mainImg}
+              src={photo.url}
+              alt={alt(current)}
+              onError={() => fail(photo.url)}
+              className={`mel-photo-in ${mainClassName}`}
+              style={photo.focus ? { objectPosition: focusPosition(photo.focus) } : undefined}
+            />
             <span aria-hidden="true" className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-semibold text-white">
               <Maximize2 className="size-3.5" strokeWidth={2.25} />
               {total > 1 ? `${current + 1}/${total}` : "Ampliar"}
@@ -117,7 +187,21 @@ export function PhotoGallery({
             >
               <ChevronRight aria-hidden="true" className="size-6" />
             </button>
-            <span className="sr-only" aria-live="polite">
+            {canAuto && (
+              <button
+                type="button"
+                onClick={() => setStopped((s) => !s)}
+                aria-label={stopped ? "Retomar troca automática das fotos" : "Pausar troca automática das fotos"}
+                aria-pressed={stopped}
+                className="absolute bottom-3 left-3 grid size-9 place-items-center rounded-full bg-black/65 text-white transition-colors hover:bg-black/80 focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                {stopped ? <Play aria-hidden="true" className="size-4" strokeWidth={2.5} /> : <Pause aria-hidden="true" className="size-4" strokeWidth={2.5} />}
+              </button>
+            )}
+            {/* Tempo até a próxima foto (só enquanto a troca automática está correndo). */}
+            {running && <span key={cycle} aria-hidden="true" className="mel-gallery-timer" style={{ animationDuration: `${AUTOPLAY_MS}ms` }} />}
+            {/* Com troca automática, não anuncia cada troca (seria falatório); só as trocas pedidas. */}
+            <span className="sr-only" aria-live={running ? "off" : "polite"}>
               {alt(current)}
             </span>
           </>
@@ -125,7 +209,8 @@ export function PhotoGallery({
       </div>
 
       {total > 1 && (
-        <ul className={`flex gap-2 overflow-x-auto pb-1 ${thumbsClassName}`} aria-label={`Fotos de ${name}`}>
+        <ul ref={thumbs} // Sem barra de rolagem visível: desliza com o dedo e a miniatura atual sempre vem para a vista.
+          className={`flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] ${thumbsClassName}`} aria-label={`Fotos de ${name}`}>
           {photos.map((p, i) => (
             <li key={p.url} className="shrink-0">
               <button
@@ -133,7 +218,7 @@ export function PhotoGallery({
                 onClick={() => setCurrent(i)}
                 aria-label={`Mostrar ${alt(i).replace(/^F/, "f")}`}
                 aria-current={i === current ? "true" : undefined}
-                className={`block size-16 overflow-hidden rounded-md border-2 transition-colors sm:size-20 ${
+                className={`block overflow-hidden rounded-md border-2 transition-colors ${thumbSize} ${
                   i === current ? "border-[#f6b928]" : "border-transparent opacity-80 hover:opacity-100"
                 }`}
               >

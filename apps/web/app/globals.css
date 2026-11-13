@@ -367,6 +367,25 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* Carrossel automático: barra dourada fina na base da foto, enche até a próxima troca. */
+.mel-gallery-timer {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: var(--color-primary);
+  transform-origin: left;
+  animation: mel-gallery-timer linear both;
+  pointer-events: none;
+}
+@keyframes mel-gallery-timer {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* Barra de rolagem fina e discreta dentro das listas suspensas (fica por dentro da borda arredondada). */
 .mel-scroll-thin {
   scrollbar-width: thin;

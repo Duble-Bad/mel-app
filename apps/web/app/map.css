@@ -627,6 +627,13 @@ li:nth-child(3n + 3) > .mel-pet .mel-pet__beam::before {
 }
 /* overflow: hidden é o que segura o 4:3: sem ele, uma foto em pé (ex.: a da Mel) faz a caixa
    crescer até a altura natural da imagem (o aspect-ratio é só preferência) e empurra o resto. */
+/* Carrossel da gaveta (alerta com várias fotos): foto + miniaturas não encolhem no painel. */
+.mel-drawer__gallery {
+  flex: none;
+}
+.mel-drawer__gallery img:not([alt=""]) {
+  object-position: 50% 35%;
+}
 .mel-drawer__media {
   aspect-ratio: 4 / 3;
   flex: none;

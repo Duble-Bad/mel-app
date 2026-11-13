@@ -235,6 +235,10 @@ test("photo gallery: thumbnails, enlarge, next/previous, close (✕ and Esc) and
   const gallery = page.getByTestId("photo-gallery");
   await expect(gallery).toHaveAttribute("data-photos", "3");
   await expect(gallery.getByRole("button", { name: /^Mostrar foto/ })).toHaveCount(3);
+  // Carrossel automático: corre sozinho e para no botão de pausa (o resto do teste é manual, sem corrida).
+  await expect(gallery).toHaveAttribute("data-autoplay", "on");
+  await gallery.getByRole("button", { name: "Pausar troca automática das fotos" }).click();
+  await expect(gallery).toHaveAttribute("data-autoplay", "off");
   await gallery.getByRole("button", { name: "Mostrar foto 2 de 3 de Galeria" }).click();
   await expect(gallery.locator("img").first()).toHaveAttribute("alt", "Foto 2 de 3 de Galeria");
   // Setas na própria foto grande trocam no lugar (sem abrir a tela cheia).
