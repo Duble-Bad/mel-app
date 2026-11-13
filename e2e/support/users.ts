@@ -36,8 +36,17 @@ export async function setRole(id: string, role: "user" | "moderator" | "admin") 
   if (error) throw error;
 }
 
-export async function deleteUserById(id: string) {
-  await admin().auth.admin.deleteUser(id);
+/** Apaga e confere (com novas tentativas): antes o erro era ignorado e a conta de teste ficava no mel-dev. */
+export async function deleteUserById(id: string, attempts = 4) {
+  for (let i = 1; i <= attempts; i++) {
+    const { error } = await admin().auth.admin.deleteUser(id);
+    if (!error || /not.?found/i.test(error.message)) return;
+    if (i === attempts) {
+      console.error(`[e2e] não foi possível apagar a conta de teste ${id.slice(0, 8)}: ${error.message}`);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 400 * i));
+  }
 }
 
 export async function deleteUserByEmail(email: string) {
@@ -50,7 +59,7 @@ export async function deleteUserByEmail(email: string) {
     if (error) throw error;
     const user = data.users.find((u) => u.email === email);
     if (user) {
-      await client.auth.admin.deleteUser(user.id);
+      await deleteUserById(user.id);
       return;
     }
     if (data.users.length < 1000) return;

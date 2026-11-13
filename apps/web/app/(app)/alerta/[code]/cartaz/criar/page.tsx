@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Criar cartaz", robots: { index: fals
 
 export default function CreatePosterPage({ params }: PageProps<"/alerta/[code]/cartaz/criar">) {
   return (
-    <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-10">
+    <main className="mel-container max-w-[1056px] flex-1 pt-6 pb-10">
       <Suspense fallback={<LoadingState label="Preparando os cartazes…" />}>{params.then(({ code }) => <Studio code={code} />)}</Suspense>
     </main>
   );

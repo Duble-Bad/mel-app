@@ -1,0 +1,194 @@
+/* Nossa origem: movimento da página. Só transform/opacity; tudo para com "reduzir movimento".
+   Os elementos só ficam escondidos quando o JS liga `.or-motion` no <html> (RevealMotion). */
+
+/* ---------- Revelar ao rolar ---------- */
+.or-motion [data-or] {
+  opacity: 0;
+  transition:
+    opacity 0.8s var(--mel-easing),
+    transform 0.9s var(--mel-easing);
+  transition-delay: var(--d, 0s);
+}
+.or-motion [data-or="up"] {
+  transform: translateY(32px);
+}
+.or-motion [data-or="left"] {
+  transform: translateX(-36px);
+}
+.or-motion [data-or="right"] {
+  transform: translateX(36px);
+}
+.or-motion [data-or="scale"] {
+  transform: scale(0.94);
+}
+.or-motion [data-or].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Número do capítulo: "estala" depois que a coluna aparece. */
+.or-motion .or-pop {
+  transform: scale(0.3);
+  opacity: 0;
+  transition:
+    transform 0.6s cubic-bezier(0.34, 1.7, 0.64, 1),
+    opacity 0.3s ease;
+  transition-delay: calc(var(--d, 0s) + 0.25s);
+}
+.or-motion .is-in .or-pop {
+  transform: none;
+  opacity: 1;
+}
+
+/* Barra dourada da citação: cresce de cima para baixo. */
+.or-bar {
+  position: relative;
+  padding-left: 1.25rem;
+}
+.or-bar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--mel-primary);
+  transform-origin: top;
+}
+.or-motion .or-bar::before {
+  transform: scaleY(0);
+  transition: transform 0.9s var(--mel-easing);
+  transition-delay: calc(var(--d, 0s) + 0.35s);
+}
+.or-motion .is-in .or-bar::before {
+  transform: none;
+}
+
+/* Letras M, E, L: caem e quicam no lugar, uma de cada vez. */
+.or-motion .or-letter {
+  opacity: 0;
+  transform: translateY(-28px) scale(0.6) rotate(-8deg);
+  transition:
+    transform 0.8s cubic-bezier(0.34, 1.6, 0.64, 1),
+    opacity 0.4s ease;
+  transition-delay: calc(var(--d, 0s) + 0.15s);
+}
+.or-motion .is-in .or-letter {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- Movimentos contínuos ---------- */
+/* Brilho que atravessa "MEL" no título. */
+.or-shimmer {
+  background: linear-gradient(100deg, var(--mel-primary) 0%, var(--mel-primary) 40%, #fff3c4 50%, var(--mel-primary) 60%, var(--mel-primary) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: or-shimmer 5s ease-in-out 1.4s infinite;
+}
+.or-shimmer svg {
+  color: var(--mel-primary);
+}
+@keyframes or-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  45%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* Cartões de vidro do topo flutuando (só sobe e desce: girar deixa o texto torto). */
+.or-float {
+  animation: or-float 6s ease-in-out infinite;
+}
+@keyframes or-float {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Seta de "Ler a história" chamando para baixo. */
+.or-bob {
+  animation: or-bob 1.8s ease-in-out infinite;
+}
+@keyframes or-bob {
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+/* Selo com um pulso dourado em volta (como um sinal saindo do pino). */
+.or-pulse {
+  position: relative;
+  display: inline-block;
+}
+.or-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 30%;
+  border: 2px solid var(--mel-primary);
+  opacity: 0;
+  animation: or-pulse 2.8s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+  animation-delay: var(--pd, 0s);
+  pointer-events: none;
+}
+@keyframes or-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Reflexo de luz que passa devagar sobre um bloco (fechamento e o "começo da história"). */
+.or-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.or-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--mel-primary) 22%, transparent) 50%, transparent 65%);
+  transform: translateX(-110%);
+  animation: or-sheen 7s ease-in-out 1.5s infinite;
+  pointer-events: none;
+}
+@keyframes or-sheen {
+  0% {
+    transform: translateX(-110%);
+  }
+  35%,
+  100% {
+    transform: translateX(110%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .or-shimmer,
+  .or-float,
+  .or-bob,
+  .or-pulse::after,
+  .or-sheen::after {
+    animation: none;
+  }
+  .or-shimmer {
+    background: none;
+    color: var(--mel-primary);
+  }
+  .or-pulse::after,
+  .or-sheen::after {
+    display: none;
+  }
+}

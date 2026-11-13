@@ -7,6 +7,10 @@
    PROIBIDO: cor direta (bg-[#…]) quando existe token. */
 @theme inline {
   --color-*: initial;
+  /* Branco e preto puros: o "--color-*: initial" acima apagava os dois, e text-white, bg-black/70
+     etc. (ícones sobre cor, selos sobre fotos, fundo de tela cheia) ficavam sem cor. */
+  --color-white: #fff;
+  --color-black: #000;
   --color-honey-50: var(--mel-honey-50);
   --color-honey-100: var(--mel-honey-100);
   --color-honey-200: var(--mel-honey-200);
@@ -310,10 +314,23 @@ input:-webkit-autofill:focus {
     transform: translateY(-8px) rotate(-3deg);
   }
 }
+/* Largura padrão das páginas (a do conceito B): conteúdo até 1200px, margem lateral 16px no celular e 32px a partir de 720px.
+   Redefine --mel-page-gutter para os filhos que "sangram" até a borda (barras de filtro com -mx) acompanharem a margem. */
+@utility mel-container {
+  --mel-page-gutter: 16px;
+  width: 100%;
+  max-width: 1264px;
+  margin-inline: auto;
+  padding-inline: var(--mel-page-gutter);
+  @media (min-width: 720px) {
+    --mel-page-gutter: 32px;
+  }
+}
 .mel-action {
   --c: var(--color-status-lost-accent);
-  border-color: color-mix(in srgb, var(--c) 65%, transparent);
-  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 30%, var(--mel-surface)) 0%, color-mix(in srgb, var(--c) 10%, var(--mel-surface)) 100%);
+  border-color: color-mix(in srgb, var(--c) 70%, transparent);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 34%, var(--mel-surface)) 0%, color-mix(in srgb, var(--c) 12%, var(--mel-surface)) 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 .mel-action:hover,
 .mel-action:focus-visible {
@@ -335,5 +352,85 @@ input:-webkit-autofill:focus {
   .mel-draw path {
     stroke-dashoffset: 0;
     animation: none;
+  }
+}
+
+/* Troca de foto na galeria (alerta, adoção): a nova surge suave em vez de pular. */
+@keyframes mel-photo-in {
+  from {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mel-photo-in {
+    animation: mel-photo-in 260ms var(--mel-easing) both;
+  }
+}
+
+/* Carrossel automático: barra dourada fina na base da foto, enche até a próxima troca. */
+.mel-gallery-timer {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: var(--color-primary);
+  transform-origin: left;
+  animation: mel-gallery-timer linear both;
+  pointer-events: none;
+}
+@keyframes mel-gallery-timer {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Setas da galeria que só aparecem com o mouse sobre a foto (gaveta do mapa). Só em aparelhos com
+   mouse: no toque não há "passar por cima", então continuam visíveis. Foco do teclado também mostra. */
+@media (hover: hover) and (pointer: fine) {
+  .mel-gallery-arrow {
+    opacity: 0;
+  }
+  .mel-gallery-main:hover .mel-gallery-arrow,
+  .mel-gallery-arrow:focus-visible {
+    opacity: 1;
+  }
+}
+
+/* Barra de rolagem fina e discreta dentro das listas suspensas (fica por dentro da borda arredondada). */
+.mel-scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/* ---------- Barra de progresso de leitura (todas as páginas; ScrollProgress no layout raiz) ----------
+   Linha dourada no topo da tela que enche conforme a página rola. Onde há animação por rolagem o
+   CSS faz tudo; senão o componente atualiza o transform. Sem rolagem vertical, fica em 0 (invisível). */
+.mel-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 70;
+  height: 3px;
+  background: linear-gradient(90deg, var(--mel-primary), color-mix(in srgb, var(--mel-primary) 45%, white));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--mel-primary) 60%, transparent);
+  transform-origin: left;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+@supports (animation-timeline: scroll()) {
+  .mel-scroll-progress {
+    animation: mel-scroll-progress auto linear both !important;
+    animation-timeline: scroll(root block) !important;
+  }
+}
+@keyframes mel-scroll-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+@media print {
+  .mel-scroll-progress {
+    display: none;
   }
 }

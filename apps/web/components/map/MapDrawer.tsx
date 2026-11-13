@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { ArrowRight, Clock, Eye, Heart, MapPin, ShieldCheck, X } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { formatDistance, timeAgo } from "@mel/core";
+import { useEffect, useRef, useState } from "react";
+import { focusPosition, formatDistance, timeAgo } from "@mel/core";
 import { KIND_BADGE, type FeedEntry } from "./feed";
 import { PetPhoto } from "@/components/ui/PetPhoto";
+import { PhotoGallery, type GalleryPhoto } from "@/components/media/PhotoGallery";
 
 /**
  * Gaveta de detalhes do mapa (Conceito B): lateral no computador, folha que
@@ -25,6 +26,8 @@ export function MapDrawer({ entry: e, onClose }: { entry: FeedEntry; onClose: ()
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (ev: KeyboardEvent) => {
+      // Fotos em tela cheia abertas por cima: o Esc fecha só elas.
+      if (document.querySelector("dialog[open]")) return;
       if (ev.key === "Escape") closeRef.current();
       // Foco preso na gaveta enquanto aberta (diálogo modal).
       if (ev.key === "Tab" && panel.current) {
@@ -65,9 +68,7 @@ export function MapDrawer({ entry: e, onClose }: { entry: FeedEntry; onClose: ()
         <button type="button" className="mel-drawer__close" onClick={onClose} aria-label="Fechar">
           <X aria-hidden="true" className="size-[22px]" strokeWidth={2} />
         </button>
-        <div className="mel-drawer__media">
-          <PetPhoto src={e.photoUrl} alt={`Foto de ${e.title}`} iconClassName="size-14" />
-        </div>
+        <DrawerPhotos key={e.id} entry={e} />
         <div className="grid gap-4 p-[22px]">
           <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
           <h2 id="mapa-gaveta-titulo" className="text-[30px] leading-tight font-extrabold tracking-[-0.02em]">
@@ -120,6 +121,51 @@ export function MapDrawer({ entry: e, onClose }: { entry: FeedEntry; onClose: ()
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Foto da gaveta. Alerta com várias fotos vira carrossel (automático e manual, com miniaturas
+ * embaixo): abre na capa já conhecida e busca as demais fotos públicas do alerta em segundo plano.
+ * Encontrados, vistos e adoção seguem com a foto única.
+ */
+function DrawerPhotos({ entry: e }: { entry: FeedEntry }) {
+  const cover = e.photoFullUrl ?? e.photoUrl;
+  const code = e.kind === "lost" ? e.href.split("/").pop() : undefined;
+  const [photos, setPhotos] = useState<GalleryPhoto[] | null>(null);
+
+  useEffect(() => {
+    if (!code) return;
+    const ctrl = new AbortController();
+    fetch(`/api/alertas/${encodeURIComponent(code)}/fotos`, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { photos?: GalleryPhoto[] } | null) => {
+        if (d?.photos && d.photos.length > 1) setPhotos(d.photos);
+      })
+      .catch(() => {}); // sem as outras fotos, fica a capa (nada a avisar)
+    return () => ctrl.abort();
+  }, [code]);
+
+  if (photos) {
+    return (
+      <div className="mel-drawer__gallery">
+        <PhotoGallery
+          photos={photos}
+          name={e.title}
+          autoplay
+          mainClassName="block aspect-[4/3] w-full bg-surface-muted object-cover max-lg:aspect-auto max-lg:h-[min(28dvh,240px)]"
+          thumbsClassName="px-[22px] pt-1"
+          thumbSize="size-14"
+          arrowsOnHover
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="mel-drawer__media">
+      {/* Foto em tamanho normal (a miniatura ficava borrada aqui) com o foco que o tutor ajustou. */}
+      <PetPhoto src={cover} alt={`Foto de ${e.title}`} iconClassName="size-14" style={{ objectPosition: focusPosition(e.photoFocus) }} />
     </div>
   );
 }

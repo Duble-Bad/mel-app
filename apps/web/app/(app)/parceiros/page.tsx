@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { CircleCheck, Store } from "lucide-react";
+import { BadgeCheck, BellRing, HeartHandshake, MapPinned, Store, type LucideIcon } from "lucide-react";
 import { Suspense } from "react";
 import { BUSINESS_CATEGORIES, BUSINESS_CATEGORY_LABELS, DEFAULT_CENTER, DEFAULT_CENTER_LABEL, type BusinessCategory, type LatLng } from "@mel/core";
 import { listBusinesses } from "@mel/data";
@@ -9,7 +9,9 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { MapView } from "@/components/location/MapView";
 import { BusinessCard } from "@/components/partners/BusinessCard";
 import { NearMeChip } from "@/components/partners/PartnerClient";
+import { PartnerHero } from "@/components/partners/PartnerHero";
 import { PartnerSignupForm } from "@/components/partners/PartnerSignupForm";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 
 export const metadata: Metadata = {
@@ -29,29 +31,48 @@ function parse(q: Record<string, string | string[] | undefined>) {
 
 export default function PartnersPage({ searchParams }: PageProps<"/parceiros">) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-14 sm:pt-12">
+    <main className="mel-container flex-1 pt-8 pb-14 sm:pt-12">
       <ProgramIntro />
       <section id="cadastro" aria-labelledby="cadastro-titulo" className="mx-auto mt-10 max-w-[900px] scroll-mt-24 sm:mt-14">
         <div className="rounded-[22px] border border-border bg-surface p-6 md:p-8">
-          <h2 id="cadastro-titulo" className="text-[28px] font-extrabold tracking-[-0.02em]">
-            Cadastrar minha organização
-          </h2>
-          <p className="mt-1.5 mb-6 text-text-secondary">Escolha como você atua. Os campos mudam conforme a categoria.</p>
+          <div className="flex items-center gap-1">
+            <h2 id="cadastro-titulo" className="text-[28px] font-extrabold tracking-[-0.02em]">
+              Cadastrar minha organização
+            </h2>
+            <InfoTip label="Preciso de conta?">
+              Você pode ler e preencher tudo sem conta. Para enviar a inscrição, pedimos login, assim a moderação consegue falar com você e só você
+              edita o perfil.
+            </InfoTip>
+          </div>
+          <p className="mt-1.5 text-text-secondary">Escolha como você atua. Os campos mudam conforme a categoria.</p>
+          {/* Como funciona, em três passos curtos (antes era um cartão de texto ao lado do título da página). */}
+          <ol className="mt-5 mb-7 grid gap-2.5 sm:grid-cols-3">
+            {STEPS.map((step, i) => (
+              <li key={step} className="flex items-start gap-3 rounded-xl bg-surface-muted/70 p-3">
+                <span aria-hidden="true" className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-extrabold text-primary-foreground">
+                  {i + 1}
+                </span>
+                <span className="text-sm leading-snug">{step}</span>
+              </li>
+            ))}
+          </ol>
           <PartnerSignupForm />
         </div>
       </section>
-      <h2 className="mt-14 mb-5 text-2xl font-extrabold tracking-[-0.02em]">Parceiros perto de você</h2>
+      <h2 id="perto" className="mt-14 mb-5 scroll-mt-24 text-2xl font-extrabold tracking-[-0.02em]">
+        Parceiros perto de você
+      </h2>
       <Suspense fallback={<LoadingState />}>{searchParams.then((q) => <Results {...parse(q)} />)}</Suspense>
     </main>
   );
 }
 
-const BENEFITS = [
-  { title: "Ponto de apoio no mapa", text: "quem encontra um animal sabe onde pedir ajuda perto." },
-  { title: "Alertas da sua região", text: "receba casos próximos e ajude a divulgar." },
-  { title: "Adoção com fila de interessados", text: "(ONGs e protetores)." },
-  { title: "Selo de parceiro", text: "depois da análise da moderação." },
-] as const;
+const BENEFITS: { title: string; text: string; Icon: LucideIcon }[] = [
+  { title: "Ponto de apoio no mapa", text: "Quem encontra um animal sabe onde pedir ajuda perto.", Icon: MapPinned },
+  { title: "Alertas da sua região", text: "Receba casos próximos e ajude a divulgar.", Icon: BellRing },
+  { title: "Fila de interessados", text: "Adoção com interessados já filtrados (ONGs e protetores).", Icon: HeartHandshake },
+  { title: "Selo de parceiro", text: "Depois da análise da moderação.", Icon: BadgeCheck },
+];
 
 const STEPS = [
   "Escolha a categoria e preencha o essencial (2 minutos).",
@@ -59,47 +80,53 @@ const STEPS = [
   "Aprovado, seu perfil aparece no mapa e na lista de parceiros.",
 ] as const;
 
-/** O programa explicado antes de pedir login; o formulário vem logo abaixo, na mesma página. */
+/** Hero do programa: proposta, chamadas e benefícios à esquerda; a rede de apoio animada à direita. */
 function ProgramIntro() {
   return (
-    <section aria-labelledby="programa" className="grid items-center gap-7 lg:grid-cols-[1.15fr_1fr] lg:gap-12">
+    <section aria-labelledby="programa" className="grid items-center gap-9 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-14">
       <div className="motion-safe:animate-enter">
-        <p className="text-[13px] font-extrabold tracking-[.12em] text-primary uppercase">Programa de parceiros</p>
-        <h1 id="programa" className="mt-2.5 text-[clamp(34px,5vw,52px)] leading-[1.05] font-black tracking-[-0.03em]">
-          Seja um parceiro da MEL
+        <p className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[13px] font-extrabold tracking-[.08em] text-primary uppercase">
+          <Store aria-hidden="true" className="size-4" strokeWidth={2.25} />
+          Programa de parceiros
+        </p>
+        <h1 id="programa" className="mt-4 text-[clamp(38px,5.4vw,60px)] leading-[1.02] font-black tracking-[-0.035em]">
+          Seja um parceiro da <span className="text-primary">MEL</span>
         </h1>
-        <p className="mt-3.5 max-w-[58ch] text-lg text-text-secondary">
+        <p className="mt-4 max-w-[54ch] text-lg text-text-secondary">
           Clínicas, pet shops, ONGs, protetores e serviços que ajudam animais a voltar para casa. Parceria pela causa: sem mensalidade, sem venda
           dentro da MEL.
         </p>
-        <ul className="mt-5.5 grid gap-3">
-          {BENEFITS.map((b) => (
-            <li key={b.title} className="flex items-start gap-3">
-              <CircleCheck aria-hidden="true" className="size-6 shrink-0 text-primary" strokeWidth={2} />
-              <span>
-                <strong>{b.title}:</strong> {b.text}
+        <div className="mt-6 flex flex-wrap gap-3">
+          <a
+            href="#cadastro"
+            className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full bg-primary px-7 font-bold text-primary-foreground shadow-primary transition-transform duration-200 ease-mel hover:bg-primary-hover motion-safe:hover:-translate-y-0.5"
+          >
+            Quero me inscrever
+          </a>
+          <a
+            href="#perto"
+            className="inline-flex min-h-13 items-center justify-center gap-2 rounded-full border border-border-strong px-6 font-bold text-text-primary transition-colors duration-200 ease-mel hover:bg-surface-muted"
+          >
+            <MapPinned aria-hidden="true" className="size-5" strokeWidth={2} />
+            Ver parceiros perto de mim
+          </a>
+        </div>
+        <ul className="mt-8 grid grid-cols-2 gap-2.5 sm:gap-3">
+          {BENEFITS.map(({ title, text, Icon }) => (
+            <li key={title} className="flex items-center gap-2.5 rounded-2xl border border-border bg-surface/70 p-3 sm:items-start sm:gap-3 sm:p-3.5">
+              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary sm:size-10">
+                <Icon className="size-5" strokeWidth={2} />
+              </span>
+              <span className="flex flex-col leading-snug">
+                <strong className="text-sm sm:text-base">{title}</strong>
+                <span className="hidden text-sm text-text-secondary sm:block">{text}</span>
               </span>
             </li>
           ))}
         </ul>
       </div>
-      <div className="grid gap-3.5 rounded-[22px] border border-border bg-surface p-6 motion-safe:animate-enter md:p-8">
-        <h2 className="text-[22px] font-extrabold">Antes de começar</h2>
-        <p className="text-text-secondary">
-          Você pode ler e preencher tudo sem conta. Para enviar a inscrição, pedimos login, assim a moderação consegue falar com você e só você
-          edita o perfil.
-        </p>
-        <ol className="m-0 grid list-decimal gap-2 pl-5 text-text-secondary">
-          {STEPS.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ol>
-        <a
-          href="#cadastro"
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-[22px] font-bold text-primary-foreground shadow-primary transition-transform duration-200 ease-mel hover:bg-primary-hover motion-safe:hover:-translate-y-0.5"
-        >
-          Quero me inscrever
-        </a>
+      <div className="motion-safe:animate-enter">
+        <PartnerHero />
       </div>
     </section>
   );

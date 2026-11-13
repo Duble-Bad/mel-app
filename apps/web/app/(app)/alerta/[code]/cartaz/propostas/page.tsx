@@ -56,7 +56,7 @@ const CHANGES: Record<PosterV2Format, string[]> = {
 
 export default function PosterComparisonPage({ params, searchParams }: PageProps<"/alerta/[code]/cartaz/propostas">) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10">
+    <main className="mel-container flex-1 pt-6 pb-10">
       <Suspense fallback={<LoadingState label="Preparando a comparação…" />}>
         {Promise.all([params, searchParams]).then(([{ code }, q]) => (
           <Comparison code={code} fotos={typeof q.fotos === "string" ? q.fotos : null} foco={typeof q.foco === "string" ? q.foco : null} />

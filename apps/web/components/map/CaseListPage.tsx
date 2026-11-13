@@ -2,7 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { ChevronLeft, ChevronRight, Map as MapIcon, SearchX } from "lucide-react";
 import { Suspense, type ReactNode } from "react";
-import { DEFAULT_CENTER_LABEL, PAGE_SIZE, parseSearchParams, toSearchParams, type PublicKind } from "@mel/core";
+import { DEFAULT_CENTER_LABEL, PAGE_SIZE, parseSearchParams, toSearchParams, type PublicKind, radiusPhrase } from "@mel/core";
 import { searchPublicCases } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { CaseCard } from "@/components/map/CaseCard";
@@ -33,7 +33,7 @@ export function CaseListPage({
   searchParams: Promise<Params>;
 }) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pt-8 pb-14">
+    <main className="mel-container flex-1 pt-8 pb-14">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div className="flex max-w-2xl flex-col gap-2">
           <h1 className="text-3xl font-extrabold tracking-[-0.03em] sm:text-4xl">{title}</h1>
@@ -73,7 +73,7 @@ async function Results({ params, path, kinds }: { params: Params; path: string; 
     <div className="flex flex-col gap-5">
       <SearchFiltersBar filters={filters} fixedKinds={kinds} />
       <p className="text-sm text-text-secondary" aria-live="polite">
-        {result.total === 1 ? "1 resultado" : `${result.total} resultados`} em até {filters.radiusKm} km
+        {result.total === 1 ? "1 resultado" : `${result.total} resultados`} {radiusPhrase(filters.radiusKm)}
         {filters.hasCenter ? " de você" : ` do ${DEFAULT_CENTER_LABEL}`}.
         {!filters.hasCenter && " Toque em “Perto de mim” para ver o que está ao seu redor."}
       </p>

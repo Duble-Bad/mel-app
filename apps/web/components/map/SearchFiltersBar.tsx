@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { LocateFixed } from "lucide-react";
 import { useState, useTransition } from "react";
-import { PERIOD_LABELS, PERIODS, PUBLIC_KIND_LABELS, PUBLIC_KINDS, type PublicKind, RADII_KM, type SearchFilters, type Species, SPECIES_LABELS, toSearchParams, userErrorMessage } from "@mel/core";
+import { PERIOD_LABELS, PERIODS, PUBLIC_KIND_LABELS, PUBLIC_KINDS, type PublicKind, RADII_KM, RADIUS_ALL, RADIUS_ALL_LABEL, type SearchFilters, type Species, SPECIES_LABELS, toSearchParams, userErrorMessage } from "@mel/core";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { FilterChip } from "@/components/ui/FilterChip";
 
@@ -38,7 +38,7 @@ export function SearchFiltersBar({ filters, fixedKinds }: { filters: SearchFilte
     setGeoError(null);
     try {
       const { position } = await getCurrentPosition();
-      apply({ center: position, hasCenter: true });
+      apply({ center: position, hasCenter: true, place: undefined });
     } catch (err) {
       setGeoError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
@@ -85,6 +85,9 @@ export function SearchFiltersBar({ filters, fixedKinds }: { filters: SearchFilte
             {r} km
           </FilterChip>
         ))}
+        <FilterChip pressed={current.radiusKm === RADIUS_ALL} onClick={() => apply({ radiusKm: RADIUS_ALL })}>
+          {RADIUS_ALL_LABEL}
+        </FilterChip>
       </div>
       {geoError && (
         <p role="alert" className="text-sm font-medium text-danger">

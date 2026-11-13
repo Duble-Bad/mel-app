@@ -37,11 +37,11 @@ export function MelMark({
 }
 
 /** Lockup: [ Mel Beacon ] MEL. Símbolo e palavra também funcionam separados. */
-export function MelLogo({ size = 32 }: { size?: number }) {
+export function MelLogo({ size = 32, accent = false }: { size?: number; /** Palavra MEL em amarelo (cabeçalho). */ accent?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <MelMark size={size} />
-      <span className="text-[22px] leading-none font-extrabold tracking-[-0.03em] text-foreground">MEL</span>
+      <span className={`text-[22px] leading-none font-extrabold tracking-[-0.03em] ${accent ? "text-primary" : "text-foreground"}`}>MEL</span>
     </span>
   );
 }

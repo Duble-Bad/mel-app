@@ -33,7 +33,7 @@ export function BreedField({
     // Nada de campo cinza "travado": diz exatamente o que fazer.
     return (
       <div className="flex flex-col gap-1.5" data-testid="breed-needs-species">
-        <p className="font-semibold">
+        <p className="text-sm font-semibold">
           Raça <span className="font-normal text-text-secondary">(opcional)</span>
         </p>
         <p className="rounded-md bg-surface-muted px-4 py-3 text-text-secondary">
@@ -62,7 +62,6 @@ export function BreedField({
     <Combobox
       label="Raça"
       optional
-      hint="Digite para buscar. Se não tiver raça definida, escolha a primeira opção."
       placeholder="Ex.: Yorkshire, Labrador, Persa…"
       pinned={PINNED}
       options={options}

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
+import { Camera } from "lucide-react";
 import { isSmallPhoto, MAX_PET_PHOTOS, PHOTO_SIZE_TIP, type PetPhoto } from "@mel/core";
+import { InfoTip } from "@/components/ui/InfoTip";
 
 // Sugestões, não exigências: nenhuma foto além da que a pessoa quiser enviar é obrigatória.
 const PHOTO_TIPS = [
@@ -23,6 +25,8 @@ interface PhotoManagerProps {
   onMakePrimary?: (photoId: string) => void;
   onRemoveExisting?: (photoId: string) => void;
   busy?: boolean;
+  /** Dentro de um cartão que já se chama "Fotos": mostra só a contagem e as dicas. */
+  compact?: boolean;
 }
 
 export function PhotoManager({
@@ -32,6 +36,7 @@ export function PhotoManager({
   onMakePrimary,
   onRemoveExisting,
   busy,
+  compact,
 }: PhotoManagerProps) {
   const inputId = useId();
   const [error, setError] = useState<string | null>(null);
@@ -74,26 +79,33 @@ export function PhotoManager({
 
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <p className="font-semibold">
-          Fotos <span className="font-normal text-text-secondary">(até {MAX_PET_PHOTOS})</span>
-        </p>
-        <p className="text-sm text-text-secondary">Fotos nítidas e recentes ajudam alguém a reconhecer o pet na rua.</p>
-        <p className="mt-1 text-sm text-text-secondary" data-testid="photo-size-tip">
-          {PHOTO_SIZE_TIP}
-        </p>
-        <details className="text-sm" data-testid="photo-tips">
-          <summary className="min-h-10 cursor-pointer py-2 font-semibold text-link underline-offset-4 hover:underline">Quais fotos ajudam mais</summary>
-          <ul className="flex list-disc flex-col gap-1 pb-1 pl-5 text-text-secondary">
+      <div className="flex items-center gap-1">
+        {compact ? (
+          <p className="text-sm text-text-secondary">
+            {total} de {MAX_PET_PHOTOS} fotos
+          </p>
+        ) : (
+          <p className="text-sm font-semibold">
+            Fotos <span className="font-normal text-text-secondary">({total}/{MAX_PET_PHOTOS})</span>
+          </p>
+        )}
+        {/* Dicas no "i" em vez de três parágrafos na tela. */}
+        <InfoTip label="Dicas para as fotos">
+          <p className="font-semibold">Fotos nítidas e recentes ajudam a reconhecer o pet na rua.</p>
+          <p className="mt-1.5 text-text-secondary" data-testid="photo-size-tip">
+            {PHOTO_SIZE_TIP}
+          </p>
+          <p className="mt-2.5 font-semibold">Quais fotos ajudam mais</p>
+          <ul className="mt-1 flex list-disc flex-col gap-0.5 pl-5 text-text-secondary" data-testid="photo-tips">
             {PHOTO_TIPS.map((tip) => (
               <li key={tip}>{tip}</li>
             ))}
           </ul>
-        </details>
+        </InfoTip>
       </div>
 
       {total > 0 && (
-        <ul className="grid grid-cols-3 gap-2">
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3">
           {existing.map((photo) => (
             <li key={photo.id} className="flex flex-col gap-1">
               <div className="relative aspect-square overflow-hidden rounded-md bg-surface-muted">
@@ -158,7 +170,7 @@ export function PhotoManager({
           htmlFor={inputId}
           className="flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-dashed border-border-strong bg-surface font-semibold hover:bg-surface-muted has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus"
         >
-          <span aria-hidden="true">📷</span> {total === 0 ? "Adicionar fotos" : "Adicionar mais fotos"}
+          <Camera aria-hidden="true" className="size-5" strokeWidth={2} /> {total === 0 ? "Adicionar fotos" : "Adicionar mais fotos"}
           <input
             id={inputId}
             type="file"

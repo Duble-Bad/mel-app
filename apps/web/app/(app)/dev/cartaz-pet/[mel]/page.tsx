@@ -15,7 +15,7 @@ const ORDER: PosterV2Format[] = ["impressao", "square", "portrait", "story", "la
 
 export default function PetPosterPreviewPage({ params, searchParams }: PageProps<"/dev/cartaz-pet/[mel]">) {
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-10">
+    <main className="mel-container flex-1 pt-6 pb-10">
       <Suspense fallback={<LoadingState label="Preparando as prévias…" />}>
         {Promise.all([params, searchParams]).then(([{ mel }, q]) => (
           <Preview mel={mel} fotos={typeof q.fotos === "string" ? q.fotos : null} />

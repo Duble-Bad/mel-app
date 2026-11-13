@@ -2,6 +2,7 @@
 
 import { FileImage, Globe } from "lucide-react";
 import { useId, useState } from "react";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { limitedTextarea } from "@/components/ui/limitedText";
 
 /** Textos do proprietário (2026-11-09) para a descrição pública do pet. */
@@ -110,12 +111,19 @@ export function PublicDescriptionField({
   const full = n >= max;
   return (
     <div className="flex flex-col gap-1.5" data-testid={`descricao-${id}`}>
-      <label htmlFor={id} className="font-semibold">
-        {label} <span className="font-normal text-text-secondary">(opcional)</span>
-      </label>
-      <p id={guidanceId} className="text-sm leading-relaxed text-text-secondary">
-        {guidance}
-      </p>
+      <div className="flex items-center gap-1">
+        <label htmlFor={id} className="text-sm font-semibold">
+          {label} <span className="font-normal text-text-secondary">(opcional)</span>
+        </label>
+        {/* Orientação e aviso de texto público no "i": a tela mostra só o campo. */}
+        <InfoTip label={`Como preencher: ${label}`}>
+          <p id={guidanceId}>{guidance}</p>
+          <p id={noticeId} className="mt-2 flex gap-1.5 text-text-secondary">
+            <Globe aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{notice}</span>
+          </p>
+        </InfoTip>
+      </div>
       <textarea
         id={id}
         rows={rows}
@@ -149,10 +157,6 @@ export function PublicDescriptionField({
         <span className={`tabular-nums ${full ? "font-semibold text-status-lost" : "text-text-secondary"}`}>
           {n}/{max}
         </span>
-      </p>
-      <p id={noticeId} className="text-sm leading-relaxed text-text-secondary">
-        <span aria-hidden="true">🌐 </span>
-        {notice}
       </p>
       {error && <p className="text-sm font-medium text-danger">{error}</p>}
     </div>

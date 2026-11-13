@@ -1,0 +1,310 @@
+/* Topo de "Seja um parceiro da MEL" (PartnerHero), a partir do conceito A · Rede viva.
+   Cores só dos tokens; anima só transform e opacity; tudo para com "reduzir movimento". */
+
+/* Camada de fundo: recorta grade e ondas no palco e some suave nas bordas (sem corte seco). */
+.ph-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: radial-gradient(closest-side, #000 62%, transparent 100%);
+}
+
+/* Grade de pontos dourados, sumindo nas bordas */
+.ph-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--mel-primary) 45%, transparent) 1.2px, transparent 1.6px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+@media (max-width: 639px) {
+  .ph-grid {
+    display: none;
+  }
+}
+
+/* Ondas de radar saindo de trás do vídeo */
+.ph-rings {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  z-index: 0;
+  pointer-events: none;
+}
+.ph-rings span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  opacity: 0;
+  animation: ph-ring 3.9s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+@keyframes ph-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.75);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.45);
+    opacity: 0;
+  }
+}
+
+/* Moldura do vídeo: borda fina e brilho dourado embaixo */
+.ph-frame {
+  transition: box-shadow 0.6s ease 0.5s;
+  box-shadow:
+    inset 0 0 0 1px var(--mel-border),
+    0 30px 60px -30px color-mix(in srgb, var(--mel-primary) 45%, transparent);
+}
+
+/* ── Duas cenas: vídeo ⇄ a rede por trás dele ────────────────────────────────────────────────
+   O vídeo encolhe num círculo (clip-path) até virar o pino do centro, com os pets dentro (o vídeo
+   também diminui, para as duas carinhas caberem). A moldura some e revela a rede que já estava em
+   volta: grade, ondas, feixes correndo até o pino e os parceiros chegando um pouco mais perto.
+   Na volta, tudo ao contrário. */
+.ph {
+  container-type: inline-size;
+  --ph-ease: cubic-bezier(0.76, 0, 0.18, 1);
+  --ph-pin: 38px;
+}
+
+.ph[data-scene="map"] .ph-frame {
+  box-shadow:
+    inset 0 0 0 1px transparent,
+    0 30px 60px -30px transparent;
+  transition: box-shadow 0.5s ease;
+}
+
+/* Parceiros em volta: "translate" próprio (não briga com o transform das animações de entrada e de
+   flutuar); no celular ficam mais perto do pino (ver abaixo). */
+.ph-node {
+  --dx: 0px;
+  --dy: 0px;
+  translate: calc(-50% + var(--dx)) calc(-50% + var(--dy));
+}
+
+/* Ondas saindo do pino central, só na cena do mapa */
+.ph-me-pulse {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--ph-pin) * 2);
+  height: calc(var(--ph-pin) * 2);
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 2px solid var(--mel-primary);
+  opacity: 0;
+}
+.ph[data-scene="map"] .ph-me-pulse {
+  animation: ph-me-pulse 2.4s cubic-bezier(0.2, 0.6, 0.3, 1) 1s infinite;
+}
+@keyframes ph-me-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+/* O vídeo: quadro inteiro ⇄ pino redondo no centro */
+.ph-video {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  background: var(--mel-surface-muted);
+  border-radius: inherit;
+  clip-path: circle(75% at 50% 50%);
+  transition: clip-path 1.2s var(--ph-ease) 0.1s;
+  will-change: clip-path;
+}
+.ph-video video {
+  transition: transform 1.3s var(--ph-ease);
+}
+.ph[data-scene="map"] .ph-video {
+  clip-path: circle(var(--ph-pin) at 50% 50%);
+  transition: clip-path 1.1s var(--ph-ease);
+}
+.ph[data-scene="map"] .ph-video video {
+  transform: scale(0.34);
+  transition: transform 1.2s var(--ph-ease);
+}
+.ph-shade {
+  transition: opacity 0.5s ease;
+}
+.ph[data-scene="map"] .ph-shade {
+  opacity: 0;
+}
+/* Selo "Parceiro verificado": sai de cena no mapa (para não cobrir os parceiros) e volta com o vídeo */
+.ph-badge {
+  transition:
+    opacity 0.45s ease 0.9s,
+    translate 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.9s;
+}
+.ph[data-scene="map"] .ph-badge {
+  opacity: 0;
+  translate: 0 12px;
+  transition:
+    opacity 0.3s ease,
+    translate 0.4s ease;
+}
+
+/* Aro dourado do pino (aparece quando o vídeo termina de encolher) */
+.ph-me-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  width: calc(var(--ph-pin) * 2 + 8px);
+  height: calc(var(--ph-pin) * 2 + 8px);
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 4px solid var(--mel-primary);
+  box-shadow:
+    0 0 0 4px var(--mel-surface-elevated),
+    0 12px 30px -8px color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  opacity: 0;
+  scale: 1.6;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    scale 0.3s ease;
+}
+.ph[data-scene="map"] .ph-me-ring {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity 0.35s ease 0.75s,
+    scale 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 0.75s;
+}
+
+/* Feixes de luz dos parceiros até o vídeo */
+.ph-beams {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+/* No celular não há espaço em volta do vídeo: feixes e parceiros só aparecem na cena da rede,
+   já mais perto do centro. */
+@media (max-width: 639px) {
+  .ph-beams,
+  .ph-node > span {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .ph[data-scene="map"] .ph-beams,
+  .ph[data-scene="map"] .ph-node > span {
+    opacity: 1;
+    transition: opacity 0.6s ease 0.7s;
+  }
+  /* Mais perto do pino; os de cima descem mais para não ficar sob o aviso. Os feixes encolhem na
+     mesma proporção para continuar saindo de cada parceiro. */
+  .ph-node {
+    --dx: calc(var(--sx) * 21cqw);
+    --dy: calc(var(--sy) * 9cqw + 6cqw);
+  }
+  .ph-beams {
+    transform: translateY(6cqw) scale(0.55, 0.66);
+  }
+}
+.ph-beam-track {
+  stroke: color-mix(in srgb, var(--mel-primary) 30%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+.ph-beam {
+  stroke: var(--mel-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 8 140;
+  filter: drop-shadow(0 0 4px var(--mel-primary));
+  animation: ph-beam 2.8s linear infinite;
+}
+@keyframes ph-beam {
+  to {
+    stroke-dashoffset: -148;
+  }
+}
+
+/* Tipos de parceiro em volta: entram em sequência e flutuam fora de fase */
+.ph-node {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: ph-node-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.5s + var(--i) * 0.15s);
+}
+.ph-node-dot {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 18%, var(--mel-background));
+  border: 1.5px solid color-mix(in srgb, var(--tone) 70%, transparent);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--tone) 10%, transparent),
+    0 10px 24px -10px var(--tone);
+  animation: ph-float 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.2s);
+}
+.ph-node-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mel-background) 80%, transparent);
+  border: 1px solid var(--mel-border);
+}
+/* Flutua só na vertical (o mel-float inclina e entortava os ícones). */
+@keyframes ph-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes ph-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ph-rings span,
+  .ph-beam,
+  .ph-node,
+  .ph-node-dot {
+    animation: none;
+  }
+  .ph-frame,
+  .ph-node,
+  .ph-video,
+  .ph-video video,
+  .ph-badge,
+  .ph-me-ring {
+    transition: none !important;
+  }
+  .ph-rings span {
+    opacity: 0.25;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

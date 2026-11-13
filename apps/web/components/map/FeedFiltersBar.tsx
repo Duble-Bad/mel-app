@@ -1,44 +1,52 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, LocateFixed } from "lucide-react";
+import { CalendarClock, Loader2, LocateFixed, MapPin, PawPrint, Radar, Ruler, X } from "lucide-react";
 import { type ReactNode, useState, useTransition } from "react";
-import { PERIOD_LABELS, PERIODS, PET_SIZES, RADII_KM, SIZE_LABELS, type Species, userErrorMessage } from "@mel/core";
+import {
+  DEFAULT_CENTER,
+  PERIODS,
+  PET_SIZES,
+  RADII_KM,
+  RADIUS_ALL,
+  RADIUS_ALL_LABEL,
+  SIZE_LABELS,
+  type Period,
+  type RadiusKm,
+  type Species,
+  userErrorMessage,
+} from "@mel/core";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { FilterChip } from "@/components/ui/FilterChip";
+import { SelectMenu, type SelectMenuOption } from "@/components/ui/SelectMenu";
 import { FEED_KINDS, feedQuery, type FeedState } from "./feed";
+import { PlaceSearch } from "./PlaceSearch";
 
-const SPECIES_CHIPS: { value: Species; label: string }[] = [
-  { value: "dog", label: "Cachorros" },
-  { value: "cat", label: "Gatos" },
-  { value: "other", label: "Outros" },
-];
 const SPECIES_OPTIONS: { value: Species; label: string }[] = [
   { value: "dog", label: "Cães" },
   { value: "cat", label: "Gatos" },
   { value: "other", label: "Outros" },
 ];
+// Curtos para caber em duas colunas no celular; o ícone e o rótulo acessível ("Período") dão o contexto.
+const PERIOD_OPTIONS: Record<Period, string> = { "24h": "24 horas", "7d": "7 dias", "30d": "30 dias", todos: "Qualquer data" };
 
-const scroller = "-mx-[var(--mel-page-gutter)] flex gap-2 overflow-x-auto px-[var(--mel-page-gutter)] pb-1 [scrollbar-width:none]";
-// Mesma altura e cantos dos botões do topo do mural ("Para adoção", "Ver no mapa"). Sem a seta
-// nativa (no Chrome do Windows ela ocupava o espaço do texto e cortava "porte"): o ícone é nosso.
-const select =
-  "min-h-12 w-full min-w-[9.5rem] appearance-none truncate rounded-md border border-border-strong bg-surface-elevated pr-8 pl-3 sm:pr-10 sm:pl-4 text-sm font-semibold text-text-primary shadow-xs transition-colors hover:bg-surface-muted focus-visible:border-primary";
+const scroller = "-mx-[var(--mel-page-gutter)] flex gap-2 overflow-x-auto px-[var(--mel-page-gutter)] pb-1 [scrollbar-width:none] sm:flex-wrap";
 
-/** Select do mural com a seta desenhada por cima (não intercepta o toque). */
-function SelectBox({ children }: { children: ReactNode }) {
-  return (
-    <span className="relative flex">
-      {children}
-      <ChevronDown aria-hidden="true" className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 sm:right-3.5 text-text-secondary" strokeWidth={2.25} />
-    </span>
-  );
-}
+const RADIUS_OPTIONS: SelectMenuOption[] = [
+  ...RADII_KM.map((r) => ({ value: String(r), label: `Até ${r} km` })),
+  { value: String(RADIUS_ALL), label: RADIUS_ALL_LABEL },
+];
+const PERIOD_MENU: SelectMenuOption[] = PERIODS.map((p) => ({ value: p, label: PERIOD_OPTIONS[p] }));
+const SPECIES_MENU: SelectMenuOption[] = [{ value: "", label: "Todos os pets" }, ...SPECIES_OPTIONS];
+const SIZE_MENU: SelectMenuOption[] = [{ value: "", label: "Qualquer porte" }, ...PET_SIZES.map((s) => ({ value: s, label: SIZE_LABELS[s].label }))];
 
 /**
- * Filtros do mapa e do mural (Conceito B): tipo em pílulas (um por vez),
- * período, raio, "Perto de mim" e espécie (pílulas no mapa, seleção no mural,
- * com porte). Tudo no endereço: dá para compartilhar o link já filtrado.
+ * Filtros do mapa e do mural, em três grupos:
+ *  1. O quê — tipo do caso em pílulas (um por vez).
+ *  2. Onde — cidade/bairro/CEP, "Perto de mim" e o lugar escolhido (com X para voltar ao padrão).
+ *  3. Alcance — distância (até 50 km ou toda a rede), período, espécie e, no mural, porte, em
+ *     seleções compactas (antes eram 14 pílulas numa linha que passava da tela).
+ * Tudo fica no endereço: dá para compartilhar o link já filtrado.
  */
 export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState; variant: "map" | "mural"; trailing?: ReactNode }) {
   const router = useRouter();
@@ -66,7 +74,7 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
     setGeoError(null);
     try {
       const { position } = await getCurrentPosition();
-      apply({ filters: { center: position, hasCenter: true } });
+      apply({ filters: { center: position, hasCenter: true, place: undefined } });
     } catch (err) {
       setGeoError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
@@ -74,116 +82,98 @@ export function FeedFiltersBar({ state, variant, trailing }: { state: FeedState;
     }
   }
 
-  const nearMe = (
-    <FilterChip pressed={f.hasCenter} onClick={locate} disabled={locating} small={variant === "mural"}>
-      <LocateFixed aria-hidden="true" className="size-4" strokeWidth={2} />
-      {locating ? "Localizando…" : "Perto de mim"}
-    </FilterChip>
-  );
-  const kindChips = (
-    <div className={`${scroller} sm:flex-wrap`} role="group" aria-label="Tipo de caso">
-      {FEED_KINDS.map((k) => (
-        <FilterChip key={k.value} pressed={current.feed === k.value} onClick={() => apply({ feed: k.value })}>
-          {k.label}
-        </FilterChip>
-      ))}
-      {variant === "map" && (
-        <>
-          <span aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" />
-          {nearMe}
-        </>
-      )}
-    </div>
-  );
-  const periodRadius = (
-    <>
-      {PERIODS.map((p) => (
-        <FilterChip key={p} small pressed={f.period === p} onClick={() => apply({ filters: { period: p } })}>
-          {PERIOD_LABELS[p]}
-        </FilterChip>
-      ))}
-      <span aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" />
-      {RADII_KM.map((r) => (
-        <FilterChip key={r} small pressed={f.radiusKm === r} onClick={() => apply({ filters: { radiusKm: r } })} aria-label={`Raio de ${r} km`}>
-          {r} km
-        </FilterChip>
-      ))}
-    </>
-  );
-
+  const ids = `feed-${variant}`;
   return (
-    <div className="flex animate-enter flex-col gap-3" aria-busy={pending || undefined}>
-      {variant === "map" ? (
-        <>
-          {kindChips}
-          <div className="flex items-center gap-3">
-            <div className={`${scroller} min-w-0 flex-1 lg:flex-wrap`} role="group" aria-label="Período, distância e espécie">
-              {periodRadius}
-              <span aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" />
-              {SPECIES_CHIPS.map((s) => (
-                <FilterChip
-                  key={s.value}
-                  small
-                  pressed={f.species.includes(s.value)}
-                  onClick={() => apply({ filters: { species: f.species.includes(s.value) ? f.species.filter((x) => x !== s.value) : [...f.species, s.value] } })}
-                >
-                  {s.label}
-                </FilterChip>
-              ))}
-            </div>
-            {trailing && <div className="shrink-0">{trailing}</div>}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {kindChips}
-            <div className="grid w-full grid-cols-2 gap-2.5 sm:flex sm:w-auto sm:gap-2">
-              <label className="sr-only" htmlFor="mural-especie">
-                Espécie
-              </label>
-              <SelectBox>
-                <select
-                  id="mural-especie"
-                  className={select}
-                  value={f.species.length === 1 ? f.species[0] : ""}
-                  onChange={(e) => apply({ filters: { species: e.target.value ? [e.target.value as Species] : [] } })}
-                >
-                  <option value="">Cães e gatos</option>
-                  {SPECIES_OPTIONS.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-              </SelectBox>
-              <label className="sr-only" htmlFor="mural-porte">
-                Porte
-              </label>
-              <SelectBox>
-                <select
-                  id="mural-porte"
-                  className={select}
-                  value={current.size ?? ""}
-                  onChange={(e) => apply({ size: (e.target.value || null) as FeedState["size"] })}
-                >
-                  <option value="">Qualquer porte</option>
-                  {PET_SIZES.map((s) => (
-                    <option key={s} value={s}>
-                      {SIZE_LABELS[s].label}
-                    </option>
-                  ))}
-                </select>
-              </SelectBox>
-            </div>
-          </div>
-          <div className={scroller} role="group" aria-label="Local, período e distância">
-            {nearMe}
-            <span aria-hidden="true" className="mx-1 w-px shrink-0 bg-border" />
-            {periodRadius}
-          </div>
-        </>
-      )}
+    // relative z-20: a entrada animada cria uma camada própria; sem isso, as listas suspensas
+    // ficavam atrás dos cartões que vêm depois na página.
+    <div className="relative z-20 flex animate-enter flex-col gap-3" aria-busy={pending || undefined}>
+      {/* 1. O quê */}
+      <div className={scroller} role="group" aria-label="Tipo de caso">
+        {FEED_KINDS.map((k) => (
+          <FilterChip key={k.value} pressed={current.feed === k.value} onClick={() => apply({ feed: k.value })}>
+            {k.label}
+          </FilterChip>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2.5 lg:flex-row lg:flex-wrap lg:items-center">
+        {/* 2. Onde */}
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Onde procurar">
+          <PlaceSearch near={f.center} className="w-full sm:w-72 lg:w-60" onPick={(r) => apply({ filters: { center: r.position, hasCenter: true, place: r.label } })} />
+          <FilterChip pressed={f.hasCenter && !f.place} onClick={locate} disabled={locating} small>
+            <LocateFixed aria-hidden="true" className="size-4" strokeWidth={2} />
+            {locating ? "Localizando…" : "Perto de mim"}
+          </FilterChip>
+          {f.place && (
+            <span className="inline-flex h-10 max-w-full items-center gap-1.5 rounded-full border border-primary bg-primary/15 pr-1 pl-3 text-sm font-semibold text-text-primary">
+              <MapPin aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2.25} />
+              <span className="max-w-[16rem] truncate">{f.place}</span>
+              <button
+                type="button"
+                onClick={() => apply({ filters: { center: DEFAULT_CENTER, hasCenter: false, place: undefined } })}
+                aria-label={`Remover ${f.place}`}
+                className="grid size-8 shrink-0 place-items-center rounded-full hover:bg-primary/20 focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                <X aria-hidden="true" className="size-4" strokeWidth={2.25} />
+              </button>
+            </span>
+          )}
+        </div>
+
+        <span aria-hidden="true" className="hidden h-6 w-px bg-border xl:block" />
+
+        {/* 3. Alcance: distância, período, espécie (e porte no mural) */}
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center" role="group" aria-label="Alcance da busca">
+          <SelectMenu
+            id={`${ids}-raio`}
+            label="Distância"
+            Icon={Radar}
+            value={String(f.radiusKm)}
+            options={RADIUS_OPTIONS}
+            active={f.radiusKm !== 5}
+            onChange={(v) => apply({ filters: { radiusKm: Number(v) as RadiusKm } })}
+          />
+          <SelectMenu
+            id={`${ids}-periodo`}
+            label="Período"
+            Icon={CalendarClock}
+            value={f.period}
+            options={PERIOD_MENU}
+            active={f.period !== "30d"}
+            onChange={(v) => apply({ filters: { period: v as Period } })}
+            align="right"
+          />
+          <SelectMenu
+            id={`${ids}-especie`}
+            label="Espécie"
+            Icon={PawPrint}
+            value={f.species.length === 1 ? f.species[0]! : ""}
+            options={SPECIES_MENU}
+            active={f.species.length > 0}
+            onChange={(v) => apply({ filters: { species: v ? [v as Species] : [] } })}
+          />
+          {variant === "mural" && (
+            <SelectMenu
+              id={`${ids}-porte`}
+              label="Porte"
+              Icon={Ruler}
+              value={current.size ?? ""}
+              options={SIZE_MENU}
+              active={!!current.size}
+              onChange={(v) => apply({ size: (v || null) as FeedState["size"] })}
+              align="right"
+            />
+          )}
+          {pending && (
+            <span role="status" className="col-span-2 inline-flex items-center gap-1.5 text-sm text-text-secondary">
+              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              Atualizando…
+            </span>
+          )}
+        </div>
+        {trailing && <div className="shrink-0 lg:ml-auto">{trailing}</div>}
+      </div>
+
       {geoError && (
         <p role="alert" className="text-sm font-medium text-danger">
           {geoError}

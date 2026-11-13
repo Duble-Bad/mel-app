@@ -1,0 +1,375 @@
+/* PROTÓTIPO dos conceitos do topo (só /dev/hero-conceitos). Tokens do tema; só transform/opacity animam. */
+
+/* ---------- A · Rede viva ---------- */
+.hc-net-grid {
+  position: absolute;
+  inset: -14% -10%;
+  z-index: 0;
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--mel-primary) 45%, transparent) 1.2px, transparent 1.6px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(closest-side, #000 30%, transparent 100%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+@media (max-width: 639px) {
+  .hc-net-grid {
+    display: none;
+  }
+}
+.hc-net-rings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  pointer-events: none;
+}
+.hc-net-rings span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  opacity: 0;
+  animation: hc-ring 3.9s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+@keyframes hc-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.75);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.45);
+    opacity: 0;
+  }
+}
+.hc-net-beams {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.hc-beam-track {
+  stroke: color-mix(in srgb, var(--mel-primary) 30%, transparent);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+}
+.hc-beam {
+  stroke: var(--mel-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 8 140;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 4px var(--mel-primary));
+  animation: hc-beam 2.8s linear infinite;
+}
+@keyframes hc-beam {
+  to {
+    stroke-dashoffset: -148;
+  }
+}
+.hc-node {
+  translate: -50% -50%;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: hc-node-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.8s + var(--i) * 0.15s);
+}
+.hc-node-dot {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 18%, var(--mel-background));
+  border: 1.5px solid color-mix(in srgb, var(--tone) 70%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--tone) 10%, transparent), 0 10px 24px -10px var(--tone);
+  animation: mel-float 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -1.2s);
+}
+.hc-node-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mel-background) 80%, transparent);
+  border: 1px solid var(--mel-border);
+}
+@keyframes hc-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* ---------- B · Moldura de luz ---------- */
+.hc-aura {
+  position: absolute;
+  inset: -12% -10%;
+  z-index: 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--mel-primary) 55%, transparent), transparent);
+  filter: blur(40px);
+  animation: hc-aura 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hc-aura {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+/* Feixe que contorna a moldura: um cone de luz girando, recortado num anel de 2px em volta do quadro. */
+.hc-beam-border {
+  position: absolute;
+  inset: -2px;
+  z-index: -1;
+  border-radius: calc(var(--radius-hero) + 2px);
+  overflow: hidden;
+  pointer-events: none;
+}
+.hc-beam-border::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160%;
+  aspect-ratio: 1;
+  background: conic-gradient(from 0deg, transparent 0 62%, color-mix(in srgb, var(--mel-primary) 40%, transparent) 76%, var(--mel-primary) 86%, #fff6d8 89%, transparent 92%);
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: hc-spin 5.5s linear infinite;
+}
+@keyframes hc-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+.hc-paw {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  fill: var(--mel-primary);
+  rotate: var(--r);
+  opacity: 0;
+  animation: hc-paw 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * 0.45s);
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--mel-primary) 50%, transparent));
+}
+@keyframes hc-paw {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  10%,
+  55% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+.hc-glass {
+  padding: 10px 16px 10px 10px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--mel-text-primary) 14%, transparent);
+  background: color-mix(in srgb, var(--mel-background) 62%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: 0 20px 40px -18px rgb(0 0 0 / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+/* ---------- C · Cinemático ---------- */
+.hc-cine-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+  overflow: hidden;
+}
+.hc-cine-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--mel-background) 0%, transparent 45%);
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .hc-cine-stage {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 140px;
+    width: 60%;
+    aspect-ratio: auto;
+    z-index: -1;
+    mask-image: linear-gradient(to right, transparent 0%, #000 34%);
+  }
+  .hc-cine-fade {
+    background:
+      linear-gradient(to top, var(--mel-background) 0%, transparent 30%),
+      linear-gradient(to bottom, color-mix(in srgb, var(--mel-background) 60%, transparent) 0%, transparent 22%);
+  }
+  .hc-cine-copy {
+    text-shadow: 0 2px 24px color-mix(in srgb, var(--mel-background) 85%, transparent);
+  }
+}
+.hc-pin {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+}
+.hc-pin-dot {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--mel-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+  opacity: 0;
+  animation: hc-pin-drop 7s cubic-bezier(0.3, 1.4, 0.5, 1) infinite;
+  animation-delay: var(--d);
+}
+.hc-pin-ring {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--mel-primary);
+  opacity: 0;
+  animation: hc-pin-ring 7s ease-out infinite;
+  animation-delay: var(--d);
+}
+.hc-pin-label {
+  position: absolute;
+  left: 14px;
+  top: -14px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0a111d;
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.45);
+  opacity: 0;
+  animation: hc-pin-label 7s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  animation-delay: var(--d);
+}
+.hc-pin--left .hc-pin-label {
+  left: auto;
+  right: 14px;
+}
+@keyframes hc-pin-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.6);
+  }
+  6%,
+  60% {
+    opacity: 1;
+    transform: none;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes hc-pin-ring {
+  0%,
+  5% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  8% {
+    opacity: 0.9;
+  }
+  30%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+@keyframes hc-pin-label {
+  0%,
+  7% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  12%,
+  58% {
+    opacity: 1;
+    transform: none;
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+/* Brilho que atravessa "com você" */
+.hc-shimmer {
+  background: linear-gradient(100deg, var(--mel-primary) 0%, var(--mel-primary) 40%, #fff3c4 50%, var(--mel-primary) 60%, var(--mel-primary) 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hc-shimmer 4.5s ease-in-out 1.2s infinite;
+}
+.hc-shimmer svg {
+  color: var(--mel-primary);
+}
+@keyframes hc-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  45%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-net-rings span,
+  .hc-beam,
+  .hc-node,
+  .hc-node-dot,
+  .hc-aura,
+  .hc-beam-border::before,
+  .hc-shimmer {
+    animation: none;
+  }
+  .hc-net-rings span {
+    opacity: 0.25;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  .hc-aura {
+    opacity: 0.5;
+  }
+  .hc-paw,
+  .hc-pin-dot,
+  .hc-pin-label {
+    animation: none;
+    opacity: 1;
+  }
+  .hc-pin-ring {
+    display: none;
+  }
+}

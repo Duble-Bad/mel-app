@@ -11,9 +11,6 @@ interface Totals {
   adoptions: number;
 }
 
-// Abaixo disso o número mais atrapalha do que ajuda (rede começando): a faixa some.
-const MIN_MEANINGFUL = 10;
-
 /**
  * Só totais (contagens "head", nenhuma linha sai do banco). Precisa da chave
  * secreta porque perfis e pets são privados por RLS. Em cache por horas: é
@@ -57,7 +54,7 @@ const ITEMS: { key: keyof Totals; label: string; Icon: LucideIcon }[] = [
   { key: "adoptions", label: "Adoções responsáveis", Icon: House },
 ];
 
-/** Faixa de números reais da rede (só aparece quando todos são significativos). */
+/** Faixa de números reais da rede (sempre os totais reais; some só se a consulta falhar). */
 export async function NetworkStats() {
   let totals: Totals | null;
   try {
@@ -66,12 +63,12 @@ export async function NetworkStats() {
     console.error("[home] números da rede indisponíveis", error);
     return null;
   }
-  if (!totals || ITEMS.some(({ key }) => totals[key] < MIN_MEANINGFUL)) return null;
+  if (!totals) return null;
 
   return (
     <ul
       aria-label="Números da rede MEL"
-      className="mt-7 grid animate-enter grid-cols-2 gap-x-3 gap-y-5 border-y border-border py-5 min-[900px]:grid-cols-4"
+      className="mt-7 grid animate-enter grid-cols-2 gap-x-3 gap-y-4.5 border-y border-border py-5.5 min-[900px]:grid-cols-4"
     >
       {ITEMS.map(({ key, label, Icon }) => (
         <li key={key} className="mh-stat flex items-center justify-center gap-3.5">

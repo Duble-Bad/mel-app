@@ -1,33 +1,404 @@
 /* Início (Conceito B): efeitos só da home. Fica fora do globals.css para não
    pesar nas outras telas. Tudo usa os tokens do tema (claro e escuro). */
 
-/* ---------- Foto do topo: fita que passa por trás e pela frente da foto ---------- */
-.mh-ribbon {
-  position: absolute;
-  right: -12%;
-  top: 12%;
-  width: 62%;
-  /* Mesma proporção do viewBox: os recortes abaixo valem em unidades do desenho. */
-  aspect-ratio: 4 / 5;
-  height: auto;
-  pointer-events: none;
-  color: var(--mel-primary);
-  overflow: visible;
-}
-.mh-ribbon--back {
-  z-index: 0;
-}
-/* Mesma fita, recortada só no trecho de volta e só dentro da foto: a fita sai
-   de trás da foto, contorna a borda direita e volta cruzando a foto pela
-   frente. O recorte direito (19,4%) coincide com a borda da foto, então a
-   emenda some na própria borda. */
-.mh-ribbon--front {
-  z-index: 2;
-  clip-path: inset(30% 19.4% -30% -30%);
-}
-.mh-photo-wrap {
+/* ---------- Topo (conceito C): o vídeo é o palco ----------
+   Celular: o vídeo vem depois das ações, em largura total. Desktop: encostado na borda direita da
+   tela, inteiro (na proporção do vídeo, sem corte) e dissolvendo no fundo à esquerda e embaixo. */
+.mh-cine-stage {
   position: relative;
-  z-index: 1;
+  aspect-ratio: 1024 / 592;
+  width: calc(100% + 2 * var(--mel-page-gutter));
+  margin-inline: calc(-1 * var(--mel-page-gutter));
+  overflow: hidden;
+  /* Dissolve em transparência (não numa cor): o fundo do topo tem brilhos e não deixa emenda. */
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 80%, transparent 100%);
+}
+@media (min-width: 1024px) {
+  .mh-cine-stage {
+    position: absolute;
+    top: 28px;
+    right: 0;
+    width: min(54vw, 940px);
+    margin: 0;
+    z-index: -1;
+    mask-image:
+      linear-gradient(to right, transparent 0%, #000 28%),
+      linear-gradient(to bottom, transparent 0%, #000 14%, #000 74%, transparent 100%);
+    mask-composite: intersect;
+  }
+  .mh-cine-copy {
+    text-shadow: 0 2px 24px color-mix(in srgb, var(--mel-background) 85%, transparent);
+  }
+}
+/* Pinos de avistamento: pousam, abrem uma onda, mostram o rótulo e somem (ciclo de 7 s). */
+.mh-pin {
+  position: absolute;
+  z-index: 2;
+  width: 0;
+  height: 0;
+}
+.mh-pin-dot {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--mel-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+  opacity: 0;
+  animation: mh-pin-drop 7s cubic-bezier(0.3, 1.4, 0.5, 1) infinite;
+  animation-delay: var(--d);
+}
+.mh-pin-ring {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--mel-primary);
+  opacity: 0;
+  animation: mh-pin-ring 7s ease-out infinite;
+  animation-delay: var(--d);
+}
+.mh-pin-label {
+  position: absolute;
+  left: 14px;
+  top: -14px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0a111d;
+  background: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 0.45);
+  opacity: 0;
+  animation: mh-pin-label 7s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  animation-delay: var(--d);
+}
+.mh-pin--left .mh-pin-label {
+  left: auto;
+  right: 14px;
+}
+@keyframes mh-pin-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.6);
+  }
+  6%,
+  60% {
+    opacity: 1;
+    transform: none;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes mh-pin-ring {
+  0%,
+  5% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  8% {
+    opacity: 0.9;
+  }
+  30%,
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+@keyframes mh-pin-label {
+  0%,
+  7% {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  12%,
+  58% {
+    opacity: 1;
+    transform: none;
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+/* "com você": sempre amarelo sólido (sem texto transparente, que escurecia com a sombra do título).
+   Entrada: as letras sobem uma a uma. Depois: um halo dourado desfocado respira atrás da palavra. */
+.mh-word {
+  isolation: isolate;
+  text-shadow: none;
+}
+.mh-word::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: var(--mel-primary);
+  filter: blur(18px);
+  opacity: 0.35;
+  pointer-events: none;
+  animation: mh-halo 4s ease-in-out 1.6s infinite;
+}
+@keyframes mh-halo {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.04);
+  }
+}
+.mh-letter {
+  display: inline-block;
+  white-space: pre;
+  animation: mh-letter 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(0.45s + var(--i) * 0.05s);
+}
+@keyframes mh-letter {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em) scale(0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-word::before,
+  .mh-letter {
+    animation: none;
+  }
+  .mh-pin-dot,
+  .mh-pin-label {
+    animation: none;
+    opacity: 1;
+  }
+  .mh-pin-ring {
+    display: none;
+  }
+}
+
+/* Indicador de tempo de cada cena do topo (HeroSlides): enche da esquerda para a direita; pausa
+   com o mouse em cima; com "reduzir movimento" fica cheio e não troca sozinho. */
+.mh-slide-progress {
+  transform: scaleX(0);
+  animation-name: mh-slide-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.mh-slide-progress.is-paused {
+  animation-play-state: paused;
+}
+.mh-slide-progress.is-static {
+  animation: none;
+  transform: none;
+}
+@keyframes mh-slide-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---------- Topo: troca "o bairro se ativando" (HeroSlides) ----------
+   A imagem vira uma grade de quarteirões que viram em 3D numa onda a partir de um ponto da cena;
+   cada quarteirão sobe no meio da virada, a face que sai escurece e uma borda dourada acende. */
+.hs-wave {
+  perspective: 1400px;
+}
+.hs-tile {
+  position: absolute;
+  /* Perspectiva em cada quarteirão: a virada tem profundidade (sem ela, vira uma faixa achatada). */
+  perspective: 700px;
+}
+.hs-tile-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: hs-flip var(--f) cubic-bezier(0.65, 0, 0.25, 1) var(--d) both;
+}
+.hs-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+.hs-face--back {
+  transform: rotateY(180deg);
+}
+.hs-face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0);
+  opacity: 0;
+  animation: hs-shade-out var(--f) ease-in var(--d) both;
+}
+.hs-face--back::after {
+  animation-name: hs-shade-in;
+  animation-timing-function: ease-out;
+}
+.hs-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--mel-primary) 85%, white),
+    0 0 14px color-mix(in srgb, var(--mel-primary) 50%, transparent);
+  animation: hs-edge var(--f) ease-in-out var(--d) both;
+}
+@keyframes hs-flip {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+  50% {
+    transform: rotateY(-90deg) scale(0.9);
+  }
+  100% {
+    transform: rotateY(-180deg) scale(1);
+  }
+}
+@keyframes hs-shade-out {
+  0% {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 0.6;
+  }
+}
+@keyframes hs-shade-in {
+  0%,
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* Lampejo dourado só no instante da virada (não uma grade acesa). */
+@keyframes hs-edge {
+  0%,
+  38% {
+    opacity: 0;
+  }
+  52% {
+    opacity: 0.8;
+  }
+  68%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Cena na tela: aproxima devagar. */
+.hs-kenburns {
+  animation: hs-kenburns 9s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+}
+@keyframes hs-kenburns {
+  from {
+    transform: scale(1.07);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Guardião: ondas douradas no chão a partir do pino, luz no pino e um brilho que atravessa. */
+.hs-ground-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--mel-primary) 90%, white);
+  box-shadow:
+    0 0 14px color-mix(in srgb, var(--mel-primary) 70%, transparent),
+    inset 0 0 10px color-mix(in srgb, var(--mel-primary) 45%, transparent);
+  opacity: 0;
+  animation: hs-ground 3.6s cubic-bezier(0.15, 0.6, 0.35, 1) infinite;
+}
+@keyframes hs-ground {
+  0% {
+    transform: translate(-50%, -50%) scale(0.15);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.9);
+    opacity: 0;
+  }
+}
+.hs-pin-light {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--mel-primary) 75%, white), transparent);
+  mix-blend-mode: screen;
+  animation: hs-pin-light 1.8s ease-in-out infinite;
+}
+@keyframes hs-pin-light {
+  0%,
+  100% {
+    transform: translate(-50%, -60%) scale(0.85);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(-50%, -60%) scale(1.1);
+    opacity: 0.9;
+  }
+}
+.hs-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 38%, rgb(255 236 190 / 0.22) 50%, transparent 62%);
+  mix-blend-mode: screen;
+  transform: translateX(-120%);
+  animation: hs-shine 6.5s ease-in-out 1.2s infinite;
+}
+@keyframes hs-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  28%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+/* Reflexo de luz que acompanha o mouse (só em telas com mouse). */
+.hs-gloss {
+  opacity: 0;
+  background: radial-gradient(420px circle at var(--gx) var(--gy), rgb(255 255 255 / 0.16), transparent 60%);
+  transition: opacity 0.4s ease;
+}
+@media (hover: hover) {
+  .hs:hover .hs-gloss {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hs-kenburns,
+  .hs-shine,
+  .hs-pin-light {
+    animation: none;
+  }
+  .hs-shine {
+    display: none;
+  }
+  .hs-ground-ring {
+    animation: none;
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* Brilho que segue o ponteiro nos cartões de ação (como no protótipo). */

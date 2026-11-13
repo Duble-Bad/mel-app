@@ -12,7 +12,7 @@ import { activateLostCase, startLostCase, updateLostCase } from "../src/lostCase
 import { reportContent } from "../src/moderation";
 import { createPet } from "../src/pets";
 import { createSighting, getTimeline, purgeOrphanSightingMedia } from "../src/sightings";
-import { anonClient, createTestUser, serviceClient } from "./helpers";
+import { anonClient, cleanupSequentially, createTestUser, deleteTestUser, serviceClient } from "./helpers";
 import type { MelClient } from "../src/client";
 
 // Região própria (Curitiba) para não cruzar com outros testes.
@@ -77,9 +77,11 @@ beforeAll(async () => {
 
 afterAll(async () => {
   for (let i = 0; i < uploaded.length; i += 100) await serviceClient().storage.from("sighting-media").remove(uploaded.slice(i, i + 100));
-  for (const s of realAnon) await serviceClient().auth.admin.deleteUser(s.id);
-  await Promise.all([tutor, guardian, account, ...crowd].map((u) => u?.cleanup()));
-}, 120_000);
+  for (const s of realAnon) await deleteTestUser(s.id);
+  // Uma por vez, o tutor (com os 8 alertas) por último: em paralelo, as cascatas se travavam e o
+  // tutor sobrava em toda execução, com os alertas "Repete", "Viral"… no mapa do mel-dev.
+  await cleanupSequentially([...crowd, guardian, account, tutor]);
+}, 240_000);
 
 describe("Ataque A: uma sessão anônima repete a mesma ação", () => {
   it("avistamentos: o limite da sessão vale e a mensagem é amigável (sessão anônima real)", async () => {

@@ -1,0 +1,18 @@
+/* Barra do indicador atual: enche no tempo da troca automática (só transform). */
+.pg-fill {
+  transform: scaleX(0);
+  animation-name: pg-fill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes pg-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pg-fill {
+    animation: none;
+    transform: none;
+  }
+}

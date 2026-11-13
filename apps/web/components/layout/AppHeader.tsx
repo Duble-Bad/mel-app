@@ -11,14 +11,14 @@ import { NotificationBell } from "./NotificationBell";
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
-        <Link href="/" className="-ml-1 rounded-md p-1" aria-label="MEL — início">
-          <MelLogo size={32} />
+      <div className="flex h-16 mel-container items-center justify-between gap-2 sm:gap-4">
+        <Link href="/" className="-ml-1 shrink-0 rounded-md p-1" aria-label="MEL — início">
+          <MelLogo size={32} accent />
         </Link>
         <Suspense fallback={<DesktopNavList pathname="" />}>
           <DesktopNav />
         </Suspense>
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex min-w-0 items-center gap-1 *:shrink-0 sm:gap-2">
           <Suspense fallback={<span className="min-h-11" aria-hidden="true" />}>
             <HeaderAccount />
           </Suspense>
@@ -67,8 +67,16 @@ async function HeaderAccount() {
       Entrar
     </Link>
   ) : (
-    <Link href="/perfil" className={`${ghostPill} !block max-w-28 truncate px-3.5 leading-[42px] sm:max-w-40 sm:px-5`}>
-      {firstName ? `Olá, ${firstName}` : "Meu perfil"}
+    <Link href="/perfil" className={`${ghostPill} !block min-w-0 !shrink max-w-28 truncate px-3.5 leading-[42px] sm:max-w-40 sm:px-5`}>
+      {firstName ? (
+        <>
+          {/* Celular estreito: só o nome, para caber ao lado dos ícones. */}
+          <span className="max-[400px]:hidden">Olá, </span>
+          {firstName}
+        </>
+      ) : (
+        "Meu perfil"
+      )}
     </Link>
   );
   return (

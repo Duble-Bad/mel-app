@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, Info, ShieldCheck, Smartphone } from "lucide-react";
+import { BellRing, Info, Smartphone } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DAILY_LIMITS, fieldErrors, GUARDIAN_RADII_M, type GuardianRadius, type GuardianSettings, guardianSettingsSchema, publicAreaFrom, radiusLabel, userErrorMessage } from "@mel/core";
 import { saveGuardianSettings } from "@mel/data";
@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { FilterChip } from "@/components/ui/FilterChip";
 import { Card } from "@/components/ui/Surface";
+import { GuardianHero } from "./GuardianHero";
 import { Switch } from "@/components/ui/Switch";
 import { useToast } from "@/components/ui/Toast";
 
@@ -58,73 +59,86 @@ export function GuardianForm({ userId, initial }: { userId: string; initial: Gua
     }
   }
 
+  const panel = "flex flex-col gap-5 rounded-2xl border border-border bg-surface p-5 sm:p-6";
   return (
-    <div className="flex flex-col gap-6">
-      <Card className="flex flex-col gap-4 bg-surface-warm">
-        <span className="flex size-12 items-center justify-center rounded-lg bg-primary-soft text-primary-soft-foreground">
-          <ShieldCheck aria-hidden="true" className="size-6" strokeWidth={1.75} />
-        </span>
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-bold">Seja um Guardião MEL</h1>
-          <p className="text-text-secondary">
-            Receba um aviso quando um pet se perder — ou for encontrado — perto de você. Você escolhe a área, o raio e quantos
-            avisos por dia.
-          </p>
+    // Desktop: apresentação e avisos no celular à esquerda (fixos); área e preferências à direita.
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-8">
+      <div className="flex flex-col gap-6 lg:sticky lg:top-24">
+        <Card className="flex flex-col gap-4 bg-surface-warm">
+          <GuardianHero radiusLabel={radiusLabel(radiusM)} />
+          <div className="flex flex-col gap-1.5">
+            <h1 className="text-2xl font-bold">Seja um Guardião <span className="text-primary">MEL</span></h1>
+            <p className="text-text-secondary">
+              Receba um aviso quando um pet se perder — ou for encontrado — perto de você. Você escolhe a área, o raio e quantos
+              avisos por dia.
+            </p>
+          </div>
+        </Card>
+        <div className="hidden lg:block">
+          <PushCard />
         </div>
-      </Card>
+      </div>
 
-      {saved && <Switch checked={enabled} onChange={setEnabled} label="Guardião ativo" description="Desligue para pausar todos os avisos." />}
+      <div className="flex flex-col gap-6">
+        {saved && <Switch checked={enabled} onChange={setEnabled} label="Guardião ativo" description="Desligue para pausar todos os avisos." />}
 
-      <section aria-labelledby="area" className="flex flex-col gap-3">
-        <h2 id="area" className="text-xl font-bold">
-          Área que você quer proteger
-        </h2>
-        <LocationPicker value={area} onChange={setArea} privacyNote="Guardamos só uma área aproximada (cerca de 100 m). Ninguém vê onde você mora." />
-        {errors.area && <p className="text-sm font-medium text-danger">{errors.area}</p>}
-      </section>
+        <section aria-labelledby="area" className={panel}>
+          <h2 id="area" className="text-xl font-bold">
+            Área que você quer proteger
+          </h2>
+          <LocationPicker value={area} onChange={setArea} privacyNote="Guardamos só uma área aproximada (cerca de 100 m). Ninguém vê onde você mora." />
+          {errors.area && <p className="text-sm font-medium text-danger">{errors.area}</p>}
+        </section>
 
-      <section aria-labelledby="raio" className="flex flex-col gap-3">
-        <h2 id="raio" className="font-semibold">
-          Raio dos avisos
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {GUARDIAN_RADII_M.map((r) => (
-            <FilterChip key={r} pressed={radiusM === r} onClick={() => setRadiusM(r)}>
-              {radiusLabel(r)}
-            </FilterChip>
-          ))}
+        <div className={panel}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <section aria-labelledby="raio" className="flex flex-col gap-3">
+              <h2 id="raio" className="font-semibold">
+                Raio dos avisos
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {GUARDIAN_RADII_M.map((r) => (
+                  <FilterChip key={r} pressed={radiusM === r} onClick={() => setRadiusM(r)}>
+                    {radiusLabel(r)}
+                  </FilterChip>
+                ))}
+              </div>
+            </section>
+
+            <section aria-labelledby="limite" className="flex flex-col gap-3">
+              <h2 id="limite" className="font-semibold">
+                No máximo, por dia
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {DAILY_LIMITS.map((n) => (
+                  <FilterChip key={n} pressed={maxPerDay === n} onClick={() => setMaxPerDay(n)}>
+                    {n} avisos
+                  </FilterChip>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <section aria-labelledby="tipos" className="flex flex-col gap-4 border-t border-border pt-5">
+            <h2 id="tipos" className="font-semibold">
+              Quero ser avisado sobre
+            </h2>
+            <Switch checked={alertLost} onChange={setAlertLost} label="Pets perdidos" description="Um tutor acabou de ativar um alerta perto de você." />
+            <Switch checked={alertFound} onChange={setAlertFound} label="Encontrados e vistos soltos" description="Alguém encontrou ou viu um animal sozinho na rua." />
+            {errors.alertLost && <p className="text-sm font-medium text-danger">{errors.alertLost}</p>}
+            <Switch checked={quietNight} onChange={setQuietNight} label="Silêncio à noite (22h–7h)" description="O aviso fica no app, mas o celular não toca." />
+          </section>
         </div>
-      </section>
 
-      <section aria-labelledby="tipos" className="flex flex-col gap-4">
-        <h2 id="tipos" className="font-semibold">
-          Quero ser avisado sobre
-        </h2>
-        <Switch checked={alertLost} onChange={setAlertLost} label="Pets perdidos" description="Um tutor acabou de ativar um alerta perto de você." />
-        <Switch checked={alertFound} onChange={setAlertFound} label="Encontrados e vistos soltos" description="Alguém encontrou ou viu um animal sozinho na rua." />
-        {errors.alertLost && <p className="text-sm font-medium text-danger">{errors.alertLost}</p>}
-      </section>
+        {error && <Alert tone="error">{error}</Alert>}
+        <Button onClick={save} loading={saving} loadingText="Salvando…">
+          {saved ? "Salvar preferências" : "Quero ser Guardião"}
+        </Button>
 
-      <section aria-labelledby="limite" className="flex flex-col gap-3">
-        <h2 id="limite" className="font-semibold">
-          No máximo, por dia
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {DAILY_LIMITS.map((n) => (
-            <FilterChip key={n} pressed={maxPerDay === n} onClick={() => setMaxPerDay(n)}>
-              {n} avisos
-            </FilterChip>
-          ))}
+        <div className="lg:hidden">
+          <PushCard />
         </div>
-        <Switch checked={quietNight} onChange={setQuietNight} label="Silêncio à noite (22h–7h)" description="O aviso fica no app, mas o celular não toca." />
-      </section>
-
-      {error && <Alert tone="error">{error}</Alert>}
-      <Button onClick={save} loading={saving} loadingText="Salvando…">
-        {saved ? "Salvar preferências" : "Quero ser Guardião"}
-      </Button>
-
-      <PushCard />
+      </div>
     </div>
   );
 }

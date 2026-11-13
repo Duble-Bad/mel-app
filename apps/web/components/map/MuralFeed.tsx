@@ -3,7 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { ChevronLeft, ChevronRight, Heart, Map as MapIcon, SearchX, ShieldCheck } from "lucide-react";
 import { Suspense } from "react";
-import { DEFAULT_CENTER_LABEL, PAGE_SIZE, parseSearchParams, type PublicAdoption, type PublicCaseItem } from "@mel/core";
+import { DEFAULT_CENTER_LABEL, PAGE_SIZE, parseSearchParams, RADIUS_ALL, type PublicAdoption, type PublicCaseItem } from "@mel/core";
 import { listAdoptions, searchPublicCases } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { ButtonLink } from "@/components/ui/Button";
@@ -29,10 +29,10 @@ const grid = "mel-stagger grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px
  */
 export function MuralFeed({ searchParams }: { searchParams: Promise<Params> }) {
   return (
-    <main className="mx-auto w-full max-w-[1200px] flex-1 px-[var(--mel-page-gutter)] pb-16">
+    <main className="mel-container flex-1 pb-16">
       <header className="flex animate-enter flex-wrap items-end justify-between gap-x-6 gap-y-4 pt-10 pb-6">
         <div className="flex max-w-2xl flex-col gap-2.5">
-          <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.05] font-black tracking-[-0.03em]">Mural da MEL</h1>
+          <h1 className="text-[clamp(32px,5vw,48px)] leading-[1.05] font-black tracking-[-0.03em]">Mural da <span className="text-primary">MEL</span></h1>
           <p className="max-w-[60ch] text-lg text-text-secondary">Acompanhe os pets perdidos, encontrados e disponíveis para adoção na sua região.</p>
         </div>
         {/* No celular, duas colunas iguais: os mesmos lados dos filtros "Cães e gatos" e "Qualquer porte". */}
@@ -97,7 +97,8 @@ async function Results({ params }: { params: Params }) {
   const paged = feed === "adoption" ? adoptions.total : cases.total;
   const pages = Math.max(1, Math.ceil(paged / PAGE_SIZE));
   const link = (page: number) => `/mural${feedQuery({ ...state, filters: { ...filters, page } })}`;
-  const where = filters.hasCenter ? "de você" : `do ${DEFAULT_CENTER_LABEL}`;
+  const where = filters.place ? `de ${filters.place}` : filters.hasCenter ? "de você" : `do ${DEFAULT_CENTER_LABEL}`;
+  const reach = filters.radiusKm === RADIUS_ALL ? `em toda a rede (os mais perto ${where} primeiro)` : `em até ${filters.radiusKm} km ${where}`;
   const pets = (n: number) => (n === 1 ? "1 pet" : `${n} pets`);
 
   return (
@@ -108,10 +109,10 @@ async function Results({ params }: { params: Params }) {
           `${pets(adoptions.total)} para adoção.`
         ) : (
           <>
-            {pets(cases.total)} em até {filters.radiusKm} km {where}
+            {pets(cases.total)} {reach}
             {size && cases.total >= SIZE_SCAN ? " (entre os mais próximos)" : ""}
             {adoptions.total > 0 && ` · ${adoptions.total} para adoção`}.
-            {!filters.hasCenter && " Toque em “Perto de mim” para ver o que está ao seu redor."}
+            {!filters.hasCenter && " Busque uma cidade ou bairro, ou toque em “Perto de mim”, para ver outra região."}
           </>
         )}
       </p>

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -18,6 +17,7 @@ import {
 import { Suspense, type ReactNode } from "react";
 import { BrandStory } from "@/components/brand/BrandStory";
 import { AdoptionPreview } from "@/components/home/AdoptionPreview";
+import { HeroCinema } from "@/components/home/HeroCinema";
 import { HelpActions } from "@/components/home/HelpActions";
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { NetworkStats } from "@/components/home/NetworkStats";
@@ -27,7 +27,7 @@ import "../home.css";
 const STEPS: { Icon: LucideIcon; title: string; text: string }[] = [
   { Icon: Megaphone, title: "Publique em 2 minutos", text: "Foto, nome e a região onde o pet sumiu. A MEL gera um cartaz com QR Code para imprimir e compartilhar." },
   { Icon: Bell, title: "A vizinhança é avisada", text: "Guardiões da região recebem o alerta. Quem vê o pet registra o avistamento com foto, mesmo sem conta." },
-  { Icon: MessageSquare, title: "Conversa segura até o reencontro", text: "O contato acontece pelo chat da MEL. Seu endereço nunca aparece, e o telefone só se você quiser." },
+  { Icon: MessageSquare, title: "Chat seguro até o reencontro", text: "O contato acontece pelo chat da MEL. Seu endereço nunca aparece, e o telefone só se você quiser." },
 ];
 
 const ADOPTION_CHECKS = [
@@ -57,8 +57,8 @@ export default function HomePage() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-[radial-gradient(60%_70%_at_75%_35%,color-mix(in_srgb,var(--color-status-found-accent)_14%,transparent),transparent_70%),radial-gradient(40%_50%_at_5%_95%,color-mix(in_srgb,var(--color-primary)_12%,transparent),transparent_70%)]"
         />
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-7 pb-10 lg:grid lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-14">
-          <div className="flex flex-col items-start gap-4 lg:gap-6 lg:pt-6">
+        <div className="flex mel-container flex-col gap-6 pt-7 pb-10 lg:grid lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-x-10 lg:gap-y-0 lg:pt-14 lg:pb-8">
+          <div className="mh-cine-copy relative z-[1] flex flex-col items-start gap-4 lg:min-h-[470px] lg:justify-center lg:gap-6">
             <span className="inline-flex animate-enter items-center gap-2 rounded-full border border-primary/50 bg-primary-soft/60 px-3.5 py-1.5 text-sm font-semibold text-text-primary">
               <PawPrintSmall />
               Rede de Encontro e Adoção de Pets
@@ -69,8 +69,13 @@ export default function HomePage() {
               style={{ animationDelay: "80ms" }}
             >
               Uma rede inteira procurando{" "}
-              <span className="relative inline-block whitespace-nowrap text-primary">
-                com você.
+              {/* Sempre amarelo sólido: letras sobem uma a uma e um halo dourado respira atrás (ver home.css). */}
+              <span className="mh-word relative inline-block whitespace-nowrap text-primary" data-text="com você.">
+                {Array.from("com você.").map((ch, i) => (
+                  <span key={i} className="mh-letter" style={{ "--i": i } as React.CSSProperties}>
+                    {ch}
+                  </span>
+                ))}
                 <svg aria-hidden="true" viewBox="0 0 300 30" preserveAspectRatio="none" className="mel-draw absolute -bottom-[0.14em] left-0 h-[0.3em] w-[92%] overflow-visible">
                   <path d="M4 20 C 80 6, 200 4, 296 16" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" style={{ "--len": 320, "--delay": "0.7s" } as React.CSSProperties} />
                 </svg>
@@ -91,9 +96,10 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Celular: as ações (e os números) vêm antes da foto, pois são a prioridade. Desktop: foto ao lado do texto. */}
-          <div className="order-3 lg:order-none">
-            <HeroPhoto />
+          {/* Celular: as ações (e os números) vêm antes do vídeo, pois são a prioridade. Desktop: o vídeo é o
+              palco à direita, até a borda da tela (posicionado pelo CSS, atrás do texto). */}
+          <div className="order-3 lg:order-none lg:contents">
+            <HeroCinema />
           </div>
 
           <section aria-labelledby="como-ajudar" className="order-2 lg:order-none lg:col-span-2 lg:mt-10">
@@ -109,7 +115,7 @@ export default function HomePage() {
       </section>
 
       <section id="como-funciona" aria-labelledby="cf-title" className="scroll-mt-20">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 lg:py-[72px]">
+        <div className="mel-container py-16 lg:pt-11 lg:pb-[72px]">
           <SectionHead eyebrow="Como funciona" id="cf-title" title="Do alerta ao reencontro, em três passos">
             Sem custo, sem anúncios. A MEL avisa quem está perto e protege os dados de quem pede ajuda.
           </SectionHead>
@@ -119,13 +125,13 @@ export default function HomePage() {
                 key={title}
                 data-reveal
                 style={{ "--d": `${i * 0.1}s` } as React.CSSProperties}
-                className="mh-step relative rounded-card border border-border bg-surface/70 p-6 sm:p-7"
+                className="mh-step relative rounded-card border border-border bg-surface/70 p-6.5"
               >
-                <span aria-hidden="true" className="mb-4 block text-[15px] font-extrabold tracking-[.08em] text-primary">
+                <span aria-hidden="true" className="mb-4.5 block text-[15px] font-extrabold tracking-[.08em] text-primary">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <IconTile Icon={Icon} />
-                <h3 className="mb-2 pr-12 text-[21px] leading-tight font-extrabold tracking-[-0.02em]">{title}</h3>
+                <h3 className="mb-2 text-[21px] leading-[1.1] font-extrabold tracking-[-0.02em]">{title}</h3>
                 <p className="text-text-secondary">{text}</p>
               </li>
             ))}
@@ -134,7 +140,7 @@ export default function HomePage() {
       </section>
 
       <section aria-labelledby="rede-title" className="border-y border-border bg-gradient-to-b from-surface-warm to-background">
-        <div className="mx-auto w-full max-w-6xl px-4 py-16 lg:py-[72px]">
+        <div className="mel-container py-16 lg:py-[72px]">
           <div data-reveal className="mb-9 flex flex-wrap items-end justify-between gap-5">
             <div>
               <Eyebrow>Agora na sua região</Eyebrow>
@@ -162,7 +168,7 @@ export default function HomePage() {
       </section>
 
       <section aria-labelledby="ad-title">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-7 px-4 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
+        <div className="grid mel-container items-center gap-7 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
           <div data-reveal>
             <Eyebrow>Adoção responsável</Eyebrow>
             <h2 id="ad-title" className={h2Class}>
@@ -199,7 +205,7 @@ export default function HomePage() {
       </section>
 
       <section aria-label="Guardiões e a origem da MEL" className="border-t border-border">
-        <div className="mx-auto grid w-full max-w-6xl gap-4.5 px-4 py-16 lg:grid-cols-2 lg:items-stretch lg:py-[72px]">
+        <div className="grid mel-container gap-4.5 py-16 lg:grid-cols-2 lg:items-stretch lg:py-[72px]">
           <Link
             href="/guardiao"
             data-reveal
@@ -228,7 +234,7 @@ export default function HomePage() {
       </section>
 
       <section aria-labelledby="pa-title" className="border-y border-border bg-gradient-to-b from-surface-warm to-background">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-7 px-4 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
+        <div className="grid mel-container items-center gap-7 py-16 lg:grid-cols-2 lg:gap-14 lg:py-[72px]">
           <div data-reveal>
             <Eyebrow>Parceiros da MEL</Eyebrow>
             <h2 id="pa-title" className={h2Class}>
@@ -327,54 +333,3 @@ function PawPrintSmall() {
   );
 }
 
-// Começa escondida atrás da foto, sai pela direita e volta por cima (ver home.css).
-const RIBBON = "M270 0 C 330 120, 430 250, 250 340 S 120 470, 20 490";
-
-/**
- * Foto do topo com a fita dourada entrelaçada: a mesma fita é desenhada duas
- * vezes — atrás da foto e, recortada só na parte de baixo, na frente dela —
- * e as duas animam juntas, então parece uma fita só passando por trás e por
- * cima. Animações desligam com "reduzir movimento".
- */
-function HeroPhoto() {
-  const ribbon = (cls: string) => (
-    <svg aria-hidden="true" viewBox="0 0 400 500" className={`mh-ribbon ${cls} mel-draw`}>
-      <path d={RIBBON} fill="none" stroke="currentColor" strokeWidth="44" strokeLinecap="round" style={{ "--len": 700, "--delay": "0.5s" } as React.CSSProperties} />
-    </svg>
-  );
-  return (
-    <div className="relative mx-auto w-full max-w-xl animate-enter lg:max-w-none" style={{ animationDelay: "120ms" }}>
-      {ribbon("mh-ribbon--back")}
-      <div className="mh-photo-wrap">
-        <Image
-          src="/fotos/mel-e-gatinho.webp"
-          alt="A Mel, uma Yorkshire com laço amarelo, abraçada a um gatinho tigrado"
-          width={1600}
-          height={901}
-          priority
-          sizes="(min-width: 1024px) 560px, 100vw"
-          className="aspect-[16/11] w-full rounded-hero object-cover object-[62%_35%] shadow-lg lg:aspect-auto lg:h-[480px]"
-        />
-      </div>
-      {ribbon("mh-ribbon--front")}
-      <svg aria-hidden="true" viewBox="0 0 100 100" className="mel-draw mel-float absolute -top-4 -left-3 z-[3] size-16 text-primary sm:size-20">
-        <path
-          d="M50 84 C 18 60, 8 40, 22 26 C 34 14, 48 24, 50 36 C 54 22, 70 12, 80 26 C 94 44, 74 64, 50 84"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ "--len": 300, "--delay": "1s" } as React.CSSProperties}
-        />
-      </svg>
-      <div className="absolute bottom-4 left-4 z-[3] flex items-center gap-3 rounded-lg border border-border-strong/70 bg-background/85 py-2.5 pr-4 pl-3 shadow-md backdrop-blur-md">
-        <span aria-hidden="true" className="mel-live size-2.5 rounded-full bg-status-found-accent" />
-        <span className="text-sm">
-          <strong className="block font-bold">Avistamentos em tempo real</strong>
-          <span className="text-text-secondary">chegam direto para o tutor</span>
-        </span>
-      </div>
-    </div>
-  );
-}

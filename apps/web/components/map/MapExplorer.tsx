@@ -5,7 +5,7 @@ import "@/app/map.css";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Clock, LoaderCircle, LocateFixed, MapPin, Minus, Plus, Search, SearchX, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { distanceMeters, formatDistance, PERIOD_LABELS, PUBLIC_KINDS, type PublicCaseItem, type RadiusKm, type SearchFilters, userErrorMessage } from "@mel/core";
+import { distanceMeters, focusPosition, formatDistance, PERIOD_LABELS, PUBLIC_KINDS, RADIUS_ALL, radiusShort, type PublicCaseItem, type RadiusKm, type SearchFilters, userErrorMessage } from "@mel/core";
 import { listAdoptions, searchAdoptionsOnMap, searchPublicCases } from "@mel/data";
 import { getCurrentPosition } from "@/lib/geo/client";
 import { type AreaMapHandle, mapLibreAreasProvider } from "@/lib/map/maplibre";
@@ -16,6 +16,7 @@ import { FeedFiltersBar } from "./FeedFiltersBar";
 import { casePoint, spreadPins, ZOOM_BY_RADIUS } from "./pins";
 import { MapDrawer } from "./MapDrawer";
 import { PetPhoto } from "@/components/ui/PetPhoto";
+
 
 const CASE_LEGEND = ["lost", "found", "sighting"] as const;
 
@@ -56,7 +57,8 @@ export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedS
   // Em "Todos", tipos sem nenhum caso no raio/período: diz isso claramente (antes parecia
   // que Perdido e Visto tinham sumido do mapa, quando só estavam fora dos 5 km padrão).
   const missingKinds = load.status === "ok" && feed === "all" && load.total > 0 ? PUBLIC_KINDS.filter((k) => !load.cases.some((c) => c.kind === k)) : [];
-  const wider = ([3, 5, 10] as RadiusKm[]).find((r) => r > filters.radiusKm);
+  // Próximo alcance maior; depois de 50 km, "toda a rede" (sem limite).
+  const wider: RadiusKm | undefined = filters.radiusKm === RADIUS_ALL ? undefined : (([3, 5, 10, 25, 50] as RadiusKm[]).find((r) => r > filters.radiusKm) ?? RADIUS_ALL);
   const noCasesOnMap = load.status === "ok" && load.cases.length === 0 && load.adoptionPins.length === 0;
   // Legenda só com o que pode aparecer no mapa (adoção só com a configuração ligada).
   const legend = showAdoptionOnMap ? [...CASE_LEGEND, "adoption" as const] : CASE_LEGEND;
@@ -85,7 +87,7 @@ export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedS
           h.onMove((b) => {
             const c = { lat: (b.north + b.south) / 2, lng: (b.east + b.west) / 2 };
             const { center, radiusKm } = areaRef.current;
-            setMovedTo(distanceMeters(c, center) > radiusKm * 300 ? c : null);
+            setMovedTo(distanceMeters(c, center) > (radiusKm || 50) * 300 ? c : null);
           }),
         );
       })
@@ -179,7 +181,7 @@ export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedS
     setGeoError(null);
     try {
       const { position } = await getCurrentPosition();
-      go({ center: position, hasCenter: true });
+      go({ center: position, hasCenter: true, place: undefined });
     } catch (err) {
       setGeoError(userErrorMessage(err, "Não conseguimos pegar sua localização."));
     } finally {
@@ -212,12 +214,12 @@ export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedS
       {missingKinds.length > 0 && (
         <p role="status" data-testid="map-missing-kinds" className="-mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary">
           <span>
-            Sem {joinPt(missingKinds.map((k) => FEED_KINDS.find((o) => o.value === k)!.label))} até {filters.radiusKm} km
+            Sem {joinPt(missingKinds.map((k) => FEED_KINDS.find((o) => o.value === k)!.label))} {radiusShort(filters.radiusKm)}
             {filters.period === "todos" ? "" : ` nos últimos ${PERIOD_LABELS[filters.period]}`}.
           </span>
-          {wider && (
+          {wider !== undefined && (
             <button type="button" onClick={() => go({ radiusKm: wider })} className="font-semibold text-link underline underline-offset-4">
-              Ampliar para {wider} km
+              {wider === RADIUS_ALL ? "Ver toda a rede" : `Ampliar para ${wider} km`}
             </button>
           )}
         </p>
@@ -232,7 +234,7 @@ export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedS
         filters.hasCenter && (
           <p role="status" data-testid="map-near-me" className="-mt-3 flex items-center gap-1.5 text-sm text-text-secondary">
             <LocateFixed aria-hidden="true" className="size-4 shrink-0 text-primary" strokeWidth={2} />
-            Mostrando casos perto da sua localização aproximada.
+            {filters.place ? `Mostrando casos perto de ${filters.place}.` : "Mostrando casos perto da sua localização aproximada."}
           </p>
         )
       )}
@@ -301,7 +303,7 @@ export function MapExplorer({ state, showAdoptionOnMap = false }: { state: FeedS
           {movedTo && (
             <button
               type="button"
-              onClick={() => go({ center: movedTo, hasCenter: true })}
+              onClick={() => go({ center: movedTo, hasCenter: true, place: undefined })}
               className="absolute top-16 left-1/2 z-[3] inline-flex min-h-11 -translate-x-1/2 animate-pop items-center gap-2 rounded-full bg-primary px-4 text-sm font-bold whitespace-nowrap text-primary-foreground shadow-primary"
             >
               <Search aria-hidden="true" className="size-4" strokeWidth={2} /> Buscar nesta área
@@ -347,7 +349,7 @@ function countText(load: Load, feed: FeedState["feed"], radiusKm: number): strin
   const pets = load.adoptions === 1 ? "1 pet para adoção" : `${load.adoptions} pets para adoção`;
   if (feed === "adoption") return pets;
   if (load.total === 0 && load.adoptions === 0) return "Nenhum caso com esses filtros nesta área. Tente aumentar o raio.";
-  const cases = `${load.total === 1 ? "1 caso" : `${load.total} casos`} nesta região (até ${radiusKm} km)`;
+  const cases = `${load.total === 1 ? "1 caso" : `${load.total} casos`} ${radiusKm === RADIUS_ALL ? "em toda a rede" : `nesta região (até ${radiusKm} km)`}`;
   return load.adoptions > 0 ? `${cases} · ${pets}` : cases;
 }
 
@@ -366,7 +368,7 @@ function CaseRow({ entry: e, active, onOpen, onHover }: { entry: FeedEntry; acti
       onBlur={() => onHover(null)}
       aria-haspopup="dialog"
     >
-      <PetPhoto src={e.photoUrl} alt="" loading="lazy" className="mel-case__thumb" fallbackClassName="mel-case__thumb flex items-center justify-center" iconClassName="size-8" />
+      <PetPhoto src={e.photoUrl} alt="" loading="lazy" className="mel-case__thumb" style={{ objectPosition: focusPosition(e.photoFocus) }} fallbackClassName="mel-case__thumb flex items-center justify-center" iconClassName="size-8" />
       <span className="block min-w-0">
         <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
         <strong>{e.title}</strong>

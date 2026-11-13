@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { Camera, ClipboardList, Lock, PawPrint, ScanEye, type LucideIcon } from "lucide-react";
 import {
   AGE_OPTIONS,
   BR_STATES,
@@ -38,6 +39,8 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ChoiceGroup, MultiChoiceGroup, YesNoUnknown } from "@/components/ui/Choice";
 import { SelectField, TextField } from "@/components/ui/Field";
+import { InfoTip } from "@/components/ui/InfoTip";
+import { StepCard, SteppedForm, type Step } from "@/components/ui/SteppedForm";
 import { FillCityFromLocation } from "@/components/location/FillCityFromLocation";
 import { BreedField } from "./BreedField";
 import { PhotoManager } from "./PhotoManager";
@@ -53,12 +56,50 @@ interface PetFormProps {
   /** Cidade/estado do tutor como sugestão no cadastro. */
   defaultCity?: string | null;
   defaultState?: string | null;
+  /** Conteúdo extra no fim do menu lateral (ex.: excluir o pet). */
+  asideFooter?: ReactNode;
 }
+
+type SectionId = "fotos" | "basico" | "aparencia" | "detalhes" | "privado";
+
+const SECTIONS: { id: SectionId; title: string; Icon: LucideIcon }[] = [
+  { id: "fotos", title: "Fotos", Icon: Camera },
+  { id: "basico", title: "Identificação", Icon: PawPrint },
+  { id: "aparencia", title: "Como reconhecer", Icon: ScanEye },
+  { id: "detalhes", title: "Mais detalhes", Icon: ClipboardList },
+  { id: "privado", title: "Privacidade", Icon: Lock },
+];
+
+/** Em qual etapa fica cada campo (para abrir a etapa certa quando há erro). */
+const FIELD_SECTION: Record<string, SectionId> = {
+  name: "basico",
+  species: "basico",
+  breed: "basico",
+  sex: "basico",
+  size: "basico",
+  colorPrimary: "aparencia",
+  colorsSecondary: "aparencia",
+  uniqueMarks: "aparencia",
+  birthDate: "detalhes",
+  ageEstimateMonths: "detalhes",
+  weightKg: "detalhes",
+  description: "detalhes",
+  city: "detalhes",
+  state: "detalhes",
+  microchipNumber: "privado",
+  hiddenMarks: "privado",
+  ownershipNotes: "privado",
+};
 
 const textarea =
   "block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 text-base focus:border-focus focus:outline-none";
 
-export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultState }: PetFormProps) {
+/**
+ * Cadastro e edição do pet. Celular: uma coluna, seções em cartões, um botão no fim.
+ * Desktop (lg): menu de etapas à esquerda (fixo, com o botão de salvar sempre à mão) e uma etapa
+ * por vez à direita, com os campos lado a lado — nada de formulário estreito e comprido.
+ */
+export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultState, asideFooter }: PetFormProps) {
   const router = useRouter();
   const isEdit = Boolean(pet);
 
@@ -88,6 +129,19 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
   const [formError, setFormError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Etapa visível no desktop (no celular todas aparecem).
+  const [active, setActive] = useState<SectionId>(isEdit ? "basico" : "fotos");
+
+  const photoCount = (pet?.photos.length ?? 0) + pendingPhotos.length;
+  const filled: Record<SectionId, boolean> = {
+    fotos: photoCount > 0,
+    basico: Boolean(name.trim() && species),
+    aparencia: Boolean(colorPrimary || uniqueMarks.trim()),
+    detalhes: Boolean(birthDate || ageEstimate || weight || neutered != null || hasMicrochip != null || description.trim() || city.trim()),
+    privado: Boolean(microchipNumber || hiddenMarks.trim() || ownershipNotes.trim() || isPublic),
+  };
+  const sectionErrors = new Set(Object.keys(errors).map((k) => FIELD_SECTION[k]).filter(Boolean));
+
 
   async function handlePhotoAction(action: () => Promise<void>) {
     setBusy(true);
@@ -133,7 +187,10 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
       };
       setErrors(errs);
       setFormError("Confira os campos destacados.");
-      document.getElementById(`field-${Object.keys(errs)[0]}`)?.scrollIntoView({ block: "center" });
+      const first = Object.keys(errs)[0];
+      // Desktop: abre a etapa do primeiro erro antes de rolar até o campo.
+      if (first && FIELD_SECTION[first]) setActive(FIELD_SECTION[first]);
+      requestAnimationFrame(() => document.getElementById(`field-${first}`)?.scrollIntoView({ block: "center" }));
       return;
     }
     setErrors({});
@@ -178,219 +235,271 @@ export function PetForm({ ownerId, pet, privateDetails, defaultCity, defaultStat
     setBusy(false);
   }
 
+  const submitLabel = isEdit ? "Salvar alterações" : "Cadastrar pet";
+  const steps: Step<SectionId>[] = SECTIONS.map((sec) => ({
+    ...sec,
+    done: filled[sec.id],
+    error: sectionErrors.has(sec.id),
+    status: sec.id === "basico" ? "Obrigatório" : sec.id === "fotos" ? `${photoCount} de 6` : filled[sec.id] ? "Preenchido" : "Opcional",
+  }));
+  const step = (id: SectionId) => SECTIONS.find((x) => x.id === id)!;
+
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
-      {formError && <Alert tone="error">{formError}</Alert>}
-
-      <section className="flex flex-col gap-5" aria-labelledby="sec-basico">
-        <h2 id="sec-basico" className="text-lg font-bold">
-          O básico
-        </h2>
-        <PhotoManager
-          existing={pet?.photos ?? []}
-          pending={pendingPhotos}
-          onPendingChange={setPendingPhotos}
-          busy={busy}
-          onMakePrimary={pet ? (id) => handlePhotoAction(() => setPrimaryPetPhoto(getBrowserClient(), pet.id, id)) : undefined}
-          onRemoveExisting={pet ? (id) => handlePhotoAction(() => removePetPhoto(getBrowserClient(), id)) : undefined}
-        />
-        <div id="field-name">
-          <TextField label="Nome" name="name" value={name} onChange={(e) => setName(e.target.value)} required error={errors.name} />
-        </div>
-        <div id="field-species">
-          <ChoiceGroup
-            name="species"
-            legend="Espécie"
-            value={species}
-            onChange={(next) => {
-              setSpecies(next);
-              // Raça de cachorro não serve para gato (e vice-versa).
-              if (breed && !isValidBreed(next, breed)) setBreed(null);
-            }}
-            error={errors.species}
-            options={SPECIES.map((s) => ({ value: s, label: SPECIES_LABELS[s] }))}
-          />
-        </div>
-        {/* Raça logo depois da espécie: a lista depende dela. */}
-        <div id="field-breed">
-          <BreedField species={species} value={breed} onChange={setBreed} error={errors.breed} />
-        </div>
-        <ChoiceGroup
-          name="sex"
-          legend="Sexo"
-          value={sex}
-          onChange={setSex}
-          options={PET_SEXES.map((s) => ({ value: s, label: SEX_LABELS[s] }))}
-        />
-        <ChoiceGroup
-          name="size"
-          legend="Porte"
-          optional
-          value={size}
-          onChange={setSize}
-          options={PET_SIZES.map((s) => ({ value: s, label: SIZE_LABELS[s].label, hint: SIZE_LABELS[s].hint }))}
-        />
-      </section>
-
-      <section className="flex flex-col gap-5" aria-labelledby="sec-aparencia">
-        <h2 id="sec-aparencia" className="text-lg font-bold">
-          Como reconhecer
-        </h2>
-        <ChoiceGroup
-          name="colorPrimary"
-          legend="Cor principal"
-          optional
-          value={colorPrimary}
-          onChange={setColorPrimary}
-          options={PET_COLORS.map((c) => ({ value: c.id, label: c.label }))}
-        />
-        {colorPrimary && (
-          <MultiChoiceGroup
-            name="colorsSecondary"
-            legend="Outras cores"
-            optional
-            values={colorsSecondary}
-            onChange={setColorsSecondary}
-            error={errors.colorsSecondary}
-            options={PET_COLORS.filter((c) => c.id !== colorPrimary).map((c) => ({ value: c.id, label: c.label }))}
-          />
+    <form onSubmit={handleSubmit} noValidate>
+      <SteppedForm
+        steps={steps}
+        active={active}
+        onActiveChange={setActive}
+        asideFooter={asideFooter}
+        before={formError && <Alert tone="error">{formError}</Alert>}
+        submit={(where) => (
+          <Button
+            type="submit"
+            size={where === "last" ? "md" : "lg"}
+            className={where === "last" ? "w-auto" : "w-full"}
+            loading={busy}
+            loadingText={progress ?? "Salvando…"}
+          >
+            {submitLabel}
+          </Button>
         )}
-        <div id="field-uniqueMarks">
-          <PublicDescriptionField
-            id="uniqueMarks"
-            label={PET_DESCRIPTION_COPY.label}
-            guidance={PET_DESCRIPTION_COPY.guidance}
-            placeholder={PET_DESCRIPTION_COPY.placeholder}
-            rows={5}
-            className={textarea}
-            value={uniqueMarks}
-            onChange={setUniqueMarks}
-            error={errors.uniqueMarks}
+      >
+        <StepCard {...step("fotos")}>
+          <PhotoManager
+            existing={pet?.photos ?? []}
+            pending={pendingPhotos}
+            onPendingChange={setPendingPhotos}
+            busy={busy}
+            compact
+            onMakePrimary={pet ? (id) => handlePhotoAction(() => setPrimaryPetPhoto(getBrowserClient(), pet.id, id)) : undefined}
+            onRemoveExisting={pet ? (id) => handlePhotoAction(() => removePetPhoto(getBrowserClient(), id)) : undefined}
           />
-        </div>
-      </section>
+        </StepCard>
 
-      <section className="flex flex-col gap-5" aria-labelledby="sec-detalhes">
-        <h2 id="sec-detalhes" className="text-lg font-bold">
-          Mais detalhes <span className="text-base font-normal text-text-secondary">(pode completar depois)</span>
-        </h2>
-        <div id="field-birthDate">
-          <DateCalendar
-            label="Data de nascimento"
-            name="birthDate"
-            optional
-            max={isoDate(new Date())}
-            value={birthDate}
-            onChange={setBirthDate}
-            error={errors.birthDate}
-          />
-        </div>
-        {!birthDate && (
-          <SelectField label="Idade aproximada" name="ageEstimate" optional value={ageEstimate} onChange={(e) => setAgeEstimate(e.target.value)}>
-            <option value="">Não sei</option>
-            {AGE_OPTIONS.map((a) => (
-              <option key={a.months} value={a.months}>
-                {a.label}
-              </option>
-            ))}
-          </SelectField>
-        )}
-        <div id="field-weightKg">
-          <TextField
-            label="Peso aproximado (kg)"
-            name="weight"
-            inputMode="decimal"
-            optional
-            placeholder="Ex.: 3,5"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            error={errors.weightKg}
-          />
-        </div>
-        <YesNoUnknown name="neutered" legend="É castrado(a)?" value={neutered} onChange={setNeutered} />
-        <YesNoUnknown name="hasMicrochip" legend="Tem microchip?" value={hasMicrochip} onChange={setHasMicrochip} />
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="description" className="font-semibold">
-            Sobre o pet <span className="font-normal text-text-secondary">(opcional)</span>
-          </label>
-          <p className="text-sm text-text-secondary">Jeito, se é medroso, se atende pelo nome…</p>
-          <textarea id="description" rows={4} className={textarea} {...limitedTextarea(description, setDescription, 1000)} />
-          <p className="text-right text-xs text-text-secondary tabular-nums">{description.length}/1000</p>
-          {errors.description && <p className="text-sm font-medium text-danger">{errors.description}</p>}
-        </div>
-        <div className="flex flex-col gap-2">
-          <TextField label="Cidade" name="city" optional value={city} onChange={(e) => setCity(e.target.value)} error={errors.city} />
-          <FillCityFromLocation
-            onFill={(c, uf) => {
-              setCity(c);
-              if (uf) setState(uf);
-            }}
-          />
-        </div>
-        <SelectField label="Estado" name="state" optional value={state} onChange={(e) => setState(e.target.value)}>
-          <option value="">Escolha o estado</option>
-          {BR_STATES.map((s) => (
-            <option key={s.uf} value={s.uf}>
-              {s.name}
-            </option>
-          ))}
-        </SelectField>
-      </section>
+        <StepCard {...step("basico")}>
+          <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
+            <div id="field-name">
+              <TextField label="Nome" name="name" value={name} onChange={(e) => setName(e.target.value)} required error={errors.name} />
+            </div>
+            <div id="field-species">
+              <ChoiceGroup
+                name="species"
+                legend="Espécie"
+                value={species}
+                onChange={(next) => {
+                  setSpecies(next);
+                  // Raça de cachorro não serve para gato (e vice-versa).
+                  if (breed && !isValidBreed(next, breed)) setBreed(null);
+                }}
+                error={errors.species}
+                options={SPECIES.map((s) => ({ value: s, label: SPECIES_LABELS[s] }))}
+              />
+            </div>
+            {/* Raça logo depois da espécie: a lista depende dela. */}
+            <div id="field-breed">
+              <BreedField species={species} value={breed} onChange={setBreed} error={errors.breed} />
+            </div>
+            <ChoiceGroup
+              name="sex"
+              legend="Sexo"
+              value={sex}
+              onChange={setSex}
+              options={PET_SEXES.map((s) => ({ value: s, label: SEX_LABELS[s] }))}
+            />
+            <div className="sm:col-span-2">
+              <ChoiceGroup
+                name="size"
+                legend="Porte"
+                optional
+                columns={5}
+                value={size}
+                onChange={setSize}
+                options={PET_SIZES.map((s) => ({ value: s, label: SIZE_LABELS[s].label, hint: SIZE_LABELS[s].hint }))}
+              />
+            </div>
+          </div>
+        </StepCard>
 
-      <section className="flex flex-col gap-4 rounded-lg bg-surface-muted p-4" aria-labelledby="sec-privado">
-        <div>
-          <h2 id="sec-privado" className="text-lg font-bold">
-            <span aria-hidden="true">🔒 </span>Só para você
-          </h2>
-          <p className="text-sm text-text-secondary">
-            Ninguém mais vê estas informações. Elas ajudam a provar que o pet é seu se alguém o encontrar.
-          </p>
-        </div>
-        <TextField
-          label="Número do microchip"
-          name="microchipNumber"
-          inputMode="numeric"
-          optional
-          value={microchipNumber}
-          onChange={(e) => setMicrochipNumber(e.target.value)}
-          error={errors.microchipNumber}
-        />
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="hiddenMarks" className="font-semibold">
-            Sinais que só você conhece <span className="font-normal text-text-secondary">(opcional)</span>
-          </label>
-          <p className="text-sm text-text-secondary">Ex.: cicatriz na barriga, unha diferente, manchinha escondida.</p>
-          <textarea id="hiddenMarks" rows={3} className={textarea} {...limitedTextarea(hiddenMarks, setHiddenMarks, 500)} />
-          <p className="text-right text-xs text-text-secondary tabular-nums">{hiddenMarks.length}/500</p>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="ownershipNotes" className="font-semibold">
-            Outras provas de posse <span className="font-normal text-text-secondary">(opcional)</span>
-          </label>
-          <p className="text-sm text-text-secondary">Ex.: tenho carteira de vacinação, fotos antigas, nota da adoção.</p>
-          <textarea id="ownershipNotes" rows={3} className={textarea} {...limitedTextarea(ownershipNotes, setOwnershipNotes, 1000)} />
-          <p className="text-right text-xs text-text-secondary tabular-nums">{ownershipNotes.length}/1000</p>
-        </div>
-      </section>
+        <StepCard {...step("aparencia")}>
+          <div className="flex flex-col gap-5">
+            <ChoiceGroup
+              name="colorPrimary"
+              legend="Cor principal"
+              optional
+              columns={6}
+              value={colorPrimary}
+              onChange={setColorPrimary}
+              options={PET_COLORS.map((c) => ({ value: c.id, label: c.label }))}
+            />
+            {colorPrimary && (
+              <MultiChoiceGroup
+                name="colorsSecondary"
+                legend="Outras cores"
+                optional
+                columns={6}
+                values={colorsSecondary}
+                onChange={setColorsSecondary}
+                error={errors.colorsSecondary}
+                options={PET_COLORS.filter((c) => c.id !== colorPrimary).map((c) => ({ value: c.id, label: c.label }))}
+              />
+            )}
+            <div id="field-uniqueMarks">
+              <PublicDescriptionField
+                id="uniqueMarks"
+                label={PET_DESCRIPTION_COPY.label}
+                guidance={PET_DESCRIPTION_COPY.guidance}
+                placeholder={PET_DESCRIPTION_COPY.placeholder}
+                rows={4}
+                className={textarea}
+                value={uniqueMarks}
+                onChange={setUniqueMarks}
+                error={errors.uniqueMarks}
+              />
+            </div>
+          </div>
+        </StepCard>
 
-      <label className="flex min-h-12 items-start gap-3">
-        <input
-          type="checkbox"
-          checked={isPublic}
-          onChange={(e) => setIsPublic(e.target.checked)}
-          className="mt-1 size-5 shrink-0 accent-primary"
-        />
-        <span>
-          <span className="font-semibold">Deixar a página do pet visível para qualquer pessoa</span>
-          <span className="block text-sm text-text-secondary">
-            Útil para plaquinha com QR Code. Se ele se perder, o alerta é publicado de qualquer forma.
-          </span>
-        </span>
-      </label>
+        <StepCard {...step("detalhes")} aside={<span className="text-sm text-text-secondary">· pode completar depois</span>}>
+          <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
+            <div id="field-birthDate">
+              <DateCalendar
+                label="Data de nascimento"
+                name="birthDate"
+                optional
+                max={isoDate(new Date())}
+                value={birthDate}
+                onChange={setBirthDate}
+                error={errors.birthDate}
+              />
+            </div>
+            {!birthDate && (
+              <SelectField label="Idade aproximada" name="ageEstimate" optional value={ageEstimate} onChange={(e) => setAgeEstimate(e.target.value)}>
+                <option value="">Não sei</option>
+                {AGE_OPTIONS.map((a) => (
+                  <option key={a.months} value={a.months}>
+                    {a.label}
+                  </option>
+                ))}
+              </SelectField>
+            )}
+            <div id="field-weightKg">
+              <TextField
+                label="Peso aproximado (kg)"
+                name="weight"
+                inputMode="decimal"
+                optional
+                placeholder="Ex.: 3,5"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                error={errors.weightKg}
+              />
+            </div>
+            <YesNoUnknown name="neutered" legend="É castrado(a)?" value={neutered} onChange={setNeutered} />
+            <YesNoUnknown name="hasMicrochip" legend="Tem microchip?" value={hasMicrochip} onChange={setHasMicrochip} />
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label htmlFor="description" className="text-sm font-semibold">
+                Sobre o pet <span className="font-normal text-text-secondary">(opcional)</span>
+              </label>
+              <textarea
+                id="description"
+                rows={3}
+                className={textarea}
+                placeholder="Jeito, se é medroso, se atende pelo nome…"
+                {...limitedTextarea(description, setDescription, 1000)}
+              />
+              <p className="text-right text-xs text-text-secondary tabular-nums">{description.length}/1000</p>
+              {errors.description && <p className="text-sm font-medium text-danger">{errors.description}</p>}
+            </div>
+            <div className="flex flex-col gap-2">
+              <TextField label="Cidade" name="city" optional value={city} onChange={(e) => setCity(e.target.value)} error={errors.city} />
+              <FillCityFromLocation
+                onFill={(c, uf) => {
+                  setCity(c);
+                  if (uf) setState(uf);
+                }}
+              />
+            </div>
+            <SelectField label="Estado" name="state" optional value={state} onChange={(e) => setState(e.target.value)}>
+              <option value="">Escolha o estado</option>
+              {BR_STATES.map((s) => (
+                <option key={s.uf} value={s.uf}>
+                  {s.name}
+                </option>
+              ))}
+            </SelectField>
+          </div>
+        </StepCard>
 
-      <Button type="submit" loading={busy} loadingText={progress ?? "Salvando…"}>
-        {isEdit ? "Salvar alterações" : "Cadastrar pet"}
-      </Button>
+        <StepCard
+          {...step("privado")}
+          aside={
+            <InfoTip label="Quem vê estas informações">
+              Os campos de &quot;Só para você&quot; ninguém mais vê. Eles ajudam a provar que o pet é seu se alguém o encontrar.
+            </InfoTip>
+          }
+        >
+          <div className="flex flex-col gap-5 rounded-xl bg-surface-muted p-4 sm:p-5">
+            <p className="flex items-center gap-2 font-semibold">
+              <Lock aria-hidden="true" className="size-4 text-text-secondary" strokeWidth={2.25} />
+              Só para você
+            </p>
+            <div className="grid gap-5 sm:grid-cols-2 sm:gap-x-6">
+              <div className="sm:col-span-2 sm:max-w-[calc(50%-12px)]">
+                <TextField
+                  label="Número do microchip"
+                  name="microchipNumber"
+                  inputMode="numeric"
+                  optional
+                  value={microchipNumber}
+                  onChange={(e) => setMicrochipNumber(e.target.value)}
+                  error={errors.microchipNumber}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="hiddenMarks" className="text-sm font-semibold">
+                  Sinais que só você conhece <span className="font-normal text-text-secondary">(opcional)</span>
+                </label>
+                <textarea
+                  id="hiddenMarks"
+                  rows={3}
+                  className={textarea}
+                  placeholder="Ex.: cicatriz na barriga, unha diferente, manchinha escondida."
+                  {...limitedTextarea(hiddenMarks, setHiddenMarks, 500)}
+                />
+                <p className="text-right text-xs text-text-secondary tabular-nums">{hiddenMarks.length}/500</p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="ownershipNotes" className="text-sm font-semibold">
+                  Outras provas de posse <span className="font-normal text-text-secondary">(opcional)</span>
+                </label>
+                <textarea
+                  id="ownershipNotes"
+                  rows={3}
+                  className={textarea}
+                  placeholder="Ex.: carteira de vacinação, fotos antigas, nota da adoção."
+                  {...limitedTextarea(ownershipNotes, setOwnershipNotes, 1000)}
+                />
+                <p className="text-right text-xs text-text-secondary tabular-nums">{ownershipNotes.length}/1000</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex items-start gap-1">
+            <label className="flex min-h-12 items-start gap-3">
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="mt-1 size-5 shrink-0 accent-primary"
+              />
+              <span className="font-semibold">Deixar a página do pet visível para qualquer pessoa</span>
+            </label>
+            <InfoTip label="Para que serve a página pública">
+              Útil para plaquinha com QR Code. Se ele se perder, o alerta é publicado de qualquer forma.
+            </InfoTip>
+          </div>
+        </StepCard>
+      </SteppedForm>
     </form>
   );
 }

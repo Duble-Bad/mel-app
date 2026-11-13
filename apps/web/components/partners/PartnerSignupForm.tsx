@@ -452,10 +452,17 @@ export function PartnerSignupForm() {
         <p className="-mt-2 text-sm text-text-secondary">
           {kind === "independent" ? "Contatos são opcionais: sem eles, as pessoas falam com você pelo chat da MEL." : "Informe ao menos um contato público."}
         </p>
-        {kind === "company" && (
-          <TextField label="Horário de funcionamento" optional placeholder="Seg. a sáb., 8h às 18h" maxLength={200} value={v.hours} onChange={set("hours")} />
-        )}
-        <Switch checked={helpsLost} onChange={setHelpsLost} label="Ajudo com pets perdidos" description="Ex.: leitor de microchip, lar temporário para animais encontrados." />
+        {/* Horário (só empresas) ao lado de "Ajudo com pets perdidos", alinhados pela base. */}
+        <div className="grid gap-4 sm:grid-cols-2 sm:items-end sm:gap-x-4">
+          {kind === "company" && (
+            <TextField label="Horário de funcionamento" optional placeholder="Seg. a sáb., 8h às 18h" maxLength={200} value={v.hours} onChange={set("hours")} />
+          )}
+          <div className={`flex min-h-13 items-center rounded-md border border-border-input px-4 py-0.5 ${kind === "company" ? "" : "sm:col-span-2"}`}>
+            <div className="w-full">
+              <Switch checked={helpsLost} onChange={setHelpsLost} label="Ajudo com pets perdidos" description="Ex.: leitor de microchip, lar temporário." />
+            </div>
+          </div>
+        </div>
         <label className="flex flex-col gap-2 text-sm">
           <span className="font-semibold">
             {kind === "company" ? "Logo" : "Logo ou foto"} <span className="font-normal text-text-secondary">(opcional{kind !== "company" && ", sem rosto de pessoas"})</span>
