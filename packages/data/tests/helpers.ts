@@ -22,6 +22,31 @@ export function serviceClient(): MelClient {
 }
 
 /** Cria um usuário confirmado de teste e devolve um cliente logado como ele. */
+/**
+ * Apaga uma conta de teste e CONFERE o resultado. Antes o erro era ignorado: quando o banco
+ * recusava (ex.: exclusões em cascata simultâneas disputando os mesmos registros), a conta e os
+ * alertas dela ficavam no mel-dev e apareciam no mapa e no mural. Tenta de novo com espera e,
+ * se ainda falhar, avisa no console com o motivo (sem derrubar o teste que já passou).
+ */
+export async function deleteTestUser(id: string, attempts = 4) {
+  const admin = serviceClient();
+  for (let i = 1; i <= attempts; i++) {
+    const { error } = await admin.auth.admin.deleteUser(id);
+    if (!error || /not.?found/i.test(error.message)) return true;
+    if (i === attempts) {
+      console.error(`[testes] não foi possível apagar a conta de teste ${id.slice(0, 8)}: ${error.message}`);
+      return false;
+    }
+    await new Promise((r) => setTimeout(r, 400 * i));
+  }
+  return false;
+}
+
+/** Apaga várias contas de teste UMA POR VEZ (em paralelo, as cascatas disputavam os mesmos registros). */
+export async function cleanupSequentially(users: ({ cleanup: () => Promise<unknown> } | undefined)[]) {
+  for (const u of users) if (u) await u.cleanup();
+}
+
 export async function createTestUser(label: string) {
   const admin = serviceClient();
   const email = `test+${label}-${crypto.randomUUID().slice(0, 8)}@exemplo.com`;
@@ -36,8 +61,6 @@ export async function createTestUser(label: string) {
   return {
     id: data.user.id,
     client,
-    cleanup: async () => {
-      await admin.auth.admin.deleteUser(data.user.id);
-    },
+    cleanup: () => deleteTestUser(data.user.id),
   };
 }
