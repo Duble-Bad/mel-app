@@ -32,7 +32,7 @@ test("the tutor edits an active alert, then closes it without declaring a reunio
   await expect(page.getByRole("heading", { name: "Quando ele sumiu?" })).toBeVisible();
   await cont();
   await expect(page.getByRole("heading", { name: /Algum detalhe/ })).toBeVisible();
-  await page.getByLabel(/Algo importante/).fill("Tem medo de moto. Atende por Bolachinha.");
+  await page.getByRole("textbox", { name: /Algo importante/ }).fill("Tem medo de moto. Atende por Bolachinha.");
   await cont();
   await expect(page.getByRole("heading", { name: /Como as pessoas podem falar/ })).toBeVisible();
   await page.getByRole("button", { name: "Salvar alterações" }).click();

@@ -39,7 +39,7 @@ test("adoption: listing → moderation → interest opens a chat with the donor 
   await donorPage.getByLabel("Nome", { exact: true }).fill(name);
   await donorPage.getByRole("radio", { name: "Cachorro" }).check({ force: true });
   await donorPage.getByRole("checkbox", { name: "Dócil" }).check({ force: true });
-  await donorPage.getByLabel("Conte sobre ele").fill("Muito carinhoso, adora passear e se dá bem com crianças.");
+  await donorPage.getByRole("textbox", { name: "Conte sobre ele" }).fill("Muito carinhoso, adora passear e se dá bem com crianças.");
   await donorPage.getByRole("button", { name: /Usar minha localização atual/ }).click();
   await expect(donorPage.getByTestId("picked-label")).toContainText("perto de");
   await donorPage.getByRole("button", { name: "Enviar para revisão" }).click();

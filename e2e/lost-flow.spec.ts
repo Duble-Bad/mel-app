@@ -66,7 +66,7 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   // 4 — Detalhes.
   await expect(page.getByRole("heading", { name: /Algum detalhe/ })).toBeVisible();
   await page.getByRole("checkbox", { name: "Coleira" }).check({ force: true });
-  await page.getByLabel(/Algo importante/).fill("É medrosa, atende pelo nome.");
+  await page.getByRole("textbox", { name: /Algo importante/ }).fill("É medrosa, atende pelo nome.");
   await cont(page).click();
 
   // 5 — Contato (número fictício).
@@ -157,7 +157,7 @@ test("each step explains what is missing", async ({ page }) => {
   await page.getByRole("button", { name: /\(hoje\)/ }).click();
   await cont(page).click();
   // Limite de verdade: não passa de 500 (nem colando), não começa com espaço e perde o do fim ao sair.
-  const notes = page.getByLabel(/Algo importante/);
+  const notes = page.getByRole("textbox", { name: /Algo importante/ });
   await notes.fill(`   ${"a".repeat(600)}`);
   await expect(notes).toHaveValue("a".repeat(500));
   await expect(page.getByTestId("contador-notes")).toContainText("500/500");

@@ -46,7 +46,7 @@ test("tutor registers a pet with photo, private details and a MEL ID", async ({ 
   await expect(descricao.getByText("Descrição e características do pet")).toBeVisible();
   await expect(descricao).toContainText("Descreva seu pet para ajudar outras pessoas a reconhecê-lo.");
   await expect(descricao).toContainText("Esta descrição será pública. Você decide quais informações deseja compartilhar");
-  const campo = page.getByLabel(/Descrição e características do pet/);
+  const campo = page.getByRole("textbox", { name: /Descrição e características do pet/ });
   await expect(campo).toHaveAttribute("placeholder", /^Ex\.: Yorkshire pequeno, pelagem marrom e cinza/);
   await expect(campo).toHaveValue(""); // o exemplo nunca vira conteúdo
   // Contador: orienta quanto aparece inteiro nos cartazes, sem bloquear nem cortar o texto.
