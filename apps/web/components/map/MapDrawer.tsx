@@ -157,6 +157,7 @@ function DrawerPhotos({ entry: e }: { entry: FeedEntry }) {
           mainClassName="block aspect-[4/3] w-full bg-surface-muted object-cover max-lg:aspect-auto max-lg:h-[min(28dvh,240px)]"
           thumbsClassName="px-[22px] pt-1"
           thumbSize="size-14"
+          arrowsOnHover
         />
       </div>
     );

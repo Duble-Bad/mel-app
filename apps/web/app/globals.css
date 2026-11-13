@@ -386,6 +386,18 @@ input:-webkit-autofill:focus {
   }
 }
 
+/* Setas da galeria que só aparecem com o mouse sobre a foto (gaveta do mapa). Só em aparelhos com
+   mouse: no toque não há "passar por cima", então continuam visíveis. Foco do teclado também mostra. */
+@media (hover: hover) and (pointer: fine) {
+  .mel-gallery-arrow {
+    opacity: 0;
+  }
+  .mel-gallery-main:hover .mel-gallery-arrow,
+  .mel-gallery-arrow:focus-visible {
+    opacity: 1;
+  }
+}
+
 /* Barra de rolagem fina e discreta dentro das listas suspensas (fica por dentro da borda arredondada). */
 .mel-scroll-thin {
   scrollbar-width: thin;

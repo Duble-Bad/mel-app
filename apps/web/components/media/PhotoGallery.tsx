@@ -35,9 +35,12 @@ export function PhotoGallery({
   thumbsClassName = "",
   autoplay = false,
   thumbSize = "size-16 sm:size-20",
+  arrowsOnHover = false,
 }: {
   /** Tamanho das miniaturas (classes); a gaveta do mapa usa menores. */
   thumbSize?: string;
+  /** Setas só aparecem com o mouse sobre a foto (ou com foco do teclado). No toque continuam visíveis. */
+  arrowsOnHover?: boolean;
   photos: GalleryPhoto[];
   /** Nome usado nos textos alternativos ("Foto 2 de 3 de Thor"). */
   name: string;
@@ -90,6 +93,7 @@ export function PhotoGallery({
     }
   }, [current, reduced]);
 
+  const arrow = `grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-[background-color,opacity] duration-200 hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-primary ${arrowsOnHover ? "mel-gallery-arrow" : ""}`;
   const canAuto = autoplay && total > 1 && !reduced;
   const running = canAuto && !stopped && !hovered && !focused && !open;
   useEffect(() => {
@@ -129,7 +133,7 @@ export function PhotoGallery({
     >
       {/* Foto grande: com mais de uma, setas nas laterais, deslizar com o dedo e ←/→ trocam no lugar. */}
       <div
-        className="relative overflow-hidden"
+        className="mel-gallery-main relative overflow-hidden"
         onKeyDown={onKeyDown}
         onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
         onPointerLeave={() => setHovered(false)}
@@ -175,7 +179,7 @@ export function PhotoGallery({
               type="button"
               onClick={() => go(-1)}
               aria-label="Foto anterior"
-              className="absolute top-1/2 left-3 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-primary"
+              className={`absolute top-1/2 left-3 ${arrow}`}
             >
               <ChevronLeft aria-hidden="true" className="size-6" />
             </button>
@@ -183,7 +187,7 @@ export function PhotoGallery({
               type="button"
               onClick={() => go(1)}
               aria-label="Próxima foto"
-              className="absolute top-1/2 right-3 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-primary"
+              className={`absolute top-1/2 right-3 ${arrow}`}
             >
               <ChevronRight aria-hidden="true" className="size-6" />
             </button>
