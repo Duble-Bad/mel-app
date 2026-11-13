@@ -60,99 +60,36 @@
 
 /* Moldura do vídeo: borda fina e brilho dourado embaixo */
 .ph-frame {
+  transition: box-shadow 0.6s ease 0.5s;
   box-shadow:
     inset 0 0 0 1px var(--mel-border),
     0 30px 60px -30px color-mix(in srgb, var(--mel-primary) 45%, transparent);
 }
 
-/* ── Duas cenas no quadro: vídeo ⇄ mapa da rede ──────────────────────────────────────────────
-   O vídeo encolhe num círculo (clip-path) até virar o pino do centro do mapa, com os pets dentro
-   (o vídeo também diminui, para as duas carinhas caberem no pino). O mapa sai do desfoque com um
-   leve recuo de câmera; parceiros e ligações entram em sequência. Na volta, tudo ao contrário. */
+/* ── Duas cenas: vídeo ⇄ a rede por trás dele ────────────────────────────────────────────────
+   O vídeo encolhe num círculo (clip-path) até virar o pino do centro, com os pets dentro (o vídeo
+   também diminui, para as duas carinhas caberem). A moldura some e revela a rede que já estava em
+   volta: grade, ondas, feixes correndo até o pino e os parceiros chegando um pouco mais perto.
+   Na volta, tudo ao contrário. */
 .ph {
+  container-type: inline-size;
   --ph-ease: cubic-bezier(0.76, 0, 0.18, 1);
   --ph-pin: 38px;
 }
 
-.ph-map {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background:
-    radial-gradient(120% 90% at 50% 50%, color-mix(in srgb, var(--mel-primary) 12%, transparent), transparent 60%),
-    color-mix(in srgb, var(--mel-surface-muted) 70%, var(--mel-surface));
-  opacity: 0;
-  transform: scale(1.18);
-  filter: blur(8px);
-  transition:
-    opacity 0.7s ease 0.35s,
-    transform 1.3s var(--ph-ease),
-    filter 0.9s ease;
-}
-.ph[data-scene="map"] .ph-map {
-  opacity: 1;
-  transform: scale(1);
-  filter: blur(0);
-  transition:
-    opacity 0.6s ease,
-    transform 1.6s cubic-bezier(0.16, 1, 0.3, 1),
-    filter 1s ease 0.15s;
-}
-.ph-map svg * {
-  transform-box: fill-box;
-}
-.ph-blocks rect {
-  fill: color-mix(in srgb, var(--mel-surface) 72%, var(--mel-surface-muted));
-}
-.ph-street {
-  fill: none;
-  stroke: color-mix(in srgb, var(--mel-primary) 18%, var(--mel-surface-elevated));
-  stroke-width: 12;
-  stroke-linecap: round;
+.ph[data-scene="map"] .ph-frame {
+  box-shadow:
+    inset 0 0 0 1px transparent,
+    0 30px 60px -30px transparent;
+  transition: box-shadow 0.5s ease;
 }
 
-/* Ligações: se desenham do pino central até cada parceiro */
-.ph-link {
-  fill: none;
-  stroke: color-mix(in srgb, var(--mel-text-primary) 30%, transparent);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 1 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.3s ease;
-}
-.ph-link--main {
-  stroke: var(--mel-primary);
-  stroke-width: 3;
-}
-.ph[data-scene="map"] .ph-link {
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 0.9s cubic-bezier(0.65, 0, 0.35, 1);
-  transition-delay: calc(0.75s + var(--i) * 0.14s);
-}
-
-/* Parceiros no mapa: acendem um a um com um leve quique */
-.ph-pin {
-  position: absolute;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  translate: -50% -50%;
-  opacity: 0;
-  scale: 0.5;
-  transition:
-    opacity 0.25s ease,
-    scale 0.3s ease;
-}
-.ph[data-scene="map"] .ph-pin {
-  opacity: 1;
-  scale: 1;
-  transition:
-    opacity 0.4s ease,
-    scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  transition-delay: calc(1.1s + var(--i) * 0.14s);
+/* Parceiros em volta: "translate" próprio (não briga com o transform das animações de entrada e de
+   flutuar); no celular ficam mais perto do pino (ver abaixo). */
+.ph-node {
+  --dx: 0px;
+  --dy: 0px;
+  translate: calc(-50% + var(--dx)) calc(-50% + var(--dy));
 }
 
 /* Ondas saindo do pino central, só na cena do mapa */
@@ -188,6 +125,7 @@
   z-index: 2;
   overflow: hidden;
   background: var(--mel-surface-muted);
+  border-radius: inherit;
   clip-path: circle(75% at 50% 50%);
   transition: clip-path 1.2s var(--ph-ease) 0.1s;
   will-change: clip-path;
@@ -262,9 +200,27 @@
   overflow: visible;
   pointer-events: none;
 }
+/* No celular não há espaço em volta do vídeo: feixes e parceiros só aparecem na cena da rede,
+   já mais perto do centro. */
 @media (max-width: 639px) {
+  .ph-beams,
+  .ph-node > span {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .ph[data-scene="map"] .ph-beams,
+  .ph[data-scene="map"] .ph-node > span {
+    opacity: 1;
+    transition: opacity 0.6s ease 0.7s;
+  }
+  /* Mais perto do pino; os de cima descem mais para não ficar sob o aviso. Os feixes encolhem na
+     mesma proporção para continuar saindo de cada parceiro. */
+  .ph-node {
+    --dx: calc(var(--sx) * 21cqw);
+    --dy: calc(var(--sy) * 9cqw + 6cqw);
+  }
   .ph-beams {
-    display: none;
+    transform: translateY(6cqw) scale(0.55, 0.66);
   }
 }
 .ph-beam-track {
@@ -288,7 +244,6 @@
 
 /* Tipos de parceiro em volta: entram em sequência e flutuam fora de fase */
 .ph-node {
-  translate: -50% -50%;
   flex-direction: column;
   align-items: center;
   gap: 6px;
@@ -340,11 +295,10 @@
   .ph-node-dot {
     animation: none;
   }
-  .ph-map,
+  .ph-frame,
+  .ph-node,
   .ph-video,
   .ph-video video,
-  .ph-pin,
-  .ph-link,
   .ph-badge,
   .ph-me-ring {
     transition: none !important;

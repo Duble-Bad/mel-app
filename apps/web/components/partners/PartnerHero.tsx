@@ -12,7 +12,7 @@ const sub = (cb: () => void) => {
   return () => mq.removeEventListener("change", cb);
 };
 
-/** Tempo em cada cena (ms): o vídeo dos pets e o mapa da rede que está por trás dele. */
+/** Tempo em cada cena (ms): o vídeo dos pets e a rede de parceiros que está por trás dele. */
 const SCENE_MS = { video: 6500, map: 5200 } as const;
 type Scene = keyof typeof SCENE_MS;
 
@@ -24,30 +24,6 @@ const NODES: { Icon: LucideIcon; label: string; x: number; y: number; tone: stri
   { Icon: House, label: "Lar temporário", x: 3, y: 78, tone: "var(--mel-status-found-accent)" },
 ];
 
-/**
- * Parceiros no mapa do bairro (cena "mapa"). x/y em % da moldura 4:3; px/py no SVG 500×400
- * (cortado em 4:3, por isso y = 12,5 + y% × 3,75) para as ligações saírem do centro até o pino.
- */
-const PINS: { Icon: LucideIcon; label: string; dist: string; x: number; y: number; tone: string }[] = [
-  { Icon: Stethoscope, label: "Clínica", dist: "400 m", x: 25, y: 40, tone: "var(--mel-status-sighting-accent)" },
-  { Icon: ShoppingBag, label: "Pet shop", dist: "1,2 km", x: 75, y: 24, tone: "var(--mel-primary)" },
-  { Icon: HandHeart, label: "ONG", dist: "2 km", x: 77, y: 72, tone: "var(--mel-status-adoption-accent)" },
-  { Icon: House, label: "Lar temporário", dist: "900 m", x: 26, y: 78, tone: "var(--mel-status-found-accent)" },
-];
-const svgX = (x: number) => x * 5;
-const svgY = (y: number) => 12.5 + y * 3.75;
-
-const BLOCKS = [
-  [-10, -10, 150, 100],
-  [170, -10, 150, 70],
-  [350, -10, 160, 85],
-  [-10, 130, 90, 120],
-  [400, 140, 110, 110],
-  [-10, 330, 100, 80],
-  [190, 320, 150, 90],
-  [400, 330, 110, 80],
-] as const;
-
 /** Avisos de exemplo (genéricos) que se revezam no canto, como a rede de parceiros trabalhando. */
 const TOASTS = [
   { title: "Leitor de microchip", text: "clínica parceira a 400 m", dot: "bg-status-sighting-accent" },
@@ -58,10 +34,10 @@ const TOASTS = [
 
 /**
  * Topo de "Seja um parceiro da MEL" (a partir do conceito A · Rede viva de /dev/hero-conceitos).
- * O quadro alterna duas cenas: o vídeo dos pets e o mapa da rede por trás dele. Na troca, o vídeo
- * encolhe num círculo até virar o pino do centro do mapa (com os pets dentro) enquanto o mapa sai do
- * desfoque com um leve zoom, os parceiros acendem um a um e as ligações se desenham; depois o pino
- * se abre de volta no vídeo. Decorativo. Com "reduzir movimento" fica só o vídeo parado no 1º quadro.
+ * O topo alterna duas cenas: o vídeo dos pets e a rede de parceiros em volta dele. Na troca, o vídeo
+ * encolhe num círculo até virar o pino do centro (com os pets dentro), a moldura some e revela a rede
+ * que já estava ali: grade, ondas, feixes correndo até o pino e os parceiros chegando mais perto.
+ * Depois o pino se abre de volta no vídeo. Decorativo. Com "reduzir movimento" fica só o vídeo parado.
  */
 export function PartnerHero() {
   const reduced = useSyncExternalStore(sub, () => window.matchMedia(REDUCED).matches, () => false);
@@ -110,46 +86,12 @@ export function PartnerHero() {
         ))}
       </svg>
 
-      <div className="ph-frame relative z-[2] aspect-[4/3] overflow-hidden rounded-[28px]">
-        {/* Cena 2: o mapa da rede, por trás do vídeo */}
-        <div className="ph-map">
-          <svg viewBox="0 0 500 400" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 size-full">
-            <g className="ph-blocks">
-              {BLOCKS.map(([x, y, w, h], i) => (
-                <rect key={i} x={x} y={y} width={w} height={h} rx="16" />
-              ))}
-            </g>
-            <path className="ph-street" d="M-20 112 C120 104 260 126 520 100" />
-            <path className="ph-street" d="M-20 300 C140 288 300 318 520 290" />
-            <path className="ph-street" d="M160 -20 C150 120 176 260 166 420" />
-            <path className="ph-street" d="M362 -20 C370 140 350 260 366 420" />
-            {PINS.map((p, i) => (
-              <path
-                key={p.label}
-                className={i === 0 ? "ph-link ph-link--main" : "ph-link"}
-                d={`M250 200 Q${(250 + svgX(p.x)) / 2 + (i % 2 ? 20 : -20)} ${(200 + svgY(p.y)) / 2} ${svgX(p.x)} ${svgY(p.y)}`}
-                pathLength={1}
-                style={{ "--i": i } as CSSProperties}
-              />
-            ))}
-          </svg>
-          {PINS.map(({ Icon, label, dist, x, y, tone }, i) => (
-            <span key={label} className="ph-pin" style={{ left: `${x}%`, top: `${y}%`, "--i": i } as CSSProperties}>
-              <span className="flex size-10 items-center justify-center rounded-2xl text-white shadow-lg ring-4 ring-surface-elevated/90 sm:size-11" style={{ background: tone }}>
-                <Icon className="size-5" strokeWidth={2.1} />
-              </span>
-              <span className="rounded-full bg-surface-elevated/95 px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap text-text-primary shadow-sm sm:text-xs">
-                {label}
-                <span className="hidden sm:inline"> · {dist}</span>
-              </span>
-            </span>
-          ))}
-          {/* Ondas do pino central (o vídeo encolhido) */}
-          <span className="ph-me-pulse" />
-          <span className="ph-me-pulse" style={{ animationDelay: "1.2s" }} />
-        </div>
+      <div className="ph-frame relative z-[2] aspect-[4/3] rounded-[28px]">
+        {/* Ondas do pino central (o vídeo encolhido), só na cena da rede */}
+        <span className="ph-me-pulse" />
+        <span className="ph-me-pulse" style={{ animationDelay: "1.2s" }} />
 
-        {/* Cena 1: o vídeo, que encolhe até virar o pino do centro do mapa */}
+        {/* O vídeo, que encolhe até virar o pino do centro da rede */}
         <div className="ph-video">
           <video ref={video} poster="/videos/mel-e-gatinho-poster.webp" muted loop playsInline preload="metadata" tabIndex={-1} className="size-full object-cover">
             <source src="/videos/mel-e-gatinho.webm" type="video/webm" />
@@ -166,7 +108,11 @@ export function PartnerHero() {
       </div>
 
       {NODES.map(({ Icon, label, x, y, tone }, i) => (
-        <span key={label} className="ph-node absolute z-[3] hidden sm:flex" style={{ left: `${x}%`, top: `${y}%`, "--tone": tone, "--i": i } as CSSProperties}>
+        <span
+          key={label}
+          className="ph-node absolute z-[3] flex"
+          style={{ left: `${x}%`, top: `${y}%`, "--tone": tone, "--i": i, "--sx": x < 50 ? 1 : -1, "--sy": y < 50 ? 1 : -1 } as CSSProperties}
+        >
           <span className="ph-node-dot">
             <Icon className="size-5" strokeWidth={2.25} />
           </span>
