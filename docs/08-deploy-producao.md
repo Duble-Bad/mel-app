@@ -1,6 +1,6 @@
 # MEL — Deploy de schema em produção (`mel-prod`)
 
-> **Status (2026-11-16):** migrations 24–50 aplicadas no `mel-prod` pelo dono, com este procedimento (commit `b298e9a`, CI verde); pós-deploy 100% ✅ e sem drift. **Produção: 50 migrations.** Ainda falta o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29) (só se houver fotos; o app não está publicado) e a configuração.
+> **Status (2026-11-16):** migrations 24–50 aplicadas no `mel-prod` pelo dono, com este procedimento (commit `b298e9a`, CI verde); pós-deploy 100% ✅ e sem drift. **Produção: 50 migrations.** Conferido de novo depois do merge `d8487f8` (só telas, sem migration): pós-deploy 100% ✅, 50/50, sem drift. [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29): listado em 2026-11-16, **0 e 0**, nada a fazer. Falta só a configuração e a publicação do app.
 >
 > **Histórico:** primeiro deploy (23 migrations) aplicado no `mel-prod` em 2026-10-29. **Pendentes: migrations 24–45** (24 e 29 são P0 de privacidade; 30 traz o push do tutor e o rótulo público do avistamento; 31, a recuperação de push preso; 32, o ponto público de 100 m; 33–38, fila de adoção; 39, parceiros com CPF cifrado; 40, exportação LGPD; 41, chat de adoção; 42–43, CPF e dados pessoais; 44–45, adoção no mapa (configuração de administrador) e endereço público de parceiros), a aplicar na fase de lançamento por este mesmo procedimento; depois delas, o passo [Fotos antigas do sighting-media](#depois-do-pós-deploy-fotos-antigas-do-sighting-media-migration-29).
 > **Antes de rodar:** o `mel-prod` estava pausado pelo plano Free (INACTIVE em 2026-11-04) — restaurar no painel do Supabase e só então fazer o pre-flight.
@@ -71,7 +71,7 @@ O `deploy-schema.mjs`, em ordem:
 - `MEL_PROD_DB_URL` é um banco Supabase (direto `db.<ref>.supabase.co` ou pooler `postgres.<ref>@…pooler.supabase.com:5432`) **do mesmo ref**.
 - Certificado SSL presente (conexão com `rejectUnauthorized: true`).
 - Fora de CI; ref de produção **fora** de `MEL_SAFE_TARGET_REFS`, do `supabase link` e do `.env.local`; `NEXT_PUBLIC_SUPABASE_URL` do terminal não aponta para produção.
-- Exatamente as migrations do repositório (hoje **30**, `EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`), idênticas ao manifesto `supabase/migrations.manifest.json` (nome, ordem e hash).
+- Exatamente as migrations do repositório (hoje **50**, `EXPECTED_MIGRATIONS` em `scripts/prod/preflight.mjs`), idênticas ao manifesto `supabase/migrations.manifest.json` (nome, ordem e hash).
 - Nenhum dado de seed/demo nas migrations (INSERT só em `storage.buckets` e `public.plans`; nada de `exemplo.com`/demo/seed/COPY/TRUNCATE).
 - Impressão digital de referência versionada (`supabase/schema-fingerprint.json`).
 - Branch `main`, working tree limpa, HEAD = `origin/main`.
@@ -83,7 +83,7 @@ O `deploy-schema.mjs`, em ordem:
 
 Transação **READ ONLY**, só catálogo — não cria usuários nem dados.
 
-- 45 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
+- 50 migrations registradas, na ordem dos arquivos (`EXPECTED` em `scripts/prod/postdeploy-check.mjs`).
 - 24 tabelas; RLS habilitado nas 24; primary key em todas.
 - 60 políticas em `public` + 9 em `storage.objects` (nomes idênticos às migrations).
 - 41 funções `public` + 55 `private` (nomes idênticos); SECURITY DEFINER sempre com `search_path`.
