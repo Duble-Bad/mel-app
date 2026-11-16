@@ -22,10 +22,7 @@
 }
 
 /* Cartão de adoção: usa o cartão do Mural (.mel-pet, em map.css), com a luz na cor do sexo.
-   Macho e sexo não informado: dourado (cor da adoção). Fêmea: rosa. O selo ADOÇÃO segue dourado. */
-.mel-adopt--female {
-  --k: #f472b6;
-}
+   Macho e sexo não informado: dourado (cor da adoção). Fêmea: rosa (.mel-adopt--female, em map.css). O selo ADOÇÃO segue dourado. */
 .mel-adopt-female-sign {
   color: #f472b6;
 }
