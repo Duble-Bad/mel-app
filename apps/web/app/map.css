@@ -19,6 +19,10 @@
   --k: #f6b928;
   --k-badge: #f6b928;
 }
+/* Adoção de fêmea: a luz do cartão fica rosa (o selo ADOÇÃO continua dourado). Mural e /adocao. */
+.mel-adopt--female {
+  --k: #f472b6;
+}
 
 /* Selo do tipo (PERDIDO, ENCONTRADO, VISTO, ADOÇÃO) */
 .mel-badge {

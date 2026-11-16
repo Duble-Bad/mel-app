@@ -21,6 +21,18 @@
   --ease-spring: cubic-bezier(0.3, 1.35, 0.55, 1);
   --accent: var(--color-status-lost-solid);
   --accent-soft: var(--color-status-lost-soft);
+  --accent-text: var(--color-status-lost);
+}
+/* Cor do fluxo: perdido (padrão), "vi um pet solto" (avistamento) e "encontrei um pet". */
+.mm-root[data-tone="sighting"] {
+  --accent: var(--color-status-sighting-solid);
+  --accent-soft: var(--color-status-sighting-soft);
+  --accent-text: var(--color-status-sighting);
+}
+.mm-root[data-tone="found"] {
+  --accent: var(--color-status-found-solid);
+  --accent-soft: var(--color-status-found-soft);
+  --accent-text: var(--color-status-found);
 }
 
 /* ---------- Indicador de etapas ---------- */
@@ -128,7 +140,7 @@
 .mm-circle[data-state="done"] {
   border: 2px solid var(--accent);
   background: var(--accent-soft);
-  color: var(--color-status-lost);
+  color: var(--accent-text);
 }
 .mm-circle[data-state="skipped"] {
   border: 2px dashed var(--color-border-strong);
@@ -261,7 +273,7 @@
 }
 .mm-name[data-state="current"] {
   font-weight: 700;
-  color: var(--color-status-lost);
+  color: var(--accent-text);
 }
 .mm-name[data-state="done"] {
   font-weight: 600;

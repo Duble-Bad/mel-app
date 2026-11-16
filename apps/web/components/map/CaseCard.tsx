@@ -16,14 +16,15 @@ export function CaseCard({ item }: { item: PublicCaseItem }) {
 
 /** Anúncio de adoção no mural (mesmo cartão, selo ADOÇÃO). */
 export function AdoptionFeedCard({ adoption }: { adoption: PublicAdoption }) {
-  return <FeedCard entry={adoptionEntry(adoption)} testId="adoption-card" />;
+  // Mesma cor do cartão de /adocao: fêmea rosa, macho (e sexo não informado) dourado; ver map.css.
+  return <FeedCard entry={adoptionEntry(adoption)} testId="adoption-card" extraClass={adoption.sex === "female" ? "mel-adopt--female" : ""} />;
 }
 
-function FeedCard({ entry: e, testId }: { entry: FeedEntry; testId: string }) {
+function FeedCard({ entry: e, testId, extraClass = "" }: { entry: FeedEntry; testId: string; extraClass?: string }) {
   // Casos: espécie, raça, porte e cor numa linha. Adoção já traz idade e porte na linha de tempo.
   const traits = e.kind === "adoption" ? [] : e.facts.map((f) => f.value);
   return (
-    <Link href={e.href} data-testid={testId} className={`mel-pet mel-kind--${e.kind} focus-visible:outline-offset-2`}>
+    <Link href={e.href} data-testid={testId} className={`mel-pet mel-kind--${e.kind} ${extraClass} focus-visible:outline-offset-2`}>
       {/* Moldura de luz (conceito B): feixe dourado que contorna o cartão; ver map.css. */}
       <span aria-hidden="true" className="mel-pet__beam" />
       <div className="mel-pet__media">

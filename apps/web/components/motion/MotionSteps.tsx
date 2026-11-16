@@ -63,7 +63,7 @@ export function MotionSteps({
     <nav aria-label={label} className="flex flex-col gap-2" data-testid="etapas">
       <p className={s.compact} aria-hidden="true">
         <span key={`n-${current}`} className={s.compactSwap} data-dir={direction}>
-          {prefix}Passo {current + 1} de {n} ·<span className={hasError ? "text-danger" : "text-status-lost"}>{steps[current]?.label}</span>
+          {prefix}Passo {current + 1} de {n} ·<span className={hasError ? "text-danger" : "text-[var(--accent-text)]"}>{steps[current]?.label}</span>
           {hasError && <span className="font-bold text-danger"> · com erro</span>}
         </span>
       </p>

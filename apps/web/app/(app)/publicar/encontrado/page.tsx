@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Encontrei um pet", robots: { index: 
 /** Sem conta obrigatória: a sessão anônima é criada ao publicar. `?vi=1` = "Vi um pet solto". */
 export default function FoundPage({ searchParams }: PageProps<"/publicar/encontrado">) {
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
+    <main className="mx-auto w-full max-w-md flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12 md:max-w-2xl lg:max-w-6xl lg:pt-10">
       <Suspense fallback={<LoadingState />}>
         {searchParams.then((q) => (
           <FoundWizard sawOnly={q.vi === "1"} />
