@@ -1,5 +1,6 @@
 # MEL — Onde estamos (status e próximos passos)
 
+> **Produção (2026-11-16):** `mel-prod` com as **50 migrations** (24–50 aplicadas hoje pelo dono, pre-flight e pós-deploy 100% ✅, sem drift). `main` em `b298e9a` com a `guardiao/hero` (filtros, carrossel de fotos, gaveta do mapa, topo de parceiros). O app continua **não publicado** (Vercel e configuração do `mel-prod` pendentes).
 > Atualizado em 2026-11-10. **MVP em Feature Freeze desde o commit `46f3238`**; série Launch Readiness (1, 2A–2L) concluída no código e na documentação; último CI verde em `25561fe`.
 > **Decisão de 2026-11-05:** o piloto segue nos planos gratuitos do **MapTiler** e da **Vercel (Hobby)**. **Próxima ação única:** decidir o domínio próprio (checklist 0.4).
 > **`main` (2026-11-10):** recebeu a branch `redesign/etapa-1` inteira (redesign Conceito B + todo o trabalho de cartazes abaixo), a pedido do proprietário. **Só código:** nada foi publicado; produção segue sem deploy e sem as migrations 24–46 (item 10 de [decisoes-pendentes.md](decisoes-pendentes.md)). Ponto público aproximado de **100 m** (migration 32, só no `mel-dev`); detalhes em "Redesign e 100 m" abaixo.
