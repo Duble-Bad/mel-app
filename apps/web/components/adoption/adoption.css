@@ -21,19 +21,48 @@
   animation: mel-adopt-rise 0.45s var(--mel-easing);
 }
 
-.mel-adopt-card {
-  transition: transform 0.35s var(--mel-easing), box-shadow 0.35s var(--mel-easing), border-color 0.3s;
+/* Cartão de adoção: usa o cartão do Mural (.mel-pet, em map.css), com a luz na cor do sexo.
+   Macho e sexo não informado: dourado (cor da adoção). Fêmea: rosa. O selo ADOÇÃO segue dourado. */
+.mel-adopt--female {
+  --k: #f472b6;
 }
-.mel-adopt-card:hover,
-.mel-adopt-card:focus-within {
+.mel-adopt-female-sign {
+  color: #f472b6;
+}
+.mel-adopt-card .mel-pet__media {
+  aspect-ratio: 4 / 3.3;
+}
+/* O link cobre o cartão inteiro (por cima da foto e do texto). */
+.mel-adopt-card__link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+.mel-adopt-card__link:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+/* Foco pelo teclado acende o cartão como o hover. */
+.mel-adopt-card:has(.mel-adopt-card__link:focus-visible) {
   transform: translateY(-5px);
-  border-color: var(--mel-border-strong);
+  box-shadow:
+    0 18px 50px -20px rgb(0 0 0 / 0.7),
+    0 0 0 1px color-mix(in srgb, var(--k) 25%, transparent),
+    0 0 38px -6px color-mix(in srgb, var(--k) 45%, transparent);
 }
-.mel-adopt-card img {
-  transition: transform 0.6s var(--mel-easing);
+.mel-adopt-card:has(.mel-adopt-card__link:focus-visible) .mel-pet__beam::before {
+  opacity: 1;
+  animation-duration: 3.2s;
 }
-.mel-adopt-card:hover img {
-  transform: scale(1.05);
+.mel-adopt-card:has(.mel-adopt-card__link:focus-visible) .mel-pet__body {
+  background:
+    radial-gradient(120% 90% at 100% 100%, color-mix(in srgb, var(--k) 12%, transparent), transparent 70%),
+    var(--color-surface);
+}
+.mel-adopt-card:has(.mel-adopt-card__link:focus-visible) .mel-pet__paws svg {
+  opacity: 0.85;
+  transform: rotate(20deg);
 }
 
 .mel-adopt-step {
@@ -63,17 +92,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mel-adopt-cta,
-  .mel-adopt-card,
-  .mel-adopt-card img,
   .mel-adopt-step,
   .mel-adopt-panel {
     animation: none;
     transition: none;
   }
   .mel-adopt-cta:hover,
-  .mel-adopt-card:hover,
-  .mel-adopt-card:focus-within,
-  .mel-adopt-card:hover img,
+  .mel-adopt-card:has(.mel-adopt-card__link:focus-visible),
   .mel-adopt-step:hover {
     transform: none;
   }
