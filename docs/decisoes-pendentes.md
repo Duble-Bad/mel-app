@@ -18,7 +18,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
 | 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
 | 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
-| 10 | 2026-11-06 | **Produção**: ~~migrations 24–50~~ (aplicadas em 2026-11-16); falta configurar o `mel-prod` (chaves PII, Auth etc.) e publicar o app | Nada em produção sem autorização expressa |
+| 10 | 2026-11-06 | **Produção**: ~~migrations 24–50~~ (aplicadas em 2026-11-16); falta configurar o `mel-prod` (chaves PII, Auth etc.), conectar o MCP da Vercel (token limitado, como o `supabase-dev`) e publicar o app | Nada em produção sem autorização expressa |
 
 ## Decididas
 
