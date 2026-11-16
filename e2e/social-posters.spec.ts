@@ -128,6 +128,8 @@ test("the owner chooses the cover photo and framing on the alert page; visitors 
   // se ele chegar antes da página ficar interativa.
   await expect.poll(() => area.locator("img").evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
   await expect(async () => {
+    // Na página do alerta o editor fica abaixo da dobra: rola até a foto antes de tocar.
+    await area.scrollIntoViewIfNeeded();
     const box = (await area.boundingBox())!;
     await page.mouse.click(box.x + box.width * 0.2, box.y + box.height * 0.3);
     await expect(area).toHaveAttribute("aria-label", /20% da esquerda, 30% do topo/, { timeout: 1_000 });
