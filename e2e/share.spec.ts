@@ -112,7 +112,7 @@ test("share section: WhatsApp and Facebook links, Instagram/TikTok poster flows,
   await section.getByRole("button", { name: "Copiar link" }).last().click();
   await expect(section.getByRole("button", { name: "Link copiado!" })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(alertUrl);
-  await expect(section.getByRole("link", { name: /Cartaz e QR Code/ })).toHaveAttribute("href", `/alerta/${t.code}/cartaz`);
+  await expect(section.getByRole("link", { name: /Cartaz e QR Code/ })).toHaveAttribute("href", `/alerta/${t.code}/cartaz/criar`);
 
   // "Eu vi este pet" e o aviso de segurança continuam; nada privado do tutor na página.
   await expect(page.getByRole("link", { name: /EU VI ESTE PET/i }).first()).toBeVisible();

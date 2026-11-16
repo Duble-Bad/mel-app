@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 
 /**
- * Só o tutor: escolhe a foto de capa dos cartazes e o ponto que deve continuar
- * visível quando o cartaz recorta (rosto, marca). O banco só aceita do dono.
+ * Só o tutor, na página do alerta: escolhe a foto de capa e o ponto que deve continuar visível
+ * quando ela é recortada (prévia do link, Mural e mapa). O banco só aceita do dono. Cada cartaz do
+ * "Criar cartaz" tem o seu próprio enquadramento.
  */
 export function PosterPhotoEditor({ code }: { code: string }) {
   const router = useRouter();
@@ -80,9 +81,9 @@ export function PosterPhotoEditor({ code }: { code: string }) {
     <section aria-labelledby="foto-cartaz" className="flex flex-col gap-4 rounded-lg bg-surface p-4 shadow-card" data-testid="poster-photo-editor">
       <div>
         <h2 id="foto-cartaz" className="font-bold">
-          Foto do cartaz <span className="font-normal text-text-secondary">(só você vê)</span>
+          Foto de capa <span className="font-normal text-text-secondary">(só você vê)</span>
         </h2>
-        <p className="text-sm text-text-secondary">Escolha a capa e toque no ponto que precisa aparecer (rosto, marca). Os cartazes recortam em volta dele.</p>
+        <p className="text-sm text-text-secondary">Escolha a capa e toque no ponto que precisa aparecer (rosto, marca). Vale para a prévia do link (WhatsApp, Facebook), o Mural e o mapa, que recortam em volta dele.</p>
       </div>
 
       {state.photos.length > 1 && (

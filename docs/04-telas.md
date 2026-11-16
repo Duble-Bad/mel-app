@@ -10,10 +10,9 @@ Legenda: 🌐 pública/indexável · 👤 requer login · 👻 permite sessão a
 | `/perdidos` | Lista de alertas ativos próximos (paginada) | 🌐 |
 | `/encontrados` | Lista de animais encontrados | 🌐 |
 | `/alerta/[code]` | **Página do Alerta MEL** (OG, QR, timeline, mapa, ações) | 🌐 (`noindex` se tutor não autorizar) |
-| `/alerta/[code]/cartaz` | Gerador de cartaz (formatos, prévia, baixar/imprimir) | 🌐 |
+| `/alerta/[code]/cartaz` e `/cartaz/a4` | Endereços do gerador antigo (removido em 2026-11-16): levam ao "Criar cartaz" (o A4, já no formato A4) | 🌐 |
 | `/alerta/[code]/cartaz/criar` | **"Criar cartaz"**: formato → 4 modelos → personalizar → baixar/imprimir/compartilhar; o tutor salva na conta | 🌐 (`noindex`; salvar só o tutor) |
 | `/alerta/[code]/cartaz/imprimir` | Página de impressão do cartaz escolhido (A4 sem margens) | 🌐 (`noindex`) |
-| `/alerta/[code]/cartaz/propostas` | Comparação interna das propostas de cartaz | 🔒 DEV, `noindex` |
 | `/dev/bonificacao` | Protótipo da bonificação (caso fictício) | 🔒 DEV, `noindex` |
 | `/encontrado/[code]` | Página do animal encontrado | 🌐 |
 | `/pet/[melId]` | Página pública do pet (MEL ID) | 🌐 se `is_public` |

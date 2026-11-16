@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { shareText, whatsappShareUrl, type PublicLostCase } from "@mel/core";
+import { getPosterDesigns } from "@mel/data";
+import { formatFramings } from "@/lib/poster/framing";
+import { getBrowserClient } from "@/lib/supabase/browser";
 
 type Network = "whatsapp" | "facebook" | "instagram" | "tiktok";
 type ImageNetwork = "instagram" | "tiktok";
@@ -33,7 +36,7 @@ const IMAGE_FORMATS: Record<ImageNetwork, { app: string; options: { format: Imag
  * Compartilhar: WhatsApp e Facebook (link do alerta), Instagram e TikTok (cartaz para
  * publicar no app), menu nativo do celular, copiar link e cartaz/QR Code.
  */
-export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, "pet" | "areaLabel" | "lostAt" | "status">; path: string }) {
+export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, "code" | "isOwner" | "pet" | "areaLabel" | "lostAt" | "status">; path: string }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [guide, setGuide] = useState<ImageNetwork | null>(null);
@@ -82,6 +85,30 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
   }
 
   /**
+   * Cartaz dos modelos do "Criar cartaz": o que o tutor salvou para este formato (modelo, fotos e
+   * enquadramentos) ou, sem nada salvo, o modelo padrão.
+   */
+  async function posterUrl(format: ImageFormat): Promise<string> {
+    const q = new URLSearchParams({ estilo: "2" });
+    try {
+      const saved = (await getPosterDesigns(getBrowserClient(), lostCase.code)).find((d) => d.format === format);
+      if (saved) {
+        q.set("estilo", String(saved.model));
+        const order = saved.photoIds.map((id) => lostCase.pet.photos.findIndex((p) => p.id === id));
+        // Só com todas as fotos salvas ainda no alerta (uma removida deixaria o enquadramento na foto errada).
+        if (order.length && order.every((i) => i >= 0)) {
+          q.set("fotos", order.join(","));
+          const quadros = formatFramings(saved.framings);
+          if (quadros) q.set("quadros", quadros);
+        }
+      }
+    } catch {
+      // Sem o salvo (rede), segue com o modelo padrão: o cartaz sai do mesmo jeito.
+    }
+    return `${path}/cartaz/${format}?${q.toString()}`;
+  }
+
+  /**
    * Gera o cartaz no formato escolhido e o entrega ao celular (só se o navegador
    * confirmar que aceita arquivos); senão baixa a imagem. Um toque, um resultado.
    */
@@ -91,7 +118,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
     setNotice(null);
     setPreparing({ network, format });
     try {
-      const res = await fetch(`${path}/cartaz/${format}`);
+      const res = await fetch(await posterUrl(format));
       if (!res.ok) throw new Error(String(res.status));
       const name = `MEL-${lostCase.pet.name}-${format}.png`.normalize("NFD").replace(/[^\w.-]/g, "");
       const file = new File([await res.blob()], name, { type: "image/png" });
@@ -111,7 +138,7 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
       setTimeout(() => URL.revokeObjectURL(href), 10_000);
       setNotice(`Este navegador não envia imagens direto para o ${app}. Baixamos o cartaz: abra o app do ${app} e publique a partir da galeria. ${note}`);
     } catch (err) {
-      if ((err as Error).name !== "AbortError") setError("Não conseguimos preparar o cartaz agora. Tente de novo ou use “Cartaz e QR Code”.");
+      if ((err as Error).name !== "AbortError") setError("Não conseguimos preparar o cartaz agora. Tente de novo ou use “Criar cartaz”.");
     } finally {
       setPreparing(null);
     }
@@ -191,9 +218,12 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
           <span aria-hidden="true">🔗</span> {copied ? "Link copiado!" : "Copiar link"}
         </button>
       </div>
-      <Link href={`${path}/cartaz`} className={btn}>
-        <span aria-hidden="true">🖼️</span> Cartaz e QR Code (baixar ou imprimir)
-      </Link>
+      {/* O tutor já tem "Criar cartaz" logo acima; aqui é para quem ajuda a divulgar. */}
+      {!(lostCase.isOwner && lostCase.status === "ACTIVE") && (
+        <Link href={`${path}/cartaz/criar`} className={btn}>
+          <span aria-hidden="true">🖼️</span> Cartaz e QR Code (baixar ou imprimir)
+        </Link>
+      )}
       <p role="status" className={notice ? "text-sm font-medium text-success" : "sr-only"} data-testid="share-status">
         {notice ?? (copied ? "Link copiado" : "")}
       </p>

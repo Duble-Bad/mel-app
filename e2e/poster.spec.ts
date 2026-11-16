@@ -16,7 +16,7 @@ async function readQr(png: Buffer): Promise<string | null> {
   return jsQR(new Uint8ClampedArray(data), info.width, info.height)?.data ?? null;
 }
 
-test("every poster format is a PNG of the right size whose QR Code opens the alert", async ({ request }) => {
+test("every poster format (models of \"Criar cartaz\") is a PNG of the right size whose QR Code opens the alert", async ({ request }) => {
   test.setTimeout(120_000);
   const t = await createTutorWithActiveAlert("poster-qr", {
     petName: "Mel",
@@ -28,7 +28,8 @@ test("every poster format is a PNG of the right size whose QR Code opens the ale
   created.push(t.email);
 
   // "og" (prévia do link) é a foto em destaque, sem QR: conferida em social-posters.spec.ts.
-  const sizes = { square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1920, 1080] } as const;
+  // Sem ?estilo: o modelo padrão (o gerador antigo saiu em 2026-11-16).
+  const sizes = { impressao: [1654, 2339], square: [1080, 1080], portrait: [1080, 1350], story: [1080, 1920], landscape: [1200, 630] } as const;
   for (const [format, [w, h]] of Object.entries(sizes)) {
     const res = await request.get(`/alerta/${t.code}/cartaz/${format}`);
     expect(res.status(), format).toBe(200);
@@ -45,7 +46,7 @@ test("every poster format is a PNG of the right size whose QR Code opens the ale
   expect(download.headers()["content-disposition"]).toBe('attachment; filename="MEL-procura-se-Mel-story.png"');
 });
 
-test("the alert page shares the poster as link preview and offers the poster page", async ({ page, request }) => {
+test("the alert page shares the poster as link preview; visitors open \"Criar cartaz\" and the old poster pages lead there", async ({ page, request }) => {
   const t = await createTutorWithActiveAlert("poster-page", { petName: "Luna", withPhoto: true });
   created.push(t.email);
 
@@ -54,26 +55,14 @@ test("the alert page shares the poster as link preview and offers the poster pag
 
   await page.goto(`/alerta/${t.code}`);
   await page.getByRole("link", { name: /Cartaz e QR Code/ }).click();
-  await expect(page.getByRole("heading", { name: "Cartaz de Luna" })).toBeVisible();
-  for (const label of ["Quadrado", "Stories / Status", "Horizontal"]) {
-    await expect(page.getByRole("heading", { name: label })).toBeVisible();
-  }
-  await expect(page.getByRole("link", { name: /Baixar quadrado/ })).toHaveAttribute("href", new RegExp(`^/alerta/${t.code}/cartaz/square\\?baixar=1&v=`)); // v: versão da capa/enquadramento
+  await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar$`));
+  await expect(page.getByTestId("formato-square")).toBeVisible();
 
-  // A4: QR legível e sem telefone (o tutor não autorizou).
-  await page.getByRole("link", { name: /versão para imprimir/ }).click();
-  await expect(page.getByRole("heading", { name: "PROCURA-SE" })).toBeVisible();
-  await expect(page.getByText(/WhatsApp:|Telefone:/)).toHaveCount(0);
-  const qrSrc = await page.getByRole("img", { name: "QR Code do alerta" }).getAttribute("src");
-  const qr = await readQr(Buffer.from(qrSrc!.split(",")[1]!, "base64"));
-  expect(qr).toMatch(new RegExp(`/alerta/${t.code}$`));
-});
-
-test("phone appears on the poster only when the tutor authorized it", async ({ page }) => {
-  const t = await createTutorWithActiveAlert("poster-phone", { petName: "Thor", whatsapp: "11900000002" });
-  created.push(t.email);
+  // Gerador antigo (2026-11-16): a página de cartazes e o A4 em HTML levam ao fluxo novo.
+  await page.goto(`/alerta/${t.code}/cartaz`);
+  await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar$`));
   await page.goto(`/alerta/${t.code}/cartaz/a4`);
-  await expect(page.getByText("WhatsApp: (11) 90000-0002")).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/alerta/${t.code}/cartaz/criar\\?formato=impressao$`));
 });
 
 test("unknown alerts or formats return 404", async ({ request }) => {

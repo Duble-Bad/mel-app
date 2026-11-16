@@ -27,6 +27,7 @@ import { MapView } from "@/components/location/MapView";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
+import { PosterPhotoEditor } from "@/components/lost/PosterPhotoEditor";
 import { CloseLostCaseButton } from "@/components/lost/CloseLostCaseButton";
 import { ButtonLink } from "@/components/ui/Button";
 import { ReportButton } from "@/components/report/ReportButton";
@@ -288,6 +289,9 @@ async function AlertContent({
               <ShareAlert lostCase={c} path={alertPath(c.code)} />
             </section>
           )}
+
+          {/* Capa e enquadramento (prévia do link, Mural e mapa): antes ficava na página antiga de cartaz. */}
+          {c.isOwner && c.status === "ACTIVE" && <PosterPhotoEditor code={c.code} />}
 
           {/* Depois do essencial (nome, ações, compartilhar): o convite para avisos não toma o topo. */}
           {c.isOwner && c.status === "ACTIVE" && <TutorPushPrompt />}

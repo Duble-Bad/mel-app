@@ -7,7 +7,6 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 
 | # | Desde | Decisão | Contexto |
 |---|---|---|---|
-| 2 | 2026-11-09 | **Substituir os cartazes atuais** pelos novos modelos (hoje os dois convivem: o gerador antigo do alerta e o "Criar cartaz") | Modelos já aprovados (2026-11-10); falta decidir se o gerador antigo sai |
 | 3 | 2026-11-09 | **Trocar a capa da Mel** para a foto horizontal com laço amarelo | Recomendação visual: a capa atual (no colo) é a que pior identifica a Mel. Não alterar sem autorização |
 | 4 | 2026-11-09 | **Teste manual**: ler o QR Code com câmera de celular (tela e A4 impresso) | Só o proprietário consegue |
 | 5 | 2026-11-09 | **Teste manual**: Instagram/TikTok/Facebook num celular real (compartilhamento nativo) | Nos testes automáticos o menu do sistema é simulado |
@@ -24,6 +23,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 
 | Data | Decisão |
 |---|---|
+| 2026-11-16 | **Gerador antigo de cartaz removido; só os modelos do "Criar cartaz"** (pedido do proprietário; encerra o item 2). `/alerta/<código>/cartaz` e o A4 em HTML (`/cartaz/a4`) levam ao "Criar cartaz"; o PNG de qualquer formato sai com os modelos novos (o salvo pelo tutor para aquele formato no Instagram/TikTok; sem salvo, o modelo 2); a prévia do link (`og`) continua igual. A **capa e o enquadramento da foto** (prévia do link, Mural e mapa), que só existiam na página antiga, foram para a **página do alerta**, na área do tutor. A comparação interna `/cartaz/propostas` saiu |
 | 2026-11-16 | **Telas, depois do deploy de schema** (pedidos do proprietário; merge `d8487f8`, CI verde; produção conferida: 50/50, sem drift; fotos antigas do `sighting-media` no `mel-prod`: 0 e 0): cartões de `/adocao` com o efeito do Mural (moldura de luz, aura, pegadas), **dourado para machos e rosa para fêmeas**, também nos cartões "Para adoção" do Mural; **"Vi um pet solto"/"Encontrei um pet"** com o indicador de etapas com ícones do alerta (na cor do fluxo) e, na revisão, a **foto que a pessoa tirou**; no desktop, painel largo com a **prévia do anúncio** ao lado. Só telas, sem migration |
 | 2026-11-16 | **Merge da `guardiao/hero` na `main` e deploy de schema no `mel-prod`** (autorizado pelo proprietário): migrations 49 e 50 no manifesto e impressão digital nova; seletores de 5 testes E2E ajustados; CI verde em `b298e9a`; o dono rodou pre-flight e deploy (27 migrations, 24–50); pós-deploy 100% ✅ e sem drift. App ainda não publicado |
 | 2026-11-13 | **Mapa e mural sem limite de 10 km** (pedido do proprietário): raios 25 e 50 km, "Toda a rede" (migration 49, aplicada no `mel-dev`; produção pendente com as demais) e busca por cidade, bairro ou CEP. A trava `MEL_SAFE_TARGET_REFS` foi configurada pelo proprietário no `.env.local` desta máquina (só o `mel-dev`) |

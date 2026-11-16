@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { alertPath, collageExtras, isPosterFormat, POSTER_FORMATS, posterContent } from "@mel/core";
+import { alertPath, collageExtras, posterContent } from "@mel/core";
 import { getPublicLostCase } from "@mel/data";
 import { fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
 import { composePhotos } from "@/lib/poster/compose";
@@ -8,25 +8,21 @@ import { isPosterModel, modelCapacity } from "@/lib/poster/models";
 import { PosterCollage } from "@/lib/poster/PosterCollage";
 import { PosterClassic, PosterHero } from "@/lib/poster/PosterModels";
 import { OG_PHOTO, OG_SIZE, OgCard } from "@/lib/poster/OgCard";
-import { photoBox, Poster } from "@/lib/poster/Poster";
 import { isV2Format, PosterV2, V2_FORMATS } from "@/lib/poster/PosterV2";
 import { siteOrigin } from "@/lib/site";
 import { createPublicClient } from "@/lib/supabase/public";
 
 /**
- * PNG do cartaz: /alerta/{code}/cartaz/{square|portrait|story|landscape|og}
- * ?baixar=1 → força download com nome amigável.
- * ?modelo=proposta → novos modelos em avaliação (também "impressao", o A4), sem substituir os atuais.
+ * PNG do cartaz: /alerta/{code}/cartaz/{impressao|square|portrait|story|landscape|og}
+ * Todos com os modelos do "Criar cartaz" (?estilo=1–4; padrão 2). O gerador antigo saiu em
+ * 2026-11-16; `?modelo=proposta`, dos endereços já gerados, continua aceito e não muda nada.
+ * "og" é a prévia do link (foto em destaque). ?baixar=1 → força download com nome amigável.
  * Usa só dados públicos do alerta (mesmos da página).
  */
 export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/cartaz/[formato]">) {
   const { code, formato } = await ctx.params;
   const params = new URL(request.url).searchParams;
-  const proposal = params.get("modelo") === "proposta";
-  // Os quatro modelos do "Criar cartaz" (?estilo=1–4) são públicos desde 2026-11-10; as demais
-  // propostas em avaliação (sem estilo) seguem só no ambiente de teste (DEV).
-  if (proposal && !isPosterModel(Number(params.get("estilo"))) && process.env.MEL_DEV_ROUTES !== "1") return new Response("Cartaz não encontrado.", { status: 404 });
-  if (!/^[a-z2-9]{6}$/i.test(code) || !(proposal ? isV2Format(formato) : isPosterFormat(formato))) {
+  if (!/^[a-z2-9]{6}$/i.test(code) || !(formato === "og" || isV2Format(formato))) {
     return new Response("Cartaz não encontrado.", { status: 404 });
   }
 
@@ -45,7 +41,7 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
   // Capa (escolhida pelo tutor) primeiro; cada foto com o enquadramento dele.
   const photos = c.pet.photos;
   const estiloParam = params.get("estilo");
-  const filename = `MEL-${c.status === "FOUND" ? "encontrado" : "procura-se"}-${c.pet.name}-${formato}${proposal ? (estiloParam ? `-modelo-${estiloParam}` : "-proposta") : ""}.png`
+  const filename = `MEL-${c.status === "FOUND" ? "encontrado" : "procura-se"}-${c.pet.name}-${formato}${isPosterModel(Number(estiloParam)) ? `-modelo-${estiloParam}` : ""}.png`
     .normalize("NFD")
     .replace(/[^\w.-]/g, "");
   const headers = {
@@ -60,7 +56,7 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     return new ImageResponse(<OgCard content={content} photo={photo} areaLabel={c.areaLabel} />, { ...OG_SIZE, fonts: posterFonts, headers });
   }
 
-  if (proposal && isV2Format(formato)) {
+  if (isV2Format(formato)) {
     // ?estilo=1|2|3|4: modelo escolhido pelo tutor (1 foto em destaque, 2 várias fotos, 3 clássico, 4 cartaz completo).
     const estilo = Number(params.get("estilo") ?? 2);
     const model = isPosterModel(estilo) ? estilo : 2;
@@ -128,9 +124,5 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     });
   }
 
-  if (!isPosterFormat(formato)) return new Response("Cartaz não encontrado.", { status: 404 });
-  const box = photoBox(formato);
-  const [photo, qr] = await Promise.all([photoDataUrl(photos[0]?.url, box.width, box.height, photos[0]?.focus), qrDataUrl(url, 440)]);
-  const { width, height } = POSTER_FORMATS[formato];
-  return new ImageResponse(<Poster format={formato} content={content} photo={photo} qr={qr} url={url} />, { width, height, fonts: posterFonts, headers });
+  return new Response("Cartaz não encontrado.", { status: 404 });
 }
