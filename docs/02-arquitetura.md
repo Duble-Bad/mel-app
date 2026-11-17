@@ -54,6 +54,27 @@ mel/
 
 Regra: **componentes nunca chamam Supabase diretamente**. UI → hooks/actions → `core/services` → `ports` → `data` (Supabase). O futuro app Expo reaproveita `core` + `data`.
 
+### Dependências entre camadas (verificadas no CI)
+
+Desde 2026-11-17 o **Dependency Cruiser** (`.dependency-cruiser.cjs`, `npm run deps:check`, também no `npm run check` e no CI) confere quem pode importar quem. Camadas, de baixo para cima: `packages/core` → `packages/data` → `apps/web/lib` → `apps/web/components` → `apps/web/app` (e `packages/ui-tokens`, isolado).
+
+| Regra | O que proíbe |
+|---|---|
+| `sem-ciclos` | Dependência circular entre módulos (A → B → A ou mais longa); import só de tipo não conta |
+| `core-puro` | `core` importar `data`, `ui-tokens`, o app, Supabase, React, Next, lucide ou motion |
+| `core-sem-node` | `core` (fora dos testes) usar módulos do Node (`fs`, `path`, `crypto`…): ele roda também no navegador |
+| `ui-tokens-isolado` | Tokens do tema importarem outra parte do projeto |
+| `data-nao-depende-do-app` | `data` (fora dos testes) importar o app |
+| `testes-do-data-so-com-a-cripto-do-app` | Testes do `data` importarem do app algo além de `apps/web/lib/pii` (exceção documentada: testam a criptografia de dados pessoais) |
+| `lib-nao-depende-de-telas` | `apps/web/lib` importar componentes ou páginas |
+| `telas-nao-dependem-de-rotas` | Componentes importarem páginas/rotas de `app/` (exceção: CSS compartilhado que mora lá, ex.: `app/map.css`) |
+| `ui-base-sem-telas` | `components/ui` importar telas de assunto (só `ui` e `brand`) |
+| `producao-sem-prototipos` | Código de produção importar protótipos internos (`components/dev`, `app/(app)/dev`) |
+
+Cada regra tem um teste que planta a violação e confere que ela é acusada (`scripts/deps/rules.test.mjs`, em `npm run test:guards`). No dia da adoção: 0 ciclos e 0 violações em cerca de 400 módulos.
+
+**Complexidade ciclomática** (regra `complexity` do ESLint, só **aviso**): acima de 15 por função no `core` e no `data` (lógica pura) e acima de 25 no app (no JSX, cada bloco condicional conta). Não trava o build; serve de guia para quebrar funções ao mexer nelas. Na adoção: 22 avisos no app, 5 no `core`, 2 no `data` (maiores: `PetForm` 68, página do alerta 56, exportação de dados 53, `classifyError` 36, `toAppNotification` 34).
+
 ## 3. Fluxo de dados
 
 ```
