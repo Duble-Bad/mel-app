@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { HydratedSubmit } from "./HydratedSubmit";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "soft";
 type Size = "md" | "lg";
@@ -37,6 +38,11 @@ export const buttonClasses = ({ variant = "primary", size = "lg" }: StyleProps, 
     .filter(Boolean)
     .join(" ");
 
+/**
+ * `type="submit"` fica desabilitado até a página ficar interativa (ver
+ * `HydratedSubmit`). `nativeSubmit` desliga isso para formulário que funciona
+ * sem JavaScript (com `action` próprio), como o de /auth/confirmar.
+ */
 export function Button({
   variant,
   size,
@@ -45,24 +51,27 @@ export function Button({
   className,
   children,
   disabled,
+  nativeSubmit,
   ...props
-}: ComponentProps<"button"> & StyleProps & { loading?: boolean; loadingText?: ReactNode }) {
+}: ComponentProps<"button"> & StyleProps & { loading?: boolean; loadingText?: ReactNode; nativeSubmit?: boolean }) {
+  const shared = {
+    ...props,
+    disabled: disabled || loading,
+    "aria-busy": loading || undefined,
+    className: buttonClasses({ variant, size }, className),
+  };
+  const content = loading ? (
+    <>
+      <LoaderCircle aria-hidden="true" className="size-[18px] animate-spin" strokeWidth={2} />
+      {loadingText ?? "Aguarde…"}
+    </>
+  ) : (
+    children
+  );
+  if (props.type === "submit" && !nativeSubmit) return <HydratedSubmit {...shared}>{content}</HydratedSubmit>;
   return (
-    <button
-      type="button"
-      {...props}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
-      className={buttonClasses({ variant, size }, className)}
-    >
-      {loading ? (
-        <>
-          <LoaderCircle aria-hidden="true" className="size-[18px] animate-spin" strokeWidth={2} />
-          {loadingText ?? "Aguarde…"}
-        </>
-      ) : (
-        children
-      )}
+    <button type="button" {...shared}>
+      {content}
     </button>
   );
 }

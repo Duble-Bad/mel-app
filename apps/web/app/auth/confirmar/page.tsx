@@ -58,7 +58,10 @@ function ConfirmLink({ query }: { query: Record<string, string | string[] | unde
       <input type="hidden" name="token_hash" value={link.tokenHash} />
       <input type="hidden" name="type" value={link.type} />
       <input type="hidden" name="next" value={link.next} />
-      <Button type="submit">{copy.action}</Button>
+      {/* Formulário nativo (funciona sem JavaScript): sem a trava de hidratação. */}
+      <Button type="submit" nativeSubmit>
+        {copy.action}
+      </Button>
     </form>
   );
 }

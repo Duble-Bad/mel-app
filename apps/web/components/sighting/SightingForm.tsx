@@ -12,6 +12,7 @@ import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { DateTimeFields, isoDate } from "@/components/ui/DateCalendar";
 import { limitedTextarea } from "@/components/ui/limitedText";
 import { takeCaptchaToken, Turnstile, useCaptchaToken } from "@/components/ui/Turnstile";
+import { HydratedSubmit } from "@/components/ui/HydratedSubmit";
 
 // Rosa dos ventos: Norte em cima, Oeste à esquerda… "Não sei" no centro.
 const COMPASS: (Direction | null)[] = [null, "N", null, "W", "unknown", "E", null, "S", null];
@@ -219,14 +220,14 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
         <Turnstile key={captcha.key} onToken={captcha.setToken} onError={setError} />
       </div>
 
-      <button
-        type="submit"
+      <HydratedSubmit
+        
         disabled={Boolean(busy)}
         aria-busy={Boolean(busy) || undefined}
         className="min-h-16 w-full rounded-lg bg-status-sighting-solid px-5 text-xl font-extrabold tracking-wide text-text-inverse uppercase shadow-card disabled:opacity-60"
       >
         {busy ?? "Enviar avistamento"}
-      </button>
+      </HydratedSubmit>
       <p className="text-center text-sm text-text-secondary">Não precisa criar conta.</p>
     </form>
   );

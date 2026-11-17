@@ -10,6 +10,7 @@ import { Alert } from "@/components/ui/Alert";
 import { kickPushDispatch } from "@/lib/push/client";
 import { AntiScamNotice } from "./AntiScamNotice";
 import { ReportDialog } from "./ReportDialog";
+import { HydratedSubmit } from "@/components/ui/HydratedSubmit";
 
 interface ChatThreadProps {
   conversation: Conversation;
@@ -218,14 +219,14 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
               placeholder="Escreva uma mensagem"
               className="block min-h-12 w-full resize-none rounded-md border-2 border-border-strong bg-surface px-3 py-2 focus:border-focus focus:outline-none"
             />
-            <button
-              type="submit"
+            <HydratedSubmit
+              
               disabled={sending || !canSend}
               aria-busy={sending || undefined}
               className="min-h-12 shrink-0 rounded-md bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-60"
             >
               {sending ? "Enviando…" : "Enviar"}
-            </button>
+            </HydratedSubmit>
           </form>
         )}
         {error && (
