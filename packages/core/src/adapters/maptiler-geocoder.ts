@@ -1,6 +1,6 @@
 import { BR_STATES, type BrState } from "../profile/profile";
 import { distanceMeters, isValidLatLng, type LatLng } from "../geo/geo";
-import type { GeocodeResult, Geocoder } from "../ports";
+import type { GeocodeOptions, GeocodeResult, Geocoder } from "../ports";
 
 /**
  * Geocoder do MapTiler (busca de endereço e endereço de um ponto).
@@ -96,15 +96,15 @@ export interface MapTilerGeocoderOptions {
 export function createMapTilerGeocoder({ apiKey, fetch: doFetch = fetch, language = "pt" }: MapTilerGeocoderOptions): Geocoder {
   const base = "https://api.maptiler.com/geocoding";
 
-  async function call(path: string, params: Record<string, string>): Promise<MapTilerFeature[]> {
+  async function call(path: string, params: Record<string, string>, signal?: AbortSignal): Promise<MapTilerFeature[]> {
     const qs = new URLSearchParams({ key: apiKey, language, ...params });
-    const res = await doFetch(`${base}/${path}.json?${qs}`);
+    const res = await doFetch(`${base}/${path}.json?${qs}`, { signal });
     if (!res.ok) throw new Error(`Geocoding falhou (${res.status})`);
     return ((await res.json()) as MapTilerResponse).features ?? [];
   }
 
   return {
-    async search(query: string, near?: LatLng) {
+    async search(query: string, near?: LatLng, { signal }: GeocodeOptions = {}) {
       const q = query.trim();
       if (q.length < 3) return [];
       const params = {
@@ -117,15 +117,15 @@ export function createMapTilerGeocoder({ apiKey, fetch: doFetch = fetch, languag
       // A busca padrão não inclui pontos de interesse (parques, praças, lojas),
       // muito usados para dizer onde o pet sumiu: consultamos os dois.
       const [places, pois] = await Promise.all([
-        call(encodeURIComponent(q), params),
-        call(encodeURIComponent(q), { ...params, types: "poi" }),
+        call(encodeURIComponent(q), params, signal),
+        call(encodeURIComponent(q), { ...params, types: "poi" }, signal),
       ]);
       return rankResults([...places, ...pois], near);
     },
 
-    async reverse(p: LatLng) {
+    async reverse(p: LatLng, { signal }: GeocodeOptions = {}) {
       if (!isValidLatLng(p)) return null;
-      const features = await call(`${p.lng},${p.lat}`, { limit: "1" });
+      const features = await call(`${p.lng},${p.lat}`, { limit: "1" }, signal);
       const first = features[0];
       return first ? toGeocodeResult(first) : null;
     },

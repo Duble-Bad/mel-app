@@ -1,6 +1,6 @@
 "use client";
 
-import { createMapTilerGeocoder, createViaCepLookup, geolocationErrorMessage, UserFacingError, withCepSearch, type Geocoder, type LatLng } from "@mel/core";
+import { createMapTilerGeocoder, createViaCepLookup, fetchWithTimeout, geolocationErrorMessage, UserFacingError, withCepSearch, type Geocoder, type LatLng } from "@mel/core";
 
 let geocoder: Geocoder | undefined;
 
@@ -8,7 +8,12 @@ let geocoder: Geocoder | undefined;
 export function getGeocoder(): Geocoder {
   const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
   if (!apiKey) throw new Error("NEXT_PUBLIC_MAPTILER_KEY ausente (veja .env.example).");
-  geocoder ??= withCepSearch(createMapTilerGeocoder({ apiKey }), createViaCepLookup());
+  // Tempo limite e uma nova tentativa (leituras, seguras de repetir): o mapa ou os Correios fora do
+  // ar viram uma mensagem em poucos segundos, em vez de "buscando…" para sempre.
+  geocoder ??= withCepSearch(
+    createMapTilerGeocoder({ apiKey, fetch: fetchWithTimeout(5_000, { retries: 1 }) }),
+    createViaCepLookup({ fetch: fetchWithTimeout(5_000, { retries: 1 }) }),
+  );
   return geocoder;
 }
 

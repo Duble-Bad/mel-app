@@ -1,5 +1,5 @@
 import type { LatLng } from "../geo/geo";
-import type { GeocodeResult, Geocoder } from "../ports";
+import type { GeocodeOptions, GeocodeResult, Geocoder } from "../ports";
 
 /** "01001-000", "01001000", " 01001 000 " → "01001000"; qualquer outro texto → null. */
 export function parseCep(text: string): string | null {
@@ -17,12 +17,12 @@ export interface CepAddress {
   state: string;
 }
 
-export type CepLookup = (cep: string) => Promise<CepAddress | null>;
+export type CepLookup = (cep: string, options?: GeocodeOptions) => Promise<CepAddress | null>;
 
 /** ViaCEP: serviço público e gratuito, sem chave. Só o CEP digitado é enviado. */
 export function createViaCepLookup({ fetch: doFetch = fetch }: { fetch?: typeof fetch } = {}): CepLookup {
-  return async (cep) => {
-    const res = await doFetch(`https://viacep.com.br/ws/${cep}/json/`);
+  return async (cep, { signal } = {}) => {
+    const res = await doFetch(`https://viacep.com.br/ws/${cep}/json/`, { signal });
     if (!res.ok) throw new Error(`ViaCEP respondeu ${res.status}`);
     const data = (await res.json()) as { erro?: boolean | string; logradouro?: string; bairro?: string; localidade?: string; uf?: string };
     if (data.erro || !data.localidade || !data.uf) return null;
@@ -50,10 +50,10 @@ const norm = (s?: string) =>
 export function withCepSearch(geocoder: Geocoder, lookup: CepLookup): Geocoder {
   return {
     ...geocoder,
-    async search(query: string, near?: LatLng): Promise<GeocodeResult[]> {
+    async search(query: string, near?: LatLng, options?: GeocodeOptions): Promise<GeocodeResult[]> {
       const cep = parseCep(query);
-      if (!cep) return geocoder.search(query, near);
-      const address = await lookup(cep);
+      if (!cep) return geocoder.search(query, near, options);
+      const address = await lookup(cep, options);
       if (!address) return [];
       const { street, neighborhood, city, state } = address;
       const uf = state as GeocodeResult["state"];
@@ -64,17 +64,17 @@ export function withCepSearch(geocoder: Geocoder, lookup: CepLookup): Geocoder {
 
       // 1) A rua do CEP, no mapa: mesmo nome e mesma cidade.
       if (street) {
-        const found = await geocoder.search([street, neighborhood, `${city} - ${state}`].filter(Boolean).join(", "), near);
+        const found = await geocoder.search([street, neighborhood, `${city} - ${state}`].filter(Boolean).join(", "), near, options);
         const match = found.find((r) => inCity(r) && firstPart(r) === norm(street));
         if (match) return [result([street, neighborhood, tail].filter(Boolean).join(", "), match.position)];
       }
       // 2) O bairro do CEP (centro do bairro); 3) a cidade.
       if (neighborhood) {
-        const found = await geocoder.search(`${neighborhood}, ${city} - ${state}`, near);
+        const found = await geocoder.search(`${neighborhood}, ${city} - ${state}`, near, options);
         const match = found.find((r) => inCity(r) && firstPart(r) === norm(neighborhood));
         if (match) return [result(`${neighborhood}, ${tail}`, match.position)];
       }
-      const found = await geocoder.search(`${city} - ${state}`, near);
+      const found = await geocoder.search(`${city} - ${state}`, near, options);
       const match = found.find(inCity);
       return match ? [result(tail, match.position)] : [];
     },

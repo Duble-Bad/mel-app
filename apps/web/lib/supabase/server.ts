@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { fetchWithTimeout } from "@mel/core";
 import type { Database, MelClient } from "@mel/data";
 import { publicEnv } from "@/lib/env";
 
@@ -13,6 +14,8 @@ export async function createSessionClient(): Promise<MelClient> {
   const { supabaseUrl, supabasePublishableKey } = publicEnv();
   const cookieStore = await cookies();
   return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
+    // Banco sem resposta: a página mostra o erro em segundos em vez de ficar carregando.
+    global: { fetch: fetchWithTimeout(15_000) },
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (cookiesToSet) => {

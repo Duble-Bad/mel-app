@@ -142,12 +142,15 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote, gp
     const q = query.trim();
     if (q.length < 3) return;
     let cancelled = false;
+    // Uma letra nova cancela a requisição que ainda estava no ar (não só ignora a resposta).
+    const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        const found = await getGeocoder().search(q, valueRef.current?.position ?? defaultCenter);
+        const found = await getGeocoder().search(q, valueRef.current?.position ?? defaultCenter, { signal: ctrl.signal });
         if (!cancelled) setResults(found);
       } catch (err) {
+        if (cancelled) return; // cancelada por uma letra nova: não é erro
         console.error("[LocationPicker] busca falhou", err);
         if (!cancelled) {
           setResults(null);
@@ -160,6 +163,7 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote, gp
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      ctrl.abort();
     };
   }, [query, defaultCenter]);
 

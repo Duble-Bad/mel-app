@@ -46,16 +46,19 @@ export function PlaceSearch({ near, onPick, className = "" }: { near: LatLng; on
     const q = query.trim();
     if (q.length < 3) return;
     let cancelled = false;
+    // Espera 350 ms sem digitar; uma letra nova cancela a requisição que ainda estava no ar.
+    const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       setSearching(true);
       setError(null);
       try {
-        const found = await getGeocoder().search(q, nearRef.current);
+        const found = await getGeocoder().search(q, nearRef.current, { signal: ctrl.signal });
         if (!cancelled) {
           setResults(rankPlaces(found).slice(0, 6));
           setActive(-1);
         }
       } catch (err) {
+        if (cancelled) return; // cancelada por uma letra nova: não é erro
         console.error("[PlaceSearch] busca falhou", err);
         if (!cancelled) {
           setResults(null);
@@ -68,6 +71,7 @@ export function PlaceSearch({ near, onPick, className = "" }: { near: LatLng; on
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      ctrl.abort();
     };
   }, [query]);
 

@@ -58,7 +58,7 @@ export async function dispatchPushQueue(limit = 50, now = new Date()): Promise<D
     let lastError = "";
     for (const s of job.subscriptions) {
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, { TTL: 60 * 60 * 6, urgency: "high" });
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, { TTL: 60 * 60 * 6, urgency: "high", timeout: 10_000 });
         ok.push(s.id);
       } catch (err) {
         const status = (err as { statusCode?: number }).statusCode;

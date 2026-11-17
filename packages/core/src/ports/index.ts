@@ -67,9 +67,14 @@ export interface GeocodeResult {
   state?: BrState;
 }
 
+/** `signal`: cancela a chamada (ex.: a pessoa digitou outra letra antes da resposta). */
+export interface GeocodeOptions {
+  signal?: AbortSignal;
+}
+
 export interface Geocoder {
-  search(query: string, near?: LatLng): Promise<GeocodeResult[]>;
-  reverse(p: LatLng): Promise<GeocodeResult | null>;
+  search(query: string, near?: LatLng, options?: GeocodeOptions): Promise<GeocodeResult[]>;
+  reverse(p: LatLng, options?: GeocodeOptions): Promise<GeocodeResult | null>;
 }
 
 export type AnalyticsEventName =

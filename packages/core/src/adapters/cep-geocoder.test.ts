@@ -62,7 +62,7 @@ describe("CEP na busca de endereço", () => {
     const lookup = vi.fn();
     await withCepSearch(plain, lookup).search("Rua das Flores, 100");
     expect(lookup).not.toHaveBeenCalled();
-    expect(plain.search).toHaveBeenCalledWith("Rua das Flores, 100", undefined);
+    expect(plain.search).toHaveBeenCalledWith("Rua das Flores, 100", undefined, undefined);
   });
 
   it("o CEP não entra no rótulo (privacidade: partes do rótulo podem ficar públicas)", async () => {

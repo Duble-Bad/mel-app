@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { fetchWithTimeout } from "@mel/core";
 import type { Database, MelClient } from "@mel/data";
 import { publicEnv } from "@/lib/env";
 
@@ -11,5 +12,6 @@ export function createPublicClient(): MelClient {
   const { supabaseUrl, supabasePublishableKey } = publicEnv();
   return createClient<Database>(supabaseUrl, supabasePublishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: fetchWithTimeout(15_000) },
   });
 }
