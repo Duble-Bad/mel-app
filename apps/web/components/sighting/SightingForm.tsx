@@ -90,7 +90,7 @@ export function SightingForm({ code, petName, chatEnabled }: { code: string; pet
   if (sent) {
     return (
       <div className="flex flex-col gap-5">
-        <Alert tone="success">
+        <Alert tone="success" celebrate="sighting">
           <strong>Obrigado!</strong> O tutor já foi avisado. Cada pista aproxima {petName} de casa.
         </Alert>
         <Link

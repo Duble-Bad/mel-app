@@ -1,10 +1,11 @@
-import { CircleCheck, Heart, MapPin, Users } from "lucide-react";
+import { Heart, MapPin, Users } from "lucide-react";
 import { formatDateTimeBr, FOUND_HOW_PUBLIC, helpersLine, type PublicLostCase } from "@mel/core";
+import { SuccessCheck } from "@/components/ui/motion/SuccessCheck";
 
 /**
- * Alerta encerrado com reencontro: "MEL ESTÁ EM CASA". Celebração calma
- * (sem confete): selo, agradecimento à comunidade e a história, se houver.
- * `celebrate`: o tutor acabou de confirmar (check com animação discreta).
+ * Alerta encerrado com reencontro: "MEL ESTÁ EM CASA": selo, agradecimento à
+ * comunidade e a história, se houver. `celebrate`: o tutor acabou de confirmar
+ * (selo que se desenha e uma explosão única de confete; parado com "reduzir movimento").
  */
 export function ReunionBanner({ c, celebrate }: { c: PublicLostCase; celebrate: boolean }) {
   const helpers = helpersLine(c.helpersCount);
@@ -14,13 +15,14 @@ export function ReunionBanner({ c, celebrate }: { c: PublicLostCase; celebrate: 
       className="flex animate-enter flex-col gap-4 rounded-card border border-status-found/20 bg-status-found-soft p-5"
     >
       <div className="flex items-center gap-3">
-        <span className={`flex size-12 shrink-0 items-center justify-center rounded-full bg-status-found-solid text-text-inverse ${celebrate ? "animate-pop" : ""}`}>
-          {celebrate ? (
-            <CircleCheck aria-hidden="true" className="size-6" strokeWidth={2} />
-          ) : (
+        {celebrate ? (
+          // Tutor acabou de confirmar: selo que se desenha e uma explosão única de confete.
+          <SuccessCheck tone="found" size={48} confetti />
+        ) : (
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-status-found-solid text-text-inverse">
             <Heart aria-hidden="true" className="size-5" fill="currentColor" strokeWidth={0} />
-          )}
-        </span>
+          </span>
+        )}
         <div className="min-w-0">
           <h2 id="em-casa" className="text-2xl font-bold tracking-[-0.02em] text-status-found uppercase">
             {c.pet.name} está em casa

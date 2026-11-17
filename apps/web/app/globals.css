@@ -434,3 +434,33 @@ input:-webkit-autofill:focus {
     display: none;
   }
 }
+
+/*
+ * Voo da foto entre as páginas (SharedPhoto: cartão → página do caso).
+ * 400 ms com a curva da MEL; um leve desfoque no meio esconde a troca de
+ * resolução (miniatura → foto grande). Cliques passam durante a transição.
+ */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-group(.morph) {
+  animation-duration: 400ms;
+  animation-timing-function: var(--mel-easing);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: mel-morph-blur;
+}
+@keyframes mel-morph-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

@@ -40,9 +40,12 @@ export function SegmentedControl<T extends string>({
 
   return (
     <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="relative grid rounded-md border border-border bg-surface-muted p-1" style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}>
+      {/* "Sliding Thumb" (ui-motion-prompts, Segmented Control 1): alavanca "levantada" (degradê
+          vertical + sombra) que vai com mola até a aba tocada, com uma leve passada do ponto.
+          Com "reduzir movimento", troca sem deslizar (motion-reduce). */}
       <span
         aria-hidden="true"
-        className="absolute inset-y-1 left-1 rounded-[11px] bg-[#f6b928] shadow-[0_4px_14px_-4px_rgb(246_185_40/0.55)] transition-transform duration-300 ease-mel"
+        className="absolute inset-y-1 left-1 rounded-[11px] bg-[linear-gradient(180deg,#f8c64e,#f6b928_55%,#e9a91c)] shadow-[0_4px_14px_-4px_rgb(246_185_40/0.55),inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform duration-[450ms] ease-[cubic-bezier(0.34,1.4,0.5,1)] motion-reduce:transition-none"
         style={{ width: `calc((100% - 8px) / ${options.length})`, transform: `translateX(${index * 100}%)` }}
       />
       {options.map((o, i) => {
@@ -59,7 +62,7 @@ export function SegmentedControl<T extends string>({
             aria-controls={controls}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(o.value)}
-            className={`relative z-10 min-h-11 rounded-[11px] text-sm transition-colors duration-200 focus-visible:outline-offset-2 ${
+            className={`relative z-10 min-h-11 rounded-[11px] text-sm transition-[color,font-weight] duration-200 focus-visible:outline-offset-2 ${
               selected ? "font-bold text-[#1c1404]" : "font-semibold text-text-secondary hover:text-text-primary"
             }`}
           >

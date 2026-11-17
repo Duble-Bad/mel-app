@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { type ChatMessage, type Conversation, formatChatTime, mentionsPayment, MESSAGE_MAX, messageBodySchema, PAYMENT_WARNING, peerLabel, userErrorMessage } from "@mel/core";
-import { markConversationRead, sendMessage, setConversationBlocked, subscribeToMessages } from "@mel/data";
+import { getPeerLastReadAt, markConversationRead, sendMessage, setConversationBlocked, subscribeToMessages } from "@mel/data";
+import { motion } from "motion/react";
+import { useReducedMotion } from "@/components/ui/motion/useReducedMotion";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { kickPushDispatch } from "@/lib/push/client";
@@ -21,6 +23,9 @@ interface ChatThreadProps {
 
 const BLOCKED_MESSAGE = "Esta conversa não aceita novas mensagens.";
 
+/** O mais recente de dois instantes (formatos do banco e do tempo real podem diferir: compara como data). */
+const latest = (a: string | null, b: string) => (a && Date.parse(a) >= Date.parse(b) ? a : b);
+
 export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymous }: ChatThreadProps) {
   const [messages, setMessages] = useState(initialMessages);
   const [body, setBody] = useState("");
@@ -34,6 +39,11 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
   const router = useRouter();
   const hadUnread = useRef(c.unread > 0);
   const peer = peerLabel(c);
+  const reduced = useReducedMotion();
+  // Mensagens que já estavam na tela ao abrir não animam; as novas sobem ("Bubble Rise").
+  const [initialIds] = useState(() => new Set(initialMessages.map((m) => m.id)));
+  // Até quando a outra pessoa leu: "Visto" na minha última mensagem ("Read Receipts").
+  const [peerReadAt, setPeerReadAt] = useState<string | null>(null);
 
   const append = (m: ChatMessage) => setMessages((list) => (list.some((x) => x.id === m.id) ? list : [...list, m]));
 
@@ -48,9 +58,33 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
     });
     return subscribeToMessages(client, c.id, (m) => {
       append(m);
-      if (m.senderId !== myId && document.visibilityState === "visible") void markRead();
+      if (m.senderId !== myId) {
+        if (document.visibilityState === "visible") void markRead();
+        // Quem respondeu leu tudo até aqui.
+        setPeerReadAt((prev) => latest(prev, m.createdAt));
+      }
     });
   }, [c.id, myId, router]);
+
+  // "Visto": consulta leve ao abrir, ao voltar para a aba e a cada 20 s com a aba visível.
+  useEffect(() => {
+    const client = getBrowserClient();
+    let alive = true;
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      getPeerLastReadAt(client, c.id, myId)
+        .then((at) => alive && at && setPeerReadAt((prev) => latest(prev, at)))
+        .catch(() => {}); // sem o "Visto", a conversa segue normal
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 20_000);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [c.id, myId]);
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
@@ -94,6 +128,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
   }
 
   const canSend = !blockedByMe && !closed;
+  const lastMineId = [...messages].reverse().find((m) => m.senderId === myId)?.id;
   const emptyHint =
     c.myRole === "owner"
       ? c.peerIsAnonymous
@@ -169,8 +204,19 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
         <ol aria-label="Mensagens" aria-live="polite" className="flex flex-col gap-3">
           {messages.map((m) => {
             const mine = m.senderId === myId;
+            const isNew = !reduced && !initialIds.has(m.id);
+            const isLastMine = mine && m.id === lastMineId;
             return (
-              <li key={m.id} data-testid="chat-message" className={`flex flex-col ${mine ? "items-end" : "items-start"}`}>
+              <motion.li
+                key={m.id}
+                data-testid="chat-message"
+                className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
+                // "Bubble Rise" (ui-motion-prompts, Send 1): a minha sobe do campo e cresce até o lugar; a recebida só entra suave.
+                initial={isNew ? (mine ? { opacity: 0, y: 28, scale: 0.92 } : { opacity: 0, y: 10 }) : false}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 380, damping: 28 }}
+                style={{ transformOrigin: mine ? "100% 100%" : "0% 100%" }}
+              >
                 <span className="sr-only">{mine ? "Você" : peer}: </span>
                 <p
                   className={`max-w-[85%] rounded-lg px-4 py-2 break-words whitespace-pre-line ${
@@ -179,13 +225,16 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
                 >
                   {m.body}
                 </p>
-                <span className="mt-0.5 text-xs text-text-secondary">{formatChatTime(m.createdAt)}</span>
+                <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-text-secondary">
+                  {formatChatTime(m.createdAt)}
+                  {isLastMine && <ReadReceipt read={Boolean(peerReadAt && Date.parse(peerReadAt) >= Date.parse(m.createdAt))} reduced={reduced} />}
+                </span>
                 {!mine && mentionsPayment(m.body, { fromTutor: c.myRole === "helper" && c.context !== "adoption" }) && (
                   <p data-testid="payment-warning" className="mt-1 max-w-[85%] text-sm font-semibold text-status-lost">
                     ⚠️ {PAYMENT_WARNING}
                   </p>
                 )}
-              </li>
+              </motion.li>
             );
           })}
         </ol>
@@ -236,5 +285,29 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * "Read Receipts" (ui-motion-prompts, Send 2): "Enviada ✓" e, quando a outra
+ * pessoa abre a conversa, o segundo ✓ desliza para o lado e os dois ficam na
+ * cor da MEL: "Vista ✓✓". O texto também muda (não depende só da cor).
+ */
+function ReadReceipt({ read, reduced }: { read: boolean; reduced: boolean }) {
+  return (
+    <span data-testid="read-receipt" data-read={read || undefined} className={`inline-flex items-center gap-0.5 font-semibold transition-colors duration-300 ${read ? "text-primary" : ""}`}>
+      <span>{read ? "Vista" : "Enviada"}</span>
+      <svg aria-hidden="true" viewBox="0 0 22 12" className="h-3 w-[22px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <motion.path d="M1 6.5 4.5 10 11 2" initial={reduced ? false : { pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.25 }} />
+        {read && (
+          <motion.path
+            d="M8 10 14.5 2"
+            initial={reduced ? false : { pathLength: 0, x: -5, opacity: 0 }}
+            animate={{ pathLength: 1, x: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 420, damping: 24 }}
+          />
+        )}
+      </svg>
+    </span>
   );
 }

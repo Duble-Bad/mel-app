@@ -28,6 +28,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
+import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
 import { PosterPhotoEditor } from "@/components/lost/PosterPhotoEditor";
@@ -148,6 +149,7 @@ async function AlertContent({
             <PhotoGallery
               photos={c.pet.photos}
               name={c.pet.name}
+              transitionName={casePhotoName(`/alerta/${c.code}`)}
               mainClassName="aspect-square w-full bg-surface-muted object-contain sm:rounded-b-lg lg:rounded-2xl"
               thumbsClassName="px-4 lg:px-0"
               autoplay
@@ -188,7 +190,7 @@ async function AlertContent({
           )}
 
           {c.isOwner && query.novo && (
-            <Alert tone="success">
+            <Alert tone="success" celebrate="brand">
               <strong>Alerta MEL ativado.</strong> Agora outras pessoas poderão
               ajudar na busca. Compartilhe para alcançar ainda mais pessoas.
             </Alert>

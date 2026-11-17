@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { focusPosition, formatDistance, timeAgo } from "@mel/core";
 import { KIND_BADGE, type FeedEntry } from "./feed";
 import { PetPhoto } from "@/components/ui/PetPhoto";
+import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { PhotoGallery, type GalleryPhoto } from "@/components/media/PhotoGallery";
 
 /**
@@ -153,6 +154,7 @@ function DrawerPhotos({ entry: e }: { entry: FeedEntry }) {
         <PhotoGallery
           photos={photos}
           name={e.title}
+          transitionName={casePhotoName(e.href)}
           autoplay
           mainClassName="block aspect-[4/3] w-full bg-surface-muted object-cover max-lg:aspect-auto max-lg:h-[min(28dvh,240px)]"
           thumbsClassName="px-[22px] pt-1"
@@ -165,7 +167,7 @@ function DrawerPhotos({ entry: e }: { entry: FeedEntry }) {
   return (
     <div className="mel-drawer__media">
       {/* Foto em tamanho normal (a miniatura ficava borrada aqui) com o foco que o tutor ajustou. */}
-      <PetPhoto src={cover} alt={`Foto de ${e.title}`} iconClassName="size-14" style={{ objectPosition: focusPosition(e.photoFocus) }} />
+      <PetPhoto transitionName={casePhotoName(e.href)} src={cover} alt={`Foto de ${e.title}`} iconClassName="size-14" style={{ objectPosition: focusPosition(e.photoFocus) }} />
     </div>
   );
 }

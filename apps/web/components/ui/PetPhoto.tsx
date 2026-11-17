@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ImgHTMLAttributes } from "react";
 import { ImageOff, PawPrint } from "lucide-react";
+import { SharedPhoto } from "@/components/ui/motion/SharedPhoto";
+import { watchPhotoTaps } from "@/components/ui/motion/photoMemory";
 
 /**
  * Foto de um caso (já reduzida no upload). Sem foto: patinha. Foto que não
@@ -12,10 +14,21 @@ export function PetPhoto({
   src,
   iconClassName = "size-10",
   fallbackClassName = "flex size-full items-center justify-center",
+  transitionName,
   ...img
-}: Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & { src?: string | null; iconClassName?: string; fallbackClassName?: string }) {
+}: Omit<ImgHTMLAttributes<HTMLImageElement>, "src"> & {
+  src?: string | null;
+  iconClassName?: string;
+  fallbackClassName?: string;
+  /** Liga esta foto à foto grande da página do caso (voo entre as páginas; ver SharedPhoto). */
+  transitionName?: string;
+}) {
   const [failed, setFailed] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
+  // Cartão com voo: lembra a foto para o esqueleto da página do caso (ver SkeletonPhoto).
+  useEffect(() => {
+    if (transitionName) watchPhotoTaps();
+  }, [transitionName]);
   // Imagem que já falhou antes da hidratação (HTML do servidor) não dispara onError no React.
   useEffect(() => {
     const el = ref.current;
@@ -30,5 +43,9 @@ export function PetPhoto({
     );
   }
   // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- miniatura já otimizada no upload; alt vem nas props
-  return <img ref={ref} src={src} {...img} onError={() => setFailed(true)} />;
+  return (
+    <SharedPhoto name={transitionName}>
+      <img ref={ref} src={src} {...img} data-vt-photo={transitionName} onError={() => setFailed(true)} />
+    </SharedPhoto>
+  );
 }

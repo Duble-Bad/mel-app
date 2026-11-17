@@ -8,12 +8,14 @@ import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
+import { PasswordStrengthMeter } from "@/components/ui/PasswordStrengthMeter";
 
 export function NewPasswordForm() {
   const router = useRouter();
   const [error, setError] = useState<string | undefined>();
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [password, setPassword] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +45,16 @@ export function NewPasswordForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
       {formError && <Alert tone="error">{formError}</Alert>}
-      <TextField label="Nova senha" name="password" type="password" autoComplete="new-password" required error={error} />
+      <TextField
+        label="Nova senha"
+        name="password"
+        type="password"
+        autoComplete="new-password"
+        required
+        error={error}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <PasswordStrengthMeter password={password} />
       <TextField label="Repita a nova senha" name="confirm" type="password" autoComplete="new-password" required />
       <Button type="submit" loading={pending} loadingText="Salvando…">
         Salvar senha

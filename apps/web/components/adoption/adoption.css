@@ -12,9 +12,13 @@
 }
 
 .mel-adopt-tab[aria-selected="true"] {
-  background: var(--mel-primary);
   border-color: var(--mel-primary);
   color: var(--mel-primary-foreground);
+}
+/* Alavanca "levantada" (degradê vertical + sombra) que desliza entre as abas (AdoptionTabs). */
+.mel-adopt-tab__thumb {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mel-primary) 82%, #ffffff), var(--mel-primary));
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--mel-primary) 70%, transparent);
 }
 
 .mel-adopt-panel {

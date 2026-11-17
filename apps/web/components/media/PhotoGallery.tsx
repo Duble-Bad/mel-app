@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { ChevronLeft, ChevronRight, ImageOff, Maximize2, Pause, Play, X } from "lucide-react";
 import { focusPosition, type PhotoFocus } from "@mel/core";
+import { SharedPhoto } from "@/components/ui/motion/SharedPhoto";
 
 export interface GalleryPhoto {
   url: string;
@@ -36,7 +37,10 @@ export function PhotoGallery({
   autoplay = false,
   thumbSize = "size-16 sm:size-20",
   arrowsOnHover = false,
+  transitionName,
 }: {
+  /** Liga a 1ª foto à miniatura do cartão de onde a pessoa veio (voo entre as páginas; ver SharedPhoto). */
+  transitionName?: string;
   /** Tamanho das miniaturas (classes); a gaveta do mapa usa menores. */
   thumbSize?: string;
   /** Setas só aparecem com o mouse sobre a foto (ou com foco do teclado). No toque continuam visíveis. */
@@ -157,6 +161,7 @@ export function PhotoGallery({
             className="group relative block w-full"
             aria-label={`Ampliar ${alt(current).replace(/^F/, "f")}`}
           >
+            <SharedPhoto name={current === 0 ? transitionName : undefined}>
             {/* eslint-disable-next-line @next/next/no-img-element -- foto já reduzida no envio */}
             <img
               key={photo.url}
@@ -169,6 +174,7 @@ export function PhotoGallery({
               className={`mel-photo-in ${mainClassName}`}
               style={photo.focus ? { objectPosition: focusPosition(photo.focus) } : undefined}
             />
+            </SharedPhoto>
             <span aria-hidden="true" className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1.5 text-xs font-semibold text-white">
               <Maximize2 className="size-3.5" strokeWidth={2.25} />
               {total > 1 ? `${current + 1}/${total}` : "Ampliar"}

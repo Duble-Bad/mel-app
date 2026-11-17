@@ -1,4 +1,5 @@
 import { PetCardSkeleton, Skeleton } from "@/components/ui/Surface";
+import { SkeletonPhoto } from "@/components/ui/motion/SkeletonPhoto";
 
 /**
  * Esqueletos de página (desempenho, item 01 de 2026-11-17): aparecem na hora, no mesmo formato do
@@ -18,7 +19,8 @@ function Loading({ label, children, className = "" }: { label: string; children:
 export function DetailSkeleton({ label = "Carregando…" }: { label?: string }) {
   return (
     <Loading label={label} className="flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10">
-      <Skeleton className="aspect-[4/3] w-full rounded-none lg:rounded-[20px]" />
+      {/* Veio de um cartão: a foto dele já ocupa este lugar (voo entre as páginas). */}
+      <SkeletonPhoto className="aspect-[4/3] w-full rounded-none lg:rounded-[20px]" />
       <div className="flex flex-col gap-4 px-4 lg:px-0">
         <Skeleton className="h-6 w-24 rounded-full" />
         <Skeleton className="h-9 w-1/2" />

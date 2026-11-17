@@ -6,6 +6,7 @@ import { shareText, whatsappShareUrl, type PublicLostCase } from "@mel/core";
 import { getPosterDesigns } from "@mel/data";
 import { formatFramings } from "@/lib/poster/framing";
 import { getBrowserClient } from "@/lib/supabase/browser";
+import { CopyFace } from "@/components/ui/motion/CopyFace";
 
 type Network = "whatsapp" | "facebook" | "instagram" | "tiktok";
 type ImageNetwork = "instagram" | "tiktok";
@@ -214,8 +215,15 @@ export function ShareAlert({ lostCase, path }: { lostCase: Pick<PublicLostCase, 
         <button type="button" onClick={moreOptions} className={btn}>
           <span aria-hidden="true">↗</span> Mais opções
         </button>
-        <button type="button" onClick={copy} className={btn}>
-          <span aria-hidden="true">🔗</span> {copied ? "Link copiado!" : "Copiar link"}
+        <button type="button" onClick={copy} className={`${btn} relative overflow-hidden`}>
+          <CopyFace
+            copied={copied}
+            idle={
+              <>
+                <span aria-hidden="true">🔗</span> Copiar link
+              </>
+            }
+          />
         </button>
       </div>
       {/* O tutor já tem "Criar cartaz" logo acima; aqui é para quem ajuda a divulgar. */}

@@ -4,6 +4,7 @@ import { Clock, MapPin } from "lucide-react";
 import { focusPosition, formatDistance, type PublicAdoption, type PublicCaseItem } from "@mel/core";
 import { adoptionEntry, caseEntry, KIND_BADGE, type FeedEntry } from "./feed";
 import { PetPhoto } from "@/components/ui/PetPhoto";
+import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 
 /**
  * Cartão do mural (Conceito B): foto dominante 4:3 com o selo do tipo sobre
@@ -29,7 +30,7 @@ function FeedCard({ entry: e, testId, extraClass = "", priority = false }: { ent
       {/* Moldura de luz (conceito B): feixe dourado que contorna o cartão; ver map.css. */}
       <span aria-hidden="true" className="mel-pet__beam" />
       <div className="mel-pet__media">
-        <PetPhoto src={e.photoUrl} alt="" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" width={600} height={450} style={{ objectPosition: focusPosition(e.photoFocus) }} />
+        <PetPhoto transitionName={casePhotoName(e.href)} src={e.photoUrl} alt="" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" width={600} height={450} style={{ objectPosition: focusPosition(e.photoFocus) }} />
         <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
       </div>
       <div className="mel-pet__body">

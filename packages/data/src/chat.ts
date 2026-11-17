@@ -125,6 +125,21 @@ export async function sendMessage(client: MelClient, conversationId: string, sen
   return toChatMessage(data as MessageRow);
 }
 
+/**
+ * Até quando a OUTRA pessoa leu a conversa (para o "Visto" das minhas mensagens).
+ * Só participantes leem a linha (RLS); devolve `null` se ela nunca abriu.
+ */
+export async function getPeerLastReadAt(client: MelClient, conversationId: string, myId: string): Promise<string | null> {
+  const { data, error } = await client
+    .from("conversations")
+    .select("owner_id, owner_last_read_at, helper_last_read_at")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (error) fail(error);
+  if (!data) return null;
+  return data.owner_id === myId ? data.helper_last_read_at : data.owner_last_read_at;
+}
+
 export async function markConversationRead(client: MelClient, conversationId: string): Promise<void> {
   const { error } = await client.rpc("mark_conversation_read", { p_id: conversationId });
   if (error) fail(error);

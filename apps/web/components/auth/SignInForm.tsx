@@ -9,6 +9,7 @@ import { AuthError, getMyProfile, linkGoogleToAnonymous, signInWithGoogle, signI
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { PasswordStrengthMeter } from "@/components/ui/PasswordStrengthMeter";
 import { PasswordField, TextField } from "@/components/ui/Field";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Divider } from "@/components/ui/Surface";
@@ -247,6 +248,7 @@ export function SignInForm({ anonymous = false }: { anonymous?: boolean }) {
             )
           }
         />
+        {isSignup && <PasswordStrengthMeter password={values.password} />}
 
         <Turnstile key={captcha.key} onToken={captcha.setToken} onError={setFormError} />
         <Button

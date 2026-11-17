@@ -20,6 +20,7 @@ import { MatchCard } from "@/components/found/MatchCard";
 import { ReportButton } from "@/components/report/ReportButton";
 import { MapView } from "@/components/location/MapView";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
+import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/States";
@@ -71,7 +72,7 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
   return (
     <article className="flex flex-col gap-6">
       {f.photoUrl ? (
-        <PhotoGallery photos={[{ url: f.photoUrl }]} name="animal encontrado" mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
+        <PhotoGallery photos={[{ url: f.photoUrl }]} name="animal encontrado" transitionName={casePhotoName(`/encontrado/${f.code}`)} mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
       ) : (
         <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-text-muted" aria-hidden="true">
           <PawPrint className="size-12" strokeWidth={1.5} />
@@ -80,7 +81,7 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
 
       <div className="flex flex-col gap-6 px-[var(--mel-page-gutter)]">
         {f.isReporter && query.novo && (
-          <Alert tone="success">
+          <Alert tone="success" celebrate="found">
             <strong>Publicado.</strong> Obrigado por ajudar! O Radar MEL já cruzou com os alertas de pets perdidos por perto.
           </Alert>
         )}

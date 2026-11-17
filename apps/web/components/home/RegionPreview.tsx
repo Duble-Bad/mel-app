@@ -6,6 +6,7 @@ import { DEFAULT_CENTER_LABEL, itemHref, itemTitle, parseSearchParams, timeAgo, 
 import { searchPublicCases } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { PetPhoto } from "@/components/ui/PetPhoto";
+import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { ZOOM_BY_RADIUS } from "@/components/map/pins";
 import { HomeMapPreview } from "./HomeMapPreview";
 
@@ -78,7 +79,7 @@ export async function RegionListPanel() {
           <li key={`${item.kind}-${item.code}`} className="border-b border-border last:border-b-0">
             <Link href={itemHref(item)} className="group grid grid-cols-[64px_1fr_auto] items-center gap-3.5 px-4 py-3 transition-colors hover:bg-surface-muted sm:px-5">
               <span className="size-16 overflow-hidden rounded-xl bg-surface-muted">
-                <PetPhoto src={item.photoUrl} alt="" loading="lazy" className="size-full object-cover" iconClassName="size-7" />
+                <PetPhoto transitionName={casePhotoName(itemHref(item))} src={item.photoUrl} alt="" loading="lazy" className="size-full object-cover" iconClassName="size-7" />
               </span>
               <span className="flex min-w-0 flex-col gap-0.5">
                 {/* Tom escurecido: texto branco legível sobre a cor do status. */}

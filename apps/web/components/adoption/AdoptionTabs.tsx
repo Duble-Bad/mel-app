@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { motion } from "motion/react";
 import { ADOPTION_TABS, type AdoptionTabId } from "./tabs";
+import { useReducedMotion } from "@/components/ui/motion/useReducedMotion";
 import "./adoption.css";
 
 /**
@@ -11,6 +13,7 @@ import "./adoption.css";
  */
 export function AdoptionTabs({ initial, panels }: { initial: AdoptionTabId; panels: Record<AdoptionTabId, ReactNode> }) {
   const [active, setActive] = useState<AdoptionTabId>(initial);
+  const reduced = useReducedMotion();
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // "Quero adotar" no cabeçalho e o estado vazio apontam para #quero-adotar.
@@ -59,8 +62,17 @@ export function AdoptionTabs({ initial, panels }: { initial: AdoptionTabId; pane
             aria-selected={active === t.id}
             tabIndex={active === t.id ? 0 : -1}
             onClick={() => show(t.id)}
-            className="mel-adopt-tab min-h-11.5 rounded-full border border-border-strong bg-surface-muted/60 px-5 font-bold transition-[background-color,color,border-color] duration-200 hover:border-text-muted"
+            className="mel-adopt-tab relative isolate min-h-11.5 rounded-full border border-border-strong bg-surface-muted/60 px-5 font-bold transition-[color,border-color] duration-200 hover:border-text-muted"
           >
+            {/* "Sliding Thumb" (ui-motion-prompts, Segmented Control 1): a pílula dourada desliza com mola até a aba tocada. */}
+            {active === t.id && (
+              <motion.span
+                aria-hidden="true"
+                layoutId="mel-adopt-tab-thumb"
+                className="mel-adopt-tab__thumb absolute -inset-px -z-10 rounded-full"
+                transition={reduced ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
+              />
+            )}
             {t.label}
           </button>
         ))}
