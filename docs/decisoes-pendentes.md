@@ -13,6 +13,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 6 | 2026-11-09 | **Prévia do link no Facebook** com domínio público | Exige domínio público e autorização para teste em ambiente público (checklist 3.8) |
 | 7f | 2026-11-10 | **"Resumo para o cartaz"** (campo próprio, curto, só para os cartazes) | Opcional; exige migration. O contador já orienta o tutor (ver Decididas) |
 | 7c | 2026-11-09 | **Foto principal no Modelo 2 / Stories com as fotos da Mel**: a capa (no colo, rosto pequeno e virado) vira a foto maior; a foto de rosto aparece como complementar | O tutor já pode trocar a principal em "Personalizar". Decidir se a capa da Mel muda (item 3) |
+| 0.4 | 2026-11-05 | **Domínio próprio** (checklist 0.4) | Avaliado em 2026-11-17: publicar no `*.vercel.app` (grátis) seria possível, mas o proprietário preferiu **esperar o domínio** para evitar retrabalho (e-mail de recuperação de senha via Resend, QR dos cartazes impressos, chaves do MapTiler e do Turnstile, Google OAuth). O lançamento aguarda essa decisão |
 | 10 | 2026-11-06 | **Produção**: ~~migrations 24–50~~ (aplicadas em 2026-11-16); falta configurar o `mel-prod` (chaves PII, Auth etc.), ~~conectar o MCP da Vercel à conta certa~~ (feito em 2026-11-17: MCP na conta do GitHub, `dubleantonio-6131`; o projeto quebrado `mel-app` foi excluído; ver checklist 3), criar o projeto só no lançamento e publicar o app | Nada em produção sem autorização expressa |
 
 ## Decididas
