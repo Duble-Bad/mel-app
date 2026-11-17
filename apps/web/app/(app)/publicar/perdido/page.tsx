@@ -11,18 +11,20 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function LostPetPage() {
+export default function LostPetPage({ searchParams }: PageProps<"/publicar/perdido">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10 md:max-w-2xl lg:max-w-3xl">
       <Suspense fallback={<LoadingState label="Preparando o alerta…" />}>
-        <LostPetContent />
+        <LostPetContent searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function LostPetContent() {
-  const profile = await requireOnboardedProfile("/publicar/perdido");
+async function LostPetContent({ searchParams }: Pick<PageProps<"/publicar/perdido">, "searchParams">) {
+  // ?pet=<id>: atalho "Ele está desaparecido? Publicar alerta" (cadastro e página do pet).
+  const { pet: petParam } = await searchParams;
+  const profile = await requireOnboardedProfile(typeof petParam === "string" ? `/publicar/perdido?pet=${encodeURIComponent(petParam)}` : "/publicar/perdido");
   const supabase = await createSessionClient();
   let data;
   try {
@@ -37,6 +39,7 @@ async function LostPetContent() {
       profile={{ id: profile.id, city: profile.city, state: profile.state }}
       pets={data.pets}
       draft={data.draft}
+      preselectPetId={typeof petParam === "string" && data.pets.some((p) => p.id === petParam) ? petParam : undefined}
     />
   );
 }

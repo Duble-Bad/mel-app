@@ -216,11 +216,14 @@ export const isMelId = (value: string) => /^MEL-[23456789ABCDEFGHJKMNPQRSTUVWXYZ
 export const MAX_PET_PHOTOS = 6;
 
 /**
- * Tamanho de foto para cartazes nítidos. O envio reduz para no máximo 1280 px no lado
- * maior; abaixo de PHOTO_MIN_SHORT_SIDE no lado menor, a foto fica borrada quando o
+ * Tamanho de foto para cartazes nítidos. O envio das fotos do pet reduz para no máximo
+ * PET_PHOTO_MAX_SIDE no lado maior (2048 px desde 2026-11-17: o A4 tem 1654×2339 px e, com
+ * 1280 px, a foto era ampliada demais); abaixo de PHOTO_MIN_SHORT_SIDE no lado menor, a foto fica borrada quando o
  * cartaz a amplia (Stories, A4). É só um aviso: nenhuma foto é recusada por isso.
  */
 export const PHOTO_MIN_SHORT_SIDE = 640;
+/** Lado maior da foto do pet depois do envio (página, cartazes e A4). */
+export const PET_PHOTO_MAX_SIDE = 2048;
 export const PHOTO_SIZE_TIP =
   "Para cartazes nítidos, envie a foto original da câmera (não print de tela nem foto reenviada pelo WhatsApp), com pelo menos 1200 px no lado maior. Vertical funciona melhor nos Stories; horizontal ou quadrada, no feed e no A4.";
 

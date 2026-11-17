@@ -179,7 +179,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
                   {m.body}
                 </p>
                 <span className="mt-0.5 text-xs text-text-secondary">{formatChatTime(m.createdAt)}</span>
-                {!mine && mentionsPayment(m.body) && (
+                {!mine && mentionsPayment(m.body, { fromTutor: c.myRole === "helper" && c.context !== "adoption" }) && (
                   <p data-testid="payment-warning" className="mt-1 max-w-[85%] text-sm font-semibold text-status-lost">
                     ⚠️ {PAYMENT_WARNING}
                   </p>

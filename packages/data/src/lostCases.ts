@@ -7,7 +7,7 @@ type Row = Database["public"]["Tables"]["lost_cases"]["Row"];
 const COLUMNS =
   "id, short_code, pet_id, owner_id, status, last_seen_lat, last_seen_lng, last_seen_label, public_point_exact, " +
   "public_area_label, city, state, lost_at, lost_at_uncertain, wearing, notes, contact_chat, contact_whatsapp_public, " +
-  "contact_phone_public, contact_phone, published_at";
+  "contact_phone_public, contact_phone, reward_cents, published_at";
 
 type CaseRow = Pick<
   Row,
@@ -31,6 +31,7 @@ type CaseRow = Pick<
   | "contact_whatsapp_public"
   | "contact_phone_public"
   | "contact_phone"
+  | "reward_cents"
   | "published_at"
 >;
 
@@ -55,6 +56,7 @@ function toCase(r: CaseRow): LostCase {
     contactWhatsappPublic: r.contact_whatsapp_public,
     contactPhonePublic: r.contact_phone_public,
     contactPhone: r.contact_phone,
+    rewardCents: r.reward_cents,
     publishedAt: r.published_at,
   };
 }
@@ -80,6 +82,8 @@ export interface LostCasePatch {
   contactWhatsappPublic?: boolean;
   contactPhonePublic?: boolean;
   contactPhone?: string | null;
+  /** null retira a bonificação. */
+  rewardCents?: number | null;
 }
 
 function patchToRow(p: LostCasePatch) {
@@ -98,6 +102,7 @@ function patchToRow(p: LostCasePatch) {
     ...(p.contactWhatsappPublic !== undefined ? { contact_whatsapp_public: p.contactWhatsappPublic } : {}),
     ...(p.contactPhonePublic !== undefined ? { contact_phone_public: p.contactPhonePublic } : {}),
     ...(p.contactPhone !== undefined ? { contact_phone: p.contactPhone } : {}),
+    ...(p.rewardCents !== undefined ? { reward_cents: p.rewardCents } : {}),
   };
 }
 
@@ -239,6 +244,7 @@ interface PublicCaseJson {
   contact_chat: boolean;
   contact_whatsapp: string | null;
   contact_phone: string | null;
+  reward_cents?: number | null;
   indexable: boolean;
   is_owner: boolean;
   pet: {
@@ -290,6 +296,7 @@ export async function getPublicLostCase(client: MelClient, code: string): Promis
     contactChat: c.contact_chat,
     contactWhatsapp: c.contact_whatsapp,
     contactPhone: c.contact_phone,
+    rewardCents: c.reward_cents ?? null,
     indexable: c.indexable,
     isOwner: c.is_owner,
     pet: {

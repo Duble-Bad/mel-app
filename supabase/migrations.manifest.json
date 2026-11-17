@@ -200,6 +200,10 @@
     {
       "file": "20261113120000_public_cases_photo_focus.sql",
       "sha256": "9cb02978011a656088d969fde6d0fd4d50d72b0475c095316ee4242fa1057975"
+    },
+    {
+      "file": "20261117120000_lost_case_reward.sql",
+      "sha256": "60f65300b063a700d2daecb355eeec2a055562da0d734b5dde38967bc1fc2a16"
     }
   ]
 }

@@ -67,6 +67,11 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   await expect(page.getByRole("heading", { name: /Algum detalhe/ })).toBeVisible();
   await page.getByRole("checkbox", { name: "Coleira" }).check({ force: true });
   await page.getByRole("textbox", { name: /Algo importante/ }).fill("É medrosa, atende pelo nome.");
+  // Bonificação opcional (migration 51): máscara em reais.
+  const bonus = page.getByTestId("bonificacao");
+  await bonus.getByText("Sim", { exact: true }).click();
+  await bonus.getByLabel("Valor da bonificação (R$)").pressSequentially("50000");
+  await expect(bonus.getByLabel("Valor da bonificação (R$)")).toHaveValue("500,00");
   await cont(page).click();
 
   // 5 — Contato (número fictício).
@@ -80,6 +85,7 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   await expect(page.getByRole("heading", { name: "Confira e ative o alerta" })).toBeVisible();
   await expect(page.getByText("perto de Rua Santa Teresa, Sé, São Paulo – SP")).toBeVisible();
   await expect(page.getByText(/local aproximado · Sé, São Paulo – SP/)).toBeVisible();
+  await expect(page.getByText("R$ 500,00", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Ativar alerta MEL/i }).click();
 
   // Alerta publicado.
@@ -103,6 +109,9 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
   await expect(visitor.getByText("Visto por último perto de")).toContainText("Sé, São Paulo – SP");
   await expect(visitor.getByRole("link", { name: "WhatsApp do tutor" })).toHaveAttribute("href", /wa\.me\/5511900000001/);
   await expect(visitor.getByText("Alerta MEL ativado.")).toHaveCount(0);
+  // Bonificação do tutor, com o aviso de que a MEL não intermedeia.
+  await expect(visitor.getByTestId("bonificacao-bloco")).toContainText("BONIFICAÇÃO OFERECIDA: R$ 500,00");
+  await expect(visitor.getByTestId("bonificacao-bloco")).toContainText("A MEL não intermedeia pagamentos");
   const html = await (await visitor.request.get(alertUrl)).text();
   expect(html).not.toContain("Santa Teresa");
   expect(html).toContain("PERDIDO: Mel"); // título / Open Graph

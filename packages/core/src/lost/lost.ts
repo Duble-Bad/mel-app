@@ -38,6 +38,8 @@ export interface LostCase {
   contactWhatsappPublic: boolean;
   contactPhonePublic: boolean;
   contactPhone: string | null;
+  /** Bonificação oferecida pelo tutor, em centavos (null = nenhuma). */
+  rewardCents: number | null;
   publishedAt: string | null;
 }
 
@@ -67,6 +69,8 @@ export interface PublicLostCase {
   contactChat: boolean;
   contactWhatsapp: string | null;
   contactPhone: string | null;
+  /** Bonificação do tutor (centavos); o banco só a envia com o alerta ATIVO. */
+  rewardCents: number | null;
   indexable: boolean;
   isOwner: boolean;
   pet: {

@@ -91,7 +91,7 @@ export function PetGallery({ photos, name }: { photos: Photo[]; name: string }) 
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- fundo decorativo (miniatura) */}
             <img src={current.thumbUrl} alt="" aria-hidden="true" draggable={false} className="absolute inset-0 -z-10 size-full scale-110 object-cover opacity-60 blur-2xl" />
-            {/* eslint-disable-next-line @next/next/no-img-element -- imagem já otimizada (1280px) no upload */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- imagem já otimizada (até 2048 px) no upload */}
             <img
               src={current.url}
               alt={`Foto de ${name}${many ? ` (${index + 1} de ${photos.length})` : ""}`}

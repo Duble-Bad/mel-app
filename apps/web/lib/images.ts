@@ -1,6 +1,6 @@
 "use client";
 
-import { UserFacingError } from "@mel/core";
+import { PET_PHOTO_MAX_SIDE, UserFacingError } from "@mel/core";
 
 interface Rendered {
   blob: Blob;
@@ -48,11 +48,11 @@ export async function prepareImage(file: File, maxSide = 1280, quality = 0.85): 
   }
 }
 
-/** Foto de pet: versão grande (página/cartaz) + miniatura (listas e mapa). */
+/** Foto de pet: versão grande (página, cartazes e A4: até PET_PHOTO_MAX_SIDE) + miniatura (listas e mapa). */
 export async function preparePhotoSet(file: File) {
   const bitmap = await load(file);
   try {
-    const full = await render(bitmap, 1280, 0.85);
+    const full = await render(bitmap, PET_PHOTO_MAX_SIDE, 0.85);
     const thumb = await render(bitmap, 400, 0.8);
     return { full: full.blob, thumb: thumb.blob, width: full.width, height: full.height };
   } finally {

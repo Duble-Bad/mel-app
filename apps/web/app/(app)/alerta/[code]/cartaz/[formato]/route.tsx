@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { alertPath, collageExtras, posterContent } from "@mel/core";
+import { alertPath, collageExtras, posterContent, rewardLine } from "@mel/core";
 import { getPublicLostCase } from "@mel/data";
 import { fetchPhoto, photoDataUrl, posterFonts, qrDataUrl } from "@/lib/poster/assets";
 import { composePhotos } from "@/lib/poster/compose";
@@ -85,8 +85,10 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     );
     // Uma foto que não chega sai junto com o seu enquadramento (as outras não mudam de lugar).
     const sources = fetched.filter((f): f is { source: Buffer; focus: (typeof picked)[number]["focus"]; framing: Framing | null } => f.source !== null);
+    // Selo da bonificação do tutor (só com o alerta ativo): as fotos cedem o espaço dele.
+    const reward = rewardLine(c.status, c.rewardCents);
     const [{ layout, model: chosen, photos: ready, diagnostics }, qr] = await Promise.all([
-      composePhotos(formato, sources, { model }),
+      composePhotos(formato, sources, { model, reward: Boolean(reward) }),
       qrDataUrl(url, formato === "impressao" ? 860 : 600),
     ]);
     const { width, height } = V2_FORMATS[formato];
@@ -103,13 +105,13 @@ export async function GET(request: Request, ctx: RouteContext<"/alerta/[code]/ca
     };
     const art =
       model === 4 ? (
-        <PosterCollage format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} extras={collageExtras(c)} />
+        <PosterCollage format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} extras={collageExtras(c)} reward={reward} />
       ) : model === 1 ? (
-        <PosterHero format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} />
+        <PosterHero format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} reward={reward} />
       ) : model === 3 ? (
-        <PosterClassic format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} />
+        <PosterClassic format={formato} content={proposalContent} photos={ready} layout={chosen} qr={qr} url={url} dev={dev} reward={reward} />
       ) : (
-        <PosterV2 format={formato} content={proposalContent} photos={ready} layout={layout} qr={qr} url={url} dev={dev} card={chosen.card} cardBelowExtras={chosen.cardBelowExtras} />
+        <PosterV2 format={formato} content={proposalContent} photos={ready} layout={layout} qr={qr} url={url} dev={dev} card={chosen.card} cardBelowExtras={chosen.cardBelowExtras} reward={reward} />
       );
     return new ImageResponse(art, {
       width,

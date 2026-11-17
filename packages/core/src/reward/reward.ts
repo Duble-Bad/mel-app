@@ -1,5 +1,5 @@
 /**
- * Bonificação oferecida pelo tutor a quem encontrar o pet (PROTÓTIPO, ainda sem coluna no banco).
+ * Bonificação oferecida pelo tutor a quem encontrar o pet (`lost_cases.reward_cents`, migration 51).
  * A MEL só exibe o valor informado: não intermedeia pagamento nem garante a bonificação.
  * Valores em centavos para não haver arredondamento de ponto flutuante.
  */
@@ -38,7 +38,7 @@ export function maskRewardInput(raw: string): string {
  * Linha exibida no alerta e nos cartazes. Só aparece com alerta ATIVO e valor informado:
  * alerta encerrado ou reencontrado não mostra oferta (nem bloco vazio).
  */
-export function rewardLine(status: "ACTIVE" | "FOUND" | "CLOSED", cents: number | null | undefined): string | null {
+export function rewardLine(status: string, cents: number | null | undefined): string | null {
   if (status !== "ACTIVE" || !cents || cents <= 0) return null;
   return `BONIFICAÇÃO OFERECIDA: ${formatRewardBRL(cents)}`;
 }

@@ -987,6 +987,7 @@ export type Database = {
           public_point_exact: boolean
           published_at: string | null
           reunion_story: string | null
+          reward_cents: number | null
           short_code: string
           state: string | null
           status: Database["public"]["Enums"]["lost_case_status"]
@@ -1023,6 +1024,7 @@ export type Database = {
           public_point_exact?: boolean
           published_at?: string | null
           reunion_story?: string | null
+          reward_cents?: number | null
           short_code?: string
           state?: string | null
           status?: Database["public"]["Enums"]["lost_case_status"]
@@ -1059,6 +1061,7 @@ export type Database = {
           public_point_exact?: boolean
           published_at?: string | null
           reunion_story?: string | null
+          reward_cents?: number | null
           short_code?: string
           state?: string | null
           status?: Database["public"]["Enums"]["lost_case_status"]

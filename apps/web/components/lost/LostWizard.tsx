@@ -2,8 +2,8 @@
 
 import { ClipboardCheck, Clock, FileText, MapPin, MessageCircle, PawPrint, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
-import { contactStepSchema, detailsStepSchema, fieldErrors, firstIncompleteStep, formatBrPhone, formatDateTimeBr, formatPhoneInput, LOST_STEPS, type LostCase, type LostStep, type Pet, petSummary, publicAreaFrom, userErrorMessage, type Wearing, WEARING, WEARING_LABELS, whenStepSchema, whereStepSchema } from "@mel/core";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { contactStepSchema, detailsStepSchema, fieldErrors, firstIncompleteStep, formatBrPhone, formatDateTimeBr, formatRewardBRL, maskRewardInput, parseRewardBRL, formatPhoneInput, LOST_STEPS, type LostCase, type LostStep, type Pet, petSummary, publicAreaFrom, userErrorMessage, type Wearing, WEARING, WEARING_LABELS, whenStepSchema, whereStepSchema } from "@mel/core";
 import { activateLostCase, discardDraft, startLostCase, updateLostCase, type LostCasePatch } from "@mel/data";
 import { getBrowserClient } from "@/lib/supabase/browser";
 import { kickPushDispatch } from "@/lib/push/client";
@@ -11,7 +11,7 @@ import { LocationPicker, type PickedLocation } from "@/components/location/Locat
 import { PetAvatar } from "@/components/pets/PetAvatar";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { MultiChoiceGroup } from "@/components/ui/Choice";
+import { ChoiceGroup, MultiChoiceGroup } from "@/components/ui/Choice";
 import { DateCalendar } from "@/components/ui/DateCalendar";
 import { TimeField } from "@/components/ui/TimeField";
 import { TextField } from "@/components/ui/Field";
@@ -52,12 +52,14 @@ interface WizardProps {
    * pet nem ativar de novo). Cada "Continuar" já vale no alerta publicado.
    */
   mode?: "create" | "edit";
+  /** Pet já escolhido pelo atalho "Ele está desaparecido?" (pula o passo do pet). */
+  preselectPetId?: string;
 }
 
 /** Passos ao editar um alerta ativo (o pet e a ativação não mudam). */
 const EDIT_STEPS: LostStep[] = ["where", "when", "details", "contact"];
 
-export function LostWizard({ profile, pets: initialPets, draft, mode = "create" }: WizardProps) {
+export function LostWizard({ profile, pets: initialPets, draft, mode = "create", preselectPetId }: WizardProps) {
   const router = useRouter();
   const editing = mode === "edit";
   const steps = editing ? EDIT_STEPS : LOST_STEPS;
@@ -141,6 +143,16 @@ export function LostWizard({ profile, pets: initialPets, draft, mode = "create" 
       setBusy(false);
     }
   }
+
+  // Atalho "Ele está desaparecido?": começa o alerta do pet escolhido (uma vez). Se o rascunho já é
+  // desse pet, só continua de onde parou; se há alerta ativo dele, choosePet leva até o alerta.
+  const preselected = useRef(false);
+  useEffect(() => {
+    if (preselected.current || editing || !preselectPetId || lostCase?.petId === preselectPetId) return;
+    preselected.current = true;
+    void choosePet(preselectPetId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- só ao abrir a página
+  }, []);
 
   const back = index > 0 ? () => setStep(steps[index - 1]!) : undefined;
   // Passos anteriores ficam concluídos (tocar volta a eles); o atual pode estar com erro.
@@ -500,6 +512,10 @@ function DetailsStep({
 }) {
   const [wearing, setWearing] = useState<Wearing[]>(lostCase.wearing);
   const [notes, setNotes] = useState(lostCase.notes ?? "");
+  // Bonificação (opcional): o valor fica em centavos; a máscara mostra "500,00".
+  const [offers, setOffers] = useState<"no" | "yes">(lostCase.rewardCents ? "yes" : "no");
+  const [reward, setReward] = useState(lostCase.rewardCents ? maskRewardInput(String(lostCase.rewardCents)) : "");
+  const [rewardError, setRewardError] = useState<string | null>(null);
   const { error, attempt, setError } = useStepError(onInvalid);
   return (
     <form
@@ -513,7 +529,13 @@ function DetailsStep({
           setError(fieldErrors(parsed.error).notes ?? "Confira os detalhes.");
           return;
         }
-        onNext(parsed.data);
+        const value = offers === "yes" ? parseRewardBRL(reward) : null;
+        if (value && !value.ok) {
+          setRewardError(value.error);
+          onInvalid?.(true);
+          return;
+        }
+        onNext({ ...parsed.data, rewardCents: value?.ok ? value.cents : null });
       }}
     >
       <MultiChoiceGroup
@@ -542,6 +564,41 @@ function DetailsStep({
           className="block w-full rounded-md border-2 border-border-strong bg-surface px-4 py-3 focus:border-focus focus:outline-none"
         />
       </Shake>
+      <div className="flex flex-col gap-3 rounded-card border border-border bg-surface-warm p-4" data-testid="bonificacao">
+        <ChoiceGroup
+          name="reward"
+          legend="Você oferece bonificação para quem encontrar?"
+          optional
+          columns={2}
+          value={offers}
+          onChange={(v) => {
+            setOffers(v);
+            setRewardError(null);
+          }}
+          options={[
+            { value: "no", label: "Não" },
+            { value: "yes", label: "Sim" },
+          ]}
+        />
+        {offers === "yes" && (
+          <TextField
+            label="Valor da bonificação (R$)"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="0,00"
+            value={reward}
+            onChange={(e) => {
+              setReward(maskRewardInput(e.target.value));
+              setRewardError(null);
+            }}
+            error={rewardError ?? undefined}
+          />
+        )}
+        <p className="text-sm text-text-secondary">
+          Aparece no alerta e nos cartazes enquanto ele estiver ativo; pode ser alterada ou retirada quando quiser. A MEL não
+          intermedeia pagamentos nem garante a bonificação.
+        </p>
+      </div>
       <Nav busy={busy} onBack={onBack} />
     </form>
   );
@@ -662,6 +719,7 @@ function ReviewStep({
     ["Quando", lostCase.lostAt ? `${formatDateTimeBr(lostCase.lostAt)}${lostCase.lostAtUncertain ? " (aproximado)" : ""}` : "—", "when"],
     ["Usando", lostCase.wearing.length ? lostCase.wearing.map((w) => WEARING_LABELS[w]).join(", ") : "—", "details"],
     ["Observação", lostCase.notes ?? "—", "details"],
+    ["Bonificação", lostCase.rewardCents ? formatRewardBRL(lostCase.rewardCents) : "não oferecida", "details"],
     [
       "Contato no alerta",
       [

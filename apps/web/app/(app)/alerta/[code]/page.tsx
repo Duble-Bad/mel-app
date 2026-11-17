@@ -10,6 +10,8 @@ import {
   formatBrPhone,
   formatDateTimeBr,
   petSummary,
+  REWARD_DISCLAIMER,
+  rewardLine,
   SEX_LABELS,
   SIGHTING_BUTTON_LABEL,
   SIZE_LABELS,
@@ -251,6 +253,14 @@ async function AlertContent({
                 Editar alerta
               </ButtonLink>
               <CloseLostCaseButton code={c.code} petName={c.pet.name} />
+            </div>
+          )}
+
+          {/* Bonificação do tutor: só com o alerta ativo (o banco nem envia o valor nos demais casos). */}
+          {rewardLine(c.status, c.rewardCents) && (
+            <div className="flex flex-col gap-1 rounded-lg bg-primary p-4 text-primary-foreground shadow-card" data-testid="bonificacao-bloco">
+              <p className="text-lg font-extrabold tracking-wide">{rewardLine(c.status, c.rewardCents)}</p>
+              <p className="text-sm">{REWARD_DISCLAIMER}</p>
             </div>
           )}
 

@@ -90,3 +90,13 @@ export async function createTutorWithActiveAlert(label: string, petNameOrOptions
   const active = await activateLostCase(client, draft.id);
   return { ...user, code: active.code };
 }
+
+/** Tutor com um pet cadastrado e sem alerta (atalho "Ele está desaparecido?"). */
+export async function createTutorWithPet(label: string, petName = "Mel") {
+  const user = await createUser(label, { onboarded: true });
+  const client = publicClient();
+  const { error } = await client.auth.signInWithPassword({ email: user.email, password: TEST_PASSWORD });
+  if (error) throw error;
+  const pet = await createPet(client, user.id, petInputSchema.parse({ name: petName, species: "dog", sex: "female", size: "mini", isPublic: false }));
+  return { ...user, petId: pet.id };
+}

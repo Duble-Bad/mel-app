@@ -75,27 +75,32 @@ export function peerLabel(
   return c.fromSighting ? "Quem enviou o avistamento" : "Visitante sem cadastro";
 }
 
+/** Falar da bonificação que oferece (valor, "recompensa", pagar na entrega) não é golpe quando quem fala é o tutor. */
+const REWARD_TALK = [/\bpag(ar|ue|amento|uem|o)\b/i, /\bdinheiro\b/i, /\brecompensa\b/i, /r\$\s?\d/i];
+
 const PAYMENT_PATTERNS = [
   /\bpix\b/i,
   /\bchave\b/i,
   /\btransfer[eê]ncia\b/i,
   /\btransfer(e|ir)\b/i,
   /\bdep[oó]sit/i,
-  /\bpag(ar|ue|amento|uem)\b/i,
   /\bboleto\b/i,
-  /\bdinheiro\b/i,
-  /\brecompensa\b/i,
   /\bfrete\b/i,
   /\bta(x|ch)a\b/i,
-  /r\$\s?\d/i,
+  ...REWARD_TALK,
   // Golpe do código: "me passa o código que chegou no seu celular".
   /\bsms\b/i,
   /\bc[oó]digo\b[^.?!]{0,40}\b(chegou|recebeu|celular|whats|verifica|confirma)/i,
 ];
 
-/** Mensagem que fala de dinheiro (ou pede código de SMS): o app mostra um alerta de golpe junto dela. */
-export function mentionsPayment(text: string): boolean {
-  return PAYMENT_PATTERNS.some((re) => re.test(text));
+/**
+ * Mensagem que fala de dinheiro (ou pede código de SMS): o app mostra um alerta de golpe junto dela.
+ * `fromTutor`: mensagem do tutor do alerta para quem ajuda (decisão 8a, 2026-11-17). Ele pode
+ * oferecer a bonificação sem ser marcado; pedido de Pix, chave, transferência, taxa, frete ou
+ * código de SMS continua sinalizado venha de quem vier.
+ */
+export function mentionsPayment(text: string, { fromTutor = false }: { fromTutor?: boolean } = {}): boolean {
+  return PAYMENT_PATTERNS.some((re) => !(fromTutor && REWARD_TALK.includes(re)) && re.test(text));
 }
 
 export const REPORT_REASONS = ["scam", "harassment", "spam", "fake", "inappropriate", "other"] as const;

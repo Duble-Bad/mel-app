@@ -1,7 +1,7 @@
 # "Criar cartaz" (quatro modelos, liberado) e bonificação (aguardando aprovação)
 
 **"Criar cartaz": aprovado e liberado pelo proprietário em 2026-11-10** (20 modelos; salvar na conta com a migration 47, aplicada só no `mel-dev`).
-**Bonificação:** protótipo interno (DEV, `MEL_DEV_ROUTES=1`), sem migration; depende de aprovação (`decisoes-pendentes.md`, itens 8 e 8a).
+**Bonificação:** aprovada e implementada em 2026-11-17 (migration 51; ver `decisoes-pendentes.md`, Decididas). O protótipo `/dev/bonificacao` continua só em DEV.
 
 ## 1. "Criar cartaz": quatro modelos por formato, escolhidos pelo tutor
 

@@ -25,6 +25,14 @@ describe("mentionsPayment", () => {
     "does not flag %s",
     (text) => expect(mentionsPayment(text)).toBe(false),
   );
+
+  it("lets the tutor talk about the reward they offer, but still flags payment requests", () => {
+    for (const text of ["A recompensa de R$ 500 é sua quando ela estiver comigo", "Ofereço bonificação, pago na entrega", "Tem dinheiro de recompensa"])
+      expect(mentionsPayment(text, { fromTutor: true }), text).toBe(false);
+    for (const text of ["Me manda seu Pix", "Paga o frete que eu busco", "me passa o código que chegou no seu celular"])
+      expect(mentionsPayment(text, { fromTutor: true }), text).toBe(true);
+    expect(mentionsPayment("quero a recompensa antes")).toBe(true);
+  });
 });
 
 describe("peerLabel", () => {

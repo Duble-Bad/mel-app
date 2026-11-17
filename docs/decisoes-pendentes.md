@@ -1,6 +1,6 @@
 # Decisões pendentes do proprietário
 
-Lista viva das decisões que dependem do proprietário (atualizada em 2026-11-16).
+Lista viva das decisões que dependem do proprietário (atualizada em 2026-11-17).
 Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md`.
 
 ## Pendentes
@@ -13,16 +13,16 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 | 6 | 2026-11-09 | **Prévia do link no Facebook** com domínio público | Exige domínio público e autorização para teste em ambiente público (checklist 3.8) |
 | 7f | 2026-11-10 | **"Resumo para o cartaz"** (campo próprio, curto, só para os cartazes) | Opcional; exige migration. O contador já orienta o tutor (ver Decididas) |
 | 7c | 2026-11-09 | **Foto principal no Modelo 2 / Stories com as fotos da Mel**: a capa (no colo, rosto pequeno e virado) vira a foto maior; a foto de rosto aparece como complementar | O tutor já pode trocar a principal em "Personalizar". Decidir se a capa da Mel muda (item 3) |
-| 8 | 2026-11-09 | **Bonificação opcional no alerta**: aprovar formulário, apresentação e a migration | Protótipo em `/dev/bonificacao` (caso fictício); proposta no mesmo documento |
-| 8a | 2026-11-09 | **Bonificação × aviso antigolpe do chat**: o chat hoje sinaliza a palavra "recompensa" como risco | Decidir como conviver: manter o aviso "nunca pague antes" e não sinalizar o tutor que oferece |
-| 11 | 2026-11-09 | **Fotos pequenas para o A4**: as fotos da Mel são ampliadas 2 a 2,5× no A4 (podem sair menos nítidas impressas) | Pedir fotos maiores ao tutor (a dica de tamanho já aparece no cadastro) ou aceitar |
-| 9 | 2026-11-09 | **Sugestão "Ele está desaparecido? Publicar alerta"** no cadastro e na página do pet | Cadastrar o pet não cria alerta; registrado em `decisoes.md` |
 | 10 | 2026-11-06 | **Produção**: ~~migrations 24–50~~ (aplicadas em 2026-11-16); falta configurar o `mel-prod` (chaves PII, Auth etc.), conectar o MCP da Vercel (token limitado, como o `supabase-dev`) e publicar o app | Nada em produção sem autorização expressa |
 
 ## Decididas
 
 | Data | Decisão |
 |---|---|
+| 2026-11-17 | **Bonificação opcional no alerta** (encerra os itens 8 e 8a): na etapa "Detalhes" do "Perdi meu pet" (e na edição), "Você oferece bonificação para quem encontrar?" Não/Sim + valor com máscara em reais (até R$ 100.000,00); aparece na revisão, na página do alerta (com o aviso "A MEL não intermedeia pagamentos…") e no selo dos cartazes, **só com o alerta ativo**. Migration 51 (`lost_cases.reward_cents`, só o tutor grava; `get_public_lost_case` só envia com ACTIVE). Chat: mensagem do **tutor** falando da bonificação (recompensa, valor, pagar na entrega) não recebe o alerta de golpe; pedido de Pix, chave, transferência, taxa, frete ou código de SMS continua sinalizado de quem vier |
+| 2026-11-17 | **Atalho "Ele está desaparecido? Publicar alerta"** (encerra o item 9): no aviso logo depois de cadastrar o pet e no topo da página do pet (`/perfil/pets/[id]`); abre "Perdi meu pet" já com o pet escolhido (`?pet=`). Com alerta ativo vira "Ver o alerta ativo"; com rascunho, "Continuar o alerta de desaparecido" |
+| 2026-11-17 | **Fotos do pet em até 2048 px** no lado maior (antes 1280; encerra o item 11). O A4 (1654×2339) amplia menos a foto. As dicas de tamanho e o aviso de foto pequena (< 640 px no lado menor) continuam. Avistamento, encontrado e adoção seguem em 1280 px |
+| 2026-11-17 | **Next.js 16.4.3 → 16.4.5** (patch de segurança GHSA-mfr8-8qww-v76h, moderada; o MEL não usava o caminho afetado). O aviso do Next interrompia `dev` e `build` na primeira tentativa |
 | 2026-11-16 | **Gerador antigo de cartaz removido; só os modelos do "Criar cartaz"** (pedido do proprietário; encerra o item 2). `/alerta/<código>/cartaz` e o A4 em HTML (`/cartaz/a4`) levam ao "Criar cartaz"; o PNG de qualquer formato sai com os modelos novos (o salvo pelo tutor para aquele formato no Instagram/TikTok; sem salvo, o modelo 2); a prévia do link (`og`) continua igual. A **capa e o enquadramento da foto** (prévia do link, Mural e mapa), que só existiam na página antiga, foram para a **página do alerta**, na área do tutor. A comparação interna `/cartaz/propostas` saiu |
 | 2026-11-16 | **Telas, depois do deploy de schema** (pedidos do proprietário; merge `d8487f8`, CI verde; produção conferida: 50/50, sem drift; fotos antigas do `sighting-media` no `mel-prod`: 0 e 0): cartões de `/adocao` com o efeito do Mural (moldura de luz, aura, pegadas), **dourado para machos e rosa para fêmeas**, também nos cartões "Para adoção" do Mural; **"Vi um pet solto"/"Encontrei um pet"** com o indicador de etapas com ícones do alerta (na cor do fluxo) e, na revisão, a **foto que a pessoa tirou**; no desktop, painel largo com a **prévia do anúncio** ao lado. Só telas, sem migration |
 | 2026-11-16 | **Merge da `guardiao/hero` na `main` e deploy de schema no `mel-prod`** (autorizado pelo proprietário): migrations 49 e 50 no manifesto e impressão digital nova; seletores de 5 testes E2E ajustados; CI verde em `b298e9a`; o dono rodou pre-flight e deploy (27 migrations, 24–50); pós-deploy 100% ✅ e sem drift. App ainda não publicado |
