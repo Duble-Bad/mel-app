@@ -68,9 +68,11 @@ Regras de custódia:
 5. Registre fora do repositório: versão, data de criação, quem gerou, onde estão
    as cópias.
 
-## 4. Configurar em produção (pendente — não feito)
+## 4. Configurar em produção (chaves geradas; cadastro na Vercel pendente)
 
-1. Gerar as duas chaves (seção 3) e guardá-las **antes** de cadastrar.
+1. ✅ **2026-11-17:** as duas chaves (v1) foram geradas pelo dono e guardadas
+   conforme a seção 3, com cópia offline. Falta cadastrá-las na Vercel quando o
+   projeto for criado.
 2. Vercel → Projeto → Settings → Environment Variables → **Production** (marcar
    como *Sensitive*):
    `MEL_PII_ENC_KEY`, `MEL_PII_ENC_KEY_VERSION=1`, `MEL_PII_HMAC_KEY`,
