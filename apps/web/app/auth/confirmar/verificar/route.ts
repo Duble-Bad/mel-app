@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { emailLinkAction, safeErrorCode } from "@mel/core";
 import { createSessionClient } from "@/lib/supabase/server";
-import { requestOrigin } from "@/lib/origin";
+import { isSameOrigin, requestOrigin } from "@/lib/origin";
 
 /**
  * Confirma o link do e-mail (botão de /auth/confirmar): verifica o token no
@@ -11,6 +11,9 @@ import { requestOrigin } from "@/lib/origin";
  */
 export async function POST(request: NextRequest) {
   const origin = requestOrigin(request);
+  // Só o botão do próprio site: um formulário de outro site com o link do
+  // atacante deixaria a vítima logada na conta dele (CSRF de login).
+  if (!isSameOrigin(request)) return NextResponse.redirect(`${origin}/entrar?erro=link`, 303);
   const form = await request.formData();
   const link = emailLinkAction({ get: (name) => (typeof form.get(name) === "string" ? (form.get(name) as string) : null) });
   // 303: depois de um POST, o navegador segue com GET.

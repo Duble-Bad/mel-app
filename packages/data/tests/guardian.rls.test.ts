@@ -97,9 +97,52 @@ describe("notifying Guardians", () => {
   });
 });
 
+describe("push subscriptions (auditoria 2026-11-17, L3)", () => {
+  const owner = async (endpoint: string) =>
+    ((await serviceClient().from("push_subscriptions").select("user_id").eq("endpoint", endpoint).maybeSingle()).data as { user_id: string } | null)?.user_id;
+
+  it("only official browser push services are accepted (no arbitrary https host)", async () => {
+    const bad = [
+      "https://atacante.example/coleta",
+      "https://fcm.googleapis.com.atacante.example/x",
+      "https://atacante.example/https://fcm.googleapis.com/x",
+      "https://127.0.0.1/x",
+      `https://fcm.googleapis.com/${"x".repeat(1000)}`,
+    ];
+    for (const endpoint of bad) {
+      await expect(savePushSubscription(finder.client, { endpoint, keys: { p256dh: "p", auth: "a" } })).rejects.toThrow("Inscrição inválida.");
+    }
+    const id = crypto.randomUUID();
+    const good = [
+      `https://fcm.googleapis.com/fcm/send/${id}`,
+      `https://updates.push.services.mozilla.com/wpush/v2/${id}`,
+      `https://web.push.apple.com/${id}`,
+      `https://wns2-bl2p.notify.windows.com/w/?token=${id}`,
+    ];
+    for (const endpoint of good) await savePushSubscription(finder.client, { endpoint, keys: { p256dh: "p", auth: "a" } });
+    for (const endpoint of good) expect(await owner(endpoint)).toBe(finder.id);
+  });
+
+  it("someone who only knows another person's endpoint cannot take the subscription; the same browser (same keys) can switch accounts", async () => {
+    const endpoint = `https://fcm.googleapis.com/fcm/send/troca-${crypto.randomUUID()}`;
+    await savePushSubscription(nearGuardian.client, { endpoint, keys: { p256dh: "chave-do-navegador", auth: "segredo-do-navegador" } });
+    // Sem as chaves do navegador: nada muda (e sem erro, para não revelar que o endereço existe).
+    await savePushSubscription(farGuardian.client, { endpoint, keys: { p256dh: "chave-falsa", auth: "segredo-falso" } });
+    expect(await owner(endpoint)).toBe(nearGuardian.id);
+    const { data } = await serviceClient().from("push_subscriptions").select("p256dh, auth").eq("endpoint", endpoint).single();
+    expect(data).toEqual({ p256dh: "chave-do-navegador", auth: "segredo-do-navegador" });
+    // Mesmo navegador (mesmas chaves) entrando com outra conta: a inscrição passa para ela.
+    await savePushSubscription(farGuardian.client, { endpoint, keys: { p256dh: "chave-do-navegador", auth: "segredo-do-navegador" } });
+    expect(await owner(endpoint)).toBe(farGuardian.id);
+    // O dono atual renova normalmente, mesmo com chaves novas.
+    await savePushSubscription(farGuardian.client, { endpoint, keys: { p256dh: "chave-nova", auth: "segredo-novo" } });
+    expect(await owner(endpoint)).toBe(farGuardian.id);
+  });
+});
+
 describe("push queue", () => {
   it("only the server (secret key) claims the queue; jobs carry the device subscriptions", async () => {
-    const endpoint = `https://push.example.test/${crypto.randomUUID()}`;
+    const endpoint = `https://fcm.googleapis.com/fcm/send/teste-${crypto.randomUUID()}`;
     await expect(savePushSubscription(nearGuardian.client, { endpoint: "http://inseguro", keys: { p256dh: "x", auth: "y" } })).rejects.toThrow("Inscrição inválida.");
     await savePushSubscription(nearGuardian.client, { endpoint, keys: { p256dh: "p", auth: "a" } }, "teste");
 

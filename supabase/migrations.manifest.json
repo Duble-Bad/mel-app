@@ -204,6 +204,10 @@
     {
       "file": "20261117120000_lost_case_reward.sql",
       "sha256": "60f65300b063a700d2daecb355eeec2a055562da0d734b5dde38967bc1fc2a16"
+    },
+    {
+      "file": "20261117130000_push_endpoint_allowlist_consents_grants.sql",
+      "sha256": "8aa561d2450d56fcab41b4b53966f2114ad296c5274bdd3b0ace316f166f481b"
     }
   ]
 }

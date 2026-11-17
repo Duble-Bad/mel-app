@@ -77,7 +77,7 @@ async function claimMine(userId: string): Promise<PushJob[]> {
 beforeAll(async () => {
   [tutor, helper, finder] = await Promise.all([createTestUser("tp-tutor"), createTestUser("tp-helper"), createTestUser("tp-finder")]);
   // Só o tutor tem aparelho inscrito; quem ajuda não tem (o fluxo não pode quebrar).
-  await savePushSubscription(tutor.client, { endpoint: `https://push.example.test/${crypto.randomUUID()}`, keys: { p256dh: "p", auth: "a" } }, "teste");
+  await savePushSubscription(tutor.client, { endpoint: `https://fcm.googleapis.com/fcm/send/teste-${crypto.randomUUID()}`, keys: { p256dh: "p", auth: "a" } }, "teste");
 }, 60_000);
 
 afterAll(async () => {

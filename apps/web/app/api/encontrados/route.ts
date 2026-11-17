@@ -2,6 +2,7 @@ import { after, type NextRequest } from "next/server";
 import { dispatchPushQueue } from "@/lib/push/dispatch";
 import { foundInputSchema } from "@mel/core";
 import { createFoundCase, DataError } from "@mel/data";
+import { rejectCrossSite } from "@/lib/origin";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -13,6 +14,8 @@ const json = (status: number, body: Record<string, unknown>) => Response.json(bo
  * própria pessoa (anônima ou não): RLS, limites e o Radar MEL rodam no banco.
  */
 export async function POST(request: NextRequest) {
+  const blocked = rejectCrossSite(request, { requireJson: true });
+  if (blocked) return blocked;
   let body: Record<string, unknown>;
   try {
     body = await request.json();

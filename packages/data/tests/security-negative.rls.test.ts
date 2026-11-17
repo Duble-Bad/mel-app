@@ -129,13 +129,24 @@ describe("ordinary users cannot do moderation", () => {
 
 describe("push, notifications, guardian and LGPD are per person", () => {
   it("A cannot see B's devices, notifications, guardian area or consents", async () => {
-    await savePushSubscription(b.client, { endpoint: `https://push.example/neg-${b.id}`, keys: { p256dh: "p".repeat(20), auth: "a".repeat(16) } });
+    await savePushSubscription(b.client, { endpoint: `https://fcm.googleapis.com/fcm/send/neg-${b.id}`, keys: { p256dh: "p".repeat(20), auth: "a".repeat(16) } });
     await serviceClient().from("notifications").insert({ user_id: b.id, kind: "guardian_alert", payload: {} } as never);
     await serviceClient().from("consents").insert({ user_id: b.id, kind: "terms_privacy", version: "x" } as never);
     for (const table of ["push_subscriptions", "notifications", "guardian_settings", "consents"]) {
       const { data } = await a.client.from(table as "consents").select("*").eq("user_id", b.id);
       expect(data ?? [], table).toEqual([]);
     }
+  });
+
+  it("a consent, once recorded, cannot be changed or erased by its owner (only SELECT and INSERT granted)", async () => {
+    const { error: insertError } = await a.client.from("consents").insert({ user_id: a.id, kind: "terms_privacy", version: "neg" } as never);
+    expect(insertError).toBeNull();
+    const { error: updateError } = await a.client.from("consents").update({ version: "alterado" } as never).eq("user_id", a.id);
+    expect(updateError?.code).toBe("42501");
+    const { error: deleteError } = await a.client.from("consents").delete().eq("user_id", a.id);
+    expect(deleteError?.code).toBe("42501");
+    const { data } = await serviceClient().from("consents").select("version").eq("user_id", a.id);
+    expect(data).toEqual([{ version: "neg" }]);
   });
 
   it("only the server (secret key) reads the push queue", async () => {

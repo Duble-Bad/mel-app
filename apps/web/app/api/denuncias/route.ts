@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { REPORTABLE, type ReportableTarget, reportSchema } from "@mel/core";
 import { DataError, reportContent } from "@mel/data";
+import { rejectCrossSite } from "@/lib/origin";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -13,6 +14,8 @@ const json = (status: number, body: Record<string, unknown>) => Response.json(bo
  * as regras do banco (não duplica, agrupa anônimas, limite por hora) valem.
  */
 export async function POST(request: NextRequest) {
+  const blocked = rejectCrossSite(request, { requireJson: true });
+  if (blocked) return blocked;
   let body: { type?: unknown; key?: unknown; reason?: unknown; details?: unknown; turnstileToken?: unknown };
   try {
     body = await request.json();

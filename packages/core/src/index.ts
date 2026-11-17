@@ -30,6 +30,7 @@ export * from "./privacy/privacy";
 export * from "./security/scheduler";
 export * from "./security/turnstile";
 export * from "./security/reauth";
+export * from "./security/requestGuard";
 export * from "./contact/phone";
 export * from "./contact/email";
 export * from "./contact/masks";

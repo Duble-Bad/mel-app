@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { isSchedulerAuthorized, runScheduledMaintenance } from "@mel/core";
 import { purgeOrphanSightingMedia, runAdoptionRetention } from "@mel/data";
+import { rejectCrossSite } from "@/lib/origin";
 import { getSessionUser } from "@/lib/session";
 import { dispatchPushQueue, type DispatchResult } from "@/lib/push/dispatch";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -67,6 +68,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   if (fromScheduler(request)) return scheduled();
+  // Pela sessão, só do próprio site (o agendador não manda Origin e usa o segredo).
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!(await getSessionUser())) return unauthorized();
   try {
     return respond(await dispatchPushQueue());

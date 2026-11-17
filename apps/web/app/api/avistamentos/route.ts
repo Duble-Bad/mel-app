@@ -2,6 +2,7 @@ import { after, type NextRequest } from "next/server";
 import { sightingInputSchema } from "@mel/core";
 import { createSighting, DataError } from "@mel/data";
 import { dispatchPushQueue } from "@/lib/push/dispatch";
+import { rejectCrossSite } from "@/lib/origin";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -13,6 +14,8 @@ const json = (status: number, body: Record<string, unknown>) => Response.json(bo
  * própria pessoa (anônima ou não), então RLS e limites do banco valem.
  */
 export async function POST(request: NextRequest) {
+  const blocked = rejectCrossSite(request, { requireJson: true });
+  if (blocked) return blocked;
   let body: Record<string, unknown>;
   try {
     body = await request.json();

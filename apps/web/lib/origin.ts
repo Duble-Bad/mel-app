@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { crossSiteRejection } from "@mel/core";
 
 /**
  * Origem que o NAVEGADOR usou (protocolo + host), para redirecionamentos e para
@@ -18,4 +19,19 @@ export function requestOrigin(request: NextRequest): string {
 export function isSameOrigin(request: NextRequest): boolean {
   const origin = request.headers.get("origin");
   return !origin || origin === requestOrigin(request);
+}
+
+/**
+ * Barreira contra envio de outro site (CSRF) para as rotas que gravam algo:
+ * devolve a resposta de recusa (403/415) ou `null` para seguir. `requireJson`
+ * nas rotas que recebem JSON. Regras em `crossSiteRejection` (@mel/core).
+ */
+export function rejectCrossSite(request: NextRequest, { requireJson = false } = {}): Response | null {
+  const rejection = crossSiteRejection({
+    origin: request.headers.get("origin"),
+    siteOrigin: requestOrigin(request),
+    contentType: request.headers.get("content-type"),
+    requireJson,
+  });
+  return rejection ? Response.json({ error: rejection.error }, { status: rejection.status, headers: { "Cache-Control": "no-store" } }) : null;
 }
