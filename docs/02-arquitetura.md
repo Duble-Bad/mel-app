@@ -75,6 +75,14 @@ Cada regra tem um teste que planta a violação e confere que ela é acusada (`s
 
 **Complexidade ciclomática** (regra `complexity` do ESLint, só **aviso**): acima de 15 por função no `core` e no `data` (lógica pura) e acima de 25 no app (no JSX, cada bloco condicional conta). Não trava o build; serve de guia para quebrar funções ao mexer nelas. Na adoção: 22 avisos no app, 5 no `core`, 2 no `data` (maiores: `PetForm` 68, página do alerta 56, exportação de dados 53, `classifyError` 36, `toAppNotification` 34).
 
+### Resiliência e desempenho (2026-11-17)
+
+- **Tempo limite em toda chamada externa** com `fetchWithTimeout` (`packages/core/src/adapters/http.ts`): MapTiler e ViaCEP 5 s + 1 nova tentativa com espera crescente (leituras); Cloudflare Turnstile 5 s **sem** nova tentativa (token vale uma vez); Web Push 10 s (a fila já repete); clientes do Supabase **no servidor** 15 s. O cliente do navegador fica sem tempo curto (uploads de foto em rede lenta). O erro de tempo esgotado vira a mensagem de conexão de `userErrorMessage`.
+- **Busca de endereço** (`LocationPicker`, `PlaceSearch`): espera 350 ms sem digitar e cancela a requisição anterior (`AbortController` até o `fetch`; o `Geocoder` aceita `{ signal }`).
+- **Esqueletos de página** (`components/ui/Skeletons.tsx`): `DetailSkeleton`, `ListSkeleton`, `FormSkeleton`, `ProfileSkeleton`, `CardGridSkeleton`, `MapSkeleton` como `fallback` do `<Suspense>`; não mudam a busca de dados.
+- **Imagens:** fotos convertidas para WebP no envio (pet até 2048 px + miniatura de 400 px); abaixo da dobra `loading="lazy"`; primeira fileira de cartões (Mural, Adoção) e foto principal da galeria com `fetchPriority="high"`.
+- **Verificação contínua:** `e2e/perf.spec.ts` (celular lento) e `e2e/resilience.spec.ts` (busca e serviço fora do ar).
+
 ## 3. Fluxo de dados
 
 ```
