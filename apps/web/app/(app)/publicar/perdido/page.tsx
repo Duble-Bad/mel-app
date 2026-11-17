@@ -4,7 +4,8 @@ import { getMyDraft, listMyPets } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { LostWizard } from "@/components/lost/LostWizard";
-import { ErrorState, LoadingState } from "@/components/ui/States";
+import { ErrorState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Perdi meu pet",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default function LostPetPage({ searchParams }: PageProps<"/publicar/perdido">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10 md:max-w-2xl lg:max-w-3xl">
-      <Suspense fallback={<LoadingState label="Preparando o alerta…" />}>
+      <Suspense fallback={<FormSkeleton label="Preparando o alerta…" />}>
         <LostPetContent searchParams={searchParams} />
       </Suspense>
     </main>

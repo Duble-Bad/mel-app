@@ -4,14 +4,14 @@ import { getGuardianSettings } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { GuardianForm } from "@/components/guardian/GuardianForm";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Guardião MEL", robots: { index: false } };
 
 export default function GuardianPage() {
   return (
     <main className="mel-container max-w-[1184px] flex-1 pt-6 pb-12">
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton steps={3} />}>
         <Content />
       </Suspense>
     </main>

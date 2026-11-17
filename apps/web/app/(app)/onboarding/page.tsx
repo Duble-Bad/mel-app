@@ -6,7 +6,8 @@ import { getCurrentProfile } from "@/lib/session";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { ButtonLink } from "@/components/ui/Button";
-import { ErrorState, LoadingState } from "@/components/ui/States";
+import { ErrorState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Boas-vindas",
@@ -18,7 +19,7 @@ export default function OnboardingPage({ searchParams }: PageProps<"/onboarding"
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
       <h1 className="text-2xl font-bold">Que bom ter você na rede MEL</h1>
       <p className="mt-2 mb-6 text-text-secondary">Só mais um passo. Leva menos de um minuto.</p>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton steps={3} />}>
         <OnboardingContent searchParams={searchParams} />
       </Suspense>
       {/* Saída sempre visível: quem entrou na conta errada não fica preso aqui. */}

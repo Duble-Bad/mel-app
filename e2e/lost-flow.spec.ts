@@ -40,8 +40,12 @@ test("'Minha cachorrinha sumiu há 15 minutos': from zero to a shareable alert i
 
   // 1 — Pet (sem pets: cadastro relâmpago com foto).
   await expect(page.getByRole("heading", { name: "Qual pet desapareceu?" })).toBeVisible();
-  await page.getByLabel("Foto do pet").setInputFiles({ name: "mel.png", mimeType: "image/png", buffer: solidPng() });
-  // Ao escolher, abre o recorte: aqui a foto vai inteira.
+  // Ao escolher, abre o recorte: aqui a foto vai inteira. Sob carga, a escolha pode chegar antes de a
+  // página ficar interativa (o React ainda não ligou o campo): escolhe de novo até o recorte abrir.
+  await expect(async () => {
+    await page.getByLabel("Foto do pet").setInputFiles({ name: "mel.png", mimeType: "image/png", buffer: solidPng() });
+    await expect(page.getByRole("button", { name: "Usar esta foto" })).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 30_000 });
   await page.getByRole("button", { name: "Usar esta foto" }).click();
   await expect(page.getByTestId("foto-escolhida")).toContainText("Foto carregada");
   await page.getByLabel("Nome do pet").fill("Mel");

@@ -12,7 +12,8 @@ import { NearMeChip } from "@/components/partners/PartnerClient";
 import { PartnerHero } from "@/components/partners/PartnerHero";
 import { PartnerSignupForm } from "@/components/partners/PartnerSignupForm";
 import { InfoTip } from "@/components/ui/InfoTip";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { EmptyState, ErrorState } from "@/components/ui/States";
+import { CardGridSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Parceiros",
@@ -62,7 +63,7 @@ export default function PartnersPage({ searchParams }: PageProps<"/parceiros">) 
       <h2 id="perto" className="mt-14 mb-5 scroll-mt-24 text-2xl font-extrabold tracking-[-0.02em]">
         Parceiros perto de você
       </h2>
-      <Suspense fallback={<LoadingState />}>{searchParams.then((q) => <Results {...parse(q)} />)}</Suspense>
+      <Suspense fallback={<CardGridSkeleton />}>{searchParams.then((q) => <Results {...parse(q)} />)}</Suspense>
     </main>
   );
 }

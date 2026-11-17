@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FoundWizard } from "@/components/found/FoundWizard";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Encontrei um pet", robots: { index: false } };
 
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Encontrei um pet", robots: { index: 
 export default function FoundPage({ searchParams }: PageProps<"/publicar/encontrado">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12 md:max-w-2xl lg:max-w-6xl lg:pt-10">
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton />}>
         {searchParams.then((q) => (
           <FoundWizard sawOnly={q.vi === "1"} />
         ))}

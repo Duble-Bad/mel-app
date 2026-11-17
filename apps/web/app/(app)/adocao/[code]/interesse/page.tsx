@@ -5,14 +5,14 @@ import { getAdoption } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { InterestForm } from "@/components/adoption/AdoptionClient";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Quero adotar", robots: { index: false } };
 
 export default function InterestPage({ params }: PageProps<"/adocao/[code]/interesse">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
-      <Suspense fallback={<LoadingState />}>{params.then(({ code }) => <Content code={code} />)}</Suspense>
+      <Suspense fallback={<FormSkeleton steps={3} />}>{params.then(({ code }) => <Content code={code} />)}</Suspense>
     </main>
   );
 }

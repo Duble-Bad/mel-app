@@ -7,7 +7,7 @@ import { getMapSettings } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { parseFeed } from "@/components/map/feed";
 import { MapExplorer } from "@/components/map/MapExplorer";
-import { LoadingState } from "@/components/ui/States";
+import { MapSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Mapa da rede MEL",
@@ -34,7 +34,7 @@ export default function MapPage({ searchParams }: PageProps<"/mapa">) {
           </Link>
         </nav>
       </header>
-      <Suspense fallback={<LoadingState label="Carregando mapa…" />}>
+      <Suspense fallback={<MapSkeleton />}>
         {Promise.all([
           searchParams,
           // Configuração do administrador (padrão: adoção fora do mapa). Falhou: fica desligada.

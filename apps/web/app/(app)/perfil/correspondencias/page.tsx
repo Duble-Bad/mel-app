@@ -5,7 +5,8 @@ import { listMyMatches } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MatchCard } from "@/components/found/MatchCard";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { EmptyState, ErrorState } from "@/components/ui/States";
+import { ListSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Correspondências do Radar", robots: { index: false } };
 
@@ -18,7 +19,7 @@ export default function MatchesPage() {
         </h1>
         <p className="text-text-secondary">Animais encontrados ou vistos por perto que podem ser o seu pet.</p>
       </div>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<ListSkeleton />}>
         <Content />
       </Suspense>
     </main>

@@ -7,7 +7,8 @@ import { listNotifications } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MarkNotificationsRead } from "@/components/layout/MarkNotificationsRead";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { EmptyState, ErrorState } from "@/components/ui/States";
+import { ListSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Notificações", robots: { index: false } };
 
@@ -15,7 +16,7 @@ export default function NotificationsPage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
       <h1 className="mb-6 text-2xl font-bold">Notificações</h1>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<ListSkeleton label="Carregando avisos…" />}>
         <NotificationsContent />
       </Suspense>
     </main>

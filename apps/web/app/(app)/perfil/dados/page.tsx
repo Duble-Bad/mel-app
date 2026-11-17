@@ -5,7 +5,8 @@ import { getMyPersonalData } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { PersonalDataPanel } from "@/components/profile/PersonalData";
-import { ErrorState, LoadingState } from "@/components/ui/States";
+import { ErrorState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Dados pessoais e documentos", robots: { index: false } };
 
@@ -14,7 +15,7 @@ export default function PersonalDataPage() {
     <main className="mx-auto w-full max-w-md flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
       <h1 className="mb-1.5 text-2xl font-bold">Dados pessoais e documentos</h1>
       <p className="mb-6 text-text-secondary">Confira e corrija seu e-mail, telefones e documentos. Por segurança, mostramos só parte de cada dado.</p>
-      <Suspense fallback={<LoadingState label="Carregando seus dados…" />}>
+      <Suspense fallback={<FormSkeleton label="Carregando seus dados…" steps={3} />}>
         <Content />
       </Suspense>
     </main>

@@ -8,14 +8,14 @@ import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AntiScamNotice } from "@/components/chat/AntiScamNotice";
 import { StartConversationForm } from "@/components/chat/StartConversationForm";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Conversar com o tutor", robots: { index: false } };
 
 export default function StartConversationPage({ params }: PageProps<"/alerta/[code]/conversar">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
-      <Suspense fallback={<LoadingState />}>{params.then(({ code }) => <Content code={code} />)}</Suspense>
+      <Suspense fallback={<FormSkeleton steps={3} />}>{params.then(({ code }) => <Content code={code} />)}</Suspense>
     </main>
   );
 }

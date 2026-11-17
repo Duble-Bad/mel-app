@@ -14,8 +14,8 @@ import { sponsoredOffersEnabled, visibleOffers } from "@/components/partners/fla
 import { NewOfferForm, OfferActions } from "@/components/partners/PartnerClient";
 import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
-import { LoadingState } from "@/components/ui/States";
 import { PublicAddressControl } from "@/components/admin/PublicAddressControl";
+import { DetailSkeleton } from "@/components/ui/Skeletons";
 
 const isCode = (c: string) => /^[a-z2-9]{6}$/i.test(c);
 
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps<"/parceiros/[code]"
 export default function PartnerPage({ params, searchParams }: PageProps<"/parceiros/[code]">) {
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-[var(--mel-page-gutter)] pt-6 pb-12">
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<DetailSkeleton />}>
         <Content params={params} searchParams={searchParams} />
       </Suspense>
     </main>

@@ -13,14 +13,15 @@ import { ModerationActions } from "@/components/admin/ModerationActions";
 import { SeekerQueue } from "@/components/admin/SeekerQueue";
 import { PartnerReviewInfo } from "@/components/admin/PartnerReviewInfo";
 import { BusinessReview } from "@/components/partners/PartnerClient";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { EmptyState, ErrorState } from "@/components/ui/States";
+import { ListSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Moderação", robots: { index: false } };
 
 export default function AdminPage({ searchParams }: PageProps<"/admin">) {
   return (
     <main className="mel-container max-w-[1124px] flex-1 pt-6 pb-12">
-      <Suspense fallback={<LoadingState />}>{searchParams.then((q) => <Content tab={q.aba === "resolvidas" ? "closed" : "open"} />)}</Suspense>
+      <Suspense fallback={<ListSkeleton />}>{searchParams.then((q) => <Content tab={q.aba === "resolvidas" ? "closed" : "open"} />)}</Suspense>
     </main>
   );
 }

@@ -124,9 +124,9 @@ async function Results({ params }: { params: Params }) {
           </EmptyState>
         ) : (
           <ul key={link(filters.page)} className={grid}>
-            {adoptions.items.map((a) => (
+            {adoptions.items.map((a, i) => (
               <li key={a.code}>
-                <AdoptionFeedCard adoption={a} />
+                <AdoptionFeedCard adoption={a} priority={i < 4} />
               </li>
             ))}
           </ul>
@@ -137,9 +137,9 @@ async function Results({ params }: { params: Params }) {
         </EmptyState>
       ) : (
         <ul key={link(filters.page)} className={grid}>
-          {cases.items.map((item) => (
+          {cases.items.map((item, i) => (
             <li key={`${item.kind}-${item.code}`}>
-              <CaseCard item={item} />
+              <CaseCard item={item} priority={i < 4} />
             </li>
           ))}
         </ul>

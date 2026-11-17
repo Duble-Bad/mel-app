@@ -11,9 +11,9 @@ import { AdoptionStatusControls, WithdrawInterest } from "@/components/adoption/
 import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
-import { LoadingState } from "@/components/ui/States";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { DetailSkeleton } from "@/components/ui/Skeletons";
 
 const isCode = (c: string) => /^[a-z2-9]{6}$/i.test(c);
 
@@ -32,11 +32,7 @@ export default function AdoptionPage({ params, searchParams }: PageProps<"/adoca
   return (
     <main className="mx-auto w-full max-w-xl flex-1 pb-12">
       <Suspense
-        fallback={
-          <div className="px-4 pt-6">
-            <LoadingState />
-          </div>
-        }
+        fallback={<DetailSkeleton />}
       >
         <Content params={params} searchParams={searchParams} />
       </Suspense>

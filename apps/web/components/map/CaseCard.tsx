@@ -10,17 +10,18 @@ import { PetPhoto } from "@/components/ui/PetPhoto";
  * ela, nome, traços, área aproximada, tempo e "Ver detalhes". O cartão inteiro é o link.
  * Estilo "moldura de luz" (conceito B): feixe dourado contornando a borda, aura e pegadas no hover.
  */
-export function CaseCard({ item }: { item: PublicCaseItem }) {
-  return <FeedCard entry={caseEntry(item)} testId="case-card" />;
+/** `priority`: cartão da primeira fileira (já na tela ao abrir): a foto carrega na hora, com prioridade. */
+export function CaseCard({ item, priority = false }: { item: PublicCaseItem; priority?: boolean }) {
+  return <FeedCard entry={caseEntry(item)} testId="case-card" priority={priority} />;
 }
 
 /** Anúncio de adoção no mural (mesmo cartão, selo ADOÇÃO). */
-export function AdoptionFeedCard({ adoption }: { adoption: PublicAdoption }) {
+export function AdoptionFeedCard({ adoption, priority = false }: { adoption: PublicAdoption; priority?: boolean }) {
   // Mesma cor do cartão de /adocao: fêmea rosa, macho (e sexo não informado) dourado; ver map.css.
-  return <FeedCard entry={adoptionEntry(adoption)} testId="adoption-card" extraClass={adoption.sex === "female" ? "mel-adopt--female" : ""} />;
+  return <FeedCard entry={adoptionEntry(adoption)} testId="adoption-card" extraClass={adoption.sex === "female" ? "mel-adopt--female" : ""} priority={priority} />;
 }
 
-function FeedCard({ entry: e, testId, extraClass = "" }: { entry: FeedEntry; testId: string; extraClass?: string }) {
+function FeedCard({ entry: e, testId, extraClass = "", priority = false }: { entry: FeedEntry; testId: string; extraClass?: string; priority?: boolean }) {
   // Casos: espécie, raça, porte e cor numa linha. Adoção já traz idade e porte na linha de tempo.
   const traits = e.kind === "adoption" ? [] : e.facts.map((f) => f.value);
   return (
@@ -28,7 +29,7 @@ function FeedCard({ entry: e, testId, extraClass = "" }: { entry: FeedEntry; tes
       {/* Moldura de luz (conceito B): feixe dourado que contorna o cartão; ver map.css. */}
       <span aria-hidden="true" className="mel-pet__beam" />
       <div className="mel-pet__media">
-        <PetPhoto src={e.photoUrl} alt="" loading="lazy" decoding="async" width={600} height={450} style={{ objectPosition: focusPosition(e.photoFocus) }} />
+        <PetPhoto src={e.photoUrl} alt="" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} decoding="async" width={600} height={450} style={{ objectPosition: focusPosition(e.photoFocus) }} />
         <span className="mel-badge">{KIND_BADGE[e.kind]}</span>
       </div>
       <div className="mel-pet__body">

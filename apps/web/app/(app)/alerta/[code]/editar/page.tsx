@@ -7,7 +7,8 @@ import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { LostWizard } from "@/components/lost/LostWizard";
 import { ButtonLink } from "@/components/ui/Button";
-import { ErrorState, LoadingState } from "@/components/ui/States";
+import { ErrorState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Editar alerta",
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 export default function EditLostCasePage({ params }: PageProps<"/alerta/[code]/editar">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10 md:max-w-2xl lg:max-w-3xl">
-      <Suspense fallback={<LoadingState label="Carregando o alerta…" />}>
+      <Suspense fallback={<FormSkeleton label="Carregando o alerta…" steps={4} />}>
         {params.then(({ code }) => (
           <EditContent code={code} />
         ))}

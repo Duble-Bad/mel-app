@@ -39,8 +39,8 @@ import { Timeline } from "@/components/sighting/Timeline";
 import { TutorPushPrompt } from "@/components/lost/TutorPushPrompt";
 import { Heart, Pencil } from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
-import { LoadingState } from "@/components/ui/States";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { DetailSkeleton } from "@/components/ui/Skeletons";
 
 const isCode = (code: string) => /^[a-z2-9]{6}$/i.test(code);
 
@@ -107,11 +107,7 @@ export default function AlertPage({
   return (
     <main className="mx-auto w-full max-w-xl flex-1 pb-10 lg:max-w-[1264px] lg:px-8 lg:pt-8">
       <Suspense
-        fallback={
-          <div className="px-4 pt-6">
-            <LoadingState label="Carregando alerta…" />
-          </div>
-        }
+        fallback={<DetailSkeleton label="Carregando alerta…" />}
       >
         <AlertContent params={params} searchParams={searchParams} />
       </Suspense>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireOnboardedProfile } from "@/lib/session";
 import { ProfileForm } from "@/components/profile/ProfileForm";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Editar perfil",
@@ -13,7 +13,7 @@ export default function EditProfilePage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
       <h1 className="mb-6 text-2xl font-bold">Editar perfil</h1>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton steps={3} />}>
         <EditProfileContent />
       </Suspense>
     </main>

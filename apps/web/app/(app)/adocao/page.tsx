@@ -143,9 +143,9 @@ function Available({ species, items, total }: { species: Species | null; items: 
         </div>
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,230px),1fr))] gap-4.5">
-          {items.map((a) => (
+          {items.map((a, i) => (
             <li key={a.code}>
-              <AdoptionCard a={a} />
+              <AdoptionCard a={a} priority={i < 4} />
             </li>
           ))}
         </ul>

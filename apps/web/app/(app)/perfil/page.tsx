@@ -10,8 +10,9 @@ import { ThemeOptions } from "@/components/theme/ThemeSwitcher";
 import { PetCard } from "@/components/pets/PetCard";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { EmptyState, ErrorState } from "@/components/ui/States";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { CardGridSkeleton, ProfileSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Meu perfil",
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
 export default function ProfilePage({ searchParams }: PageProps<"/perfil">) {
   return (
     <main className="mel-container max-w-[1184px] flex-1 pt-6 pb-12">
-      <Suspense fallback={<LoadingState label="Carregando seu perfil…" />}>
+      <Suspense fallback={<ProfileSkeleton />}>
         <ProfileContent searchParams={searchParams} />
       </Suspense>
     </main>
@@ -77,7 +78,7 @@ async function ProfileContent({
             <h2 id="meus-pets" className="text-xl font-bold">
               Meus pets
             </h2>
-            <Suspense fallback={<LoadingState label="Carregando seus pets…" />}>
+            <Suspense fallback={<CardGridSkeleton label="Carregando seus pets…" cards={3} />}>
               <MyPets ownerId={profile.id} />
             </Suspense>
           </section>

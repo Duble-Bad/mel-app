@@ -10,7 +10,7 @@ import { DeletePetButton } from "@/components/pets/DeletePetButton";
 import { PetForm } from "@/components/pets/PetForm";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Editar pet",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 export default function EditPetPage({ params, searchParams }: PageProps<"/perfil/pets/[id]">) {
   return (
     <main className="mel-container max-w-[944px] flex-1 pt-6 pb-12 lg:max-w-[1184px]">
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton steps={4} />}>
         <EditPetContent params={params} searchParams={searchParams} />
       </Suspense>
     </main>

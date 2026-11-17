@@ -41,18 +41,18 @@ test("'Encontrei um cachorro na rua': no account → Radar finds the lost Yorksh
   await expect(finder.getByTestId("picked-label")).toContainText("perto de");
   await cont(finder).click();
 
-  await finder.getByRole("radio", { name: "Agora" }).check({ force: true });
+  await expect(() => finder.getByRole("radio", { name: "Agora" }).check({ force: true })).toPass({ timeout: 10_000 }); // a etapa ainda pode estar deslizando
   await cont(finder).click();
 
   await expect(finder.getByRole("heading", { name: "Como ele é?" })).toBeVisible();
   await cont(finder).click();
   await expect(finder.getByText("Diga se é cachorro, gato ou outro.")).toBeVisible();
-  await finder.getByRole("radio", { name: "Cachorro" }).check({ force: true });
-  await finder.getByRole("radio", { name: /^Mini/ }).check({ force: true });
-  await finder.getByRole("radio", { name: "Fêmea" }).check({ force: true });
+  await expect(() => finder.getByRole("radio", { name: "Cachorro" }).check({ force: true })).toPass({ timeout: 10_000 }); // a etapa ainda pode estar deslizando
+  await expect(() => finder.getByRole("radio", { name: /^Mini/ }).check({ force: true })).toPass({ timeout: 10_000 }); // a etapa ainda pode estar deslizando
+  await expect(() => finder.getByRole("radio", { name: "Fêmea" }).check({ force: true })).toPass({ timeout: 10_000 }); // a etapa ainda pode estar deslizando
   await cont(finder).click();
 
-  await finder.getByRole("radio", { name: "Está comigo" }).check({ force: true });
+  await expect(() => finder.getByRole("radio", { name: "Está comigo" }).check({ force: true })).toPass({ timeout: 10_000 }); // a etapa ainda pode estar deslizando
   await finder.getByLabel(/Detalhe para conferir/).fill("Mancha branca no peito");
   await cont(finder).click();
 

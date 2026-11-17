@@ -15,7 +15,8 @@ const SEX_SYMBOL = {
  * hover e pegadas no canto; ver map.css), na cor do sexo: macho (e sexo não informado) dourado,
  * fêmea rosa. O cartão inteiro é o link (camada por cima), com o nome do pet como texto acessível.
  */
-export function AdoptionCard({ a }: { a: PublicAdoption }) {
+/** `priority`: cartão da primeira fileira (já na tela ao abrir): a foto carrega na hora, com prioridade. */
+export function AdoptionCard({ a, priority = false }: { a: PublicAdoption; priority?: boolean }) {
   const sex = a.sex === "male" || a.sex === "female" ? SEX_SYMBOL[a.sex] : null;
   const traits = [ageLabel(a.ageMonths), a.size && `porte ${SIZE_LABELS[a.size].label.toLowerCase()}`].filter(Boolean).join(" · ");
   return (
@@ -24,7 +25,7 @@ export function AdoptionCard({ a }: { a: PublicAdoption }) {
       <div className="mel-pet__media">
         {a.photoUrls[0] ? (
           // eslint-disable-next-line @next/next/no-img-element -- foto reduzida no envio
-          <img src={a.photoUrls[0]} alt="" loading="lazy" />
+          <img src={a.photoUrls[0]} alt="" loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} />
         ) : (
           <span className="flex size-full items-center justify-center text-text-muted">
             <PawPrint aria-hidden="true" className="size-10" strokeWidth={1.5} />

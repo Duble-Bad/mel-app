@@ -9,7 +9,8 @@ import { getCurrentProfile, getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { SeekerForm } from "@/components/adoption/SeekerForm";
 import { SeekerStatus } from "@/components/adoption/SeekerStatus";
-import { ErrorState, LoadingState } from "@/components/ui/States";
+import { ErrorState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Quero adotar",
@@ -34,7 +35,7 @@ export default function SeekerPage() {
       </header>
       <div className="grid items-start gap-7 min-[960px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] min-[960px]:gap-12">
         <div className="min-w-0 rounded-[22px] border border-border bg-surface p-5 md:p-8">
-          <Suspense fallback={<LoadingState />}>
+          <Suspense fallback={<FormSkeleton steps={4} />}>
             <Content />
           </Suspense>
         </div>

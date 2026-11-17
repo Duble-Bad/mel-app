@@ -7,7 +7,8 @@ import { listMyConversations } from "@mel/data";
 import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { LiveConversations } from "@/components/chat/LiveConversations";
-import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { EmptyState, ErrorState } from "@/components/ui/States";
+import { ListSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Conversas", robots: { index: false } };
 
@@ -15,7 +16,7 @@ export default function ConversationsPage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
       <h1 className="mb-6 text-2xl font-bold">Conversas</h1>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<ListSkeleton label="Carregando conversas…" />}>
         <Content />
       </Suspense>
     </main>

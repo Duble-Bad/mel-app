@@ -6,7 +6,7 @@ import { petSummary } from "@mel/core";
 import { getPublicLostCase } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
 import { SightingForm } from "@/components/sighting/SightingForm";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Eu vi este pet",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function SightingPage({ params }: PageProps<"/avistamento/[code]">) {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pt-6 pb-10">
-      <Suspense fallback={<LoadingState />}>{params.then(({ code }) => <SightingContent code={code} />)}</Suspense>
+      <Suspense fallback={<FormSkeleton steps={4} />}>{params.then(({ code }) => <SightingContent code={code} />)}</Suspense>
     </main>
   );
 }

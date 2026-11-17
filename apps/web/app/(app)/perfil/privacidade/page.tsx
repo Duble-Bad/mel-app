@@ -6,7 +6,7 @@ import { listMyConsents } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AcceptTermsButton, DeleteAccount, ExportDataButton } from "@/components/profile/PrivacyActions";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Privacidade e dados", robots: { index: false } };
 
@@ -21,7 +21,7 @@ export default function PrivacySettingsPage() {
         </Link>
         .
       </p>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton steps={3} />}>
         <Content />
       </Suspense>
     </main>

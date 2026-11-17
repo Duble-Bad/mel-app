@@ -22,8 +22,9 @@ import { MapView } from "@/components/location/MapView";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
-import { EmptyState, LoadingState } from "@/components/ui/States";
+import { EmptyState } from "@/components/ui/States";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { DetailSkeleton } from "@/components/ui/Skeletons";
 
 const isCode = (code: string) => /^[a-z2-9]{6}$/i.test(code);
 const title = (f: PublicFoundCase) => `${f.custody === "street" ? "Visto solto" : "Encontrado"}: ${SPECIES_LABELS[f.species].toLowerCase()}${f.areaLabel ? ` perto de ${f.areaLabel}` : ""}`;
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: PageProps<"/encontrado/[code]
 export default function FoundCasePage({ params, searchParams }: PageProps<"/encontrado/[code]">) {
   return (
     <main className="mx-auto w-full max-w-xl flex-1 pb-12">
-      <Suspense fallback={<div className="px-4 pt-6"><LoadingState /></div>}>
+      <Suspense fallback={<DetailSkeleton />}>
         <Content params={params} searchParams={searchParams} />
       </Suspense>
     </main>

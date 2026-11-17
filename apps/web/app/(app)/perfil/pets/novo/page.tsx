@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireOnboardedProfile } from "@/lib/session";
 import { PetForm } from "@/components/pets/PetForm";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = {
   title: "Cadastrar pet",
@@ -16,7 +16,7 @@ export default function NewPetPage() {
       <p className="mt-2 mb-6 text-text-secondary">
         Com o pet cadastrado, um alerta de desaparecimento fica pronto em segundos se você precisar.
       </p>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton steps={4} />}>
         <NewPetContent />
       </Suspense>
     </main>

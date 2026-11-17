@@ -19,7 +19,7 @@ import { getSessionUser } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { Alert } from "@/components/ui/Alert";
 import { PetGallery } from "@/components/pets/PetGallery";
-import { LoadingState } from "@/components/ui/States";
+import { DetailSkeleton } from "@/components/ui/Skeletons";
 
 export async function generateMetadata({ params }: PageProps<"/pet/[melId]">): Promise<Metadata> {
   const { melId } = await params;
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: PageProps<"/pet/[melId]">): P
 export default function PetPage({ params }: PageProps<"/pet/[melId]">) {
   return (
     <main className="mel-container max-w-[1184px] flex-1 pt-4 pb-12 lg:pt-10">
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<DetailSkeleton />}>
         {params.then(({ melId }) => <PetContent melId={melId} />)}
       </Suspense>
     </main>

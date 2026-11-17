@@ -163,6 +163,8 @@ export function PhotoGallery({
               ref={mainImg}
               src={photo.url}
               alt={alt(current)}
+              // Foto principal da página (alerta, pet): é o maior conteúdo da tela, carrega primeiro.
+              fetchPriority={current === 0 ? "high" : "auto"}
               onError={() => fail(photo.url)}
               className={`mel-photo-in ${mainClassName}`}
               style={photo.focus ? { objectPosition: focusPosition(photo.focus) } : undefined}

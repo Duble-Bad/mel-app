@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireOnboardedProfile } from "@/lib/session";
 import { AdoptionForm } from "@/components/adoption/AdoptionForm";
-import { LoadingState } from "@/components/ui/States";
+import { FormSkeleton } from "@/components/ui/Skeletons";
 
 export const metadata: Metadata = { title: "Colocar para adoção", robots: { index: false } };
 
@@ -11,7 +11,7 @@ export default function PublishAdoptionPage() {
     <main className="mel-container max-w-[944px] flex-1 pt-6 pb-12 lg:max-w-[1184px]">
       <h1 className="mb-1.5 text-2xl font-bold lg:text-3xl">Colocar para adoção</h1>
       <p className="mb-6 text-text-secondary">Conte sobre o pet. A equipe da MEL revisa antes de publicar.</p>
-      <Suspense fallback={<LoadingState />}>
+      <Suspense fallback={<FormSkeleton />}>
         <Content />
       </Suspense>
     </main>
