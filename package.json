@@ -18,6 +18,7 @@
     "test": "npm run test --workspaces --if-present && npm run test:guards",
     "test:guards": "node --test scripts/lib/safe-target.test.mjs scripts/prod/prod.test.mjs",
     "test:db": "npm run test:db -w @mel/data",
+    "test:visual": "playwright test e2e/visual-novidades.spec.ts --reporter=list,html",
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm run test",
     "db:push": "node scripts/db-push-dev.mjs",

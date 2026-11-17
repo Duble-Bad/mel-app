@@ -10,6 +10,7 @@ import {
   formatBrPhone,
   formatDateTimeBr,
   petSummary,
+  formatRewardBRL,
   REWARD_DISCLAIMER,
   rewardLine,
   SEX_LABELS,
@@ -259,7 +260,12 @@ async function AlertContent({
           {/* Bonificação do tutor: só com o alerta ativo (o banco nem envia o valor nos demais casos). */}
           {rewardLine(c.status, c.rewardCents) && (
             <div className="flex flex-col gap-1 rounded-lg bg-primary p-4 text-primary-foreground shadow-card" data-testid="bonificacao-bloco">
-              <p className="text-lg font-extrabold tracking-wide">{rewardLine(c.status, c.rewardCents)}</p>
+              {/* O valor nunca quebra no meio ("R$" de um lado, "500,00" do outro). */}
+              <p className="flex flex-wrap items-baseline gap-x-2 font-extrabold tracking-wide">
+                <span aria-hidden="true" className="text-sm">BONIFICAÇÃO OFERECIDA</span>
+                <span aria-hidden="true" className="text-2xl whitespace-nowrap">{formatRewardBRL(c.rewardCents!)}</span>
+                <span className="sr-only">{rewardLine(c.status, c.rewardCents)}</span>
+              </p>
               <p className="text-sm">{REWARD_DISCLAIMER}</p>
             </div>
           )}

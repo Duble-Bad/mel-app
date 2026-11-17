@@ -61,7 +61,7 @@ export async function createApprovedNgo(ownerEmail: string, ownerId: string, mod
 }
 
 /** Anúncio de adoção aprovado (foto sólida, local fictício). */
-export async function createApprovedAdoption(ownerEmail: string, ownerId: string, mod: MelClient, name: string, at: Place) {
+export async function createApprovedAdoption(ownerEmail: string, ownerId: string, mod: MelClient, name: string, at: Place, sex: "male" | "female" = "female") {
   const owner = await signedClient(ownerEmail);
   const png = new Blob([new Uint8Array(solidPng(400, 400, [200, 160, 60]))], { type: "image/png" });
   const photo = await uploadAdoptionPhoto(owner, ownerId, png);
@@ -71,7 +71,7 @@ export async function createApprovedAdoption(ownerEmail: string, ownerId: string
     adoptionInputSchema.parse({
       name,
       species: "dog",
-      sex: "female",
+      sex,
       size: "medium",
       ageMonths: 24,
       description: "Anúncio fictício de teste automatizado, não é um animal real.",

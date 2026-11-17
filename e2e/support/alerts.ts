@@ -25,6 +25,8 @@ interface AlertOptions {
   contactChat?: boolean;
   /** Último local visto (padrão: Praça da Sé). */
   at?: { lat: number; lng: number; label: string };
+  /** Bonificação oferecida pelo tutor, em centavos (migration 51). */
+  rewardCents?: number;
 }
 
 const publicClient = () =>
@@ -85,6 +87,7 @@ export async function createTutorWithActiveAlert(label: string, petNameOrOptions
     publicAreaLabel: opts.at?.label ?? "Sé, São Paulo – SP",
     lostAt: new Date(Date.now() - 60 * 60_000).toISOString(),
     contactChat: opts.contactChat ?? true,
+    ...(opts.rewardCents ? { rewardCents: opts.rewardCents } : {}),
     ...(opts.whatsapp ? { contactWhatsappPublic: true, contactPhone: opts.whatsapp } : {}),
   });
   const active = await activateLostCase(client, draft.id);
