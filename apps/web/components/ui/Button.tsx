@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
-import { HydratedSubmit } from "./HydratedSubmit";
+import { HydratedButton, HydratedSubmit } from "./HydratedSubmit";
 
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "soft";
 type Size = "md" | "lg";
@@ -52,8 +52,16 @@ export function Button({
   children,
   disabled,
   nativeSubmit,
+  waitHydration,
   ...props
-}: ComponentProps<"button"> & StyleProps & { loading?: boolean; loadingText?: ReactNode; nativeSubmit?: boolean }) {
+}: ComponentProps<"button"> &
+  StyleProps & {
+    loading?: boolean;
+    loadingText?: ReactNode;
+    nativeSubmit?: boolean;
+    /** Botão de ação (não de envio) que só funciona com JavaScript: travado até a página ficar interativa. */
+    waitHydration?: boolean;
+  }) {
   const shared = {
     ...props,
     disabled: disabled || loading,
@@ -69,6 +77,7 @@ export function Button({
     children
   );
   if (props.type === "submit" && !nativeSubmit) return <HydratedSubmit {...shared}>{content}</HydratedSubmit>;
+  if (waitHydration) return <HydratedButton {...shared}>{content}</HydratedButton>;
   return (
     <button type="button" {...shared}>
       {content}

@@ -45,7 +45,7 @@ export function SegmentedControl<T extends string>({
           Com "reduzir movimento", troca sem deslizar (motion-reduce). */}
       <span
         aria-hidden="true"
-        className="absolute inset-y-1 left-1 rounded-[11px] bg-[linear-gradient(180deg,#f8c64e,#f6b928_55%,#e9a91c)] shadow-[0_4px_14px_-4px_rgb(246_185_40/0.55),inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform duration-[450ms] ease-[cubic-bezier(0.34,1.4,0.5,1)] motion-reduce:transition-none"
+        className="absolute inset-y-1 left-1 rounded-[11px] bg-[#f6b928] bg-[linear-gradient(180deg,#f8c64e,#f6b928_55%,#e9a91c)] shadow-[0_4px_14px_-4px_rgb(246_185_40/0.55),inset_0_1px_0_rgb(255_255_255/0.35)] transition-transform duration-[450ms] ease-[cubic-bezier(0.34,1.4,0.5,1)] motion-reduce:transition-none"
         style={{ width: `calc((100% - 8px) / ${options.length})`, transform: `translateX(${index * 100}%)` }}
       />
       {options.map((o, i) => {

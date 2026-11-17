@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { BrState } from "@mel/core";
 import { getCurrentPosition, getGeocoder } from "@/lib/geo/client";
 import { userErrorMessage } from "@mel/core";
+import { useHydrated } from "@/components/ui/HydratedSubmit";
 
 /**
  * "Usar minha localização" para preencher cidade/estado. Usa o GPS uma vez,
@@ -11,6 +12,8 @@ import { userErrorMessage } from "@mel/core";
  */
 export function FillCityFromLocation({ onFill }: { onFill: (city: string, state: BrState | null) => void }) {
   const [pending, setPending] = useState(false);
+  // Antes de a página ficar interativa o toque se perderia em silêncio: o botão nasce travado.
+  const hydrated = useHydrated();
   const [message, setMessage] = useState<{ tone: "error" | "ok"; text: string } | null>(null);
 
   async function handleClick() {
@@ -40,7 +43,7 @@ export function FillCityFromLocation({ onFill }: { onFill: (city: string, state:
       <button
         type="button"
         onClick={handleClick}
-        disabled={pending}
+        disabled={pending || !hydrated}
         className="inline-flex min-h-11 items-center gap-2 self-start rounded-md px-1 font-semibold text-link underline-offset-4 hover:underline disabled:opacity-60"
       >
         <span aria-hidden="true">📍</span>

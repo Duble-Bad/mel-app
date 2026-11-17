@@ -17,7 +17,12 @@ export function useHydrated(): boolean {
  * ele nasce desabilitado e libera sozinho assim que a página está pronta.
  * Com o botão padrão desabilitado, o Enter num campo também não envia.
  */
-export function HydratedSubmit({ disabled, ...props }: ComponentProps<"button">) {
+export function HydratedSubmit(props: ComponentProps<"button">) {
+  return <HydratedButton {...props} type="submit" />;
+}
+
+/** Mesmo princípio para botões de ação que só funcionam com JavaScript (ex.: "Usar minha localização"). */
+export function HydratedButton({ disabled, type = "button", ...props }: ComponentProps<"button">) {
   const hydrated = useHydrated();
-  return <button {...props} type="submit" disabled={!hydrated || disabled} data-hydrated={hydrated || undefined} />;
+  return <button {...props} type={type} disabled={!hydrated || disabled} data-hydrated={hydrated || undefined} />;
 }

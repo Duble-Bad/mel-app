@@ -183,7 +183,7 @@ export function LocationPicker({ value, onChange, defaultCenter, privacyNote, gp
       data-lat={value?.position.lat ?? ""}
       data-lng={value?.position.lng ?? ""}
     >
-      <Button variant="secondary" onClick={useGps} loading={gpsPending} loadingText="Procurando você…">
+      <Button variant="secondary" waitHydration onClick={useGps} loading={gpsPending} loadingText="Procurando você…">
         <span aria-hidden="true">📍</span> Usar minha localização atual
       </Button>
       {gpsHint && <p className="-mt-1 text-sm text-text-secondary">{gpsHint}</p>}
