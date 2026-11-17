@@ -41,6 +41,8 @@ As correções escolhidas na auditoria final para antes do Feature Freeze ficam 
 
 ## 3. Hospedagem do app (Vercel)
 
+> **Estado (2026-11-17):** conta pessoal do dono na Vercel, plano **Hobby**, já ligada ao GitHub `Duble-Bad` (dono do `mel-app`). **Nenhum projeto, deploy ou domínio criado** (a importação foi iniciada em 2026-11-16 e parada antes do "Import"; nada a desfazer). MCP da Vercel conectado ao Claude Code. Decisão do dono: criar o projeto **só no lançamento**. Na importação: **Root Directory = `apps/web`** (monorepo) e **variáveis de ambiente antes do primeiro deploy** (sem elas o build quebra ou aponta para o banco errado). Opcional antes do lançamento: um deploy de teste em `*.vercel.app` apontando para o `mel-dev`, sem domínio nem `mel-prod`.
+
 | # | Item | Observação |
 |---|---|---|
 | 3.1 | Domínio próprio + deploy do app | Pré-requisito do SMTP, do Google e das chaves restritas por domínio |
