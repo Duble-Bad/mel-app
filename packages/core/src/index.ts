@@ -31,6 +31,7 @@ export * from "./security/scheduler";
 export * from "./security/turnstile";
 export * from "./security/reauth";
 export * from "./security/requestGuard";
+export * from "./security/pushEndpoint";
 export * from "./contact/phone";
 export * from "./contact/email";
 export * from "./contact/masks";

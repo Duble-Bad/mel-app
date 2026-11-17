@@ -1,6 +1,6 @@
 import "server-only";
 import webpush from "web-push";
-import { isQuietHour, pushPayload } from "@mel/core";
+import { isAllowedPushEndpoint, isQuietHour, pushPayload } from "@mel/core";
 import { claimPushBatch, finishPush } from "@mel/data";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -57,6 +57,13 @@ export async function dispatchPushQueue(limit = 50, now = new Date()): Promise<D
     const dead: string[] = [];
     let lastError = "";
     for (const s of job.subscriptions) {
+      // Defesa extra além do banco: nunca envia para fora dos serviços oficiais; remove a inscrição.
+      if (!isAllowedPushEndpoint(s.endpoint)) {
+        dead.push(s.id);
+        lastError = "endereço fora dos serviços oficiais de push";
+        console.error("[push] inscrição recusada:", lastError);
+        continue;
+      }
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, body, { TTL: 60 * 60 * 6, urgency: "high", timeout: 10_000 });
         ok.push(s.id);

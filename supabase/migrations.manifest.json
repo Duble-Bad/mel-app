@@ -208,6 +208,10 @@
     {
       "file": "20261117130000_push_endpoint_allowlist_consents_grants.sql",
       "sha256": "8aa561d2450d56fcab41b4b53966f2114ad296c5274bdd3b0ace316f166f481b"
+    },
+    {
+      "file": "20261117140000_push_subscriptions_endpoint_check.sql",
+      "sha256": "d4810e6cc932d289b72fa8ad254a13dbc0a541701a5e7412961e5a8b46aecc1e"
     }
   ]
 }

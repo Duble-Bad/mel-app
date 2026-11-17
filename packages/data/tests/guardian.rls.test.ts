@@ -123,6 +123,13 @@ describe("push subscriptions (auditoria 2026-11-17, L3)", () => {
     for (const endpoint of good) expect(await owner(endpoint)).toBe(finder.id);
   });
 
+  it("the table itself refuses other hosts, even from the service role (CHECK, migration 53)", async () => {
+    const { error } = await serviceClient()
+      .from("push_subscriptions")
+      .insert({ user_id: finder.id, endpoint: "https://atacante.example/direto", p256dh: "p", auth: "a" } as never);
+    expect(error?.code).toBe("23514");
+  });
+
   it("someone who only knows another person's endpoint cannot take the subscription; the same browser (same keys) can switch accounts", async () => {
     const endpoint = `https://fcm.googleapis.com/fcm/send/troca-${crypto.randomUUID()}`;
     await savePushSubscription(nearGuardian.client, { endpoint, keys: { p256dh: "chave-do-navegador", auth: "segredo-do-navegador" } });
