@@ -1,0 +1,71 @@
+/* Barra de abas "Sliding Pill" (SlidingPillTabs.tsx). Só tokens da MEL, nos dois temas. */
+.mel-pilltabs__bar {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  height: 64px;
+  border-radius: 30px;
+  border: 1px solid var(--mel-border);
+  background: var(--mel-surface-elevated);
+  box-shadow: var(--mel-shadow-lg);
+}
+/* A pílula: totalmente arredondada, centrada na altura da barra. O componente escreve a posição
+   (transform) e a largura a cada quadro enquanto as molas se movem. */
+.mel-pilltabs__pill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  z-index: -1;
+  width: 0;
+  height: 48px;
+  margin-top: -24px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mel-primary) 78%, var(--mel-honey-300)), var(--mel-primary) 55%, var(--mel-primary-hover));
+  box-shadow:
+    0 8px 22px -8px color-mix(in srgb, var(--mel-primary) 75%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--mel-text-inverse) 30%, transparent);
+  will-change: transform, width;
+}
+/* --c (0 a 1): quanto a aba está sob a pílula. A cor mistura do texto secundário para a cor
+   legível sobre o dourado. */
+.mel-pilltabs__tab {
+  --c: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  height: 100%;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--mel-primary-foreground) calc(var(--c) * 100%), var(--mel-text-secondary));
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mel-pilltabs__tab:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: -3px;
+}
+.mel-pilltabs__icon {
+  display: inline-flex;
+  transition: transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.mel-pilltabs__tab:active .mel-pilltabs__icon {
+  transform: scale(0.88);
+}
+.mel-pilltabs__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mel-pilltabs__icon {
+    transition: none;
+  }
+}

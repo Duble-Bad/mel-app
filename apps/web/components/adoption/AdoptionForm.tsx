@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, HeartPulse, MapPin, MessageSquareText, PawPrint, X, type LucideIcon } from "lucide-react";
+import { Camera, Check, CircleAlert, HeartPulse, LoaderCircle, MapPin, MessageSquareText, PawPrint, X, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { adoptionInputSchema, fieldErrors, PET_COLORS, PET_SEXES, PET_SIZES, type PetColor, type PetSex, type PetSize, publicAreaFrom, SEX_LABELS, SIZE_LABELS, type Species, SPECIES, SPECIES_LABELS, type Temperament, TEMPERAMENT_LABELS, TEMPERAMENTS, userErrorMessage } from "@mel/core";
 import { createAdoption, uploadAdoptionPhoto } from "@mel/data";
@@ -24,6 +24,13 @@ const AGES: { months: number; label: string }[] = [
 ];
 
 const MAX_PHOTOS = 4;
+
+/**
+ * Cada foto tem a sua própria faixa de envio: as que já subiram guardam o
+ * caminho e não são reenviadas; uma que falha não derruba as outras e pode ser
+ * tentada de novo (ou removida) sem começar do zero.
+ */
+type PhotoItem = { file: File; url: string; path?: string; status?: "sending" | "done" | "failed" };
 
 type StepId = "fotos" | "pet" | "jeito" | "sobre" | "regiao";
 const STEPS: { id: StepId; title: string; Icon: LucideIcon }[] = [
@@ -52,7 +59,8 @@ const FIELD_STEP: Record<string, StepId> = {
 
 /** Anúncio de adoção. Entra em análise da moderação antes de aparecer. No desktop, em etapas. */
 export function AdoptionForm({ userId }: { userId: string }) {
-  const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [dragOver, setDragOver] = useState(false);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<Species | null>(null);
   const [sex, setSex] = useState<PetSex>("unknown");
@@ -75,7 +83,7 @@ export function AdoptionForm({ userId }: { userId: string }) {
   useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
 
   function addPhotos(files: FileList | null) {
-    const list = [...(files ?? [])].slice(0, MAX_PHOTOS - photos.length).map((file) => {
+    const list = [...(files ?? [])].filter((f) => f.type.startsWith("image/")).slice(0, MAX_PHOTOS - photos.length).map((file) => {
       const url = URL.createObjectURL(file);
       urls.current.push(url);
       return { file, url };
@@ -116,9 +124,38 @@ export function AdoptionForm({ userId }: { userId: string }) {
     setError(null);
     const client = getBrowserClient();
     try {
-      setBusy("Enviando fotos…");
-      const paths: string[] = [];
-      for (const p of photos) paths.push(await uploadAdoptionPhoto(client, userId, await prepareImage(p.file)));
+      // Envia só as fotos que ainda não subiram, em paralelo, cada uma com o seu estado.
+      const pending = photos.filter((p) => !p.path);
+      let sent = photos.length - pending.length;
+      setBusy(`Enviando fotos… ${sent} de ${photos.length}`);
+      const mark = (url: string, patch: Partial<PhotoItem>) => setPhotos((list) => list.map((x) => (x.url === url ? { ...x, ...patch } : x)));
+      const results = await Promise.all(
+        pending.map(async (p) => {
+          mark(p.url, { status: "sending" });
+          try {
+            const path = await uploadAdoptionPhoto(client, userId, await prepareImage(p.file));
+            mark(p.url, { status: "done", path });
+            setBusy(`Enviando fotos… ${++sent} de ${photos.length}`);
+            return { url: p.url, path };
+          } catch (err) {
+            console.error("[AdoptionForm] foto falhou", err);
+            mark(p.url, { status: "failed" });
+            return { url: p.url, path: null };
+          }
+        }),
+      );
+      const failed = results.filter((r) => !r.path).length;
+      if (failed) {
+        setError(
+          failed === 1
+            ? "Uma foto não foi enviada (marcada em vermelho). As outras já estão salvas: toque em “Enviar para revisão” para tentar só ela de novo, ou remova-a."
+            : `${failed} fotos não foram enviadas (marcadas em vermelho). As outras já estão salvas: toque em “Enviar para revisão” para tentar só elas de novo, ou remova-as.`,
+        );
+        setBusy(null);
+        return;
+      }
+      const uploaded = new Map(results.map((r) => [r.url, r.path!]));
+      const paths = photos.map((p) => p.path ?? uploaded.get(p.url)!);
       setBusy("Publicando…");
       const code = await createAdoption(client, userId, adoptionInputSchema.parse({ ...draft, photoPaths: paths }));
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- página nova com o anúncio em análise
@@ -158,11 +195,37 @@ export function AdoptionForm({ userId }: { userId: string }) {
       )}
     >
       <StepCard {...step("fotos")} aside={<span className="text-sm text-text-secondary">· 1 a 4, a primeira é a capa</span>}>
-        <div className="grid grid-cols-4 gap-2 lg:gap-3">
+        <div
+          className={`grid grid-cols-4 gap-2 rounded-lg transition-[box-shadow,background-color] duration-150 lg:gap-3 ${dragOver ? "bg-primary-soft/40 shadow-[0_0_0_2px_var(--color-brand)]" : ""}`}
+          // Computador: arrastar fotos para cá. A área reage enquanto o arquivo passa por cima.
+          onDragOver={(e) => {
+            if (photos.length >= MAX_PHOTOS || !e.dataTransfer.types.includes("Files")) return;
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            addPhotos(e.dataTransfer.files);
+          }}
+        >
           {photos.map((p, i) => (
             <div key={p.url} className="relative aspect-square">
               {/* eslint-disable-next-line @next/next/no-img-element -- prévia local */}
-              <img src={p.url} alt={`Foto ${i + 1}`} className="size-full rounded-md object-cover" />
+              <img src={p.url} alt={`Foto ${i + 1}`} className={`size-full rounded-md object-cover ${p.status === "failed" ? "ring-2 ring-danger" : ""}`} />
+              {p.status && (
+                <span
+                  className={`absolute bottom-1 left-1 inline-flex size-6 items-center justify-center rounded-full shadow-sm ${p.status === "failed" ? "bg-danger text-white" : p.status === "done" ? "bg-success text-white" : "bg-surface-elevated text-text-primary"}`}
+                >
+                  {p.status === "sending" && <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin motion-reduce:animate-none" strokeWidth={2.5} />}
+                  {p.status === "done" && <Check aria-hidden="true" className="size-3.5" strokeWidth={3} />}
+                  {p.status === "failed" && <CircleAlert aria-hidden="true" className="size-3.5" strokeWidth={2.5} />}
+                  <span className="sr-only">{p.status === "failed" ? "não enviada" : p.status === "done" ? "enviada" : "enviando"}</span>
+                </span>
+              )}
               <button
                 type="button"
                 aria-label={`Remover foto ${i + 1}`}
@@ -174,9 +237,9 @@ export function AdoptionForm({ userId }: { userId: string }) {
             </div>
           ))}
           {photos.length < MAX_PHOTOS && (
-            <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border-strong bg-surface text-center text-sm text-text-secondary hover:bg-surface-muted has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus">
+            <label className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed bg-surface text-center text-sm hover:bg-surface-muted has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus ${dragOver ? "border-brand text-text-primary" : "border-border-strong text-text-secondary"}`}>
               <Camera aria-hidden="true" className="size-6 text-brand" strokeWidth={1.75} />
-              Adicionar
+              {dragOver ? "Solte aqui" : "Adicionar"}
               <input type="file" accept="image/*" multiple className="sr-only" aria-label="Fotos do animal" onChange={(e) => addPhotos(e.target.files)} />
             </label>
           )}

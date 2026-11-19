@@ -28,32 +28,40 @@ const accent: Record<Tone, string> = {
   adoption: "var(--color-status-adoption-accent)",
 };
 
-/** As quatro ações da MEL. Celular: 2×2 compacto (cabe na 1ª tela); desktop: 4 lado a lado. */
-export function HelpActions() {
+/** Tira as variantes de tela maior (sm:, lg:) de uma lista de classes: sobra a disposição de celular. */
+const phoneOnly = (classes: string) => classes.split(" ").filter((c) => !/^(sm|lg):/.test(c)).join(" ");
+
+/**
+ * As quatro ações da MEL. Celular: 2×2 compacto (cabe na 1ª tela); desktop: 4 lado a lado.
+ * `phone`: força a disposição de celular em qualquer largura. Só a página interna /dev/hero-celular
+ * usa, para desenhar a tela do celular dentro de uma moldura no computador.
+ */
+export function HelpActions({ phone = false }: { phone?: boolean } = {}) {
+  const cx = phone ? phoneOnly : (classes: string) => classes;
   return (
-    <ul className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+    <ul className={cx("grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4 lg:gap-4")}>
       {ACTIONS.map(({ label, hint, Icon, tone, href, glow }, i) => (
         <li key={label} className="animate-enter" style={{ animationDelay: `${120 + i * 70}ms` }}>
           <Link
             href={href}
             style={{ "--c": accent[tone], "--glow": accent[tone] } as React.CSSProperties}
-            className={`mel-action ${glow ? "mh-glow" : ""} group relative flex h-full flex-col overflow-hidden rounded-card border-[1.5px] p-3.5 text-text-primary transition-[transform,box-shadow,border-color] duration-300 ease-mel hover:-translate-y-1.5 focus-visible:-translate-y-1.5 active:scale-[.98] sm:min-h-27 sm:p-4.5 lg:min-h-49 lg:p-5.5`}
+            className={cx(`mel-action ${glow ? "mh-glow" : ""} group relative flex h-full flex-col overflow-hidden rounded-card border-[1.5px] p-3.5 text-text-primary transition-[transform,box-shadow,border-color] duration-300 ease-mel hover:-translate-y-1.5 focus-visible:-translate-y-1.5 active:scale-[.98] sm:min-h-27 sm:p-4.5 lg:min-h-49 lg:p-5.5`)}
           >
             {glow && <span aria-hidden="true" className="mh-glow__border" />}
             <PawPrint aria-hidden="true" className="absolute -top-2 -right-2 size-20 rotate-12 text-text-primary opacity-[.06]" strokeWidth={1.5} />
             <span
               aria-hidden="true"
-              className="flex size-10 items-center justify-center rounded-full text-white shadow-md sm:size-12"
+              className={cx("flex size-10 items-center justify-center rounded-full text-white shadow-md sm:size-12")}
               style={{ background: "var(--c)" }}
             >
-              <Icon className="size-5 sm:size-6" strokeWidth={2.25} />
+              <Icon className={cx("size-5 sm:size-6")} strokeWidth={2.25} />
             </span>
-            <span className="mt-2.5 text-[17px] leading-[1.1] font-extrabold tracking-[-0.01em] sm:text-xl lg:mt-3.5 lg:text-[22px]">{label}</span>
-            <span className="mt-1 flex items-end lg:mt-1.5 justify-between gap-2">
-              <span className="text-[13px] leading-snug text-text-primary/85 sm:text-sm">{hint}</span>
+            <span className={cx("mt-2.5 text-[17px] leading-[1.1] font-extrabold tracking-[-0.01em] sm:text-xl lg:mt-3.5 lg:text-[22px]")}>{label}</span>
+            <span className={cx("mt-1 flex items-end lg:mt-1.5 justify-between gap-2")}>
+              <span className={cx("text-[13px] leading-snug text-text-primary/85 sm:text-sm")}>{hint}</span>
               <span
                 aria-hidden="true"
-                className="hidden size-9 shrink-0 items-center justify-center rounded-full text-white transition-transform duration-300 ease-mel group-hover:translate-x-1 sm:flex"
+                className={cx("hidden size-9 shrink-0 items-center justify-center rounded-full text-white transition-transform duration-300 ease-mel group-hover:translate-x-1 sm:flex")}
                 style={{ background: "var(--c)" }}
               >
                 <ChevronRight className="size-4" strokeWidth={2.5} />

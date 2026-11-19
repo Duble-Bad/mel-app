@@ -5,8 +5,9 @@ import {
   useCallback, useEffect, useRef, useState,
   type ClipboardEvent, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
 } from "react";
-import { Archive, Bell, Check, Heart, House, Map as MapIcon, PawPrint, Send, SlidersHorizontal, UserRound } from "lucide-react";
+import { Archive, Check, Handshake, Heart, House, LayoutGrid, Map as MapIcon, Send, SlidersHorizontal } from "lucide-react";
 import { animate, AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
+import { SlidingPillTabs, type PillTab } from "@/components/ui/motion/SlidingPillTabs";
 import { useToast } from "@/components/ui/Toast";
 import { PHOTOS, SectionHead, useCmReduced } from "./shared";
 
@@ -36,38 +37,28 @@ function LabCard({ n, title, hint, children, wide }: { n: string; title: string;
 
 /* ---------- 1. Barra de abas com pílula líquida ---------- */
 
-const TABS = [
-  { label: "Início", Icon: House, screen: "3 casos novos perto de você" },
-  { label: "Mapa", Icon: MapIcon, screen: "Raio de 2 km · Vila Madalena" },
-  { label: "Alertas", Icon: Bell, screen: "2 avistamentos aguardando resposta" },
-  { label: "Perfil", Icon: UserRound, screen: "Guardiã desde março" },
+/** As mesmas seções do menu do app (components/layout/MainNav), com um ícone para cada. */
+const TABS: (PillTab & { screen: string })[] = [
+  { id: "inicio", label: "Início", icon: <House size={20} />, screen: "3 casos novos perto de você" },
+  { id: "mapa", label: "Mapa", icon: <MapIcon size={20} />, screen: "Raio de 2 km · Vila Madalena" },
+  { id: "mural", label: "Mural", icon: <LayoutGrid size={20} />, screen: "12 pets no mural desta semana" },
+  { id: "adocao", label: "Adoção", icon: <Heart size={20} />, screen: "5 animais esperando um lar" },
+  { id: "parceiros", label: "Parceiros", icon: <Handshake size={20} />, screen: "Clínicas, ONGs e protetores" },
 ];
 
-function LiquidTabs() {
-  const [active, setActive] = useState(0);
+/** "Sliding Pill": a barra de verdade (components/ui/motion/SlidingPillTabs), aqui só trocando um texto. */
+function PillTabsDemo() {
+  const [active, setActive] = useState("inicio");
   return (
     <div className="flex w-full flex-col gap-5">
       <div className="cm-tabs-screen" aria-live="polite">
         <AnimatePresence mode="wait" initial={false}>
           <motion.p key={active} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.22 }}>
-            {TABS[active]?.screen}
+            {TABS.find((t) => t.id === active)?.screen}
           </motion.p>
         </AnimatePresence>
       </div>
-      <nav aria-label="Navegação de exemplo" className="cm-tabs">
-        <span className="cm-tabs-goo" aria-hidden="true">
-          <motion.span className="cm-tabs-blob" animate={{ x: `${active * 100}%` }} initial={false} transition={{ type: "spring", stiffness: 420, damping: 30 }} />
-          <motion.span className="cm-tabs-blob cm-tabs-trail" animate={{ x: `${active * 100}%` }} initial={false} transition={{ type: "spring", stiffness: 130, damping: 19 }} />
-        </span>
-        {TABS.map(({ label, Icon }, i) => (
-          <button key={label} type="button" className="cm-tab" aria-current={i === active ? "page" : undefined} onClick={() => setActive(i)}>
-            <motion.span className="inline-flex" animate={{ y: i === active ? -1 : 0, scale: i === active ? 1.12 : 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
-              <Icon size={19} aria-hidden="true" />
-            </motion.span>
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
+      <SlidingPillTabs label="Navegação de exemplo" tabs={TABS} active={active} onSelect={setActive} />
     </div>
   );
 }
@@ -257,7 +248,9 @@ function SwipeDemo() {
 
 /* ---------- 4. Painel inferior com pontos de encaixe ---------- */
 
-const SNAP = { full: 0, half: 134, closed: 284 } as const;
+const SNAP = { full: 0, half: 70, closed: 284 } as const;
+/** Altura (px) do rodapé fixo com o botão "Aplicar". */
+const SHEET_FOOT = 68;
 type SheetState = keyof typeof SNAP;
 const SHEET_FILTERS = ["Cães", "Gatos", "Até 2 km", "Com foto"];
 
@@ -267,6 +260,9 @@ function SheetDemo() {
   const [picked, setPicked] = useState<string[]>(["Cães", "Até 2 km"]);
   const y = useMotionValue<number>(SNAP.closed);
   const backdrop = useTransform(y, [SNAP.full, SNAP.closed], [0.5, 0]);
+  // O rodapé não acompanha o painel: fica colado na base da área visível em qualquer encaixe e só
+  // desce (junto com o painel) no trecho final do fechamento.
+  const footY = useTransform(y, [SNAP.half, SNAP.closed], [0, SHEET_FOOT + 8]);
   const opener = useRef<HTMLButtonElement>(null);
   const handle = useRef<HTMLButtonElement>(null);
 
@@ -306,40 +302,39 @@ function SheetDemo() {
         </button>
       </div>
       <motion.div className="cm-phone-dim" style={{ opacity: backdrop, pointerEvents: state === "closed" ? "none" : "auto" }} onClick={() => go("closed")} aria-hidden="true" />
-      <motion.div
-        className="cm-bsheet"
+      {/* O diálogo é a moldura parada; dentro dele, o painel arrastável e o rodapé fixo com "Aplicar". */}
+      <div
+        className="cm-bsheet-dialog"
         role="dialog"
         aria-label="Filtros"
         inert={state === "closed"}
-        drag="y"
-        dragConstraints={{ top: SNAP.full, bottom: SNAP.closed }}
-        dragElastic={0.06}
-        dragMomentum={false}
-        style={{ y }}
-        onDragEnd={onDragEnd}
         onKeyDown={(e) => {
           if (e.key === "Escape") go("closed");
         }}
       >
-        <button ref={handle} type="button" className="cm-bsheet-handle" aria-label={state === "full" ? "Reduzir painel" : "Expandir painel"} onClick={() => go(state === "full" ? "half" : "full")}>
-          <span />
-        </button>
-        <p className="text-sm font-bold">Filtros</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {SHEET_FILTERS.map((f) => {
-            const on = picked.includes(f);
-            return (
-              <button key={f} type="button" aria-pressed={on} className="cm-pick" onClick={() => setPicked((p) => (on ? p.filter((x) => x !== f) : [...p, f]))}>
-                {f}
-              </button>
-            );
-          })}
-        </div>
-        <p className="cm-lab-note mt-4">Arraste: meio, tela cheia ou para baixo para fechar.</p>
-        <button type="button" className="cm-btn cm-btn-gold cm-btn-sm mt-4 w-full" onClick={() => go("closed")}>
-          Aplicar {picked.length} filtros
-        </button>
-      </motion.div>
+        <motion.div className="cm-bsheet" drag="y" dragConstraints={{ top: SNAP.full, bottom: SNAP.closed }} dragElastic={0.06} dragMomentum={false} style={{ y }} onDragEnd={onDragEnd}>
+          <button ref={handle} type="button" className="cm-bsheet-handle" aria-label={state === "full" ? "Reduzir painel" : "Expandir painel"} onClick={() => go(state === "full" ? "half" : "full")}>
+            <span />
+          </button>
+          <p className="text-sm font-bold">Filtros</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {SHEET_FILTERS.map((f) => {
+              const on = picked.includes(f);
+              return (
+                <button key={f} type="button" aria-pressed={on} className="cm-pick" onClick={() => setPicked((p) => (on ? p.filter((x) => x !== f) : [...p, f]))}>
+                  {f}
+                </button>
+              );
+            })}
+          </div>
+          <p className="cm-lab-note mt-4">Arraste: meio, tela cheia ou para baixo para fechar. O botão Aplicar fica sempre à vista.</p>
+        </motion.div>
+        <motion.div className="cm-bsheet-foot" style={{ y: footY }}>
+          <button type="button" className="cm-btn cm-btn-gold cm-btn-sm w-full" onClick={() => go("closed")}>
+            Aplicar {picked.length} filtros
+          </button>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -384,21 +379,29 @@ function PullDemo() {
   const [busy, setBusy] = useState(false);
   const startY = useRef<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const rotate = useTransform(y, [0, 90], [0, 320]);
-  const opacity = useTransform(y, [0, 24, 56], [0, 0.5, 1]);
-  const scale = useTransform(y, [0, 56], [0.4, 1]);
+  const [done, setDone] = useState(false);
+  // O arco cresce com a distância puxada (até 3/4 de volta no ponto de soltar) e gira um pouco junto.
+  const arc = useTransform(y, [4, 56], [0.02, 0.76]);
+  const rotate = useTransform(y, [0, 96], [-90, 150]);
+  const opacity = useTransform(y, [0, 14, 40], [0, 0.6, 1]);
+  const scale = useTransform(y, [0, 56], [0.6, 1]);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const settle = (to: number) => animate(y, to, reduced ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 30 });
 
   function refresh() {
-    if (busy) return;
+    if (busy || done) return;
     setBusy(true);
     settle(54);
     timer.current = setTimeout(() => {
       setItems((list) => [(Math.max(...list) + 1), ...list].slice(0, 3));
       setBusy(false);
-      settle(0);
+      // Assenta: o arco fecha o círculo, o "check" se desenha e só então a lista volta ao lugar.
+      setDone(true);
+      timer.current = setTimeout(() => {
+        settle(0);
+        timer.current = setTimeout(() => setDone(false), 320);
+      }, reduced ? 0 : 520);
     }, 1250);
   }
   function onDown(e: ReactPointerEvent<HTMLDivElement>) {
@@ -421,10 +424,16 @@ function PullDemo() {
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="cm-pull" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-        <motion.span className="cm-pull-ind" style={{ opacity, scale }} aria-hidden="true">
-          <motion.span className={`inline-flex ${busy ? "cm-spin" : ""}`} style={{ rotate }}>
-            <PawPrint size={20} />
+        <motion.span className="cm-pull-ind" data-state={done ? "done" : busy ? "busy" : "pull"} style={{ opacity, scale }} aria-hidden="true">
+          <motion.span className="cm-pull-turn" style={{ rotate: busy || done ? 0 : rotate }}>
+            <svg viewBox="0 0 36 36" className="cm-pull-svg">
+              <circle cx="18" cy="18" r="13" className="cm-pull-track" />
+              <motion.circle cx="18" cy="18" r="13" className="cm-pull-arc" style={{ pathLength: done ? 1 : arc }} />
+            </svg>
           </motion.span>
+          <svg viewBox="0 0 36 36" className="cm-pull-tick">
+            <path d="M12 18.5 L16.4 22.8 L24.4 13.8" pathLength={1} />
+          </svg>
         </motion.span>
         <motion.ul className="cm-pull-list" style={{ y }}>
           <AnimatePresence mode="popLayout" initial={false}>
@@ -438,8 +447,8 @@ function PullDemo() {
         </motion.ul>
       </div>
       <p className="cm-lab-note flex items-center justify-between gap-3" role="status">
-        <span>{busy ? "Buscando novidades..." : "Arraste a lista para baixo e solte."}</span>
-        <button type="button" className="cm-link" onClick={refresh} disabled={busy}>
+        <span>{busy ? "Buscando novidades..." : done ? "Atualizado." : "Arraste a lista para baixo e solte."}</span>
+        <button type="button" className="cm-link" onClick={refresh} disabled={busy || done}>
           Atualizar
         </button>
       </p>
@@ -645,8 +654,8 @@ export function Playground() {
           lead="Tudo aqui funciona de verdade: toque, arraste, segure, digite. Cada cartão indica em que tela da MEL o padrão entraria."
         />
         <div className="cm-labs">
-          <LabCard n="A" title="Abas com pílula líquida" hint="Barra inferior do app">
-            <LiquidTabs />
+          <LabCard n="A" title="Barra de abas com pílula" hint="Barra inferior do app (celular)" wide>
+            <PillTabsDemo />
           </LabCard>
           <LabCard n="B" title="Segurar para confirmar" hint="Marcar pet como encontrado">
             <HoldConfirm />

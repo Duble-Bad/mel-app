@@ -1126,60 +1126,6 @@
   font-weight: 700;
   overflow: hidden;
 }
-.cm-tabs {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  padding: 6px;
-  border-radius: 26px;
-  background: var(--mel-surface-muted);
-  border: 1px solid var(--mel-border);
-}
-.cm-tabs-goo {
-  position: absolute;
-  inset: 6px;
-  filter: url(#cm-goo);
-  pointer-events: none;
-}
-.cm-tabs-blob {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 25%;
-  height: 100%;
-  border-radius: 20px;
-  background: var(--mel-primary);
-}
-.cm-tabs-trail {
-  background: none;
-}
-.cm-tabs-trail::before {
-  content: "";
-  position: absolute;
-  inset: 24% 20%;
-  border-radius: 999px;
-  background: var(--mel-primary);
-}
-.cm-tab {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  min-height: 56px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mel-text-secondary);
-  cursor: pointer;
-  transition: color 0.25s;
-}
-.cm-tab[aria-current="page"] {
-  color: var(--mel-primary-foreground);
-}
-
 /* B. Segurar */
 .cm-hold {
   position: relative;
@@ -1271,15 +1217,15 @@
   font-size: 13px;
   font-weight: 800;
 }
-/* Lida: verde de sucesso. Arquivar: neutro forte (não é ação destrutiva). */
+/* Fundo revelado pelo gesto. Direita (lida): verde de sucesso. Esquerda (arquivar): vermelho. */
 .cm-swipe-read {
   background: var(--mel-status-found-solid);
   color: var(--mel-text-inverse);
 }
 .cm-swipe-archive {
   justify-content: flex-end;
-  background: var(--mel-inverse-surface);
-  color: var(--mel-inverse-foreground);
+  background: var(--mel-status-lost-solid);
+  color: var(--mel-text-inverse);
 }
 .cm-swipe-row {
   position: relative;
@@ -1315,7 +1261,8 @@
 }
 
 /* Botões da linha: sempre com cor (verde = lida, neutro forte = arquivar) e com um "hover" que
-   contrasta com o cartão nos dois temas (fundo tingido + borda), em vez do cinza sobre cinza. */
+   contrasta com o cartão nos dois temas (fundo tingido + borda), em vez do cinza sobre cinza.
+   Arquivar fica vermelho no hover, a mesma cor do fundo revelado pelo deslize. */
 .cm-act {
   flex: none;
   display: grid;
@@ -1350,9 +1297,9 @@
   border-color: var(--mel-border-strong);
 }
 .cm-act-archive:hover {
-  background: var(--mel-inverse-surface);
+  background: var(--mel-status-lost-solid);
   border-color: transparent;
-  color: var(--mel-inverse-foreground);
+  color: var(--mel-text-inverse);
 }
 
 /* D. Painel inferior */
@@ -1385,18 +1332,27 @@
   inset: 0;
   background: var(--mel-ink-950);
 }
+.cm-bsheet-dialog {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
 .cm-bsheet {
   position: absolute;
   left: 0;
   right: 0;
   top: 48px;
   height: 284px;
-  padding: 0 16px 16px;
+  /* O espaço de baixo é do rodapé fixo: nada do painel fica escondido atrás dele. */
+  padding: 0 16px 84px;
   border-radius: 22px 22px 0 0;
   border-top: 1px solid var(--mel-border);
   background: var(--mel-surface-elevated);
   box-shadow: 0 -14px 30px -14px color-mix(in srgb, var(--mel-ink-950) 45%, transparent);
   touch-action: none;
+  pointer-events: auto;
 }
 .cm-bsheet::after {
   content: "";
@@ -1406,6 +1362,18 @@
   top: 100%;
   height: 80px;
   background: inherit;
+}
+/* Rodapé com "Aplicar": colado na base da área visível, em qualquer ponto de encaixe. */
+.cm-bsheet-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--mel-border);
+  background: var(--mel-surface-elevated);
+  box-shadow: 0 -10px 20px -14px color-mix(in srgb, var(--mel-ink-950) 40%, transparent);
+  pointer-events: auto;
 }
 .cm-bsheet-handle {
   display: grid;
@@ -1451,21 +1419,66 @@
   user-select: none;
   -webkit-user-select: none;
 }
+/* Indicador: um disco discreto com um arco na cor da marca. O arco cresce com o puxão, gira
+   enquanto busca e, ao terminar, fecha o círculo e vira um "check" antes de sumir com a lista. */
 .cm-pull-ind {
   position: absolute;
-  top: 10px;
+  top: 9px;
   left: 50%;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  margin-left: -18px;
+  width: 38px;
+  height: 38px;
+  margin-left: -19px;
   border-radius: 50%;
-  background: var(--mel-primary);
-  color: var(--mel-primary-foreground);
+  border: 1px solid var(--mel-border);
+  background: var(--mel-surface-elevated);
+  box-shadow: var(--mel-shadow-md);
 }
-.cm-spin {
-  animation: cm-spin 0.75s linear infinite;
+.cm-pull-turn,
+.cm-pull-svg,
+.cm-pull-tick {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.cm-pull-track,
+.cm-pull-arc,
+.cm-pull-tick path {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cm-pull-track {
+  stroke: color-mix(in srgb, var(--mel-brand) 18%, transparent);
+}
+.cm-pull-arc {
+  stroke: var(--mel-brand);
+}
+.cm-pull-ind[data-state="busy"] .cm-pull-svg {
+  animation: cm-spin 0.8s linear infinite;
+}
+.cm-pull-ind[data-state="done"] .cm-pull-arc {
+  stroke: var(--mel-status-found);
+  transition: stroke 0.25s;
+}
+.cm-pull-tick path {
+  stroke: var(--mel-status-found);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.cm-pull-ind[data-state="done"] .cm-pull-tick path {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.3s var(--cm-io) 0.12s;
+}
+.cm-pull-ind[data-state="done"] {
+  animation: cm-pull-settle 0.45s var(--cm-back);
+}
+@keyframes cm-pull-settle {
+  40% {
+    scale: 1.14;
+  }
 }
 .cm-pull-list {
   position: relative;
@@ -1744,4 +1757,10 @@
 
 .cm-root[data-motion="reduced"] .mh-radar-sweep {
   display: none;
+}
+
+@media (min-width: 680px) {
+  .cm-lab-wide {
+    grid-column: span 2;
+  }
 }

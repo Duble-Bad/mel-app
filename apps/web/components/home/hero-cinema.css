@@ -1,34 +1,27 @@
 /*
- * Topo do início: o vídeo da Mel. Base = "radar" (telas menores que lg e a página de conceito);
+ * Topo do início: o vídeo da Mel. Base = radar circular (telas menores que lg e a página de conceito);
  * em lg+ com data-variant="auto" valem as regras do conceito C (vídeo-palco na borda direita).
  * Só tokens da MEL; o preto das máscaras (mask) não é cor de tela.
  */
 
 /* ---------- Radar (base) ----------
-   O vídeo tem 1024×592 e os dois bichos ocupam quase toda a largura: recortar em círculo cortava um
-   deles. Por isso o vídeo aparece INTEIRO, num cartão centralizado, e o radar é maior que o cartão
-   (os anéis nascem atrás do vídeo e passam das bordas). Em 390 px o vídeo fica com ~358 px de
-   largura; se o radar encolhesse o vídeo para caber num círculo, ele teria ~200 px. */
+   O vídeo fica DENTRO do círculo do radar (a "lente"). A lente ocupa 84% do palco (antes 66%), então
+   o círculo mostra uma área maior do vídeo, e o enquadramento (object-position) foi deslocado para a
+   direita para o gatinho e a Mel aparecerem inteiros, lado a lado. Os anéis nascem na borda da
+   lente e passam do palco. */
 .mh-radar {
-  --mh-band: 58px;
   position: relative;
   width: min(100%, 440px);
+  aspect-ratio: 1;
   margin-inline: auto;
-  padding-block: var(--mh-band);
   /* --px/--py (de -0,5 a 0,5) só existem na página de conceito, com mouse: inclinam o palco. */
   transform: perspective(1100px) rotateX(calc(var(--py, 0) * -12deg)) rotateY(calc(var(--px, 0) * 16deg));
 }
 .mh-radar-deco {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  inset: 0;
   z-index: -1;
-  width: 124%;
-  aspect-ratio: 1;
-  translate: -50% -50%;
   pointer-events: none;
-  /* Some antes de encostar no texto de cima e nas ações de baixo. */
-  mask-image: linear-gradient(to bottom, transparent 5%, #000 28%, #000 72%, transparent 95%);
 }
 .mh-radar-orbit,
 .mh-radar-ring,
@@ -37,12 +30,12 @@
   border-radius: 50%;
 }
 .mh-radar-orbit-a {
-  inset: 9%;
+  inset: 3%;
   border: 1px dashed color-mix(in srgb, var(--mel-brand) 46%, transparent);
   animation: mh-radar-spin 80s linear infinite;
 }
 .mh-radar-orbit-b {
-  inset: 0;
+  inset: -7%;
   border: 1px solid var(--mel-border);
 }
 .mh-radar-ring {
@@ -53,9 +46,9 @@
   animation-delay: calc(var(--i) * -1.5s);
 }
 .mh-radar-sweep {
-  inset: 2%;
-  background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--mel-brand) 34%, transparent) 100%);
-  mask-image: radial-gradient(closest-side, transparent 58%, #000 59%, transparent 100%);
+  inset: -2%;
+  background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--mel-brand) 38%, transparent) 100%);
+  mask-image: radial-gradient(closest-side, transparent 80%, #000 81%, transparent 100%);
   animation: mh-radar-spin 7s linear infinite;
 }
 @keyframes mh-radar-spin {
@@ -65,34 +58,38 @@
 }
 @keyframes mh-radar-ring {
   from {
-    transform: scale(0.42);
+    transform: scale(0.84);
     opacity: 0.8;
   }
   to {
-    transform: scale(1);
+    transform: scale(1.22);
     opacity: 0;
   }
 }
 
+/* A lente: o mesmo elemento que, nas telas grandes do site, é o palco retangular do vídeo. */
 .mh-cine-stage {
-  position: relative;
-  aspect-ratio: 1024 / 592;
-  width: 100%;
+  position: absolute;
+  inset: 8%;
   overflow: hidden;
-  border-radius: 26px;
+  border-radius: 50%;
   background: var(--mel-surface-muted);
   box-shadow:
     0 0 0 1px var(--mel-brand-ring),
-    0 0 0 8px color-mix(in srgb, var(--mel-brand) 14%, transparent),
-    0 30px 70px -24px color-mix(in srgb, var(--mel-brand) 55%, transparent);
+    0 0 0 9px color-mix(in srgb, var(--mel-brand) 14%, transparent),
+    0 34px 80px -22px color-mix(in srgb, var(--mel-brand) 55%, transparent);
   animation: mh-radar-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
 }
 .mh-cine-stage::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(140deg, color-mix(in srgb, var(--mel-text-inverse) 22%, transparent) 0%, transparent 34%);
+  border-radius: 50%;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--mel-text-inverse) 24%, transparent) 0%, transparent 38%);
   pointer-events: none;
+}
+.mh-cine-video {
+  object-position: 61% 50%;
 }
 @keyframes mh-radar-in {
   from {
@@ -105,7 +102,7 @@
   display: none;
 }
 
-/* Cartões flutuantes (dados reais). Ficam nas faixas acima e abaixo do vídeo, sem cobrir os bichos. */
+/* Cartões flutuantes (dados reais), nos cantos do palco que o círculo deixa livres. */
 .mh-chips {
   display: contents;
 }
@@ -116,21 +113,21 @@
 }
 /* Em cima, à esquerda: o caso mais recente. Embaixo: casos no mapa (esquerda) e reencontros (direita). */
 .mh-chip-a {
-  top: 4px;
+  top: 1%;
   left: -2px;
-  max-width: 72%;
+  max-width: 70%;
   --depth: 34px;
 }
 .mh-chip-b {
   bottom: 0;
   right: -2px;
-  max-width: 56%;
+  max-width: 58%;
   --depth: 56px;
 }
 .mh-chip-c {
-  bottom: 9px;
+  bottom: 5%;
   left: -2px;
-  max-width: 42%;
+  max-width: 44%;
   --depth: 44px;
 }
 .mh-chip {
@@ -191,20 +188,28 @@
 
 @media (min-width: 1024px) {
   .mh-radar[data-variant="radar"] {
-    --mh-band: 66px;
     width: min(100%, 540px);
   }
   .mh-radar[data-variant="radar"] .mh-chip-a,
   .mh-radar[data-variant="radar"] .mh-chip-c {
-    left: -5%;
+    left: -6%;
   }
   .mh-radar[data-variant="radar"] .mh-chip-b {
-    right: -5%;
+    right: -6%;
   }
 
-  /* ---------- Telas grandes no site (conceito C, sem mudança): o vídeo é o palco ----------
-     Encostado na borda direita da tela, inteiro (na proporção do vídeo, sem corte) e dissolvendo no
-     fundo à esquerda e embaixo. O radar e os cartões não aparecem. */
+  /* Dentro de uma moldura de celular (página interna /dev/hero-celular) os cartões não saem do palco. */
+  .mh-radar-phone .mh-radar[data-variant="radar"] .mh-chip-a,
+  .mh-radar-phone .mh-radar[data-variant="radar"] .mh-chip-c {
+    left: -2px;
+  }
+  .mh-radar-phone .mh-radar[data-variant="radar"] .mh-chip-b {
+    right: -2px;
+  }
+
+  /* ---------- Telas grandes no site: conceito C, igual ao de antes (commit 79a3b51) ----------
+     O vídeo é o palco: encostado na borda direita da tela, inteiro (na proporção do vídeo, sem
+     corte) e dissolvendo no fundo à esquerda e embaixo. Sem radar e sem cartões. */
   .mh-radar[data-variant="auto"] {
     display: contents;
   }
@@ -215,8 +220,8 @@
   }
   .mh-radar[data-variant="auto"] .mh-cine-stage {
     position: absolute;
-    top: 28px;
-    right: 0;
+    inset: 28px 0 auto auto;
+    aspect-ratio: 1024 / 592;
     width: min(54vw, 940px);
     margin: 0;
     z-index: -1;
@@ -229,6 +234,9 @@
       linear-gradient(to right, transparent 0%, #000 28%),
       linear-gradient(to bottom, transparent 0%, #000 14%, #000 74%, transparent 100%);
     mask-composite: intersect;
+  }
+  .mh-radar[data-variant="auto"] .mh-cine-video {
+    object-position: 50% 50%;
   }
   .mh-radar[data-variant="auto"] .mh-pin {
     display: block;

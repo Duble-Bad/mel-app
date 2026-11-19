@@ -171,6 +171,15 @@
   }
 }
 
+/* Barra de tempo dos avisos (components/ui/Toast): cheia no começo, vazia quando o aviso some. */
+@keyframes mel-toast-time {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
 @keyframes mel-shimmer {
   from {
     background-position: 200% 0;

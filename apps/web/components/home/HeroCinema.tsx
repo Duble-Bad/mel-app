@@ -14,40 +14,22 @@ const PINS = [
 /**
  * Topo do início: UM só vídeo da Mel com o gatinho, com duas apresentações (hero-cinema.css).
  *
- * - Telas grandes (lg+), `variant="auto"`: conceito C aprovado em 2026-11-12. O vídeo é o palco,
- *   encostado na borda direita da tela e dissolvendo no fundo; pinos de avistamento pousam na cena.
- * - Telas menores (ou `variant="radar"`, na página de conceito): o vídeo fica inteiro e centralizado
- *   dentro de um radar maior que ele (os dois bichos sempre visíveis), com os cartões flutuantes
- *   recebidos em `children` (dados reais: ver HeroLiveChips).
+ * - Telas grandes (lg+), `variant="auto"`: conceito C aprovado em 2026-11-12, sem mudança. O vídeo é
+ *   o palco, encostado na borda direita da tela e dissolvendo no fundo; pinos pousam na cena.
+ * - Telas menores (ou `variant="radar"`, na página de conceito): o vídeo fica dentro do círculo do
+ *   radar, enquadrado para os dois bichos aparecerem, com os cartões flutuantes recebidos em
+ *   `children` (dados reais: ver HeroLiveChips).
  *
  * Como é o mesmo <video> nos dois casos, nenhum aparelho baixa o vídeo duas vezes. Sem "reduzir
- * movimento" o vídeo toca em loop enquanto está na tela; com ele, fica no primeiro quadro.
+ * movimento" o vídeo toca em loop; com ele, fica no primeiro quadro.
  */
 export function HeroCinema({ variant = "auto", children }: { variant?: "auto" | "radar"; children?: ReactNode }) {
   const reduced = useReducedMotion();
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     // O atributo autoPlay tocaria antes de sabermos da preferência; por isso o play é aqui.
-    const el = video.current;
-    if (!el) return;
-    if (reduced) {
-      el.pause();
-      return;
-    }
-    if (!("IntersectionObserver" in window)) {
-      el.play().catch(() => {});
-      return;
-    }
-    // Fora da tela o vídeo pausa: não gasta bateria nem decodificação enquanto a pessoa lê o resto.
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) el.play().catch(() => {});
-        else el.pause();
-      },
-      { threshold: 0.1 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    if (reduced) video.current?.pause();
+    else video.current?.play().catch(() => {});
   }, [reduced]);
 
   return (
@@ -69,7 +51,7 @@ export function HeroCinema({ variant = "auto", children }: { variant?: "auto" | 
           loop
           playsInline
           preload="auto"
-          className="size-full object-cover"
+          className="mh-cine-video size-full object-cover"
         >
           <source src="/videos/mel-e-gatinho.webm" type="video/webm" />
           <source src="/videos/mel-e-gatinho.mp4" type="video/mp4" />
