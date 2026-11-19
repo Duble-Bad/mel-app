@@ -7,6 +7,7 @@ Ao decidir, mover o item para "Decididas" com a data e registrar em `decisoes.md
 
 | # | Desde | Decisão | Contexto |
 |---|---|---|---|
+| 13 | 2026-11-19 | **Conceito de movimento `/dev/conceito-motion`**: o que levar para as telas reais (herói cinematográfico com radar e luz que segue o mouse; mapa da rede que "acorda" com a rolagem; cartões com inclinação 3D, filtros que reorganizam a grade e cartão que se expande em painel; números ao vivo com odômetro, gráfico e painel de aeroporto; sequência de reencontro; laboratório com abas líquidas, segurar para confirmar, deslizar para arquivar, painel com encaixes, pilha de avisos, puxar para atualizar, código de verificação e favoritar) | Página interna para comparar com o site atual (só com `MEL_DEV_ROUTES=1`). Sem biblioteca nova (motion, CSS, SVG e canvas). Só testado no Chromium; desempenho do mapa precisa ser medido num celular intermediário antes de ir para produção |
 | 3 | 2026-11-09 | **Trocar a capa da Mel** para a foto horizontal com laço amarelo | Recomendação visual: a capa atual (no colo) é a que pior identifica a Mel. Não alterar sem autorização |
 | 4 | 2026-11-09 | **Teste manual**: ler o QR Code com câmera de celular (tela e A4 impresso) | Só o proprietário consegue |
 | 5 | 2026-11-09 | **Teste manual**: Instagram/TikTok/Facebook num celular real (compartilhamento nativo) | Nos testes automáticos o menu do sistema é simulado |
