@@ -146,7 +146,7 @@ describe("signUpWithPassword with an anonymous session (conversion)", () => {
   it.each([
     ["e-mail já cadastrado", "email_exists", "Já existe uma conta com este e-mail. Você pode entrar nela, mas o que enviou sem conta"],
     ["e-mail inválido", "email_address_invalid", "Não conseguimos usar este e-mail"],
-    ["senha fraca/curta", "weak_password", "Essa senha é fácil de adivinhar"],
+    ["senha fraca/curta", "weak_password", "Essa senha não atende às regras"],
     ["sessão expirada no servidor", "session_not_found", "Sua sessão expirou"],
     ["rate limit", "over_request_rate_limit", "Muitas tentativas seguidas"],
     ["erro inesperado do Supabase", "unexpected_failure", "Não deu certo agora"],

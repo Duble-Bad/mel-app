@@ -163,6 +163,14 @@ test("sign-in screen: no errors before interaction, eye icon for the password, n
   await page.getByRole("button", { name: "Criar conta" }).click();
   await expect(page.getByText("Conte pra gente como podemos te chamar.")).toBeVisible();
   await expect(page.getByLabel("Seu nome")).toBeFocused();
+
+  // Senha nova: 8+ com minúscula, maiúscula, número e símbolo (mesma regra do Supabase).
+  await page.getByLabel("Seu nome").fill("Ana Exemplo");
+  await page.getByLabel("E-mail").fill("ana@exemplo.com");
+  await password.fill("melzinha77");
+  await page.getByRole("button", { name: "Criar conta" }).click();
+  await expect(page.getByText("A senha precisa ter uma letra maiúscula (A–Z).")).toBeVisible();
+  await expect(page.getByTestId("password-strength").getByText("(pendente)")).toHaveCount(2);
 });
 
 test("theme: dark by default, can be switched, and is applied before paint on reload", async ({ browser }) => {

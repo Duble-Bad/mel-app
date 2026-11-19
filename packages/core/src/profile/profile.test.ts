@@ -19,10 +19,23 @@ describe("profileInputSchema", () => {
 
 describe("signUpSchema", () => {
   it("asks for the name too", () => {
-    const r = signUpSchema.safeParse({ email: "ana@exemplo.com", password: "12345678", displayName: " " });
+    const r = signUpSchema.safeParse({ email: "ana@exemplo.com", password: "Melzinha7!", displayName: " " });
     expect(r.success).toBe(false);
     expect(fieldErrors(r.error!).displayName).toBe("Conte pra gente como podemos te chamar.");
-    expect(signUpSchema.parse({ email: "ana@exemplo.com", password: "12345678", displayName: " Ana " }).displayName).toBe("Ana");
+    expect(signUpSchema.parse({ email: "ana@exemplo.com", password: "Melzinha7!", displayName: " Ana " }).displayName).toBe("Ana");
+  });
+
+  it("exige minúscula, maiúscula, número e símbolo na senha nova (regra do Supabase)", () => {
+    const err = (password: string) =>
+      fieldErrors(signUpSchema.safeParse({ email: "ana@exemplo.com", password, displayName: "Ana" }).error!).password;
+    expect(err("Ab1!")).toMatch(/8 caracteres/);
+    expect(err("MELZINHA7!")).toMatch(/minúscula/);
+    expect(err("melzinha7!")).toMatch(/maiúscula/);
+    expect(err("Melzinha!!")).toMatch(/número/);
+    expect(err("Melzinha77")).toMatch(/símbolo/);
+    // Acento e espaço não contam como símbolo (o Supabase recusaria).
+    expect(err("Melzinha7 ç")).toMatch(/símbolo/);
+    expect(signUpSchema.safeParse({ email: "ana@exemplo.com", password: "Melzinha7!", displayName: "Ana" }).success).toBe(true);
   });
 });
 

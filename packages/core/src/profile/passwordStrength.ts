@@ -1,7 +1,9 @@
 /**
- * Força da senha, só como orientação (a regra que bloqueia continua sendo o
- * mínimo de 8 caracteres, igual no app e no Supabase). Sem dicionário nem
- * biblioteca: tamanho, variedade e repetições óbvias.
+ * Força da senha, só como orientação visual. A regra que BLOQUEIA é
+ * `passwordChecks` / `isPasswordAccepted` (8+ caracteres com minúscula,
+ * maiúscula, número e símbolo), a mesma do Supabase
+ * (password_requirements = lower_upper_letters_digits_symbols).
+ * Sem dicionário nem biblioteca: tamanho, variedade e repetições óbvias.
  *
  * 0 = vazia · 1 = fraca · 2 = razoável · 3 = boa · 4 = forte
  */
@@ -20,7 +22,7 @@ export function passwordHint(password: string, level: PasswordStrength): string 
   if (level === 0 || level === 4) return "";
   if (password.length < 8) return "Use pelo menos 8 caracteres.";
   if (!/\d/.test(password)) return "Acrescente um número.";
-  if (!/[^A-Za-z0-9]/.test(password)) return "Acrescente um símbolo (ex.: ! @ #).";
+  if (!hasSymbol(password)) return "Acrescente um símbolo (ex.: ! @ #).";
   if (!(/[a-z]/.test(password) && /[A-Z]/.test(password))) return "Misture letras maiúsculas e minúsculas.";
   return "Uma senha mais longa fica ainda mais forte.";
 }
@@ -44,22 +46,49 @@ export function passwordStrength(password: string): PasswordStrength {
 }
 
 /**
+ * Símbolos aceitos: exatamente o conjunto que o Supabase conta como símbolo em
+ * `lower_upper_letters_digits_symbols`. Acento, "ç" ou espaço NÃO contam, senão
+ * o app aceitaria e o Supabase recusaria a mesma senha.
+ */
+export const PASSWORD_SYMBOLS = "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~";
+
+function hasSymbol(password: string): boolean {
+  return [...password].some((ch) => PASSWORD_SYMBOLS.includes(ch));
+}
+
+/**
  * O que compõe a senha, item a item, para a lista ao lado do campo.
- * `required`: o que a MEL exige (hoje só o tamanho, igual no Supabase);
- * os demais deixam a senha forte e aparecem como recomendação.
+ * Todos são obrigatórios (decisão do dono em 2026-11-19), iguais no app e no
+ * Supabase.
  */
 export interface PasswordCheck {
-  id: "length" | "number" | "symbol" | "case";
+  id: "length" | "lower" | "upper" | "number" | "symbol";
   label: string;
-  required: boolean;
   ok: boolean;
 }
 
+export const PASSWORD_MIN_LENGTH = 8;
+
 export function passwordChecks(password: string): PasswordCheck[] {
   return [
-    { id: "length", label: "Pelo menos 8 caracteres", required: true, ok: password.length >= 8 },
-    { id: "number", label: "Um número (0–9)", required: false, ok: /\d/.test(password) },
-    { id: "symbol", label: "Um símbolo (ex.: ! @ # $)", required: false, ok: /[^A-Za-z0-9]/.test(password) },
-    { id: "case", label: "Letras maiúsculas e minúsculas", required: false, ok: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+    { id: "length", label: `Pelo menos ${PASSWORD_MIN_LENGTH} caracteres`, ok: password.length >= PASSWORD_MIN_LENGTH },
+    { id: "lower", label: "Uma letra minúscula (a–z)", ok: /[a-z]/.test(password) },
+    { id: "upper", label: "Uma letra maiúscula (A–Z)", ok: /[A-Z]/.test(password) },
+    { id: "number", label: "Um número (0–9)", ok: /\d/.test(password) },
+    { id: "symbol", label: "Um símbolo (ex.: ! @ # $ %)", ok: hasSymbol(password) },
   ];
+}
+
+export function isPasswordAccepted(password: string): boolean {
+  return passwordChecks(password).every((c) => c.ok);
+}
+
+/** Mensagem do primeiro requisito que falta (vazia quando a senha é aceita). */
+export function passwordRequirementMessage(password: string): string {
+  if (!password) return "Crie uma senha.";
+  const missing = passwordChecks(password).find((c) => !c.ok);
+  if (!missing) return "";
+  if (missing.id === "length") return `A senha precisa ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+  if (missing.id === "symbol") return "A senha precisa ter um símbolo, como ! @ # $ %. Acentos e espaço não contam.";
+  return `A senha precisa ter ${missing.label.charAt(0).toLowerCase()}${missing.label.slice(1)}.`;
 }

@@ -38,15 +38,19 @@ describe("passwordHint", () => {
 });
 
 describe("passwordChecks", () => {
-  it("separa o obrigatório do recomendado e marca o que já foi cumprido", async () => {
-    const { passwordChecks } = await import("./passwordStrength");
-    const checks = passwordChecks("melzinha7");
-    expect(checks.map((c) => [c.id, c.required, c.ok])).toEqual([
-      ["length", true, true],
-      ["number", false, true],
-      ["symbol", false, false],
-      ["case", false, false],
+  it("lista os 5 requisitos obrigatórios e marca o que já foi cumprido", async () => {
+    const { passwordChecks, isPasswordAccepted, PASSWORD_SYMBOLS } = await import("./passwordStrength");
+    expect(passwordChecks("melzinha7").map((c) => [c.id, c.ok])).toEqual([
+      ["length", true],
+      ["lower", true],
+      ["upper", false],
+      ["number", true],
+      ["symbol", false],
     ]);
     expect(passwordChecks("").every((c) => !c.ok)).toBe(true);
+    expect(isPasswordAccepted("Melzinha7!")).toBe(true);
+    expect(isPasswordAccepted("Melzinha7ç")).toBe(false);
+    // Mesmo conjunto de símbolos do Supabase, incluindo barra invertida e crase.
+    for (const ch of "\`~:\"'") expect(PASSWORD_SYMBOLS).toContain(ch);
   });
 });

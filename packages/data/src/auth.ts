@@ -9,7 +9,7 @@ const AUTH_MESSAGES: Record<string, string> = {
   invalid_credentials: "E-mail ou senha não conferem. Confira e tente de novo.",
   user_already_exists: "Já existe uma conta com este e-mail. Tente entrar.",
   email_exists: "Já existe uma conta com este e-mail. Tente entrar.",
-  weak_password: "Essa senha é fácil de adivinhar. Tente uma mais longa.",
+  weak_password: "Essa senha não atende às regras: pelo menos 8 caracteres, com letra minúscula, maiúscula, número e símbolo.",
   same_password: "A nova senha precisa ser diferente da atual.",
   email_address_invalid: "Não conseguimos usar este e-mail. Confira se está certo.",
   over_request_rate_limit: "Muitas tentativas seguidas. Espere um minuto e tente de novo.",

@@ -14,17 +14,14 @@ const COLOR: Record<PasswordStrength, string> = {
 
 /**
  * Força da senha ("Flow Fill", ui-motion-prompts, Password Strength 1) e a
- * composição da senha item a item: o OBRIGATÓRIO (8 caracteres, a mesma regra
- * do Supabase) separado do que a deixa forte (número, símbolo, maiúsculas e
- * minúsculas). Assim nada aparece "cumprido" enquanto a força diz "fraca" sem
- * explicar o porquê. Texto e ícone em cada item (não depende só da cor).
+ * composição obrigatória item a item (8+ caracteres, minúscula, maiúscula,
+ * número e símbolo — a mesma regra do Supabase). Cada item é marcado enquanto
+ * a pessoa digita. Texto e ícone em cada item (não depende só da cor).
  */
 export function PasswordStrengthMeter({ password, id }: { password: string; id?: string }) {
   const level = passwordStrength(password);
   const color = COLOR[level];
   const checks = passwordChecks(password);
-  const required = checks.filter((c) => c.required);
-  const recommended = checks.filter((c) => !c.required);
 
   return (
     <div id={id} className="flex flex-col gap-2" data-testid="password-strength" data-level={level}>
@@ -50,19 +47,16 @@ export function PasswordStrengthMeter({ password, id }: { password: string; id?:
       <p className="text-xs text-text-secondary" aria-live="polite">
         <span className="font-semibold text-text-primary">Força da senha: {level ? PASSWORD_STRENGTH_LABEL[level] : "—"}</span>
       </p>
-      <div className="grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
-        <CheckList title="Obrigatório" items={required} />
-        <CheckList title="Para uma senha forte" items={recommended} />
-      </div>
+      <CheckList title="A senha precisa ter" items={checks} />
     </div>
   );
 }
 
 function CheckList({ title, items }: { title: string; items: PasswordCheck[] }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 text-xs">
       <p className="font-semibold text-text-secondary">{title}</p>
-      <ul className="flex flex-col gap-1">
+      <ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
         {items.map((c) => (
           <li key={c.id} className={`inline-flex items-center gap-1.5 transition-colors duration-200 ${c.ok ? "text-success" : "text-text-secondary"}`}>
             {c.ok ? (

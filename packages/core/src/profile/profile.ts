@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { passwordRequirementMessage } from "./passwordStrength";
 
 export const BR_STATES = [
   { uf: "AC", name: "Acre" },
@@ -69,12 +70,26 @@ export const credentialsSchema = z.object({
 
 export type Credentials = z.infer<typeof credentialsSchema>;
 
+/**
+ * Senha NOVA (criar conta, redefinir): 8+ caracteres com minúscula, maiúscula,
+ * número e símbolo — a mesma regra do Supabase. O login continua aceitando a
+ * senha de quem se cadastrou antes da regra (`credentialsSchema`).
+ */
+export const newPasswordSchema = z.string().superRefine((value, ctx) => {
+  const message = passwordRequirementMessage(value);
+  if (message) ctx.addIssue({ code: "custom", message });
+});
+
 /** Criar conta: nome já no cadastro (vai para o perfil e preenche o onboarding). */
-export const signUpSchema = credentialsSchema.extend({ displayName: profileInputSchema.shape.displayName });
+export const signUpSchema = credentialsSchema.extend({
+  password: newPasswordSchema,
+  displayName: profileInputSchema.shape.displayName,
+});
 export type SignUpInput = z.infer<typeof signUpSchema>;
 
 export const emailSchema = credentialsSchema.shape.email;
-export const passwordSchema = credentialsSchema.shape.password;
+/** Usado na tela de nova senha (recuperação): segue a regra completa. */
+export const passwordSchema = newPasswordSchema;
 
 /** Precisa passar pelo onboarding antes de usar áreas logadas. */
 export function needsOnboarding(profile: Pick<Profile, "onboardedAt"> | null): boolean {
