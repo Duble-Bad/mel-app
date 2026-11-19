@@ -91,6 +91,43 @@
 .mh-cine-video {
   object-position: 61% 50%;
 }
+
+/* Celular e conceito: o vídeo ocupa só a faixa do meio do círculo (74% da altura), então aparece
+   bem mais da cena (cerca de 75% da largura do vídeo, antes 58%) e os dois brincando cabem
+   inteiros. Em cima e embaixo, a própria capa do vídeo desfocada completa o círculo, e as bordas do
+   vídeo se dissolvem nela (sem faixa nem emenda). Fora do círculo nada muda. */
+@media (max-width: 1023.98px) {
+  .mh-radar .mh-cine-stage::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    background: url("/videos/mel-e-gatinho-poster.webp") center / cover;
+    filter: blur(18px) saturate(1.1);
+  }
+  .mh-radar .mh-cine-video {
+    position: relative;
+    display: block;
+    height: 74%;
+    margin-top: 13%;
+    object-position: 50% 50%;
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  }
+}
+.mh-radar[data-variant="radar"] .mh-cine-stage::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  background: url("/videos/mel-e-gatinho-poster.webp") center / cover;
+  filter: blur(18px) saturate(1.1);
+}
+.mh-radar[data-variant="radar"] .mh-cine-video {
+  position: relative;
+  display: block;
+  height: 74%;
+  margin-top: 13%;
+  object-position: 50% 50%;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+}
 @keyframes mh-radar-in {
   from {
     scale: 0.8;
