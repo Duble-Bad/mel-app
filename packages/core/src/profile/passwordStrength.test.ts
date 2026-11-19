@@ -36,3 +36,17 @@ describe("passwordHint", () => {
     expect(passwordHint("", 0)).toBe("");
   });
 });
+
+describe("passwordChecks", () => {
+  it("separa o obrigatório do recomendado e marca o que já foi cumprido", async () => {
+    const { passwordChecks } = await import("./passwordStrength");
+    const checks = passwordChecks("melzinha7");
+    expect(checks.map((c) => [c.id, c.required, c.ok])).toEqual([
+      ["length", true, true],
+      ["number", false, true],
+      ["symbol", false, false],
+      ["case", false, false],
+    ]);
+    expect(passwordChecks("").every((c) => !c.ok)).toBe(true);
+  });
+});

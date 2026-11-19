@@ -464,3 +464,12 @@ input:-webkit-autofill:focus {
     animation-delay: 0s !important;
   }
 }
+
+/*
+ * Campo de senha: o Edge/IE desenha o próprio "olho" e um "x" de limpar
+ * dentro do input, que somavam com o botão Mostrar/Ocultar da MEL (dois olhos).
+ */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}

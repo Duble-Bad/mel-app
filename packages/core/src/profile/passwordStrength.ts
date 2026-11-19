@@ -42,3 +42,24 @@ export function passwordStrength(password: string): PasswordStrength {
   if (password.length >= 16 && classes >= 3) score++;
   return Math.min(4, score) as PasswordStrength;
 }
+
+/**
+ * O que compõe a senha, item a item, para a lista ao lado do campo.
+ * `required`: o que a MEL exige (hoje só o tamanho, igual no Supabase);
+ * os demais deixam a senha forte e aparecem como recomendação.
+ */
+export interface PasswordCheck {
+  id: "length" | "number" | "symbol" | "case";
+  label: string;
+  required: boolean;
+  ok: boolean;
+}
+
+export function passwordChecks(password: string): PasswordCheck[] {
+  return [
+    { id: "length", label: "Pelo menos 8 caracteres", required: true, ok: password.length >= 8 },
+    { id: "number", label: "Um número (0–9)", required: false, ok: /\d/.test(password) },
+    { id: "symbol", label: "Um símbolo (ex.: ! @ # $)", required: false, ok: /[^A-Za-z0-9]/.test(password) },
+    { id: "case", label: "Letras maiúsculas e minúsculas", required: false, ok: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+  ];
+}

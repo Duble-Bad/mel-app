@@ -12,6 +12,8 @@ import { ReportButton } from "@/components/report/ReportButton";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
+import { DETAIL_MAIN_CLASS, DetailLayout } from "@/components/layout/DetailLayout";
+import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DetailSkeleton } from "@/components/ui/Skeletons";
 
@@ -30,7 +32,7 @@ export async function generateMetadata({ params }: PageProps<"/adocao/[code]">):
 
 export default function AdoptionPage({ params, searchParams }: PageProps<"/adocao/[code]">) {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 pb-12">
+    <main className={DETAIL_MAIN_CLASS}>
       <Suspense
         fallback={<DetailSkeleton />}
       >
@@ -69,9 +71,7 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
   const open = a.status === "AVAILABLE" || a.status === "IN_PROCESS";
 
   return (
-    <article className="flex flex-col gap-6">
-      <Gallery a={a} />
-      <div className="flex flex-col gap-6 px-[var(--mel-page-gutter)]">
+    <DetailLayout media={<Gallery a={a} />}>
         {a.isOwner && <OwnerPanel a={a} justPublished={Boolean(q.novo)} />}
 
         <header className="flex flex-col gap-2">
@@ -154,8 +154,7 @@ async function Content({ params, searchParams }: PageProps<"/adocao/[code]">) {
           <p className="text-sm text-text-secondary">Adoção na MEL é sempre gratuita. Desconfie de qualquer cobrança e denuncie.</p>
           {!a.isOwner && (open || a.status === "ADOPTED") && <ReportButton type="adoption" targetKey={a.code} />}
         </div>
-      </div>
-    </article>
+    </DetailLayout>
   );
 }
 
@@ -164,8 +163,9 @@ function Gallery({ a }: { a: PublicAdoption }) {
     <PhotoGallery
       photos={a.photoUrls.map((url) => ({ url }))}
       name={a.name}
-      mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero"
-      thumbsClassName="px-[var(--mel-page-gutter)]"
+      transitionName={casePhotoName(`/adocao/${a.code}`)}
+      mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero lg:rounded-2xl"
+      thumbsClassName="px-[var(--mel-page-gutter)] lg:px-0"
     />
   );
 }

@@ -28,6 +28,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createSessionClient } from "@/lib/supabase/server";
 import { MapView } from "@/components/location/MapView";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
+import { DETAIL_MAIN_CLASS } from "@/components/layout/DetailLayout";
 import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { ReunionBanner } from "@/components/lost/ReunionBanner";
 import { ShareAlert } from "@/components/lost/ShareAlert";
@@ -106,7 +107,7 @@ export default function AlertPage({
   searchParams,
 }: PageProps<"/alerta/[code]">) {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 pb-10 lg:max-w-[1264px] lg:px-8 lg:pt-8">
+    <main className={DETAIL_MAIN_CLASS}>
       <Suspense
         fallback={<DetailSkeleton label="Carregando alerta…" />}
       >

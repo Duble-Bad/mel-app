@@ -20,6 +20,7 @@ import { MatchCard } from "@/components/found/MatchCard";
 import { ReportButton } from "@/components/report/ReportButton";
 import { MapView } from "@/components/location/MapView";
 import { PhotoGallery } from "@/components/media/PhotoGallery";
+import { DETAIL_MAIN_CLASS, DetailLayout } from "@/components/layout/DetailLayout";
 import { casePhotoName } from "@/components/ui/motion/SharedPhoto";
 import { Alert } from "@/components/ui/Alert";
 import { ButtonLink } from "@/components/ui/Button";
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: PageProps<"/encontrado/[code]
 
 export default function FoundCasePage({ params, searchParams }: PageProps<"/encontrado/[code]">) {
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 pb-12">
+    <main className={DETAIL_MAIN_CLASS}>
       <Suspense fallback={<DetailSkeleton />}>
         <Content params={params} searchParams={searchParams} />
       </Suspense>
@@ -70,16 +71,22 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
   ].filter(Boolean);
 
   return (
-    <article className="flex flex-col gap-6">
-      {f.photoUrl ? (
-        <PhotoGallery photos={[{ url: f.photoUrl }]} name="animal encontrado" transitionName={casePhotoName(`/encontrado/${f.code}`)} mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero" />
-      ) : (
-        <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-text-muted" aria-hidden="true">
-          <PawPrint className="size-12" strokeWidth={1.5} />
-        </div>
-      )}
-
-      <div className="flex flex-col gap-6 px-[var(--mel-page-gutter)]">
+    <DetailLayout
+      media={
+        f.photoUrl ? (
+          <PhotoGallery
+            photos={[{ url: f.photoUrl }]}
+            name="animal encontrado"
+            transitionName={casePhotoName(`/encontrado/${f.code}`)}
+            mainClassName="aspect-square w-full bg-surface-muted object-cover sm:rounded-b-hero lg:rounded-2xl"
+          />
+        ) : (
+          <div className="flex aspect-[3/1] items-center justify-center bg-surface-muted text-text-muted lg:rounded-2xl" aria-hidden="true">
+            <PawPrint className="size-12" strokeWidth={1.5} />
+          </div>
+        )
+      }
+    >
         {f.isReporter && query.novo && (
           <Alert tone="success" celebrate="found">
             <strong>Publicado.</strong> Obrigado por ajudar! O Radar MEL já cruzou com os alertas de pets perdidos por perto.
@@ -198,7 +205,6 @@ async function Content({ params, searchParams }: PageProps<"/encontrado/[code]">
             />
           </section>
         )}
-      </div>
-    </article>
+    </DetailLayout>
   );
 }
