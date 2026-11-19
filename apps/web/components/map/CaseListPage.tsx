@@ -5,6 +5,7 @@ import { Suspense, type ReactNode } from "react";
 import { DEFAULT_CENTER_LABEL, PAGE_SIZE, parseSearchParams, toSearchParams, type PublicKind, radiusPhrase } from "@mel/core";
 import { searchPublicCases } from "@mel/data";
 import { createPublicClient } from "@/lib/supabase/public";
+import { CardTilt } from "@/components/map/CardTilt";
 import { CaseCard } from "@/components/map/CaseCard";
 import { SearchFiltersBar } from "@/components/map/SearchFiltersBar";
 import { ButtonLink } from "@/components/ui/Button";
@@ -71,6 +72,7 @@ async function Results({ params, path, kinds }: { params: Params; path: string; 
 
   return (
     <div className="flex flex-col gap-5">
+      <CardTilt />
       <SearchFiltersBar filters={filters} fixedKinds={kinds} />
       <p className="text-sm text-text-secondary" aria-live="polite">
         {result.total === 1 ? "1 resultado" : `${result.total} resultados`} {radiusPhrase(filters.radiusKm)}

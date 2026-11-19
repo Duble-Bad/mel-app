@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { MotionConfig } from "motion/react";
 import { useReducedMotion } from "@/components/ui/motion/useReducedMotion";
 import { CasesGrid } from "./CasesGrid";
@@ -14,11 +14,11 @@ import { ReducedContext } from "./shared";
 import "./conceito-motion.css";
 
 /**
- * Conceito de movimento da MEL (página interna). Tudo aqui é demonstração: dados fictícios,
- * nenhuma chamada ao servidor. "Movimento reduzido" vale pela preferência do sistema OU pela chave
+ * Conceito de movimento da MEL (página interna). Demonstração com dados fictícios; a única
+ * exceção são os cartões do radar do topo (`heroChips`), que vêm do servidor com dados reais. "Movimento reduzido" vale pela preferência do sistema OU pela chave
  * fixa no canto, que simula a preferência para comparar os dois modos.
  */
-export function ConceptMotion() {
+export function ConceptMotion({ heroChips }: { heroChips?: ReactNode }) {
   const system = useReducedMotion();
   const [forced, setForced] = useState(false);
   const reduced = system || forced;
@@ -27,21 +27,17 @@ export function ConceptMotion() {
     <ReducedContext value={reduced}>
       <MotionConfig reducedMotion={reduced ? "always" : "never"}>
         <div id="topo" className="cm-root" data-motion={reduced ? "reduced" : "normal"}>
-          {/* Filtro "gooey" compartilhado (barra de abas e rodapé). */}
+          {/* Filtro "gooey" da barra de abas (o do rodapé vem com o GooBackdrop). */}
           <svg width="0" height="0" className="absolute" aria-hidden="true" focusable="false">
             <defs>
               <filter id="cm-goo">
                 <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b" />
                 <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9" />
               </filter>
-              <filter id="cm-goo-lg">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="b" />
-                <feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -11" />
-              </filter>
             </defs>
           </svg>
 
-          <Hero />
+          <Hero chips={heroChips} />
           <NetworkStory />
           <CasesGrid />
           <LiveNumbers />

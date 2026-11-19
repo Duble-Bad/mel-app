@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { ArrowDown, ArrowRight, Eye, MapPin, ShieldCheck } from "lucide-react";
-import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import { ArrowDown, ArrowRight, Eye, ShieldCheck } from "lucide-react";
+import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import { HeroCinema } from "@/components/home/HeroCinema";
 import { Magnetic, useCmReduced } from "./shared";
 
 const LINES = [
@@ -11,50 +12,20 @@ const LINES = [
 ];
 const ACCENT = "com você.";
 
-/** Camada com profundidade: desloca-se contra o ponteiro, proporcional a `depth` (px). */
-function Depth({ sx, sy, depth, className, style, children }: { sx: MotionValue<number>; sy: MotionValue<number>; depth: number; className?: string; style?: CSSProperties; children: ReactNode }) {
-  const x = useTransform(sx, (v) => v * depth);
-  const y = useTransform(sy, (v) => v * depth);
-  return (
-    <motion.div className={className} style={{ ...style, x, y }}>
-      {children}
-    </motion.div>
-  );
-}
-
 /**
- * 1. Topo cinematográfico: título revelado palavra a palavra por máscara, o vídeo da Mel dentro de
- * uma "lente" de radar com profundidade (inclina e desloca camadas com o ponteiro), holofote dourado
- * que segue o mouse e botão principal magnético. No toque, nada segue o dedo: só as animações de
+ * 1. Topo cinematográfico: título revelado palavra a palavra por máscara, o vídeo da Mel inteiro e
+ * centralizado dentro do radar (inclina e desloca os cartões com o ponteiro), cartões com dados reais
+ * (`chips`, vindos do servidor), holofote dourado que segue o mouse e botão principal magnético. No toque, nada segue o dedo: só as animações de
  * entrada e o radar.
  */
-export function Hero() {
+export function Hero({ chips }: { chips?: ReactNode }) {
   const reduced = useCmReduced();
-  const video = useRef<HTMLVideoElement>(null);
   const px = useMotionValue(0);
   const py = useMotionValue(0);
   const sx = useSpring(px, { stiffness: 70, damping: 18, mass: 0.8 });
   const sy = useSpring(py, { stiffness: 70, damping: 18, mass: 0.8 });
-  const rotateY = useTransform(sx, [-0.5, 0.5], [-9, 9]);
-  const rotateX = useTransform(sy, [-0.5, 0.5], [7, -7]);
   const spotX = useTransform(sx, (v) => `${v * 100}%`);
   const spotY = useTransform(sy, (v) => `${v * 100}%`);
-
-  // O vídeo só toca quando está na tela e sem "movimento reduzido".
-  useEffect(() => {
-    const el = video.current;
-    if (!el) return;
-    if (reduced) {
-      el.pause();
-      return;
-    }
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry?.isIntersecting) el.play().catch(() => {});
-      else el.pause();
-    }, { threshold: 0.15 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [reduced]);
 
   function onMove(e: ReactPointerEvent<HTMLElement>) {
     if (reduced || e.pointerType !== "mouse") return;
@@ -139,67 +110,11 @@ export function Hero() {
           </ul>
         </div>
 
-        <div className="cm-stage-wrap">
-          <motion.div className="cm-stage" style={{ rotateX, rotateY }}>
-            <span className="cm-orbit cm-orbit-a" aria-hidden="true" />
-            <span className="cm-orbit cm-orbit-b" aria-hidden="true" />
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="cm-ring" style={{ "--i": i } as CSSProperties} aria-hidden="true" />
-            ))}
-            <span className="cm-sweep" aria-hidden="true" />
-
-            <Depth sx={sx} sy={sy} depth={-14} className="cm-lens">
-              <video
-                ref={video}
-                aria-label="Vídeo: a Mel, uma Yorkshire com laço amarelo, ao lado de um gatinho tigrado"
-                poster="/videos/mel-e-gatinho-poster.webp"
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                className="cm-lens-video"
-              >
-                <source src="/videos/mel-e-gatinho.webm" type="video/webm" />
-                <source src="/videos/mel-e-gatinho.mp4" type="video/mp4" />
-              </video>
-              <span className="cm-lens-glare" aria-hidden="true" />
-            </Depth>
-
-            <Depth sx={sx} sy={sy} depth={34} className="cm-chip-pos cm-chip-a">
-              <span className="cm-chip" style={{ "--d": "1100ms", "--f": "0s" } as CSSProperties}>
-                <span className="cm-chip-dot bg-status-sighting-solid text-white" aria-hidden="true">
-                  <Eye size={13} />
-                </span>
-                <span>
-                  <b>Avistada há 4 min</b>
-                  <small>Rua Harmonia, Vila Madalena</small>
-                </span>
-              </span>
-            </Depth>
-            <Depth sx={sx} sy={sy} depth={56} className="cm-chip-pos cm-chip-b">
-              <span className="cm-chip" style={{ "--d": "1300ms", "--f": "-1.6s" } as CSSProperties}>
-                <span className="cm-chip-dot bg-primary text-primary-foreground" aria-hidden="true">
-                  <ShieldCheck size={13} />
-                </span>
-                <span>
-                  <b>312 Guardiões avisados</b>
-                  <small>em um raio de 2 km</small>
-                </span>
-              </span>
-            </Depth>
-            <Depth sx={sx} sy={sy} depth={44} className="cm-chip-pos cm-chip-c">
-              <span className="cm-chip" style={{ "--d": "1500ms", "--f": "-3.1s" } as CSSProperties}>
-                <span className="cm-chip-dot bg-status-found-solid text-white" aria-hidden="true">
-                  <MapPin size={13} />
-                </span>
-                <span>
-                  <b>A 200 m de casa</b>
-                  <small>última pista confirmada</small>
-                </span>
-              </span>
-            </Depth>
-          </motion.div>
-        </div>
+        {/* O mesmo radar do site (telas menores que lg): vídeo inteiro e centralizado, cartões com
+            dados reais. Aqui o mouse ainda inclina o palco e desloca os cartões (--px/--py). */}
+        <motion.div className="cm-stage-wrap" style={{ "--px": sx, "--py": sy } as unknown as CSSProperties}>
+          <HeroCinema variant="radar">{chips}</HeroCinema>
+        </motion.div>
       </div>
 
       <a href="#rede" className="cm-scrollcue">

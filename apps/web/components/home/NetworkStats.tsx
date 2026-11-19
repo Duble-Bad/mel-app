@@ -4,7 +4,7 @@ import { Heart, House, PawPrint, Users, type LucideIcon } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/service";
 import { CountUp } from "./CountUp";
 
-interface Totals {
+export interface Totals {
   people: number;
   pets: number;
   reunions: number;
@@ -16,7 +16,7 @@ interface Totals {
  * secreta porque perfis e pets são privados por RLS. Em cache por horas: é
  * vitrine, não painel. Erro lança (não fica em cache) e quem chama esconde a faixa.
  */
-async function getTotals(): Promise<Totals | null> {
+export async function getTotals(): Promise<Totals | null> {
   "use cache";
   cacheLife("hours");
   const db = createServiceClient();

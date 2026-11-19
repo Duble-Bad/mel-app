@@ -1,0 +1,53 @@
+/* Fundo "de mel" (components/home/GooBackdrop.tsx). Só tokens da MEL. */
+.mh-goo {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(48px, 8vw, 104px) clamp(20px, 5vw, 72px);
+  border-radius: clamp(28px, 4vw, 48px);
+  border: 1px solid var(--mel-border);
+  background: var(--mel-surface);
+  text-align: center;
+  overflow: hidden;
+}
+.mh-goo-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  filter: url(#mh-goo-filter);
+  opacity: 0.36;
+}
+.mh-goo-blob {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--mel-brand);
+}
+/* A bolha que segue o ponteiro só existe onde há ponteiro. */
+.mh-goo-ptr {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .mh-goo-blob {
+    animation: mh-goo-drift 15s ease-in-out infinite alternate;
+    animation-play-state: paused;
+  }
+  .mh-goo[data-live="true"] .mh-goo-blob {
+    animation-play-state: running;
+  }
+  .mh-goo[data-live="true"] .mh-goo-ptr {
+    display: block;
+    left: 50%;
+    top: 50%;
+    width: 150px;
+    margin: -75px;
+    animation: none;
+  }
+}
+@keyframes mh-goo-drift {
+  to {
+    transform: translate(var(--tx), var(--ty)) scale(var(--ts, 1.1));
+  }
+}

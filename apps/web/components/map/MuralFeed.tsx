@@ -9,6 +9,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { PetCardSkeleton } from "@/components/ui/Surface";
+import { CardTilt } from "./CardTilt";
 import { AdoptionFeedCard, CaseCard } from "./CaseCard";
 import { feedQuery, type FeedState, includesAdoption, includesCases, kindsFor, parseFeed } from "./feed";
 import { FeedFiltersBar } from "./FeedFiltersBar";
@@ -103,6 +104,7 @@ async function Results({ params }: { params: Params }) {
 
   return (
     <div className="flex flex-col gap-5">
+      <CardTilt />
       <FeedFiltersBar state={state} variant="mural" />
       <p className="text-sm text-text-secondary" aria-live="polite">
         {feed === "adoption" ? (

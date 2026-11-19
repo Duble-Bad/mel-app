@@ -1,12 +1,9 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Bell,
   CircleCheck,
   HandHeart,
   Heart,
-  Megaphone,
-  MessageSquare,
   PlayCircle,
   ShieldCheck,
   Store,
@@ -14,20 +11,26 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
-import { Suspense, type ReactNode } from "react";
+import { Fragment, Suspense, type ReactNode } from "react";
 import { BrandStory } from "@/components/brand/BrandStory";
 import { AdoptionPreview } from "@/components/home/AdoptionPreview";
+import { FinalCta } from "@/components/home/FinalCta";
 import { HeroCinema } from "@/components/home/HeroCinema";
+import { HeroLiveChips } from "@/components/home/HeroLiveChips";
 import { HelpActions } from "@/components/home/HelpActions";
 import { HomeMotion } from "@/components/home/HomeMotion";
 import { NetworkStats } from "@/components/home/NetworkStats";
+import { NetworkStory, type StoryStep } from "@/components/home/NetworkStory";
 import { RegionListPanel, RegionMapPanel } from "@/components/home/RegionPreview";
 import "../home.css";
 
-const STEPS: { Icon: LucideIcon; title: string; text: string }[] = [
-  { Icon: Megaphone, title: "Publique em 2 minutos", text: "Foto, nome e a região onde o pet sumiu. A MEL gera um cartaz com QR Code para imprimir e compartilhar." },
-  { Icon: Bell, title: "A vizinhança é avisada", text: "Guardiões da região recebem o alerta. Quem vê o pet registra o avistamento com foto, mesmo sem conta." },
-  { Icon: MessageSquare, title: "Chat seguro até o reencontro", text: "O contato acontece pelo chat da MEL. Seu endereço nunca aparece, e o telefone só se você quiser." },
+const HERO_WORDS = ["Uma", "rede", "inteira", "procurando"];
+
+const STEPS: StoryStep[] = [
+  { tone: "lost", tag: "Alerta", title: "Publique em 2 minutos", text: "Foto, nome e a região onde o pet sumiu. A MEL gera um cartaz com QR Code para imprimir e compartilhar." },
+  { tone: "brand", tag: "A rede acorda", title: "A vizinhança é avisada", text: "Guardiões da região recebem o alerta. Quem está mais perto fica sabendo primeiro, e o aviso se espalha em ondas." },
+  { tone: "sighting", tag: "Avistamentos", title: "Cada avistamento vira uma pista", text: "Quem vê o pet registra o avistamento com foto, mesmo sem conta. Os pontos se ligam e mostram o caminho." },
+  { tone: "found", tag: "Reencontro", title: "Chat seguro até o reencontro", text: "O contato acontece pelo chat da MEL. Seu endereço nunca aparece, e o telefone só se você quiser." },
 ];
 
 const ADOPTION_CHECKS = [
@@ -65,10 +68,20 @@ export default function HomePage() {
             </span>
             <h1
               id="hero-title"
-              className="animate-enter text-[clamp(34px,9.5vw,64px)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance"
+              className="mh-title animate-enter text-[clamp(34px,9.5vw,64px)] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance"
               style={{ animationDelay: "80ms" }}
             >
-              Uma rede inteira procurando{" "}
+              {/* Telas menores que lg: cada palavra sobe de trás de uma máscara (home.css: .mh-mask).
+                  Em lg+ os spans são texto comum e o título entra inteiro, como antes. */}
+              {HERO_WORDS.map((word, i) => (
+                <Fragment key={word}>
+                  <span className="mh-mask">
+                    <span className="mh-w" style={{ "--i": i } as React.CSSProperties}>
+                      {word}
+                    </span>
+                  </span>{" "}
+                </Fragment>
+              ))}
               {/* Sempre amarelo sólido: letras sobem uma a uma e um halo dourado respira atrás (ver home.css). */}
               <span className="mh-word relative inline-block whitespace-nowrap text-primary" data-text="com você.">
                 {Array.from("com você.").map((ch, i) => (
@@ -85,7 +98,7 @@ export default function HomePage() {
               Encontre, divulgue e receba ajuda da comunidade para reencontrar seu pet, informar avistamentos e apoiar adoções responsáveis.
             </p>
             <div className="flex animate-enter flex-wrap gap-3" style={{ animationDelay: "220ms" }}>
-              <Link href="/entrar?criar=1" className={btnGold}>
+              <Link href="/entrar?criar=1" className={`${btnGold} mh-cta-glow`}>
                 <UserPlus aria-hidden="true" className="size-5" strokeWidth={2.25} />
                 Criar conta gratuitamente
               </Link>
@@ -96,13 +109,18 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Celular: as ações (e os números) vêm antes do vídeo, pois são a prioridade. Desktop: o vídeo é o
-              palco à direita, até a borda da tela (posicionado pelo CSS, atrás do texto). */}
-          <div className="order-3 lg:order-none lg:contents">
-            <HeroCinema />
+          {/* Telas menores que lg: o vídeo fica inteiro dentro do radar, logo abaixo do texto, com cartões
+              de dados reais (chegam por streaming; sem eles o radar fica só com o vídeo). Desktop: o
+              mesmo vídeo é o palco à direita, até a borda da tela (posicionado pelo CSS, atrás do texto). */}
+          <div className="lg:contents">
+            <HeroCinema>
+              <Suspense fallback={null}>
+                <HeroLiveChips />
+              </Suspense>
+            </HeroCinema>
           </div>
 
-          <section aria-labelledby="como-ajudar" className="order-2 lg:order-none lg:col-span-2 lg:mt-10">
+          <section aria-labelledby="como-ajudar" className="lg:col-span-2 lg:mt-10">
             <h2 id="como-ajudar" className="mb-3 text-sm font-bold tracking-[.06em] text-text-secondary uppercase lg:sr-only">
               Como podemos ajudar?
             </h2>
@@ -114,29 +132,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="como-funciona" aria-labelledby="cf-title" className="scroll-mt-20">
-        <div className="mel-container py-16 lg:pt-11 lg:pb-[72px]">
-          <SectionHead eyebrow="Como funciona" id="cf-title" title="Do alerta ao reencontro, em três passos">
+      <section id="como-funciona" aria-labelledby="cf-title" className="scroll-mt-20 pb-10 lg:pb-14">
+        <div className="mel-container pt-16 lg:pt-11">
+          <SectionHead eyebrow="Como funciona" id="cf-title" title="Do alerta ao reencontro, em quatro passos">
             Sem custo, sem anúncios. A MEL avisa quem está perto e protege os dados de quem pede ajuda.
           </SectionHead>
-          <ol className="grid gap-4 md:grid-cols-3 md:gap-5">
-            {STEPS.map(({ Icon, title, text }, i) => (
-              <li
-                key={title}
-                data-reveal
-                style={{ "--d": `${i * 0.1}s` } as React.CSSProperties}
-                className="mh-step relative rounded-card border border-border bg-surface/70 p-6.5"
-              >
-                <span aria-hidden="true" className="mb-4.5 block text-[15px] font-extrabold tracking-[.08em] text-primary">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <IconTile Icon={Icon} />
-                <h3 className="mb-2 text-[21px] leading-[1.1] font-extrabold tracking-[-0.02em]">{title}</h3>
-                <p className="text-text-secondary">{text}</p>
-              </li>
-            ))}
-          </ol>
         </div>
+        {/* A história conduzida pela rolagem (do alerta ao reencontro). Com "reduzir movimento",
+            vira uma lista comum de quatro etapas com o mapa parado. */}
+        <NetworkStory steps={STEPS} />
       </section>
 
       <section aria-labelledby="rede-title" className="border-y border-border bg-gradient-to-b from-surface-warm to-background">
@@ -260,6 +264,8 @@ export default function HomePage() {
           </ul>
         </div>
       </section>
+
+      <FinalCta />
     </main>
   );
 }

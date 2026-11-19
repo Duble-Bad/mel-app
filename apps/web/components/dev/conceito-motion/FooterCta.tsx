@@ -1,56 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { ArrowRight, ArrowUp } from "lucide-react";
-import { motion, useInView, useMotionValue, useSpring } from "motion/react";
 import { MelMark } from "@/components/brand/MelLogo";
-import { Magnetic, useCmReduced } from "./shared";
-
-const blob = (width: string, left: string, top: string, tx: string, ty: string, ts: number, seconds: number) =>
-  ({ width, left, top, "--tx": tx, "--ty": ty, "--ts": ts, animationDuration: `${seconds}s` }) as CSSProperties;
-
-const BLOBS: CSSProperties[] = [
-  blob("22%", "-6%", "62%", "90%", "-30%", 1.25, 13),
-  blob("16%", "12%", "78%", "140%", "-60%", 0.8, 17),
-  blob("20%", "38%", "80%", "-70%", "-34%", 1.2, 15),
-  blob("15%", "60%", "74%", "110%", "-50%", 1.3, 19),
-  blob("24%", "80%", "58%", "-80%", "26%", 0.85, 14),
-  blob("14%", "-4%", "-14%", "120%", "60%", 1.3, 21),
-  blob("17%", "86%", "-18%", "-130%", "50%", 1.15, 18),
-];
+import { GooBackdrop } from "@/components/home/GooBackdrop";
+import { Magnetic } from "./shared";
 
 /**
  * 7. Chamada final: bolhas douradas que se fundem como mel (filtro "gooey" em SVG), com uma bolha
- * extra que segue o ponteiro. As bolhas só se movem enquanto o bloco está na tela.
+ * extra que segue o ponteiro. É o mesmo fundo da chamada final do início (components/home/GooBackdrop).
  */
 export function FooterCta() {
-  const reduced = useCmReduced();
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { amount: 0.05 });
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const x = useSpring(mx, { stiffness: 60, damping: 16 });
-  const y = useSpring(my, { stiffness: 60, damping: 16 });
-
-  function onMove(e: ReactPointerEvent<HTMLDivElement>) {
-    if (reduced || e.pointerType !== "mouse") return;
-    const r = e.currentTarget.getBoundingClientRect();
-    mx.set(e.clientX - (r.left + r.width / 2));
-    my.set(e.clientY - (r.top + r.height / 2));
-  }
-
   return (
     <section aria-labelledby="cm-cta-title" className="cm-section cm-section-last">
       <div className="mel-container">
-        <div ref={ref} className="cm-cta" data-live={inView && !reduced} onPointerMove={onMove}>
-          <div className="cm-cta-goo" aria-hidden="true">
-            {BLOBS.map((style, i) => (
-              <span key={i} className="cm-blob" style={style} />
-            ))}
-            <motion.span className="cm-blob cm-blob-ptr" style={{ x, y }} />
-          </div>
-
+        <GooBackdrop>
           <MelMark size={60} className="cm-cta-mark" />
           <h2 id="cm-cta-title" className="cm-cta-title text-balance">
             Nenhum pet deveria procurar o caminho de casa sozinho.
@@ -75,7 +39,7 @@ export function FooterCta() {
             <ArrowUp size={15} aria-hidden="true" />
             Voltar ao topo
           </a>
-        </div>
+        </GooBackdrop>
       </div>
     </section>
   );

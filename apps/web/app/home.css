@@ -1,33 +1,68 @@
 /* Início (Conceito B): efeitos só da home. Fica fora do globals.css para não
    pesar nas outras telas. Tudo usa os tokens do tema (claro e escuro). */
 
-/* ---------- Topo (conceito C): o vídeo é o palco ----------
-   Celular: o vídeo vem depois das ações, em largura total. Desktop: encostado na borda direita da
-   tela, inteiro (na proporção do vídeo, sem corte) e dissolvendo no fundo à esquerda e embaixo. */
-.mh-cine-stage {
-  position: relative;
-  aspect-ratio: 1024 / 592;
-  width: calc(100% + 2 * var(--mel-page-gutter));
-  margin-inline: calc(-1 * var(--mel-page-gutter));
-  overflow: hidden;
-  /* Dissolve em transparência (não numa cor): o fundo do topo tem brilhos e não deixa emenda. */
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 80%, transparent 100%);
-}
+/* ---------- Topo ----------
+   O palco do vídeo (.mh-cine-stage) e o radar das telas menores ficam em
+   components/home/hero-cinema.css, junto do componente. Aqui: o texto e os pinos das telas grandes. */
 @media (min-width: 1024px) {
-  .mh-cine-stage {
-    position: absolute;
-    top: 28px;
-    right: 0;
-    width: min(54vw, 940px);
-    margin: 0;
-    z-index: -1;
-    mask-image:
-      linear-gradient(to right, transparent 0%, #000 28%),
-      linear-gradient(to bottom, transparent 0%, #000 14%, #000 74%, transparent 100%);
-    mask-composite: intersect;
-  }
   .mh-cine-copy {
     text-shadow: 0 2px 24px color-mix(in srgb, var(--mel-background) 85%, transparent);
+  }
+}
+/* Telas menores que lg: o título entra palavra por palavra, de trás de uma máscara, e o botão
+   principal ganha um brilho que passa de tempos em tempos (no toque não existe "hover"). */
+@media (max-width: 1023.98px) {
+  .mh-title {
+    animation: none;
+  }
+  .mh-mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding: 0.06em 0.04em 0.16em;
+    margin: -0.06em -0.04em -0.16em;
+  }
+  .mh-w {
+    display: inline-block;
+    transform-origin: 0 100%;
+    animation: mh-word-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(80ms + var(--i) * 80ms);
+  }
+  .mh-cta-glow {
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 14px 34px -14px color-mix(in srgb, var(--mel-brand) 80%, transparent),
+      var(--mel-shadow-primary);
+  }
+  .mh-cta-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--mel-text-inverse) 50%, transparent) 50%, transparent 65%);
+    transform: translateX(-120%);
+    animation: mh-sheen 4.8s cubic-bezier(0.16, 1, 0.3, 1) 1.6s infinite;
+    pointer-events: none;
+  }
+}
+@keyframes mh-word-up {
+  from {
+    transform: translateY(118%) rotate(5deg);
+  }
+}
+@keyframes mh-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  26%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-w,
+  .mh-cta-glow::after {
+    animation: none;
   }
 }
 /* Pinos de avistamento: pousam, abrem uma onda, mostram o rótulo e somem (ciclo de 7 s). */

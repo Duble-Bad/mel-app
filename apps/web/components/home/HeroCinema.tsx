@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useSyncExternalStore, type CSSProperties } from "react";
-
-const REDUCED = "(prefers-reduced-motion: reduce)";
-const sub = (cb: () => void) => {
-  const mq = window.matchMedia(REDUCED);
-  mq.addEventListener("change", cb);
-  return () => mq.removeEventListener("change", cb);
-};
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useReducedMotion } from "@/components/ui/motion/useReducedMotion";
+import "./hero-cinema.css";
 
 /** Pinos de avistamento que pousam na cena (posição em fração do vídeo, que aparece inteiro). */
 const PINS = [
@@ -17,47 +12,83 @@ const PINS = [
 ];
 
 /**
- * Topo do início (conceito C, aprovado em 2026-11-12): o vídeo da Mel com o gatinho é o palco,
- * encostado na borda direita da tela e dissolvendo no fundo à esquerda; pinos de avistamento pousam
- * na cena. O vídeo aparece inteiro (sem corte), para os dois bichos ficarem visíveis. Sem "reduzir
- * movimento" o vídeo toca em loop; com ele, fica no primeiro quadro e os pinos ficam parados.
+ * Topo do início: UM só vídeo da Mel com o gatinho, com duas apresentações (hero-cinema.css).
+ *
+ * - Telas grandes (lg+), `variant="auto"`: conceito C aprovado em 2026-11-12. O vídeo é o palco,
+ *   encostado na borda direita da tela e dissolvendo no fundo; pinos de avistamento pousam na cena.
+ * - Telas menores (ou `variant="radar"`, na página de conceito): o vídeo fica inteiro e centralizado
+ *   dentro de um radar maior que ele (os dois bichos sempre visíveis), com os cartões flutuantes
+ *   recebidos em `children` (dados reais: ver HeroLiveChips).
+ *
+ * Como é o mesmo <video> nos dois casos, nenhum aparelho baixa o vídeo duas vezes. Sem "reduzir
+ * movimento" o vídeo toca em loop enquanto está na tela; com ele, fica no primeiro quadro.
  */
-export function HeroCinema() {
-  const reduced = useSyncExternalStore(sub, () => window.matchMedia(REDUCED).matches, () => false);
+export function HeroCinema({ variant = "auto", children }: { variant?: "auto" | "radar"; children?: ReactNode }) {
+  const reduced = useReducedMotion();
   const video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     // O atributo autoPlay tocaria antes de sabermos da preferência; por isso o play é aqui.
-    if (reduced) video.current?.pause();
-    else video.current?.play().catch(() => {});
+    const el = video.current;
+    if (!el) return;
+    if (reduced) {
+      el.pause();
+      return;
+    }
+    if (!("IntersectionObserver" in window)) {
+      el.play().catch(() => {});
+      return;
+    }
+    // Fora da tela o vídeo pausa: não gasta bateria nem decodificação enquanto a pessoa lê o resto.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) el.play().catch(() => {});
+        else el.pause();
+      },
+      { threshold: 0.1 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, [reduced]);
 
   return (
-    <div className="mh-cine-stage">
-      <video
-        ref={video}
-        aria-label="Vídeo: a Mel, uma Yorkshire com laço amarelo, brincando com um gatinho tigrado na grama"
-        poster="/videos/mel-e-gatinho-poster.webp"
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="size-full object-cover"
-      >
-        <source src="/videos/mel-e-gatinho.webm" type="video/webm" />
-        <source src="/videos/mel-e-gatinho.mp4" type="video/mp4" />
-      </video>
-      {PINS.map((p) => (
-        <span
-          key={p.label}
-          aria-hidden="true"
-          className={`mh-pin ${p.x > 60 ? "mh-pin--left" : ""}`}
-          style={{ left: `${p.x}%`, top: `${p.y}%`, "--d": `${p.delay}s` } as CSSProperties}
+    <div className="mh-radar" data-variant={variant}>
+      <span className="mh-radar-deco" aria-hidden="true">
+        <span className="mh-radar-orbit mh-radar-orbit-a" />
+        <span className="mh-radar-orbit mh-radar-orbit-b" />
+        {[0, 1, 2].map((i) => (
+          <span key={i} className="mh-radar-ring" style={{ "--i": i } as CSSProperties} />
+        ))}
+        <span className="mh-radar-sweep" />
+      </span>
+      <div className="mh-cine-stage">
+        <video
+          ref={video}
+          aria-label="Vídeo: a Mel, uma Yorkshire com laço amarelo, brincando com um gatinho tigrado na grama"
+          poster="/videos/mel-e-gatinho-poster.webp"
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="size-full object-cover"
         >
-          <span className="mh-pin-ring" />
-          <span className="mh-pin-dot" />
-          <span className="mh-pin-label">{p.label}</span>
-        </span>
-      ))}
+          <source src="/videos/mel-e-gatinho.webm" type="video/webm" />
+          <source src="/videos/mel-e-gatinho.mp4" type="video/mp4" />
+        </video>
+        {variant === "auto" &&
+          PINS.map((p) => (
+            <span
+              key={p.label}
+              aria-hidden="true"
+              className={`mh-pin ${p.x > 60 ? "mh-pin--left" : ""}`}
+              style={{ left: `${p.x}%`, top: `${p.y}%`, "--d": `${p.delay}s` } as CSSProperties}
+            >
+              <span className="mh-pin-ring" />
+              <span className="mh-pin-dot" />
+              <span className="mh-pin-label">{p.label}</span>
+            </span>
+          ))}
+      </div>
+      {children}
     </div>
   );
 }

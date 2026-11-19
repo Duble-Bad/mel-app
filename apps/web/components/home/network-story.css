@@ -1,0 +1,437 @@
+/*
+ * "A rede se ativando" (components/home/NetworkStory.tsx): história conduzida pela rolagem.
+ * Só tokens da MEL. Durante a rolagem só mudam `transform` e `opacity` (valores de movimento
+ * escritos direto no estilo de cada camada); nenhuma regra aqui depende de uma variável que mude a
+ * cada quadro, exceto --act (4 legendas) e --p (a barra de progresso).
+ */
+.ns-story {
+  position: relative;
+  /* Quatro etapas: cerca de 85% da altura da tela de rolagem para cada uma. */
+  height: 340vh;
+  height: 340svh;
+}
+.ns-pinned {
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  height: calc(100svh - 64px);
+  overflow: clip;
+}
+/* Celular: mapa quadrado (limitado pela altura da tela) com a legenda logo abaixo, o conjunto
+   centralizado na área fixada. Um mapa mais alto que largo cortaria as laterais da prancha, e a
+   trilha e o reencontro ficam justamente à direita. */
+.ns-grid {
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 18px;
+  height: 100%;
+  padding-block: 12px 28px;
+}
+
+/* ---------- Legendas ---------- */
+.ns-steps-wrap {
+  position: relative;
+  padding-top: 14px;
+}
+.ns-steps {
+  display: grid;
+}
+.ns-step {
+  grid-area: 1 / 1;
+  opacity: var(--act, 1);
+  translate: 0 calc((1 - var(--act, 1)) * 16px);
+}
+.ns-step[data-tone="lost"] {
+  --tone: var(--mel-status-lost);
+}
+.ns-step[data-tone="brand"] {
+  --tone: var(--mel-primary);
+}
+.ns-step[data-tone="sighting"] {
+  --tone: var(--mel-status-sighting);
+}
+.ns-step[data-tone="found"] {
+  --tone: var(--mel-status-found);
+}
+.ns-step-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tone);
+}
+.ns-step-n {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid var(--tone);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.ns-step-title {
+  margin-top: 8px;
+  font-size: clamp(21px, 2.6vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+.ns-step-text {
+  margin-top: 6px;
+  max-width: 46ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--mel-text-secondary);
+}
+.ns-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--mel-border);
+  overflow: hidden;
+  border-radius: 2px;
+}
+.ns-rail span {
+  position: absolute;
+  inset: 0;
+  background: var(--mel-brand);
+  transform-origin: 0 0;
+  transform: scaleX(var(--p, 0));
+}
+
+/* ---------- Cena ---------- */
+.ns-scene {
+  order: -1;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: calc(100vh - 330px);
+  max-height: calc(100svh - 330px);
+  container-type: size;
+  contain: layout paint style;
+  min-height: 0;
+  border-radius: var(--mel-radius-hero);
+  overflow: hidden;
+  background: var(--mel-surface);
+  border: 1px solid var(--mel-border);
+  box-shadow: var(--mel-shadow-lg);
+}
+/* Prancha 800×600 que cobre a cena (como object-fit: cover). --u = 1 unidade da prancha em px. */
+.ns-board {
+  --u: calc(max(100cqw, 133.334cqh) / 800);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(800 * var(--u));
+  height: calc(600 * var(--u));
+  margin: calc(-300 * var(--u)) 0 0 calc(-400 * var(--u));
+}
+.ns-cam {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 51.667%;
+  will-change: transform;
+}
+.ns-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.ns-block {
+  fill: var(--mel-surface-muted);
+  stroke: var(--mel-border);
+}
+.ns-park {
+  fill: var(--mel-status-found-soft);
+  stroke: color-mix(in srgb, var(--mel-status-found) 32%, transparent);
+}
+.ns-avenue {
+  fill: none;
+  stroke: var(--mel-surface);
+  stroke-width: 30;
+}
+.ns-avenue-mark {
+  fill: none;
+  stroke: var(--mel-border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 8 10;
+}
+.ns-g-off {
+  fill: var(--mel-text-muted);
+  opacity: 0.6;
+}
+
+/* Onda e recorte dos Guardiões acesos: círculos de raio 500 centrados no pino (400, 310). */
+.ns-wave,
+.ns-reveal {
+  position: absolute;
+  left: 50%;
+  top: 51.667%;
+  width: calc(1000 * var(--u));
+  height: calc(1000 * var(--u));
+  margin: calc(-500 * var(--u)) 0 0 calc(-500 * var(--u));
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+.ns-wave {
+  border: 3px solid var(--mel-brand);
+  background: color-mix(in srgb, var(--mel-brand) 7%, transparent);
+}
+.ns-wave::after {
+  content: "";
+  position: absolute;
+  inset: 11%;
+  border-radius: 50%;
+  border: 1.5px solid var(--mel-brand);
+}
+.ns-reveal {
+  overflow: hidden;
+}
+.ns-reveal-in,
+.ns-reveal-in svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.ns-reveal-in {
+  will-change: transform;
+}
+.ns-g-link {
+  stroke: var(--mel-brand);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  opacity: 0.5;
+}
+.ns-g-on {
+  fill: var(--mel-brand);
+}
+.ns-g-halo {
+  fill: var(--mel-brand);
+  opacity: 0.2;
+}
+
+.ns-trails {
+  will-change: opacity;
+}
+.ns-trail {
+  fill: none;
+  stroke: var(--mel-status-sighting);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.ns-trail-found {
+  stroke: var(--mel-status-found);
+}
+
+/* Pinos: âncora de tamanho zero no ponto do mapa; a caixa do desenho fica com a ponta na âncora. */
+.ns-pin,
+.ns-fx {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.ns-fx {
+  left: 0;
+  top: 0;
+}
+.ns-box {
+  position: absolute;
+  display: block;
+  will-change: transform, opacity;
+}
+.ns-box svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.ns-box-sm {
+  left: calc(-40 * var(--u));
+  top: calc(-64 * var(--u));
+  width: calc(80 * var(--u));
+  height: calc(72 * var(--u));
+  transform-origin: 50% 88.9%;
+}
+.ns-box-lg {
+  left: calc(-70 * var(--u));
+  top: calc(-88 * var(--u));
+  width: calc(140 * var(--u));
+  height: calc(96 * var(--u));
+  transform-origin: 50% 91.7%;
+}
+.ns-sight-fill {
+  fill: var(--mel-status-sighting-solid);
+}
+.ns-sight-base {
+  fill: var(--mel-status-sighting);
+  opacity: 0.35;
+}
+.ns-lost-fill {
+  fill: var(--mel-status-lost-solid);
+}
+.ns-found-fill {
+  fill: var(--mel-status-found-solid);
+}
+.ns-pin-eye {
+  fill: var(--mel-text-inverse);
+}
+.ns-pin-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  fill: var(--mel-text-primary);
+  stroke: var(--mel-surface);
+  stroke-width: 4.5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+.ns-pin-label-lg {
+  font-size: 14px;
+}
+.ns-lost-ring,
+.ns-found-halo {
+  position: absolute;
+  border-radius: 50%;
+}
+.ns-lost-ring {
+  left: calc(-64 * var(--u));
+  top: calc(-64 * var(--u));
+  width: calc(128 * var(--u));
+  height: calc(128 * var(--u));
+  border: 2px solid var(--mel-status-lost);
+  opacity: 0;
+  animation: ns-radar 2.6s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+.ns-lost-ring-2 {
+  animation-delay: -1.3s;
+}
+@keyframes ns-radar {
+  from {
+    transform: scale(0.12);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+.ns-found-halo {
+  left: calc(-46 * var(--u));
+  top: calc(-46 * var(--u));
+  width: calc(92 * var(--u));
+  height: calc(92 * var(--u));
+  background: color-mix(in srgb, var(--mel-status-found) 22%, transparent);
+  border: 2px solid color-mix(in srgb, var(--mel-status-found) 60%, transparent);
+}
+
+.ns-hud {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 9px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--mel-surface-elevated) 86%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--mel-border);
+}
+.ns-hud-tl {
+  top: 12px;
+  left: 12px;
+}
+.ns-hud-br {
+  right: 12px;
+  bottom: 12px;
+  padding: 6px 12px;
+}
+.ns-hud-k {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mel-text-secondary);
+}
+.ns-hud-v {
+  font-size: 22px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--mel-primary);
+}
+
+@media (min-width: 1024px) {
+  .ns-grid {
+    grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
+    grid-template-rows: none;
+    align-items: center;
+    gap: 64px;
+    padding-block: 28px;
+  }
+  .ns-scene {
+    order: 0;
+    aspect-ratio: auto;
+    max-height: none;
+    height: min(100%, 680px);
+  }
+  .ns-steps-wrap {
+    padding: 0 0 0 30px;
+  }
+  .ns-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+  .ns-step {
+    opacity: calc(0.36 + var(--act, 1) * 0.64);
+    translate: calc(var(--act, 1) * 10px) 0;
+  }
+  .ns-rail {
+    right: auto;
+    bottom: 0;
+    width: 2px;
+    height: auto;
+  }
+  .ns-rail span {
+    transform: scaleY(var(--p, 0));
+  }
+}
+
+/* ---------- Movimento reduzido: sem fixar; mapa no estado final e as quatro etapas em lista ---------- */
+.ns-story[data-static="true"] {
+  height: auto;
+}
+.ns-story[data-static="true"] .ns-pinned {
+  position: static;
+  height: auto;
+}
+.ns-story[data-static="true"] .ns-grid {
+  height: auto;
+  padding-block: 12px 0;
+}
+.ns-story[data-static="true"] .ns-scene {
+  height: auto;
+  max-height: none;
+  aspect-ratio: 4 / 3;
+}
+.ns-story[data-static="true"] .ns-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.ns-story[data-static="true"] .ns-step {
+  opacity: 1;
+  translate: none;
+}
+.ns-story[data-static="true"] .ns-rail {
+  display: none;
+}
+.ns-story[data-static="true"] .ns-lost-ring {
+  animation: none;
+}

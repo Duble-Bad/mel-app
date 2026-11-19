@@ -88,6 +88,26 @@
   overflow: hidden;
   background: var(--color-surface-muted);
 }
+/* Inclinação 3D (conceito de movimento): só com mouse. components/map/CardTilt escreve --rx/--ry
+   (graus) e --gx/--gy (posição do ponteiro) no cartão; aqui eles viram inclinação e um brilho que
+   acompanha o ponteiro sobre a foto. No toque e com "reduzir movimento" nada disto vale. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .mel-pet:hover {
+    transform: perspective(900px) translateY(-5px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  }
+  .mel-pet__media::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(240px circle at var(--gx, 50%) var(--gy, 30%), color-mix(in srgb, var(--mel-text-inverse) 30%, transparent), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .mel-pet:hover .mel-pet__media::after {
+    opacity: 1;
+  }
+}
 .mel-pet__media img {
   width: 100%;
   height: 100%;

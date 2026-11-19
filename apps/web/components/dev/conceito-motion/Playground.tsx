@@ -5,8 +5,9 @@ import {
   useCallback, useEffect, useRef, useState,
   type ClipboardEvent, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type Ref,
 } from "react";
-import { Archive, Bell, Check, Heart, House, Map as MapIcon, PawPrint, Send, SlidersHorizontal, UserRound, X } from "lucide-react";
+import { Archive, Bell, Check, Heart, House, Map as MapIcon, PawPrint, Send, SlidersHorizontal, UserRound } from "lucide-react";
 import { animate, AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
+import { useToast } from "@/components/ui/Toast";
 import { PHOTOS, SectionHead, useCmReduced } from "./shared";
 
 const SOFT = { type: "spring", stiffness: 340, damping: 32 } as const;
@@ -151,42 +152,72 @@ const NOTES: Note[] = [
   { id: 3, title: "Cartaz pronto para imprimir", text: "QR Code gerado" },
 ];
 
+/** Distância do dedo (px) ou velocidade (px/s) a partir das quais o gesto vale como ação. */
+const SWIPE_DISTANCE = 64;
+const SWIPE_VELOCITY = 320;
+
 function SwipeRow({ note, read, onArchive, onRead, ref }: { note: Note; read: boolean; onArchive: () => void; onRead: () => void; ref?: Ref<HTMLLIElement> }) {
+  const reduced = useCmReduced();
+  const row = useRef<HTMLDivElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const x = useMotionValue(0);
-  const readOpacity = useTransform(x, [8, 60], [0, 1]);
-  const readScale = useTransform(x, [8, 70], [0.5, 1]);
-  const archiveOpacity = useTransform(x, [-60, -8], [1, 0]);
-  const archiveScale = useTransform(x, [-70, -8], [1, 0.5]);
+  // O fundo já aparece com cor cheia assim que a linha sai do lugar; só o ícone cresce com o gesto.
+  const readOpacity = useTransform(x, [0, 1], [0, 1]);
+  const readScale = useTransform(x, [8, 70], [0.6, 1.15]);
+  const archiveOpacity = useTransform(x, [-1, 0], [1, 0]);
+  const archiveScale = useTransform(x, [-70, -8], [1.15, 0.6]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  /** Completa o gesto: a linha termina de sair para o lado do deslize e só então a ação acontece. */
+  function complete(dir: 1 | -1) {
+    const width = row.current?.offsetWidth ?? 320;
+    if (reduced) {
+      x.set(0);
+      if (dir < 0) onArchive();
+      else onRead();
+      return;
+    }
+    if (dir < 0) {
+      void animate(x, -width, { duration: 0.2, ease: EASE_OUT }).then(onArchive);
+      return;
+    }
+    void animate(x, width, { type: "spring", stiffness: 380, damping: 36 }).then(() => {
+      onRead();
+      // Mostra o "Lida" verde por um instante e devolve a linha, já no novo estado.
+      timer.current = setTimeout(() => void animate(x, 0, SOFT), 420);
+    });
+  }
 
   function onDragEnd(_: unknown, info: PanInfo) {
-    if (info.offset.x < -110 || info.velocity.x < -700) onArchive();
-    else if (info.offset.x > 110 || info.velocity.x > 700) onRead();
+    // O motion começa a devolver a linha ao soltar; a animação abaixo assume o controle do mesmo valor.
+    if (info.offset.x < -SWIPE_DISTANCE || info.velocity.x < -SWIPE_VELOCITY) complete(-1);
+    else if (info.offset.x > SWIPE_DISTANCE || info.velocity.x > SWIPE_VELOCITY) complete(1);
   }
   return (
-    <motion.li ref={ref} layout className="cm-swipe" exit={{ opacity: 0, x: -260, transition: { duration: 0.24 } }} transition={SOFT}>
+    <motion.li ref={ref} layout className="cm-swipe" exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }} transition={SOFT}>
       <motion.span className="cm-swipe-bg cm-swipe-read" style={{ opacity: readOpacity }} aria-hidden="true">
         <motion.span className="inline-flex" style={{ scale: readScale }}>
-          <Check size={18} />
+          <Check size={18} strokeWidth={3} />
         </motion.span>
         {read ? "Não lida" : "Lida"}
       </motion.span>
       <motion.span className="cm-swipe-bg cm-swipe-archive" style={{ opacity: archiveOpacity }} aria-hidden="true">
         Arquivar
         <motion.span className="inline-flex" style={{ scale: archiveScale }}>
-          <Archive size={18} />
+          <Archive size={18} strokeWidth={2.5} />
         </motion.span>
       </motion.span>
-      <motion.div className="cm-swipe-row" data-read={read} drag="x" style={{ x }} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.55} onDragEnd={onDragEnd}>
+      <motion.div ref={row} className="cm-swipe-row" data-read={read} drag="x" style={{ x }} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.8} onDragEnd={onDragEnd}>
         <span className="cm-swipe-dot" aria-hidden="true" />
         <span className="min-w-0 flex-1">
           <b className="line-clamp-2 block text-sm leading-tight">{note.title}</b>
           <small className="block truncate text-caption text-text-secondary">{note.text}</small>
         </span>
-        <button type="button" className="cm-mini-btn" aria-label={`${read ? "Marcar como não lida" : "Marcar como lida"}: ${note.title}`} onClick={onRead}>
-          <Check size={15} aria-hidden="true" />
+        <button type="button" className="cm-act cm-act-read" aria-pressed={read} aria-label={`Marcar como lida: ${note.title}`} onClick={onRead}>
+          <Check size={16} strokeWidth={3} aria-hidden="true" />
         </button>
-        <button type="button" className="cm-mini-btn" aria-label={`Arquivar: ${note.title}`} onClick={onArchive}>
-          <Archive size={15} aria-hidden="true" />
+        <button type="button" className="cm-act cm-act-archive" aria-label={`Arquivar: ${note.title}`} onClick={() => complete(-1)}>
+          <Archive size={16} strokeWidth={2.25} aria-hidden="true" />
         </button>
       </motion.div>
     </motion.li>
@@ -315,61 +346,26 @@ function SheetDemo() {
 
 /* ---------- 5. Pilha de avisos ---------- */
 
-const TOAST_TEXT = ["Avistamento enviado. Obrigado!", "Alerta entregue a 312 Guardiões", "Link do caso copiado", "Cartaz salvo com QR Code"];
+const TOAST_TEXT = ["Avistamento enviado. Obrigado!", "Alerta entregue aos Guardiões da região", "Link do caso copiado", "Cartaz salvo com QR Code"];
 
+/** Dispara os avisos DE VERDADE do site (components/ui/Toast): a pilha aparece no rodapé da tela. */
 function ToastDemo() {
-  const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
-  const [expanded, setExpanded] = useState(false);
-  const nextId = useRef(0);
-  const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
-  useEffect(() => {
-    const set = timers.current;
-    return () => set.forEach(clearTimeout);
-  }, []);
-
-  const dismiss = (id: number) => setToasts((t) => t.filter((x) => x.id !== id));
-  function push() {
-    const id = nextId.current++;
-    setToasts((t) => [...t.slice(-3), { id, text: TOAST_TEXT[id % TOAST_TEXT.length] ?? "" }]);
-    timers.current.add(setTimeout(() => dismiss(id), 5200));
-  }
-
+  const toast = useToast();
+  const next = useRef(0);
   return (
-    <div className="flex w-full flex-col gap-4">
-      <div
-        className="cm-toasts"
-        role="status"
-        onPointerEnter={() => setExpanded(true)}
-        onPointerLeave={() => setExpanded(false)}
-        onFocus={() => setExpanded(true)}
-        onBlur={() => setExpanded(false)}
+    <div className="flex w-full flex-col items-center gap-4">
+      <p className="cm-lab-note text-center">
+        Este é o aviso real do site. Dispare dois ou três: o novo entra por baixo, os anteriores recuam, e com o ponteiro (ou o foco) na pilha todos
+        voltam ao tamanho normal e o tempo para.
+      </p>
+      <button
+        type="button"
+        className="cm-btn cm-btn-ghost cm-btn-sm"
+        onClick={() => {
+          const i = next.current++;
+          toast({ tone: i % 4 === 2 ? "info" : "success", title: TOAST_TEXT[i % TOAST_TEXT.length] ?? "" });
+        }}
       >
-        <AnimatePresence initial={false}>
-          {toasts.map((t, i) => {
-            const depth = toasts.length - 1 - i;
-            return (
-              <motion.div
-                key={t.id}
-                className="cm-toast"
-                initial={{ opacity: 0, y: 46, scale: 0.9 }}
-                animate={{ opacity: expanded ? 1 : 1 - depth * 0.22, y: expanded ? -depth * 52 : -depth * 10, scale: expanded ? 1 : 1 - depth * 0.06 }}
-                exit={{ opacity: 0, scale: 0.88, transition: { duration: 0.18 } }}
-                transition={SOFT}
-              >
-                <span className="cm-toast-ico" aria-hidden="true">
-                  <Check size={14} />
-                </span>
-                <span className="min-w-0 flex-1 truncate">{t.text}</span>
-                <button type="button" className="cm-mini-btn" aria-label={`Dispensar aviso: ${t.text}`} onClick={() => dismiss(t.id)}>
-                  <X size={14} aria-hidden="true" />
-                </button>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-        {toasts.length === 0 ? <p className="cm-lab-note m-auto">Nenhum aviso por enquanto.</p> : null}
-      </div>
-      <button type="button" className="cm-btn cm-btn-ghost cm-btn-sm self-center" onClick={push}>
         <Send size={16} aria-hidden="true" />
         Disparar aviso
       </button>
@@ -519,31 +515,41 @@ function OtpDemo() {
         transition={{ duration: 0.45 }}
       >
         <legend className="sr-only">Código de verificação de 6 dígitos</legend>
-        {digits.map((d, i) => (
-          <input
-            key={i}
-            ref={(el) => {
-              inputs.current[i] = el;
-            }}
-            className="cm-otp-cell"
-            style={{ "--i": i } as CSSProperties}
-            data-filled={d !== ""}
-            value={d}
-            inputMode="numeric"
-            autoComplete={i === 0 ? "one-time-code" : "off"}
-            aria-label={`Dígito ${i + 1} de 6`}
-            aria-invalid={status === "error"}
-            readOnly={status === "ok"}
-            onChange={(e) => {
-              // Uma tecla troca o dígito; vários caracteres de uma vez (colar, código do SMS) se distribuem.
-              const v = e.target.value;
-              fill(i, d && v.length === 2 ? v.replace(d, "") || v.slice(-1) : v);
-            }}
-            onKeyDown={(e) => onKeyDown(i, e)}
-            onPaste={(e) => onPaste(i, e)}
-            onFocus={(e) => e.currentTarget.select()}
-          />
-        ))}
+        {/* Com o código certo, os seis campos deslizam um para o outro, fundem-se numa só forma
+            (.cm-otp-pill), a forma encolhe até virar um círculo e o "check" se desenha por cima. */}
+        <span className="cm-otp-cells">
+          <span className="cm-otp-pill" aria-hidden="true">
+            <svg viewBox="0 0 56 56" className="cm-otp-check">
+              <circle cx="28" cy="28" r="26" pathLength={1} />
+              <path d="M17.5 28.5 L25 36 L39 21" pathLength={1} />
+            </svg>
+          </span>
+          {digits.map((d, i) => (
+            <input
+              key={i}
+              ref={(el) => {
+                inputs.current[i] = el;
+              }}
+              className="cm-otp-cell"
+              style={{ "--i": i } as CSSProperties}
+              data-filled={d !== ""}
+              value={d}
+              inputMode="numeric"
+              autoComplete={i === 0 ? "one-time-code" : "off"}
+              aria-label={`Dígito ${i + 1} de 6`}
+              aria-invalid={status === "error"}
+              readOnly={status === "ok"}
+              onChange={(e) => {
+                // Uma tecla troca o dígito; vários caracteres de uma vez (colar, código do SMS) se distribuem.
+                const v = e.target.value;
+                fill(i, d && v.length === 2 ? v.replace(d, "") || v.slice(-1) : v);
+              }}
+              onKeyDown={(e) => onKeyDown(i, e)}
+              onPaste={(e) => onPaste(i, e)}
+              onFocus={(e) => e.currentTarget.select()}
+            />
+          ))}
+        </span>
       </motion.fieldset>
       <p className="cm-lab-note text-center" role="status">
         {status === "ok" ? (
@@ -613,7 +619,6 @@ function FavoriteDemo() {
         </motion.span>
         {liked ? (
           <span key={burst} className="cm-fav-burst" aria-hidden="true">
-            <span className="cm-fav-ring" />
             {RAYS.map((a, i) => (
               <span key={a} className="cm-fav-ray" style={{ "--a": `${a}deg`, "--i": i } as CSSProperties} />
             ))}

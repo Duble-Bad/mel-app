@@ -20,7 +20,7 @@ const KIND: Record<PublicKind, { label: string; color: string }> = {
  * Os mesmos casos públicos do /mapa (filtros padrão: parseSearchParams sem nada), já
  * aproximados pelo banco. `cache`: mapa e mural da home dividem a consulta na requisição.
  */
-const mapCases = cache(async (): Promise<{ items: PublicCaseItem[]; total: number } | null> => {
+export const mapCases = cache(async (): Promise<{ items: PublicCaseItem[]; total: number } | null> => {
   try {
     return await searchPublicCases(createPublicClient(), DEFAULT_MAP_FILTERS, { pageSize: 100 });
   } catch (error) {

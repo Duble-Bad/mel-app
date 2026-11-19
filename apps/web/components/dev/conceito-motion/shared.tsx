@@ -1,11 +1,16 @@
 "use client";
 
-import { createContext, useContext, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import type { ReactNode } from "react";
+import { ForcedReducedMotion, useReducedMotion } from "@/components/ui/motion/useReducedMotion";
 
-/** "Movimento reduzido" do conceito: preferência do sistema OU a chave fixa da página. */
-export const ReducedContext = createContext(false);
-export const useCmReduced = () => useContext(ReducedContext);
+export { Magnetic } from "@/components/ui/motion/Magnetic";
+
+/**
+ * "Movimento reduzido" do conceito: preferência do sistema OU a chave fixa da página. É o mesmo
+ * contexto que os componentes do site consultam, então a chave vale também para eles.
+ */
+export const ReducedContext = ForcedReducedMotion;
+export const useCmReduced = useReducedMotion;
 
 export type CaseStatus = "lost" | "sighting" | "found" | "adoption";
 
@@ -136,37 +141,4 @@ export function SectionHead({ index, kicker, title, lead, id }: { index: string;
       {lead ? <p className="mt-4 max-w-2xl text-body-lg text-pretty text-text-secondary">{lead}</p> : null}
     </header>
   );
-}
-
-/** Botão/âncora "magnético": com mouse, o conteúdo é puxado na direção do ponteiro e volta com mola. */
-export function Magnetic({ children, strength = 0.32, className }: { children: ReactNode; strength?: number; className?: string }) {
-  const reduced = useCmReduced();
-  const ref = useRef<HTMLSpanElement>(null);
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const x = useSpring(mx, { stiffness: 220, damping: 16, mass: 0.6 });
-  const y = useSpring(my, { stiffness: 220, damping: 16, mass: 0.6 });
-
-  function onMove(e: ReactPointerEvent<HTMLSpanElement>) {
-    if (reduced || e.pointerType !== "mouse" || !ref.current) return;
-    const r = ref.current.getBoundingClientRect();
-    mx.set((e.clientX - (r.left + r.width / 2)) * strength);
-    my.set((e.clientY - (r.top + r.height / 2)) * strength);
-  }
-  function reset() {
-    mx.set(0);
-    my.set(0);
-  }
-  return (
-    <span ref={ref} className={`cm-magnet ${className ?? ""}`} onPointerMove={onMove} onPointerLeave={reset}>
-      <motion.span className="inline-flex" style={{ x, y }}>
-        {children}
-      </motion.span>
-    </span>
-  );
-}
-
-/** Lê uma cor do tema (token CSS) no elemento, para uso em <canvas>. */
-export function readToken(el: Element, name: string): string {
-  return getComputedStyle(el).getPropertyValue(name).trim();
 }

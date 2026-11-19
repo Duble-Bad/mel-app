@@ -1,11 +1,12 @@
 import { Heart, MapPin, Users } from "lucide-react";
 import { formatDateTimeBr, FOUND_HOW_PUBLIC, helpersLine, type PublicLostCase } from "@mel/core";
+import { CelebrationBurst } from "@/components/ui/motion/CelebrationBurst";
 import { SuccessCheck } from "@/components/ui/motion/SuccessCheck";
 
 /**
  * Alerta encerrado com reencontro: "MEL ESTÁ EM CASA": selo, agradecimento à
  * comunidade e a história, se houver. `celebrate`: o tutor acabou de confirmar
- * (selo que se desenha e uma explosão única de confete; parado com "reduzir movimento").
+ * (selo que se desenha e uma explosão única de confete, corações e patinhas; parado com "reduzir movimento").
  */
 export function ReunionBanner({ c, celebrate }: { c: PublicLostCase; celebrate: boolean }) {
   const helpers = helpersLine(c.helpersCount);
@@ -16,8 +17,12 @@ export function ReunionBanner({ c, celebrate }: { c: PublicLostCase; celebrate: 
     >
       <div className="flex items-center gap-3">
         {celebrate ? (
-          // Tutor acabou de confirmar: selo que se desenha e uma explosão única de confete.
-          <SuccessCheck tone="found" size={48} confetti />
+          // Tutor acabou de confirmar: selo que se desenha e, na tela toda, uma explosão única de
+          // confete, corações e patinhas (comemoração do conceito de movimento).
+          <>
+            <SuccessCheck tone="found" size={48} />
+            <CelebrationBurst />
+          </>
         ) : (
           <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-status-found-solid text-text-inverse">
             <Heart aria-hidden="true" className="size-5" fill="currentColor" strokeWidth={0} />
