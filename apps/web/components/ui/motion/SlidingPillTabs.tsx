@@ -53,11 +53,21 @@ export function SlidingPillTabs({ label, tabs, active, onSelect }: { label: stri
   const right = useRef<Edge>({ x: 0, v: 0, target: 0, ...LEAD });
   const frame = useRef(0);
   const placed = useRef(false);
-  const index = Math.max(0, tabs.findIndex((t) => t.id === active));
+  // -1 = a tela atual não é de nenhuma aba (ex.: perfil): nenhuma fica marcada e a pílula some.
+  const index = tabs.findIndex((t) => t.id === active);
 
   useIsoLayoutEffect(() => {
     const el = bar.current;
     if (!el) return;
+    if (index < 0) {
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+      placed.current = false;
+      if (pill.current) pill.current.style.opacity = "0";
+      for (const item of items.current) item?.style.setProperty("--c", "0");
+      return;
+    }
+    if (pill.current) pill.current.style.opacity = "";
 
     /** Escreve a pílula e a cor de cada aba a partir das duas bordas. */
     const paint = () => {

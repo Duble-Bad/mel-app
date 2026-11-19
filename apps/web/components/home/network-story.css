@@ -13,8 +13,8 @@
 .ns-pinned {
   position: sticky;
   top: 64px;
-  height: calc(100vh - 64px);
-  height: calc(100svh - 64px);
+  height: calc(100vh - 64px - var(--mel-tabbar-h));
+  height: calc(100svh - 64px - var(--mel-tabbar-h));
   overflow: clip;
 }
 /* Celular: mapa quadrado (limitado pela altura da tela) com a legenda logo abaixo, o conjunto
@@ -112,8 +112,8 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  max-height: calc(100vh - 330px);
-  max-height: calc(100svh - 330px);
+  max-height: calc(100vh - 330px - var(--mel-tabbar-h));
+  max-height: calc(100svh - 330px - var(--mel-tabbar-h));
   container-type: size;
   contain: layout paint style;
   min-height: 0;

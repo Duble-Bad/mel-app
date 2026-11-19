@@ -24,6 +24,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Indicador do Next (só em dev) em cima: embaixo ele cobria a barra de abas do celular.
+  devIndicators: { position: "top-left" },
   // Pasta de build separada (ex.: NEXT_DIST_DIR=.next-home) permite vários
   // `next dev` em paralelo sem dividir o cache do Turbopack (que corrompe).
   distDir: process.env.NEXT_DIST_DIR || ".next",

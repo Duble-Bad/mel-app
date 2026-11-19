@@ -61,7 +61,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 px-4 pb-[max(16px,env(safe-area-inset-bottom))]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center gap-2 px-4 pb-[calc(var(--mel-tabbar-h)+max(16px,env(safe-area-inset-bottom)))] lg:pb-[max(16px,env(safe-area-inset-bottom))]"
         onPointerOver={() => setExpanded(true)}
         onPointerLeave={() => setExpanded(false)}
         onFocus={() => setExpanded(true)}

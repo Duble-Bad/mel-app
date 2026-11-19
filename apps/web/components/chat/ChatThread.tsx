@@ -246,7 +246,7 @@ export function ChatThread({ conversation: c, initialMessages, myId, iAmAnonymou
         <div ref={end} />
       </div>
 
-      <div className="sticky bottom-0 border-t border-border bg-surface px-4 py-3">
+      <div className="sticky bottom-[var(--mel-tabbar-h)] border-t border-border bg-surface px-4 py-3">
         {blockedByMe ? (
           <p className="text-text-secondary">Você bloqueou esta pessoa. Ela não consegue mais mandar mensagens para você.</p>
         ) : closed ? (

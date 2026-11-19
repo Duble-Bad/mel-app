@@ -14,7 +14,7 @@ export const NAV_ITEMS = [
   { href: "/parceiros", label: "Parceiros" },
 ] as const;
 
-function isActive(pathname: string, href: string) {
+export function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 

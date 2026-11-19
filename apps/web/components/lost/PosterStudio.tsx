@@ -673,7 +673,7 @@ function SaveBox({ saved, current, saving, onSave, onRemove }: { saved: boolean;
 /** Barra de navegação da etapa: fica presa ao rodapé da tela enquanto se rola a etapa. */
 function StepNav({ children }: { children: React.ReactNode }) {
   return (
-    <div className="sticky bottom-0 z-10 -mx-4 sm:static flex items-center justify-between gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:mx-0 sm:rounded-lg sm:border sm:px-3">
+    <div className="sticky bottom-[var(--mel-tabbar-h)] z-10 -mx-4 sm:static flex items-center justify-between gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-sm sm:mx-0 sm:rounded-lg sm:border sm:px-3">
       {children}
     </div>
   );
