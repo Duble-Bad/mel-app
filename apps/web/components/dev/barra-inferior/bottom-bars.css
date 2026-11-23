@@ -1,0 +1,319 @@
+/*
+ * Comparação interna de barras inferiores (/dev/barra-inferior). Só tokens da MEL.
+ * Cada barra recebe --i (índice da aba ativa, 0 a 4); os indicadores têm 1/5 da largura e andam
+ * com translateX(calc(var(--i) * 100%)). Com "reduzir movimento", tudo troca sem transição.
+ */
+.bb-frame {
+  --bb-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --bb-out: cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  isolation: isolate;
+  height: 560px;
+  overflow: hidden;
+  border-radius: 36px;
+  border: 6px solid var(--mel-border-strong);
+  background: var(--mel-background);
+  box-shadow: var(--mel-shadow-lg);
+}
+.bb-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 20px 16px 110px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.bb-nav {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+}
+
+/* ---------- Base das opções 2 a 6 ---------- */
+.bb-bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 64px;
+  border-radius: 30px;
+  border: 1px solid var(--mel-border);
+  background: var(--mel-surface-elevated);
+  box-shadow: var(--mel-shadow-lg);
+}
+.bb-tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  height: 100%;
+  border-radius: 999px;
+  color: var(--mel-text-secondary);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.25s;
+}
+.bb-tab:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: -3px;
+}
+.bb-icon {
+  display: inline-flex;
+  transition: transform 0.4s var(--bb-spring);
+}
+.bb-icon svg {
+  transition: fill 0.3s;
+}
+.bb-tab:active .bb-icon {
+  transform: scale(0.88);
+}
+.bb-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Indicador que ocupa a largura de uma aba e desliza até a ativa. */
+.bb-slide {
+  position: absolute;
+  left: 0;
+  width: 20%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform 0.5s var(--bb-spring);
+}
+
+/* ---------- 2. Aba que se abre ---------- */
+.bb-bar[data-v="expand"] {
+  display: flex;
+  gap: 2px;
+  padding: 6px;
+}
+.bb-bar[data-v="expand"] .bb-tab {
+  flex: 1 1 0;
+  flex-direction: row;
+  gap: 0;
+  font-size: 13px;
+  font-weight: 800;
+  transition:
+    flex-grow 0.45s var(--bb-out),
+    background-color 0.3s,
+    color 0.25s;
+}
+.bb-bar[data-v="expand"] .bb-label {
+  max-width: 0;
+  opacity: 0;
+  transition:
+    max-width 0.45s var(--bb-out),
+    opacity 0.2s,
+    margin 0.45s var(--bb-out);
+}
+.bb-bar[data-v="expand"] .bb-tab[aria-current="page"] {
+  flex-grow: 2.8;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mel-primary) 78%, var(--mel-honey-300)), var(--mel-primary) 55%, var(--mel-primary-hover));
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--mel-primary) 75%, transparent);
+  color: var(--mel-primary-foreground);
+}
+.bb-bar[data-v="expand"] .bb-tab[aria-current="page"] .bb-label {
+  max-width: 120px;
+  margin-left: 7px;
+  opacity: 1;
+  transition:
+    max-width 0.45s var(--bb-out),
+    opacity 0.3s 0.12s,
+    margin 0.45s var(--bb-out);
+}
+
+/* ---------- 3. Círculo dourado no recorte ---------- */
+.bb-bar[data-v="orb"] {
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+/* O fundo da barra é uma camada com um furo (máscara) que acompanha o círculo; a sombra vem de fora. */
+.bb-notch {
+  position: absolute;
+  inset: 0;
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--mel-ink-950) 22%, transparent));
+}
+.bb-notch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  background: var(--mel-surface-elevated);
+  mask-image: radial-gradient(circle 31px at 50% 4px, transparent 30px, #000 31px);
+  mask-size: 200% 100%;
+  mask-repeat: no-repeat;
+  mask-position: calc((1 - (var(--i) + 0.5) / 5) * 100%) 0;
+  transition: mask-position 0.5s var(--bb-spring);
+}
+.bb-orb {
+  top: -20px;
+}
+.bb-orb span {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mel-primary) 78%, var(--mel-honey-300)), var(--mel-primary) 55%, var(--mel-primary-hover));
+  box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--mel-primary) 80%, transparent);
+}
+.bb-bar[data-v="orb"] .bb-tab {
+  justify-content: flex-end;
+  padding-bottom: 9px;
+  gap: 5px;
+}
+.bb-bar[data-v="orb"] .bb-tab[aria-current="page"] {
+  color: var(--mel-text-primary);
+}
+.bb-bar[data-v="orb"] .bb-tab[aria-current="page"] .bb-icon {
+  color: var(--mel-primary-foreground);
+  transform: translateY(-21px);
+}
+
+/* ---------- 4. Cápsula de vidro ---------- */
+.bb-bar[data-v="glass"] {
+  padding: 6px;
+  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--mel-text-inverse) 28%, var(--mel-border));
+  background: color-mix(in srgb, var(--mel-surface-elevated) 58%, transparent);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+}
+.bb-lens {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / 5);
+  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--mel-primary) 34%, transparent), color-mix(in srgb, var(--mel-primary) 14%, transparent));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--mel-text-inverse) 55%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--mel-primary) 50%, transparent),
+    0 8px 20px -8px color-mix(in srgb, var(--mel-primary) 70%, transparent);
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform 0.5s var(--bb-spring);
+}
+.bb-bar[data-v="glass"] .bb-tab[aria-current="page"] {
+  color: var(--mel-text-primary);
+}
+.bb-bar[data-v="glass"] .bb-tab[aria-current="page"] .bb-icon {
+  color: var(--mel-primary);
+  transform: scale(1.12);
+}
+
+/* ---------- 5. Linha de brilho ---------- */
+.bb-frame[data-option="line"] .bb-nav {
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.bb-bar[data-v="line"] {
+  height: 68px;
+  border: 0;
+  border-top: 1px solid var(--mel-border);
+  border-radius: 0;
+  box-shadow: 0 -8px 24px -12px color-mix(in srgb, var(--mel-ink-950) 30%, transparent);
+  overflow: hidden;
+}
+.bb-line {
+  top: 0;
+  height: 100%;
+}
+.bb-line span {
+  width: 34px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: var(--mel-primary);
+}
+.bb-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 96px;
+  height: 46px;
+  margin-left: -48px;
+  background: radial-gradient(60% 100% at 50% 0, color-mix(in srgb, var(--mel-primary) 30%, transparent), transparent 100%);
+}
+.bb-bar[data-v="line"] .bb-tab {
+  gap: 4px;
+  font-size: 11px;
+}
+.bb-bar[data-v="line"] .bb-icon svg {
+  fill: transparent;
+}
+.bb-bar[data-v="line"] .bb-tab[aria-current="page"] {
+  color: var(--mel-primary);
+  font-weight: 800;
+}
+.bb-bar[data-v="line"] .bb-tab[aria-current="page"] .bb-icon {
+  transform: translateY(-1px) scale(1.08);
+}
+.bb-bar[data-v="line"] .bb-tab[aria-current="page"] .bb-icon svg {
+  fill: color-mix(in srgb, var(--mel-primary) 26%, transparent);
+}
+
+/* ---------- 6. Etiqueta flutuante ---------- */
+.bb-bar[data-v="tag"] {
+  height: 56px;
+}
+.bb-bar[data-v="tag"] .bb-label {
+  /* O nome continua no botão para leitores de tela; visualmente ele vive na etiqueta. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.bb-tag {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: calc((var(--i) + 0.5) * 20%);
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--mel-primary);
+  color: var(--mel-primary-foreground);
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--mel-primary) 80%, transparent);
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  /* Nas pontas a etiqueta escorrega para dentro: 0% na 1ª aba, -100% na última. */
+  transform: translateX(calc(-18% - var(--i) * 16%));
+  transition:
+    left 0.45s var(--bb-spring),
+    transform 0.45s var(--bb-spring);
+}
+.bb-dot {
+  bottom: 7px;
+}
+.bb-dot span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mel-primary);
+}
+.bb-bar[data-v="tag"] .bb-tab[aria-current="page"] {
+  color: var(--mel-primary);
+}
+.bb-bar[data-v="tag"] .bb-tab[aria-current="page"] .bb-icon {
+  transform: translateY(-4px) scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-frame *,
+  .bb-frame *::after {
+    transition: none !important;
+  }
+}
