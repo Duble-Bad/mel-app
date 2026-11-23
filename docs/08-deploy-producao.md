@@ -31,6 +31,15 @@ Colocar o `mel-prod` em `MEL_SAFE_TARGET_REFS` **não** libera produção: o pro
 
 ## Execução (somente com autorização)
 
+**Atalho (desde 2026-11-23):** num PowerShell, na raiz do repositório:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\prod\mel-prod.ps1            # só a conferência
+powershell -ExecutionPolicy Bypass -File .\scripts\prod\mel-prod.ps1 -Deploy    # conferência + deploy + pós-deploy
+```
+
+Na 1ª vez pergunta a URL do **Session pooler** (painel → Connect → Session pooler, com o marcador da senha) e o caminho do certificado, e guarda em `%USERPROFILE%\.mel-prod.json` (fora do repositório, **sem a senha**; `-Reconfigurar` refaz). Depois só pede a senha, mascarada, e a apaga no fim. As confirmações digitadas do deploy continuam. Resultados sem segredo em `%TEMP%\mel-preflight.txt` e `%TEMP%\mel-postdeploy.txt`. Abaixo, o passo a passo manual equivalente.
+
 Num **PowerShell novo** (ou Windows Terminal), na raiz do repositório, na `main` atualizada e limpa.
 **Não use o Git Bash**: no terminal dele o Node não é reconhecido como interativo e o deploy é recusado.
 
