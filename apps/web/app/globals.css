@@ -489,8 +489,13 @@ input::-ms-clear {
 :root {
   --mel-tabbar-h: calc(76px + env(safe-area-inset-bottom));
 }
+/* Estilo "Círculo dourado": o círculo sobe 20 px acima da barra; o espaço reservado cresce junto,
+   para nada ficar atrás dele. (Antes da regra do teclado aberto, que zera o espaço.) */
+html[data-tabbar="orb"] {
+  --mel-tabbar-h: calc(96px + env(safe-area-inset-bottom));
+}
 @media (min-width: 1024px) {
-  :root {
+  html:root {
     --mel-tabbar-h: 0px;
   }
 }
@@ -502,6 +507,12 @@ input::-ms-clear {
   padding: 0 10px max(8px, env(safe-area-inset-bottom));
   pointer-events: none;
   transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+}
+/* Telas estreitas: menos margem lateral, para a barra ter largura para as cinco abas. */
+@media (max-width: 379.98px) {
+  .mel-apptabbar {
+    padding-inline: 6px;
+  }
 }
 .mel-apptabbar > * {
   pointer-events: auto;

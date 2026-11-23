@@ -1,0 +1,214 @@
+/*
+ * Barra de abas do aplicativo (AppTabs.tsx), nos dois estilos. Só tokens da MEL, claro e escuro.
+ * --i = índice da aba atual; --n = número de abas. O estilo vem de data-variant na barra; em
+ * "auto" vale a escolha da pessoa (data-tabbar no <html>, posto antes da primeira pintura).
+ */
+.mel-tabs {
+  --tabs-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --tabs-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --tabs-gold: linear-gradient(135deg, color-mix(in srgb, var(--mel-primary) 78%, var(--mel-honey-300)), var(--mel-primary) 55%, var(--mel-primary-hover));
+}
+.mel-tabs__bar {
+  position: relative;
+  isolation: isolate;
+  height: 64px;
+}
+.mel-tabs__tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+  color: var(--mel-text-secondary);
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mel-tabs__tab:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: -3px;
+}
+.mel-tabs__icon {
+  display: inline-flex;
+  flex: none;
+  transition: transform 0.4s var(--tabs-spring);
+}
+.mel-tabs__tab:active .mel-tabs__icon {
+  transform: scale(0.88);
+}
+.mel-tabs__label {
+  overflow: hidden;
+  white-space: nowrap;
+}
+.mel-tabs__notch,
+.mel-tabs__orb,
+.mel-tabs__short {
+  display: none;
+}
+
+/* ====================== "Aba que se abre" (padrão) ====================== */
+:is(.mel-tabs[data-variant="expand"], :root:not([data-tabbar="orb"]) .mel-tabs[data-variant="auto"]) {
+  & .mel-tabs__bar {
+    display: flex;
+    gap: 1px;
+    padding: 5px;
+    border-radius: 30px;
+    border: 1px solid var(--mel-border);
+    background: var(--mel-surface-elevated);
+    box-shadow: var(--mel-shadow-lg);
+  }
+  /* Abas fechadas: dividem por igual o que sobra e nunca ficam menores que 48 px (alvo de toque),
+     com a altura toda da barra (52 px). A aba aberta tem a largura do próprio conteúdo. */
+  & .mel-tabs__tab {
+    flex: 1 1 48px;
+    min-width: 48px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 800;
+    transition:
+      padding 0.45s var(--tabs-out),
+      background-color 0.3s,
+      color 0.25s;
+  }
+  /* O nome das abas fechadas some da vista, mas continua sendo o nome do link para leitores de tela. */
+  & .mel-tabs__label {
+    max-width: 0;
+    opacity: 0;
+    transition:
+      max-width 0.45s var(--tabs-out),
+      opacity 0.2s,
+      margin 0.45s var(--tabs-out);
+  }
+  & .mel-tabs__tab[aria-current="page"] {
+    flex: 0 1 auto;
+    padding-inline: 10px;
+    background: var(--tabs-gold);
+    box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--mel-primary) 75%, transparent);
+    color: var(--mel-primary-foreground);
+  }
+  & .mel-tabs__tab[aria-current="page"] .mel-tabs__label {
+    max-width: 120px;
+    margin-left: 5px;
+    text-overflow: ellipsis;
+    opacity: 1;
+    transition:
+      max-width 0.45s var(--tabs-out),
+      opacity 0.3s 0.12s,
+      margin 0.45s var(--tabs-out);
+  }
+}
+
+/* ====================== "Círculo dourado" ====================== */
+:is(.mel-tabs[data-variant="orb"], :root[data-tabbar="orb"] .mel-tabs[data-variant="auto"]) {
+  & .mel-tabs__bar {
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  }
+  /* O fundo da barra é uma camada com um furo (máscara) que acompanha o círculo; a sombra vem de fora. */
+  & .mel-tabs__notch {
+    display: block;
+    position: absolute;
+    inset: 0;
+    filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--mel-ink-950) 22%, transparent));
+  }
+  & .mel-tabs__notch span {
+    position: absolute;
+    inset: 0;
+    border-radius: 26px;
+    background: var(--mel-surface-elevated);
+    box-shadow: inset 0 0 0 1px var(--mel-border);
+    mask-image: radial-gradient(circle 31px at 50% 4px, transparent 30px, #000 31px);
+    mask-size: 200% 100%;
+    mask-repeat: no-repeat;
+    mask-position: calc((1 - (var(--i) + 0.5) / var(--n)) * 100%) 0;
+    transition: mask-position 0.5s var(--tabs-spring);
+  }
+  & .mel-tabs__orb {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    width: calc(100% / var(--n));
+    pointer-events: none;
+    transform: translateX(calc(var(--i) * 100%));
+    transition:
+      transform 0.5s var(--tabs-spring),
+      opacity 0.2s;
+  }
+  & .mel-tabs__orb span {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--tabs-gold);
+    box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--mel-primary) 80%, transparent);
+  }
+  /* Tela fora das cinco seções: sem círculo e sem recorte. */
+  & .mel-tabs__bar[data-none="true"] .mel-tabs__orb {
+    opacity: 0;
+  }
+  & .mel-tabs__bar[data-none="true"] .mel-tabs__notch span {
+    mask-image: none;
+  }
+  & .mel-tabs__tab {
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 0 1px 9px;
+    font-size: 10px;
+    letter-spacing: -0.01em;
+    transition: color 0.25s;
+  }
+  & .mel-tabs__label {
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+  /* Aba com nome curto (ex.: "Mapa" no lugar de "Mapa da Rede"): mostra o curto; o completo fica
+     só para leitores de tela (escondido da vista, mas ainda é o nome do link). */
+  & .mel-tabs__short {
+    display: inline;
+  }
+  & .mel-tabs__full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  & .mel-tabs__tab[aria-current="page"] {
+    color: var(--mel-text-primary);
+    font-weight: 800;
+  }
+  /* O nome da aba atual pode passar um pouco da largura da aba: nunca é cortado. */
+  & .mel-tabs__tab[aria-current="page"] .mel-tabs__label {
+    max-width: none;
+    overflow: visible;
+  }
+  & .mel-tabs__tab[aria-current="page"] .mel-tabs__icon {
+    color: var(--mel-primary-foreground);
+    transform: translateY(-21px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mel-tabs *,
+  .mel-tabs *::after {
+    transition: none !important;
+  }
+}
+
+/* Telas estreitas (360 px): o nome da aba aberta encolhe um pouco para "Mapa da Rede" caber
+   inteiro sem tirar largura das abas fechadas (48 px). */
+@media (max-width: 379.98px) {
+  :is(.mel-tabs[data-variant="expand"], :root:not([data-tabbar="orb"]) .mel-tabs[data-variant="auto"]) .mel-tabs__tab {
+    font-size: 12px;
+    letter-spacing: -0.01em;
+  }
+  :is(.mel-tabs[data-variant="expand"], :root:not([data-tabbar="orb"]) .mel-tabs[data-variant="auto"]) .mel-tabs__tab[aria-current="page"] {
+    padding-inline: 9px;
+  }
+}

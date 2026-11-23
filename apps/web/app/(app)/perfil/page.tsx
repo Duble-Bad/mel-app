@@ -6,6 +6,7 @@ import { listMyLostCases, listMyPets } from "@mel/data";
 import { requireOnboardedProfile } from "@/lib/session";
 import { createSessionClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { TabBarOptions } from "@/components/theme/TabBarOptions";
 import { ThemeOptions } from "@/components/theme/ThemeSwitcher";
 import { PetCard } from "@/components/pets/PetCard";
 import { Alert } from "@/components/ui/Alert";
@@ -94,6 +95,11 @@ async function ProfileContent({
               Aparência
             </h2>
             <ThemeOptions layout="segmented" />
+            {/* A barra de abas só existe abaixo de lg. */}
+            <div className="flex flex-col gap-2 lg:hidden">
+              <h3 className="mt-2 font-bold">Barra de navegação</h3>
+              <TabBarOptions />
+            </div>
           </section>
 
           <div className="flex flex-col gap-3">

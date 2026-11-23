@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { themes } from "@mel/ui-tokens";
+import { TABBAR_INIT_SCRIPT } from "@/lib/theme/tabbar";
 import { THEME_INIT_SCRIPT } from "@/lib/theme/theme";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
@@ -40,7 +41,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="pt-BR" className={`${jakarta.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         {/* Antes da 1ª pintura: evita piscar claro antes do tema escuro. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TABBAR_INIT_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col bg-background text-text-primary">
         <ScrollProgress />

@@ -3,7 +3,7 @@
 import { Handshake, Heart, House, LayoutGrid, Map as MapIcon } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Suspense, useState } from "react";
-import { SlidingPillTabs, type PillTab } from "@/components/ui/motion/SlidingPillTabs";
+import { AppTabs, type AppTab } from "@/components/ui/motion/AppTabs";
 import { isActive, NAV_ITEMS } from "./MainNav";
 
 const ICONS: Record<string, React.ReactNode> = {
@@ -14,14 +14,20 @@ const ICONS: Record<string, React.ReactNode> = {
   "/parceiros": <Handshake size={21} strokeWidth={2.1} />,
 };
 
-const TABS: PillTab[] = NAV_ITEMS.map((item) => ({ id: item.href, label: item.label, href: item.href, icon: ICONS[item.href] }));
+/** Nome curto no estilo "Círculo dourado", onde cada aba tem só a própria largura para o nome. */
+const SHORT: Record<string, string> = { "/mapa": "Mapa" };
+
+const TABS: AppTab[] = NAV_ITEMS.map((item) => ({ id: item.href, label: item.label, shortLabel: SHORT[item.href], href: item.href, icon: ICONS[item.href] }));
 
 /**
  * Barra de abas do celular (abaixo de lg), como num aplicativo: as mesmas seções do menu
- * principal, com a pílula dourada "Sliding Pill" sob a seção atual. Fica fixa embaixo; some
- * enquanto o teclado está aberto (campo de texto em foco) para não cobrir o que se digita.
- * O espaço que ela ocupa é `--mel-tabbar-h` (globals.css): rodapé, chat, avisos e barras fixas
- * sobem esse tanto. Em telas que não são de nenhuma seção, nenhuma aba fica marcada.
+ * principal. Dois estilos (components/ui/motion/AppTabs): "Aba que se abre" (padrão) e "Círculo
+ * dourado", escolhido pela pessoa em Aparência (por aparelho; ver lib/theme/tabbar.ts). A marcação
+ * é a mesma nos dois; o CSS escolhe pelo atributo data-tabbar do <html>, posto antes da primeira
+ * pintura, então a barra já nasce no estilo certo. Fica fixa embaixo; some enquanto o teclado está
+ * aberto (campo de texto em foco) para não cobrir o que se digita. O espaço que ela ocupa é
+ * `--mel-tabbar-h` (globals.css): rodapé, chat, avisos e barras fixas sobem esse tanto. Em telas
+ * que não são de nenhuma seção, nenhuma aba fica marcada.
  */
 export function AppTabBar() {
   // usePathname depende da URL: com cacheComponents precisa de Suspense. Enquanto isso, a mesma
@@ -30,7 +36,7 @@ export function AppTabBar() {
     <Suspense
       fallback={
         <div className="mel-apptabbar lg:hidden">
-          <SlidingPillTabs label="Seções" tabs={TABS} active="" />
+          <AppTabs label="Seções" tabs={TABS} active="" />
         </div>
       }
     >
@@ -42,12 +48,14 @@ export function AppTabBar() {
 function LiveTabBar() {
   const pathname = usePathname();
   const current = NAV_ITEMS.find((item) => isActive(pathname, item.href))?.href ?? "";
-  // A pílula sai no toque, sem esperar a página nova carregar; quando a rota muda, vale a rota.
+  // O destaque sai no toque, sem esperar a página nova carregar; quando a rota muda, vale a rota.
   const [tapped, setTapped] = useState<{ on: string; to: string } | null>(null);
-  const active = tapped && tapped.on === pathname ? tapped.to : current;
+  // Mudou de rota (inclusive pelo "voltar"): o toque já cumpriu o papel e a rota passa a valer.
+  if (tapped && tapped.on !== pathname) setTapped(null);
+  const active = tapped ? tapped.to : current;
   return (
     <div className="mel-apptabbar lg:hidden">
-      <SlidingPillTabs label="Seções" tabs={TABS} active={active} onSelect={(to) => setTapped({ on: pathname, to })} />
+      <AppTabs label="Seções" tabs={TABS} active={active} onSelect={(to) => setTapped({ on: pathname, to })} />
     </div>
   );
 }

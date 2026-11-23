@@ -4,6 +4,7 @@ import { Check, Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { THEME_PREFERENCES, type ThemePreference } from "@/lib/theme/theme";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { TabBarOptions } from "./TabBarOptions";
 import { useTheme } from "./ThemeProvider";
 
 const OPTIONS: Record<ThemePreference, { label: string; hint: string; icon: LucideIcon }> = {
@@ -128,10 +129,19 @@ export function ThemeSwitcher() {
         >
           <p className="px-3 pt-2 pb-1 text-caption font-semibold tracking-[.06em] text-text-secondary uppercase">Aparência</p>
           <ThemeOptions onPicked={() => setMenuOpen(false)} />
+          {/* A barra de abas só existe abaixo de lg; em telas maiores a escolha não aparece. */}
+          <div className="mt-1.5 border-t border-border pt-1.5 lg:hidden">
+            <p className="px-3 pt-2 pb-1 text-caption font-semibold tracking-[.06em] text-text-secondary uppercase">Barra de navegação</p>
+            <TabBarOptions />
+          </div>
         </div>
       )}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Aparência" description="Escolha como a MEL aparece para você.">
         <ThemeOptions onPicked={() => setSheetOpen(false)} />
+        <div className="flex flex-col gap-2 border-t border-border pt-4">
+          <h3 className="font-bold">Barra de navegação</h3>
+          <TabBarOptions />
+        </div>
       </BottomSheet>
     </div>
   );
