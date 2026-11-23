@@ -1,46 +1,70 @@
 /*
- * "A rede se ativando" (components/home/NetworkStory.tsx): história conduzida pela rolagem.
- * Só tokens da MEL. Durante a rolagem só mudam `transform` e `opacity` (valores de movimento
- * escritos direto no estilo de cada camada); nenhuma regra aqui depende de uma variável que mude a
- * cada quadro, exceto --act (4 legendas) e --p (a barra de progresso).
+ * "Como funciona" em quatro passos (components/home/NetworkStory.tsx): tocador com mapa ilustrativo.
+ * Só tokens da MEL. No mapa só mudam `transform` e `opacity` (valores de movimento escritos direto
+ * no estilo de cada camada). Sem rolagem presa: a seção tem altura normal.
+ *
+ * [data-ready="false"]: antes de a página ficar interativa (e sem JavaScript) os quatro passos
+ * aparecem todos, como lista, e os controles ficam ocultos.
  */
-.ns-story {
-  position: relative;
-  /* Quatro etapas: cerca de 85% da altura da tela de rolagem para cada uma. */
-  height: 340vh;
-  height: 340svh;
-}
-.ns-pinned {
-  position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px - var(--mel-tabbar-h));
-  height: calc(100svh - 64px - var(--mel-tabbar-h));
-  overflow: clip;
-}
-/* Celular: mapa quadrado (limitado pela altura da tela) com a legenda logo abaixo, o conjunto
-   centralizado na área fixada. Um mapa mais alto que largo cortaria as laterais da prancha, e a
-   trilha e o reencontro ficam justamente à direita. */
 .ns-grid {
   display: grid;
-  grid-template-rows: auto auto;
-  align-content: center;
   gap: 18px;
-  height: 100%;
-  padding-block: 12px 28px;
+}
+.ns-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  touch-action: pan-y;
 }
 
-/* ---------- Legendas ---------- */
-.ns-steps-wrap {
-  position: relative;
-  padding-top: 14px;
-}
-.ns-steps {
+/* ---------- Segmentos (um por passo) ---------- */
+.ns-segs {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
-.ns-step {
-  grid-area: 1 / 1;
-  opacity: var(--act, 1);
-  translate: 0 calc((1 - var(--act, 1)) * 16px);
+/* Área de toque alta (28 px); o traço visível tem 4 px. */
+.ns-seg {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  cursor: pointer;
+}
+.ns-seg:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.ns-seg-track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--mel-border-strong);
+  transition: height 0.2s;
+}
+.ns-seg:hover .ns-seg-track {
+  height: 6px;
+}
+.ns-seg-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--mel-primary);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+.ns-seg-fill[data-done="true"] {
+  transform: none;
+}
+
+/* ---------- Passos ---------- */
+.ns-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 .ns-step[data-tone="lost"] {
   --tone: var(--mel-status-lost);
@@ -53,6 +77,17 @@
 }
 .ns-step[data-tone="found"] {
   --tone: var(--mel-status-found);
+}
+.ns-step-head {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.ns-step-head:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: 4px;
 }
 .ns-step-tag {
   display: inline-flex;
@@ -75,8 +110,9 @@
   letter-spacing: 0;
 }
 .ns-step-title {
+  display: block;
   margin-top: 8px;
-  font-size: clamp(21px, 2.6vw, 34px);
+  font-size: clamp(21px, 2.4vw, 30px);
   line-height: 1.1;
   letter-spacing: -0.03em;
   font-weight: 800;
@@ -88,22 +124,95 @@
   line-height: 1.5;
   color: var(--mel-text-secondary);
 }
-.ns-rail {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: var(--mel-border);
-  overflow: hidden;
-  border-radius: 2px;
+
+/* ---------- Controles ---------- */
+.ns-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.ns-rail span {
-  position: absolute;
-  inset: 0;
-  background: var(--mel-brand);
-  transform-origin: 0 0;
-  transform: scaleX(var(--p, 0));
+.ns-ctl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--mel-border-strong);
+  background: color-mix(in srgb, var(--mel-surface) 70%, transparent);
+  color: var(--mel-text-primary);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
+}
+.ns-ctl:hover {
+  background: var(--mel-surface-muted);
+}
+.ns-ctl:active {
+  transform: scale(0.95);
+}
+.ns-ctl:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ns-ctl:focus-visible {
+  outline: 3px solid var(--mel-focus);
+  outline-offset: 2px;
+}
+.ns-ctl-main {
+  min-width: 138px;
+  padding: 0 18px;
+  border-color: transparent;
+  background: var(--mel-primary);
+  color: var(--mel-primary-foreground);
+}
+.ns-ctl-main:hover {
+  background: var(--mel-primary-hover);
+}
+.ns-count {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mel-text-secondary);
+}
+
+/* ---------- Interativo: um passo em destaque por vez ---------- */
+/* Celular: só o passo atual aparece (os quatro ocupam o mesmo lugar, então a altura não pula). */
+.ns-story[data-ready="true"] .ns-steps {
+  display: grid;
+}
+.ns-story[data-ready="true"] .ns-step {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition:
+    opacity 0.35s,
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0s 0.35s;
+}
+.ns-story[data-ready="true"] .ns-step[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 0.35s 0.1s,
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.1s,
+    visibility 0s;
+}
+.ns-story[data-ready="false"] .ns-segs,
+.ns-story[data-ready="false"] .ns-controls {
+  display: none;
+}
+.ns-story[data-still="true"] .ns-step {
+  transition: none;
+}
+.ns-story[data-still="true"] .ns-lost-ring {
+  animation: none;
 }
 
 /* ---------- Cena ---------- */
@@ -112,11 +221,10 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  max-height: calc(100vh - 330px - var(--mel-tabbar-h));
-  max-height: calc(100svh - 330px - var(--mel-tabbar-h));
+  max-height: 52vh;
+  max-height: 52svh;
   container-type: size;
   contain: layout paint style;
-  min-height: 0;
   border-radius: var(--mel-radius-hero);
   overflow: hidden;
   background: var(--mel-surface);
@@ -368,70 +476,48 @@
 
 @media (min-width: 1024px) {
   .ns-grid {
-    grid-template-columns: minmax(0, 0.74fr) minmax(0, 1.26fr);
-    grid-template-rows: none;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
     align-items: center;
-    gap: 64px;
-    padding-block: 28px;
+    gap: 56px;
   }
   .ns-scene {
     order: 0;
-    aspect-ratio: auto;
-    max-height: none;
-    height: min(100%, 680px);
+    aspect-ratio: 4 / 3;
+    max-height: 600px;
   }
-  .ns-steps-wrap {
-    padding: 0 0 0 30px;
-  }
-  .ns-steps {
+  /* Desktop: os quatro passos ficam visíveis em lista; o atual em destaque, os outros apagados. */
+  .ns-story[data-ready="true"] .ns-steps {
     display: flex;
-    flex-direction: column;
-    gap: 30px;
   }
-  .ns-step {
-    opacity: calc(0.36 + var(--act, 1) * 0.64);
-    translate: calc(var(--act, 1) * 10px) 0;
+  .ns-story[data-ready="true"] .ns-step {
+    opacity: 0.4;
+    visibility: visible;
+    transform: none;
+    transition:
+      opacity 0.35s,
+      transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .ns-rail {
-    right: auto;
-    bottom: 0;
-    width: 2px;
-    height: auto;
+  .ns-story[data-ready="true"] .ns-step[data-active="true"] {
+    opacity: 1;
+    transform: translateX(10px);
+    transition:
+      opacity 0.35s,
+      transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .ns-rail span {
-    transform: scaleY(var(--p, 0));
+  .ns-story[data-ready="true"] .ns-step:not([data-active="true"]) .ns-step-text {
+    display: none;
+  }
+  .ns-story[data-ready="true"] .ns-step:hover {
+    opacity: 0.75;
+  }
+  .ns-story[data-ready="true"] .ns-step[data-active="true"]:hover {
+    opacity: 1;
   }
 }
-
-/* ---------- Movimento reduzido: sem fixar; mapa no estado final e as quatro etapas em lista ---------- */
-.ns-story[data-static="true"] {
-  height: auto;
-}
-.ns-story[data-static="true"] .ns-pinned {
-  position: static;
-  height: auto;
-}
-.ns-story[data-static="true"] .ns-grid {
-  height: auto;
-  padding-block: 12px 0;
-}
-.ns-story[data-static="true"] .ns-scene {
-  height: auto;
-  max-height: none;
-  aspect-ratio: 4 / 3;
-}
-.ns-story[data-static="true"] .ns-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 26px;
-}
-.ns-story[data-static="true"] .ns-step {
-  opacity: 1;
-  translate: none;
-}
-.ns-story[data-static="true"] .ns-rail {
-  display: none;
-}
-.ns-story[data-static="true"] .ns-lost-ring {
-  animation: none;
+@media (prefers-reduced-motion: reduce) {
+  .ns-step,
+  .ns-seg-track,
+  .ns-ctl {
+    transition: none !important;
+  }
 }

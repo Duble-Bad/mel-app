@@ -23,7 +23,7 @@ export function NetworkStory() {
           index="01"
           kicker="A rede se ativando"
           title={<>Do susto ao reencontro, em quatro movimentos.</>}
-          lead="Role devagar: a própria rolagem conduz a história. Cada ponto dourado é um Guardião que recebeu o alerta."
+          lead="A história toca sozinha, passo a passo, e dá para pausar ou pular. Cada ponto dourado é um Guardião que recebeu o alerta."
         />
       </div>
       <Story steps={STEPS} guardians={312} caption="Raio do alerta: 2 km" />

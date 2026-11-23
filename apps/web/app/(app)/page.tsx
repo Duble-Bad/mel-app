@@ -138,8 +138,8 @@ export default function HomePage() {
             Sem custo, sem anúncios. A MEL avisa quem está perto e protege os dados de quem pede ajuda.
           </SectionHead>
         </div>
-        {/* A história conduzida pela rolagem (do alerta ao reencontro). Com "reduzir movimento",
-            vira uma lista comum de quatro etapas com o mapa parado. */}
+        {/* Tocador dos quatro passos com o mapa ilustrativo (toca sozinho só enquanto está na tela;
+            pausar, anterior/próximo, segmentos). Sem rolagem presa. */}
         <NetworkStory steps={STEPS} />
       </section>
 

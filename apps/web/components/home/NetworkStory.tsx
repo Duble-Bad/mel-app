@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties } from "react";
-import { motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "motion/react";
+import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
+import { motion, useAnimationFrame, useInView, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
 import { useReducedMotion } from "@/components/ui/motion/useReducedMotion";
 import "./network-story.css";
 
@@ -62,13 +63,20 @@ const SIGHTINGS = [
 ];
 const PIN = "M0 0 C -4 -10 -14 -17 -14 -28 A 14 14 0 1 1 14 -28 C 14 -17 4 -10 0 0 Z";
 
-/** Faixa da rolagem (0 a 1) em que cada etapa fica em destaque. São sempre quatro etapas. */
-const RANGES = [
-  [0, 0.26],
+/**
+ * Trecho da linha do tempo do mapa (0 a 1) que cada passo percorre: do estado em que o passo
+ * começa até o estado final dele. São sempre quatro passos.
+ */
+const SPANS = [
+  [0, 0.24],
   [0.26, 0.6],
   [0.6, 0.86],
-  [0.86, 1.2],
+  [0.86, 1],
 ] as const;
+/** Quanto tempo cada passo fica na tela (ms) e que fração dele o mapa leva para se mover. */
+const STEP_MS = 5600;
+const MOVE = 0.55;
+const LAST = SPANS.length - 1;
 
 export type StoryTone = "lost" | "brand" | "sighting" | "found";
 export interface StoryStep {
@@ -78,22 +86,9 @@ export interface StoryStep {
   text: string;
 }
 
+const noSubscribe = () => () => {};
 const clamp01 = (n: number) => Math.min(Math.max(n, 0), 1);
-
-function Step({ step, index, p }: { step: StoryStep; index: number; p: MotionValue<number> }) {
-  const [s, e] = RANGES[index] ?? RANGES[0];
-  const act = useTransform(p, (v) => r3(Math.min(clamp01((v - s) * 28 + 1), clamp01((e - v) * 28))));
-  return (
-    <motion.li className="ns-step" data-tone={step.tone} style={{ "--act": act } as unknown as CSSProperties}>
-      <span className="ns-step-tag">
-        <span className="ns-step-n">{index + 1}</span>
-        {step.tag}
-      </span>
-      <h3 className="ns-step-title">{step.title}</h3>
-      <p className="ns-step-text">{step.text}</p>
-    </motion.li>
-  );
-}
+const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
 function SightingPin({ s, last, p, r }: { s: (typeof SIGHTINGS)[number]; last: boolean; p: MotionValue<number>; r: MotionValue<number> }) {
   const a = useTransform(p, [s.on, s.on + 1 / 16], [0, 1]);
@@ -116,33 +111,132 @@ function SightingPin({ s, last, p, r }: { s: (typeof SIGHTINGS)[number]; last: b
 }
 
 /**
- * "A rede se ativando": seção fixada (sticky) em que a rolagem conduz a história do alerta ao
- * reencontro. Um só valor (a rolagem, suavizada por mola) alimenta valores de movimento que mexem
- * apenas em `transform` e `opacity` de poucas camadas (o mapa de fundo nunca é redesenhado; os
- * Guardiões acesos são revelados por um recorte circular que cresce com a onda). O React não
- * re-renderiza durante a rolagem. A única exceção é a trilha, um traço que se desenha (camada própria).
+ * "Como funciona" em quatro passos, como um tocador (tipo Stories): o mapa ilustrativo se move de
+ * um passo para o outro sozinho enquanto a seção está na tela, com uma barra de quatro segmentos
+ * que enche no tempo de cada passo. Nada depende da rolagem e a página tem altura normal.
  *
- * Com "reduzir movimento" (`data-static`): nada fica fixado, o mapa aparece no estado final e as
- * quatro etapas viram uma lista comum.
+ * - Controles: pausar/continuar, anterior/próximo, tocar num segmento ou no título de um passo,
+ *   deslizar para os lados no celular e setas do teclado com o foco dentro do bloco. Depois do
+ *   4º passo ele para (não fica em loop) e o botão vira "Ver de novo".
+ * - Pausar congela o segmento e o mapa onde estão. Ir para um passo toca a transição do mapa
+ *   daquele passo, mesmo pausado (aí só a transição; o tempo não volta a correr).
+ * - Um só valor (`p`, de 0 a 1) alimenta os valores de movimento do mapa, que mexem apenas em
+ *   `transform` e `opacity` de poucas camadas (o fundo nunca é redesenhado); o relógio roda num
+ *   quadro de animação sem re-renderizar o React, que só re-renderiza quando o passo muda.
+ * - "Reduzir movimento": não toca sozinho; os passos mudam só pelos controles e o mapa mostra o
+ *   estado final de cada passo, sem movimento.
+ * - Sem JavaScript (e até a página ficar interativa): os quatro passos aparecem como lista.
  *
  * O mapa é uma ILUSTRAÇÃO (ruas, horários e pontos inventados); `guardians` mostra um contador só
  * na página de conceito, com número fictício. No site não há contador.
  */
 export function NetworkStory({ steps, guardians, caption = "Ilustração" }: { steps: readonly StoryStep[]; guardians?: number; caption?: string }) {
   const reduced = useReducedMotion();
-  const track = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: track, offset: ["start start", "end end"] });
-  const smooth = useSpring(scrollYProgress, { stiffness: 140, damping: 30, restDelta: 0.0005 });
-  // `p` é a única fonte de todos os valores abaixo: segue a rolagem ou fica em 1 (estado final).
+  const root = useRef<HTMLDivElement>(null);
+  const inView = useInView(root, { amount: 0.35 });
+  // Falso no servidor e na hidratação; verdadeiro assim que a página fica interativa.
+  const ready = useSyncExternalStore(noSubscribe, () => true, () => false);
+  const [step, setStep] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [ended, setEnded] = useState(false);
+  const stepRef = useRef(0);
+  /** Pausado, mas tocando só a transição do mapa do passo recém-escolhido. */
+  const transitionOnly = useRef(false);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+
+  /** Progresso do passo atual (0 a 1): é o enchimento do segmento. */
+  const t = useMotionValue(0);
+  /** Onde o mapa deve estar na linha do tempo; `p` segue esse alvo com mola (ou direto, sem movimento). */
+  const target = useMotionValue(0);
+  const smooth = useSpring(target, { stiffness: 120, damping: 26, restDelta: 0.0005 });
   const p = useMotionValue(0);
+
   useEffect(() => {
     if (reduced) {
-      p.set(1);
-      return;
+      // Sem movimento: cada passo já aparece no estado final.
+      t.set(1);
+      target.set(SPANS[stepRef.current]?.[1] ?? 1);
+      p.set(target.get());
+      return target.on("change", (v) => p.set(v));
     }
     p.set(smooth.get());
     return smooth.on("change", (v) => p.set(v));
-  }, [reduced, smooth, p]);
+  }, [reduced, smooth, target, t, p]);
+
+  const place = (s: number, progress: number) => {
+    const [from, to] = SPANS[s] ?? SPANS[0];
+    target.set(from + (to - from) * ease(Math.min(progress / MOVE, 1)));
+  };
+
+  /** Vai para um passo. `manual`: veio de um controle (pausado, toca só a transição do mapa). */
+  const go = (to: number, manual = true) => {
+    const s = Math.min(Math.max(to, 0), LAST);
+    stepRef.current = s;
+    setStep(s);
+    setEnded(false);
+    if (reduced) {
+      t.set(1);
+      target.set(SPANS[s]?.[1] ?? 1);
+      return;
+    }
+    t.set(0);
+    place(s, 0);
+    transitionOnly.current = manual && !playing;
+  };
+
+  useAnimationFrame((_, delta) => {
+    if (reduced || !inView) return;
+    const running = playing && !ended;
+    if (!running && !transitionOnly.current) return;
+    let next = t.get() + Math.min(delta, 64) / STEP_MS;
+    if (!running && next >= MOVE) {
+      next = MOVE;
+      transitionOnly.current = false;
+    }
+    if (next >= 1) {
+      if (stepRef.current < LAST) {
+        go(stepRef.current + 1, false);
+        return;
+      }
+      next = 1;
+      setEnded(true);
+    }
+    t.set(next);
+    place(stepRef.current, next);
+  });
+
+  const toggle = () => {
+    if (ended) {
+      setPlaying(true);
+      go(0, false);
+      return;
+    }
+    transitionOnly.current = false;
+    setPlaying((on) => !on);
+  };
+
+  function onKeyDown(e: ReactKeyboardEvent) {
+    if (e.key === "ArrowRight") go(stepRef.current + 1);
+    else if (e.key === "ArrowLeft") go(stepRef.current - 1);
+    else return;
+    e.preventDefault();
+  }
+  function onPointerDown(e: ReactPointerEvent) {
+    swipe.current = e.pointerType === "mouse" ? null : { x: e.clientX, y: e.clientY };
+  }
+  function onPointerUp(e: ReactPointerEvent) {
+    const from = swipe.current;
+    swipe.current = null;
+    if (!from) return;
+    const dx = e.clientX - from.x;
+    const dy = e.clientY - from.y;
+    // Deslize horizontal claro (não a rolagem da página): esquerda avança, direita volta.
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.5) go(stepRef.current + (dx < 0 ? 1 : -1));
+  }
+
+  const running = playing && !ended && !reduced;
+  const PlayIcon = ended ? RotateCcw : running ? Pause : Play;
+  const playLabel = ended ? "Ver de novo" : running ? "Pausar" : "Continuar";
 
   const wave = useTransform(p, [0.26, 0.6], [0, 1]);
   const sight = useTransform(p, [0.6, 0.86], [0, 1]);
@@ -169,18 +263,64 @@ export function NetworkStory({ steps, guardians, caption = "Ilustração" }: { s
   const count = useTransform(wave, (w) => Math.round((guardians ?? 0) * w));
 
   return (
-    <div ref={track} className="ns-story" data-static={reduced}>
-      <div className="ns-pinned">
-        <div className="mel-container ns-grid">
-          <div className="ns-steps-wrap">
-            <ol className="ns-steps">
-              {steps.slice(0, 4).map((step, i) => (
-                <Step key={step.tag} step={step} index={i} p={p} />
+    <div
+      ref={root}
+      className="ns-story mel-container"
+      data-ready={ready}
+      data-still={reduced}
+      role="group"
+      aria-roledescription="carrossel"
+      aria-label="Como funciona, passo a passo"
+      onKeyDown={onKeyDown}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => (swipe.current = null)}
+    >
+        <div className="ns-grid">
+          <div className="ns-side">
+            {/* Segmentos: um por passo. O atual enche no tempo do passo; tocar num deles pula para lá. */}
+            <div className="ns-segs" role="group" aria-label="Passos">
+              {steps.slice(0, 4).map((s, i) => (
+                <button key={s.tag} type="button" className="ns-seg" aria-current={i === step ? "step" : undefined} aria-label={`Passo ${i + 1} de 4: ${s.title}`} onClick={() => go(i)}>
+                  <span className="ns-seg-track">
+                    {i === step ? <motion.span key="now" className="ns-seg-fill" style={{ scaleX: t }} /> : <span key="idle" className="ns-seg-fill" data-done={i < step} />}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <ol className="ns-steps" aria-live={running ? "off" : "polite"}>
+              {steps.slice(0, 4).map((s, i) => (
+                <li key={s.tag} className="ns-step" data-tone={s.tone} data-active={i === step}>
+                  <button type="button" className="ns-step-head" tabIndex={ready ? 0 : -1} aria-current={i === step ? "step" : undefined} onClick={() => go(i)}>
+                    <span className="ns-step-tag">
+                      <span className="ns-step-n">{i + 1}</span>
+                      {s.tag}
+                    </span>
+                    <span className="ns-step-title">{s.title}</span>
+                  </button>
+                  <p className="ns-step-text">{s.text}</p>
+                </li>
               ))}
             </ol>
-            <span className="ns-rail" aria-hidden="true">
-              <motion.span style={{ "--p": p } as unknown as CSSProperties} />
-            </span>
+
+            <div className="ns-controls">
+              <button type="button" className="ns-ctl" aria-label="Passo anterior" disabled={step === 0} onClick={() => go(step - 1)}>
+                <ChevronLeft size={20} aria-hidden="true" />
+              </button>
+              {!reduced && (
+                <button type="button" className="ns-ctl ns-ctl-main" aria-label={playLabel} onClick={toggle}>
+                  <PlayIcon size={18} aria-hidden="true" fill={ended ? "none" : "currentColor"} />
+                  <span>{playLabel}</span>
+                </button>
+              )}
+              <button type="button" className="ns-ctl" aria-label="Próximo passo" disabled={step === LAST} onClick={() => go(step + 1)}>
+                <ChevronRight size={20} aria-hidden="true" />
+              </button>
+              <span className="ns-count tabular-nums" aria-hidden="true">
+                {step + 1} de 4
+              </span>
+            </div>
           </div>
 
           <div
@@ -279,7 +419,6 @@ export function NetworkStory({ steps, guardians, caption = "Ilustração" }: { s
             </span>
           </div>
         </div>
-      </div>
     </div>
   );
 }
