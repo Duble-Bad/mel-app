@@ -26,6 +26,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Indicador do Next (só em dev) em cima: embaixo ele cobria a barra de abas do celular.
   devIndicators: { position: "top-left" },
+  // Teste no celular pela Wi-Fi (docs/19): sem isto o `next dev` recusa os scripts pedidos de outro
+  // endereço e a página abre sem funcionar (botões e barra sem resposta). Só vale no modo dev.
+  allowedDevOrigins: ["172.18.4.238", "172-18-4-238.sslip.io"],
   // Pasta de build separada (ex.: NEXT_DIST_DIR=.next-home) permite vários
   // `next dev` em paralelo sem dividir o cache do Turbopack (que corrompe).
   distDir: process.env.NEXT_DIST_DIR || ".next",

@@ -6,6 +6,7 @@
 // Uso: node scripts/dev-https/proxy.mjs   (MEL_DEV_HTTPS_IP, MEL_DEV_APP_URL opcionais)
 import { createServer as createHttps } from "node:https";
 import { createServer as createHttp, request } from "node:http";
+import { connect } from "node:net";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -22,7 +23,7 @@ const tls = { key: readFileSync(join(DIR, "servidor.key")), cert: readFileSync(j
 const caCer = readFileSync(join(DIR, "ca.cer"));
 const caCrt = readFileSync(join(DIR, "ca.crt"));
 
-createHttps(tls, (req, res) => {
+const httpsServer = createHttps(tls, (req, res) => {
   const upstream = request(
     {
       hostname: APP.hostname,
@@ -42,7 +43,27 @@ createHttps(tls, (req, res) => {
     res.end("App de desenvolvimento fora do ar (porta 3000).");
   });
   req.pipe(upstream);
-}).listen(HTTPS_PORT, "0.0.0.0", () => console.log(`HTTPS de teste: https://${NAME}:${HTTPS_PORT} (também https://${IP}:${HTTPS_PORT}) → ${APP.origin}`));
+});
+// WebSocket (atualização ao vivo do `next dev`): sem repassar o "upgrade", o modo dev do Next 16
+// não conclui a conexão e a página abre sem ficar interativa pelo HTTPS.
+httpsServer.on("upgrade", (req, socket, head) => {
+  const up = connect(Number(APP.port), APP.hostname, () => {
+    const headers = Object.entries({ ...req.headers, "x-forwarded-proto": "https", "x-forwarded-host": req.headers.host })
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("\r\n");
+    up.write(`${req.method} ${req.url} HTTP/1.1\r\n${headers}\r\n\r\n`);
+    if (head?.length) up.write(head);
+    up.pipe(socket);
+    socket.pipe(up);
+  });
+  const close = () => {
+    up.destroy();
+    socket.destroy();
+  };
+  up.on("error", close);
+  socket.on("error", close);
+});
+httpsServer.listen(HTTPS_PORT, "0.0.0.0", () => console.log(`HTTPS de teste: https://${NAME}:${HTTPS_PORT} (também https://${IP}:${HTTPS_PORT}) → ${APP.origin}`));
 
 // Só o certificado PÚBLICO da CA (a chave privada nunca é servida).
 const page = `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
