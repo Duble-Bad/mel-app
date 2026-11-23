@@ -225,6 +225,9 @@
   max-height: 52svh;
   container-type: size;
   contain: layout paint style;
+  /* Deslizar para o lado no mapa troca de passo (como no texto); só a rolagem vertical fica com o
+     navegador. Sem isto o navegador assumia o gesto e cancelava o deslize. */
+  touch-action: pan-y;
   border-radius: var(--mel-radius-hero);
   overflow: hidden;
   background: var(--mel-surface);
